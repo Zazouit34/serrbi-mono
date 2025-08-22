@@ -9,10 +9,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <NextThemesProvider
       attribute="class"
-      defaultTheme="light"
-      enableSystem
+      forcedTheme="light"      // always light
+      enableSystem={false}     // ignore OS theme
       disableTransitionOnChange
-      enableColorScheme
     >
       {children}
     </NextThemesProvider>
