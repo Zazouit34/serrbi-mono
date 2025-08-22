@@ -1,12 +1,31 @@
+import { getCurrentUser } from "@/server/services/current-user"
 import { Button } from "@workspace/ui/components/button"
+import { logout } from "@/lib/actions/auth"
 
-export default function Page() {
+
+import Image from "next/image"
+
+
+
+export default async function Page() {
+  
+  const dbUser = await getCurrentUser()
+  
+
+  
   return (
-    <div className="flex items-center justify-center min-h-svh">
-      <div className="flex flex-col items-center justify-center gap-4">
-        <h1 className="text-2xl font-bold">Hello World</h1>
-        <Button size="sm">Button</Button>
-      </div>
-    </div>
+    <main className="flex relative flex-col mx-auto">
+      {dbUser ? (
+        <>
+          <h1>Hello {dbUser.name}</h1>
+          {/*<Image src={dbUser.image || "/images/default-avatar.png"} alt={dbUser.name || "No name"} width={100} height={100} />*/}
+          <p>{dbUser.email}</p>
+          <Button onClick={logout}>Logout</Button>
+          
+        </>
+      ) : (
+        <h1>no user</h1>
+      )}
+    </main>
   )
 }
