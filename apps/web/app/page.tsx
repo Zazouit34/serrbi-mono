@@ -20,6 +20,7 @@ export default async function Page() {
           <h1>Hello {dbUser.name}</h1>
           {/*<Image src={dbUser.image || "/images/default-avatar.png"} alt={dbUser.name || "No name"} width={100} height={100} />*/}
           <p>{dbUser.email}</p>
+          <p>{dbUser.phone}</p>
           <Button onClick={logout}>Logout</Button>
           
         </>
