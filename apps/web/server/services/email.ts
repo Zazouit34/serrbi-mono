@@ -2,7 +2,7 @@
 import { Resend } from "resend"
 
 const resend = new Resend(process.env.RESEND_API_KEY)
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"
+const APP_URL = "http://localhost:3000"
 
 export async function sendPasswordResetEmail(email: string, token: string) {
   const resetLink = `${APP_URL}/reset?token=${encodeURIComponent(token)}`
