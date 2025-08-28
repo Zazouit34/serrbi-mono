@@ -174,10 +174,12 @@ export function Navbar() {
         {/* Right Side - Login & Language */}
         <div className="flex gap-2 justify-self-end items-center">
           {/* Login button - Desktop only */}
-          <Link href={`/login?callbackUrl=${encodeURIComponent(pathname)}`} className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "hidden px-3 md:flex")}>
+
+          <UserMenu />
+          {/*<Link href={`/login?callbackUrl=${encodeURIComponent(pathname)}`} className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "hidden px-3 md:flex")}>
             <LogIn className="mr-2 size-4" />
             Log in / Sign up
-          </Link>
+          </Link>*/}
 
           <NavigationMenu viewport={false}>
             <NavigationMenuList>
@@ -186,7 +188,7 @@ export function Navbar() {
                   <Globe2 className="mr-2 size-4" />
                   {DEFAULT_LANGUAGES.find((l) => l.code === selectedLang)?.label ?? selectedLang.toUpperCase()}
                 </NavigationMenuTrigger>
-                <NavigationMenuContent>
+                <NavigationMenuContent >
                   <ul className="grid w-[200px] gap-4">
                     <li>
                       {DEFAULT_LANGUAGES.map((lang) => (

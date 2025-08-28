@@ -60,6 +60,7 @@ export default function RegisterForm() {
     },
 })
 
+
 async function onSubmit(values: RegisterFormValues) {
   setError('')
   setSuccess('')
@@ -67,6 +68,8 @@ async function onSubmit(values: RegisterFormValues) {
     try {
       // Create the user first before login
       await registerMutation.mutateAsync(values)
+
+      
     
       await loginCredentials(values.email, values.password, callbackUrl)
     } catch {

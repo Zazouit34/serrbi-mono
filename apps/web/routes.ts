@@ -17,7 +17,8 @@ export const publicRoutes =[
  * @type {string[]}
  */
 export const privateRoutes = [
-    "/agent"
+    "/agent",
+    "/jobs/job-listing/new"
 ]
 
 /**
@@ -27,12 +28,14 @@ export const privateRoutes = [
 export const authRoutes = [
     "/login",
     "/register",
+    "/reset",
+    "/forgot"
 ]
 
 /**
  * prefix for API authentication routes.
  * Routes with this prefix used for api authentication purposes.
- * @type {string}
+ * @type {string }
  */
 export const apiAuthPrefix = "/api/auth";
 

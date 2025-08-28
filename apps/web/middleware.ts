@@ -11,7 +11,7 @@ const middleware: NextMiddleware = auth((req) => {
   const { nextUrl } = req
   const isLoggedIn = !!req.auth
 
-  const isApiAuthRoute = nextUrl.pathname.startsWith(apiAuthPrefix)
+  const isApiAuthRoute = nextUrl.pathname.startsWith(apiAuthPrefix) || nextUrl.pathname.startsWith("/api/trpc")
   const isPrivateRoute = privateRoutes.includes(nextUrl.pathname)
   const isPublicRoute = publicRoutes.includes(nextUrl.pathname)
   const isAuthRoute = authRoutes.includes(nextUrl.pathname)
@@ -26,6 +26,7 @@ const middleware: NextMiddleware = auth((req) => {
     }
     return null;
   }
+  
   if(isPrivateRoute){
     if(!isLoggedIn) {
       return Response.redirect(new URL(`/login?callbackUrl=${encodeURIComponent(nextUrl.pathname)}`, nextUrl))

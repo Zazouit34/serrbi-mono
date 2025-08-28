@@ -9,7 +9,7 @@ import { cn } from '@workspace/ui/lib/utils'
 
 const PasswordInput = React.forwardRef<HTMLInputElement, InputProps>(({ className, ...props }, ref) => {
 	const [showPassword, setShowPassword] = React.useState(false)
-	const disabled = props.value === '' || props.value === undefined || props.disabled
+	const disabled = props.disabled
 
 	return (
 		<div className="relative">
