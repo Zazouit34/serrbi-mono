@@ -1,27 +1,28 @@
 // serrbi/apps/web/server/services/email.ts
 import { Resend } from "resend"
 
-const resend = new Resend(process.env.RESEND_API_KEY)
-const APP_URL = "http://localhost:3000"
+function getResend() {
+  const key = process.env.RESEND_API_KEY
+  if (!key) throw new Error("RESEND_API_KEY is missing")
+  return new Resend(key)
+}
 
 export async function sendPasswordResetEmail(email: string, token: string) {
-  const resetLink = `${APP_URL}/reset?token=${encodeURIComponent(token)}`
-  await resend.emails.send({
+  const link = `/reset?token=${encodeURIComponent(token)}`
+  await getResend().emails.send({
     from: "Serrbi <onboarding@resend.dev>",
     to: email,
     subject: "Reset your password",
-    html: `<h1>Reset your password</h1>
-    <p>Click <a href="${resetLink}">here</a> to reset your password</p>`,
+    html: `<h1>Reset</h1><p><a href="${link}">Reset password</a></p>`,
   })
 }
 
 export async function sendVerificationEmail(email: string, token: string) {
-  const verifyLink = `${APP_URL}/verify?email=${encodeURIComponent(email)}&token=${encodeURIComponent(token)}`
-  await resend.emails.send({
+  const link = `/verify?email=${encodeURIComponent(email)}&token=${encodeURIComponent(token)}`
+  await getResend().emails.send({
     from: "Serrbi <onboarding@resend.dev>",
     to: email,
     subject: "Verify your email",
-    html: `<h1>Verify your email</h1>
-    <p>Click <a href="${verifyLink}">here</a> to verify your account</p>`,
+    html: `<h1>Verify</h1><p><a href="${link}">Verify account</a></p>`,
   })
 }
