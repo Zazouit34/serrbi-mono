@@ -1,11 +1,9 @@
-'use client'
-import { Button, buttonVariants } from "@workspace/ui/components/button"
+"use client";
+import { User, LogOut, LogIn } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { buttonVariants } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
-import Image from "next/image"
-import { User, LogIn } from "lucide-react"
-import { auth } from "@/auth"
-import { logout } from "@/lib/actions/auth"
-import Link from "next/link"
+import Link from "next/link";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,45 +17,30 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
-} from "@workspace/ui/components/dropdown-menu"
+} from "@workspace/ui/components/dropdown-menu";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@workspace/ui/components/avatar";
+import { useCurrentUser } from "@/hooks/use-current-user";
+import { logout } from "@/lib/actions/auth";
 
-export async function UserMenu() {
-  const session = await auth()
-
-  const userName = session?.user?.name;
-  const userEmail = session?.user?.email;
-  const userImage = session?.user?.image;
-
-  if (!session?.user) {
-    // Show login/signup button if not logged in
-    // Import Link, cn, buttonVariants, and LogIn at the top of the file if not already imported
-    // (Assume these are available as in navbar.tsx)
-    return (
-      <Link href="/login" className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "hidden px-3 md:flex")}>
-        <LogIn className="mr-2 size-4" />
-        Log in / Sign up
-      </Link>
-    )
-  }
-
-  // If logged in, show dropdown menu
-  return (
+export function UserMenu() {
+  const pathname = usePathname();
+  const { user } = useCurrentUser();
+  return user ? (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" className="rounded-full">
-          {userImage ? (
-            <Image src={userImage} alt={userName ?? ""} width={32} height={32} />
-          ) : (
-            <User className="size-4" />
-          )}
-        </Button>
+        <Avatar>
+          <AvatarImage src={user?.image || ""}/>
+          <AvatarFallback className="bg-rose-500">
+            <User className="text-white size-4" />
+          </AvatarFallback>
+        </Avatar>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-56" align="start">
-        <DropdownMenuLabel className="flex flex-col space-y-1">
-          <span className="text-sm font-medium leading-none">{userName}</span>
-          <span className="text-xs leading-none text-muted-foreground">{userEmail}</span>
-        </DropdownMenuLabel>
-        <DropdownMenuSeparator />
+      <DropdownMenuContent className="w-56" align="center">
+        <DropdownMenuLabel>My Account</DropdownMenuLabel>
         <DropdownMenuGroup>
           <DropdownMenuItem>
             Profile
@@ -90,16 +73,33 @@ export async function UserMenu() {
               </DropdownMenuSubContent>
             </DropdownMenuPortal>
           </DropdownMenuSub>
+          <DropdownMenuItem>
+            New Team
+            <DropdownMenuShortcut>⌘+T</DropdownMenuShortcut>
+          </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
+        <DropdownMenuItem>GitHub</DropdownMenuItem>
         <DropdownMenuItem>Support</DropdownMenuItem>
+        <DropdownMenuItem disabled>API</DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => logout()}>
+        <DropdownMenuItem onClick={logout}>
+          <LogOut className="mr-2 size-4" />
           Log out
+          <DropdownMenuShortcut>⇧⌘Q</DropdownMenuShortcut>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
-  )
-  }
-  
-
+  ) : (
+    <Link
+      href={`/login?callbackUrl=${encodeURIComponent(pathname)}`}
+      className={cn(
+        buttonVariants({ variant: "ghost", size: "sm" }),
+        "hidden px-3 md:flex"
+      )}
+    >
+      <LogIn className="mr-2 size-4" />
+      Log in / Sign up
+    </Link>
+  );
+}

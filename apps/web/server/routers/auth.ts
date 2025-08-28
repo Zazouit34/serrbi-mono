@@ -1,8 +1,14 @@
 import { publicProcedure, router, protectedProcedure } from "../trpc";
-import { loginFormSchema, registerFormSchema } from "@workspace/ui/lib/validation-schemas";
+import { loginFormSchema, registerFormSchema, emailFormSchema , tokenFormSchema ,resetPasswordFormSchema} from "@workspace/ui/lib/validation-schemas";
 import bcrypt from "bcryptjs";
+
 import { TRPCError } from "@trpc/server";
 import type { PrismaClient } from "@workspace/db"
+import { createResetPasswordToken, getResetPasswordTokenbyToken } from "../services/verification"
+import { sendPasswordResetEmail } from "@/server/services/email"
+
+
+
 
 export const authRouter = router({
   // Keep login for compatibility with existing UI
@@ -36,8 +42,66 @@ export const authRouter = router({
     return { success: true, message: "Registration successful", user }
   }),
 
+  forgotPassword: publicProcedure.input(emailFormSchema).mutation(async ({ ctx, input }) => {
+    const db = ctx.prisma as PrismaClient
+    const { email } = input
+
+    const existing = await db.user.findUnique({ where: { email } })
+    if (!existing) throw new TRPCError({ code: "NOT_FOUND", message: "User not found" })
+
+    const token = await createResetPasswordToken(email)
+    await sendPasswordResetEmail(email, token.token)
+  
+    return { success: true, message: "Password reset email sent" }
+  }),
+
+  verifyResetToken : publicProcedure.input(tokenFormSchema).query(async ({ ctx, input }) => {
+    const db = ctx.prisma as PrismaClient
+    const { token } = input
+    
+    const tokenData = await db.passwordResetToken.findFirst({ where: { token } })
+    if (!tokenData) throw new TRPCError({ code: "NOT_FOUND", message: "Invalid token" })
+    if (tokenData.expires < new Date()) {
+      await db.passwordResetToken.delete({ where: { id: tokenData.id } })
+      throw new TRPCError({ code: "BAD_REQUEST", message: "Token expired" })
+    }
+  
+    return { success: true, message: "Token verified", tokenData }
+  }),
+
+ resetPassword: publicProcedure
+ .input(resetPasswordFormSchema)
+ .mutation(async ({ ctx, input }) => {
+   const db = ctx.prisma as PrismaClient
+   const tokenRecord = await getResetPasswordTokenbyToken(input.token)
+   if (!tokenRecord) throw new TRPCError({ code: "BAD_REQUEST", message: "Invalid token" })
+   if (tokenRecord.expires < new Date()) {
+     await db.passwordResetToken.delete({ where: { id: tokenRecord.id } })
+     throw new TRPCError({ code: "BAD_REQUEST", message: "Token expired" })
+   }
+
+   const user = await db.user.findUnique({ where: { email: tokenRecord.email } })
+   if (!user) {
+     await db.passwordResetToken.delete({ where: { id: tokenRecord.id } })
+     throw new TRPCError({ code: "NOT_FOUND", message: "User not found" })
+   }
+
+   const hashed = await bcrypt.hash(input.password, 10)
+   await db.user.update({ where: { id: user.id }, data: { password: hashed } })
+   await db.passwordResetToken.delete({ where: { id: tokenRecord.id } })
+
+   return { success: true, message: "Password has been changed" }
+ }),
+  
+  
+
   userData: protectedProcedure.query(async ({ ctx }) => {
     // ctx.user is injected by protectedProcedure
     return { user: (ctx as any).user, session: ctx.session }
   }),
 })
+
+
+
+
+
