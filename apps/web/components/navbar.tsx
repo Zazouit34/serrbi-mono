@@ -186,7 +186,7 @@ export function Navbar() {
           viewport={false}
           className="overflow-x-auto w-full no-scrollbar"
         >
-          <NavigationMenuList className="flex gap-2">
+          <NavigationMenuList className="flex gap-2 justify-center">
             {DEFAULT_LINKS.map((link) => (
               <NavigationMenuItem key={link.href} className="flex-shrink-0">
                 <NavigationMenuLink asChild>
