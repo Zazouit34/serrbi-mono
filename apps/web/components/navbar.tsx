@@ -186,27 +186,25 @@ export function Navbar() {
           viewport={false}
           className="overflow-x-auto w-full no-scrollbar"
         >
-          <div className="flex justify-center w-full">
-            <NavigationMenuList className="flex gap-2">
-              {DEFAULT_LINKS.map((link) => (
-                <NavigationMenuItem key={link.href} className="flex-shrink-0">
-                  <NavigationMenuLink asChild>
-                    <Link
-                      href={link.href}
-                      className="flex flex-col justify-center items-center px-2 py-3 w-20 text-xs font-medium hover:text-primary"
-                    >
-                      <img
-                        src={link.image}
-                        alt={link.label}
-                        className="mb-1 w-10 h-10"
-                      />
-                      {link.label}
-                    </Link>
-                  </NavigationMenuLink>
-                </NavigationMenuItem>
-              ))}
-            </NavigationMenuList>
-          </div>
+          <NavigationMenuList className="flex gap-2 justify-center">
+            {DEFAULT_LINKS.map((link) => (
+              <NavigationMenuItem key={link.href} className="flex-shrink-0">
+                <NavigationMenuLink asChild>
+                  <Link
+                    href={link.href}
+                    className="flex flex-col justify-center items-center px-2 py-3 w-20 text-xs font-medium hover:text-primary"
+                  >
+                    <img
+                      src={link.image}
+                      alt={link.label}
+                      className="mb-1 w-10 h-10"
+                    />
+                    {link.label}
+                  </Link>
+                </NavigationMenuLink>
+              </NavigationMenuItem>
+            ))}
+          </NavigationMenuList>
         </NavigationMenu>
       </header>
     </>

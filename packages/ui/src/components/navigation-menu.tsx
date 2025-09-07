@@ -18,7 +18,7 @@ function NavigationMenu({
       data-slot="navigation-menu"
       data-viewport={viewport}
       className={cn(
-        "group/navigation-menu relative flex max-w-max flex-1 items-center justify-center",
+        "flex relative flex-1 justify-center items-center w-full group/navigation-menu md:max-w-max",
         className
       )}
       {...props}
@@ -37,7 +37,7 @@ function NavigationMenuList({
     <NavigationMenuPrimitive.List
       data-slot="navigation-menu-list"
       className={cn(
-        "group flex flex-1 list-none items-center justify-center gap-1",
+        "flex flex-1 gap-1 justify-center items-center list-none group",
         className
       )}
       {...props}
@@ -106,7 +106,7 @@ function NavigationMenuViewport({
   return (
     <div
       className={cn(
-        "absolute top-full left-0 isolate z-50 flex justify-center"
+        "flex isolate absolute left-0 top-full z-50 justify-center"
       )}
     >
       <NavigationMenuPrimitive.Viewport
