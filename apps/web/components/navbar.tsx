@@ -143,7 +143,7 @@ export function Navbar() {
             <SerrbiMark className="w-7 h-7" />
           </Link>
 
-          <NavigationMenu viewport={false}>
+          <NavigationMenu viewport={false} className="z-50">
             <NavigationMenuList>
               <NavigationMenuItem>
                 <NavigationMenuTrigger className="px-2">
@@ -155,7 +155,7 @@ export function Navbar() {
                   <ul className="grid w-[200px] gap-4">
                     <li>
                       {DEFAULT_LANGUAGES.map((lang) => (
-                        <NavigationMenuLink asChild key={lang.code}>
+                        <NavigationMenuLink asChild key={lang.code} >
                           <Link
                             href="#"
                             className="flex-row gap-2 items-center"
@@ -182,30 +182,25 @@ export function Navbar() {
         </div>
 
         {/* Links row (no border) */}
-        <NavigationMenu
-          viewport={false}
-          className="overflow-x-auto !w-full no-scrollbar"
-        >
-          <NavigationMenuList className="flex gap-2 justify-center">
-            {DEFAULT_LINKS.map((link) => (
-              <NavigationMenuItem key={link.href} className="flex-shrink-0">
-                <NavigationMenuLink asChild>
-                  <Link
-                    href={link.href}
-                    className="flex flex-col justify-center items-center px-2 py-3 w-20 text-xs font-medium hover:text-primary"
-                  >
-                    <img
-                      src={link.image}
-                      alt={link.label}
-                      className="mb-1 size-12"
-                    />
-                    {link.label}
-                  </Link>
-                </NavigationMenuLink>
-              </NavigationMenuItem>
+        <nav className="overflow-x-auto relative w-full no-scrollbar">
+          <div className="flex justify-center items-center w-full">
+            {DEFAULT_LINKS.map((link, index) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="flex relative flex-col justify-center items-center px-2 py-3 w-20 text-xs font-medium transition-colors hover:text-primary group"
+              >
+                <img
+                  src={link.image}
+                  alt={link.label}
+                  className="mb-1 size-14"
+                />
+                {link.label}
+                <div className="absolute bottom-0 left-0 w-full h-1 bg-primary transform scale-x-0 transition-transform duration-300 ease-in-out group-hover:scale-x-100 data-[active]:scale-x-100" />
+              </Link>
             ))}
-          </NavigationMenuList>
-        </NavigationMenu>
+          </div>
+        </nav>
       </header>
     </>
   );
