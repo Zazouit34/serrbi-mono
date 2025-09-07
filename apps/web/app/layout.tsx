@@ -9,6 +9,7 @@ import { Providers } from "@/components/providers";
 import Provider from "@/app/_trpc/provider";
 
 import { Navbar } from "@/components/navbar";
+import { MobileNavbar } from "@/components/mobile-navbar";
 import { Container } from "@workspace/ui/components/container";
 
 const fontSans = Inter({ subsets: ["latin"], variable: "--font-sans" });
@@ -20,8 +21,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <body className={`${fontSans.variable} font-sans antialiased`}>
           <Provider>
             <Providers>
-              <Navbar />
-              <main>
+              <Navbar  />
+              <MobileNavbar />
+              <main className="mb-4">
                 <Container>{children}</Container>
               </main>
               <Toaster />

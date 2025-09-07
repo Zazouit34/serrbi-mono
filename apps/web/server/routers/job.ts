@@ -1,5 +1,11 @@
-import { protectedProcedure, router } from "../trpc";
-import { jobListingFormSchema } from "@workspace/ui/lib/validation-schemas";
+import { protectedProcedure, router, publicProcedure } from "../trpc";
+import {
+  jobListingFormSchema,
+  jobListQuerySchema,
+  jobGetByIdSchema,
+  jobApplicationCreateSchema,
+} from "@workspace/ui/lib/validation-schemas";
+import { sendJobApplicationEmail } from "../services/email";
 import { TRPCError } from "@trpc/server";
 import type { PrismaClient } from "@workspace/db";
 
@@ -15,6 +21,7 @@ export const jobRouter = router({
           data: {
             userId: user.id,
             title: input.title,
+            companyName: input.companyName,
             description: input.description,
             category: input.category,
             locationRequirement: input.locationRequirement,
@@ -30,6 +37,7 @@ export const jobRouter = router({
           select: {
             id: true,
             title: true,
+            companyName: true,
             description: true,
             category: true,
             locationRequirement: true,
@@ -45,17 +53,140 @@ export const jobRouter = router({
           },
         });
 
-        return { 
-          success: true, 
-          message: "Job listing created successfully", 
-          job 
+        return {
+          success: true,
+          message: "Job listing created successfully",
+          job,
         };
       } catch (error) {
         console.error("Error creating job:", error);
-        throw new TRPCError({ 
-          code: "INTERNAL_SERVER_ERROR", 
-          message: "Failed to create job listing" 
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to create job listing",
         });
       }
+    }),
+
+  getJob: publicProcedure
+    .input(jobListQuerySchema.optional())
+    .query(async ({ ctx, input }) => {
+      const page = input?.page ?? 1;
+      const pageSize = input?.pageSize ?? 10;
+      const locationRequirement = input?.locationRequirement;
+      const category = input?.category;
+      const experienceLevel = input?.experienceLevel;
+      const type = input?.type;
+      const search = input?.search;
+      const db = ctx.prisma as PrismaClient;
+
+      const where: any = {};
+      if (locationRequirement) where.locationRequirement = locationRequirement;
+      if (category) where.category = category;
+      if (experienceLevel) where.experienceLevel = experienceLevel;
+      if (type) where.type = type;
+      if (search) where.title = { contains: search, mode: "insensitive" };
+
+
+      const [items, total] = await Promise.all([
+        db.job.findMany({
+          where,
+          orderBy: { createdAt: "desc" },
+          skip: (page - 1) * pageSize,
+          take: pageSize,
+          select: {
+            id: true,
+            title: true,
+            companyName: true, 
+            description: true,
+            category: true,
+            wage: true,
+            stateAbbreviation: true,
+            city: true,
+            type: true,
+            experienceLevel: true,
+            locationRequirement: true,
+            status: true,
+            user: { select: { name: true, image: true } },
+            createdAt: true,
+          },
+        }),
+        db.job.count({ where }),
+      ]);
+      return { items, total, page, pageSize };
+    }),
+
+  getById: publicProcedure
+    .input(jobGetByIdSchema)
+    .query(async ({ ctx, input }) => {
+      const db = ctx.prisma as PrismaClient;
+      const job = await db.job.findUnique({
+        where: { id: input.id },
+        select: {
+          id: true,
+          title: true,
+          companyName: true,
+          description: true,
+          category: true,
+          city: true,
+          stateAbbreviation: true,
+          type: true,
+          experienceLevel: true,
+          locationRequirement: true,
+          wage: true,
+          createdAt: true,
+          status: true,
+        },
+      });
+      if (!job) throw new TRPCError({ code: "NOT_FOUND" });
+      return job;
+    }),
+
+  submitApplication: publicProcedure
+    .input(jobApplicationCreateSchema)
+    .mutation(async ({ ctx, input }) => {
+      const db = ctx.prisma as PrismaClient;
+
+      const job = await db.job.findUnique({
+        where: { id: input.jobId },
+        select: {
+          id: true,
+          title: true,
+          applicationEmail: true,
+          companyName: true,
+        },
+      });
+      if (!job)
+        throw new TRPCError({ code: "NOT_FOUND", message: "Job not found" });
+
+      const app = await db.jobApplication.create({
+        data: {
+          jobId: input.jobId,
+          jobTitle: input.jobTitle,
+          name: input.name,
+          email: input.email,
+          cv: input.cv,
+        },
+      });
+      // Send application email with CV attachment
+      try {
+        await sendJobApplicationEmail(
+          job.applicationEmail,
+          job.title,
+          job.companyName || "Company",
+          input.name,
+          input.email,
+          input.cvData,
+          input.cvFilename
+        );
+      } catch (emailError) {
+        console.error("Failed to send application email:", emailError);
+        // Don't fail the mutation if email fails
+      }
+
+      return {
+        success: true,
+        message: "Application submitted",
+        applicationId: app.id,
+      };
     }),
 });

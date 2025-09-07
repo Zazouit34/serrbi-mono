@@ -15,6 +15,6 @@ export const loginCredentials = async (
 };
 
 export const logout = async () => {
-  await signOut({ redirectTo: "/" }); // logout can just go home
+  await signOut({ redirectTo: "/" }); 
 };
 

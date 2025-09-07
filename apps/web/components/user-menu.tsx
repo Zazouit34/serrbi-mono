@@ -1,6 +1,7 @@
 "use client";
 import { User, LogOut, LogIn } from "lucide-react";
 import { usePathname } from "next/navigation";
+import { Skeleton } from "@workspace/ui/components/skeleton";
 import { buttonVariants } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
 import Link from "next/link";
@@ -28,7 +29,10 @@ import { logout } from "@/lib/actions/auth";
 
 export function UserMenu() {
   const pathname = usePathname();
-  const { user } = useCurrentUser();
+  const { user , status } = useCurrentUser();
+  if (status === "loading") {
+    return <Skeleton className="h-8 w-[120px] rounded-md" />
+  }
   return user ? (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>

@@ -49,7 +49,7 @@ export function MarkdownPartial({
 
   return (
     <>
-      <div ref={markdownRef} className="max-h-[300px] overflow-hidden relative">
+      <div ref={markdownRef} className="relative max-h-[300px] overflow-hidden [display:-webkit-box] [-webkit-line-clamp:2] [-webkit-box-orient:vertical]">
         {mainMarkdown}
         {isOverflowing && (
           <div className="bg-gradient-to-t from-background to-transparent to-15% inset-0 absolute pointer-events-none" />
@@ -59,7 +59,7 @@ export function MarkdownPartial({
       {isOverflowing && (
         <Dialog>
           <DialogTrigger asChild>
-            <Button variant="ghost" className="underline -ml-3">
+            <Button variant="ghost" className="-ml-3 text-foreground/60 hover:text-foreground/100">
               Read More
             </Button>
           </DialogTrigger>
@@ -67,7 +67,7 @@ export function MarkdownPartial({
             <DialogHeader>
               <DialogTitle>{dialogTitle}</DialogTitle>
             </DialogHeader>
-            <div className="flex-1 overflow-y-auto">{dialogMarkdown}</div>
+            <div className="overflow-y-auto flex-1">{dialogMarkdown}</div>
           </DialogContent>
         </Dialog>
       )}

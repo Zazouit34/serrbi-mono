@@ -15,12 +15,13 @@ import {
   MDXEditorMethods,
   MDXEditorProps,
   quotePlugin,
-  tablePlugin,
   thematicBreakPlugin,
   toolbarPlugin,
 } from "@mdxeditor/editor"
 import { Ref } from "react"
 import { markdownClassNames } from "./markdown-renderer"
+
+
 
 export default function InternalMarkdownEditor({
   ref,
@@ -33,6 +34,7 @@ export default function InternalMarkdownEditor({
     <MDXEditor
       {...props}
       ref={ref}
+      contentEditableClassName="my-mdx-editor-container"
       className={cn(markdownClassNames, className)}
       suppressHtmlProcessing
       plugins={[

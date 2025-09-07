@@ -125,3 +125,9 @@
     @apply bg-background text-foreground;
   }
 }
+
+.my-mdx-editor-container {
+  border: 1px solid #ccc; /* Example: light gray solid border */
+  border-radius: 5px; /* Example: slightly rounded corners */
+  height: 250px;
+}

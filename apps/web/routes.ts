@@ -7,7 +7,7 @@ export const publicRoutes =[
     "/",
     "/jobs",
     "/talents",
-    "/projects",
+    "/tasks",
     "/services",
 
 ]

@@ -13,7 +13,10 @@ export const jobCategoryValues = [
     "Other",
   ] as const
   export type JobCategoryValue = (typeof jobCategoryValues)[number]
-  
+
+
+
+
   export const locationRequirementValues = [
     "in_office",
     "hybrid",

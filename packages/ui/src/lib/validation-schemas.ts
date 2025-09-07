@@ -3,11 +3,24 @@ import {
   jobCategoryValues,
   locationRequirementValues,
   experienceLevelValues,
-  jobListingTypeValues,
+  jobListingTypeValues
 } from "@workspace/ui/lib/job-enum"
+import { serviceCategoryValues, priceTypeValues } from "@workspace/ui/lib/service-enum"
+import { taskCategoryValues, taskStatusValues } from "@workspace/ui/lib/task-enum"
 import { isValidPhoneNumber } from "libphonenumber-js";
 
 export const emailSchema = z.string().email({ message: 'Invalid email address' })
+
+export const urlSchema = z.string().url({ message: 'Invalid URL' }).optional()
+
+// Add the opening hours schema
+const openingHoursSchema = z.array(
+  z.object({
+    day: z.string(),
+    open: z.string(),  // "09:00"
+    close: z.string()  // "19:00"
+  })
+);
 
 export const emailFormSchema = z.object({
   email: emailSchema,
@@ -121,6 +134,7 @@ const emptyToUndefined = z.literal("").transform(() => undefined)
 export const jobListingFormSchema = z
   .object({
     title: z.string().min(1, "Required").trim(),
+    companyName: z.string().min(1, "Required").trim(),
     description: z.string().min(1, "Required").trim(),
 
     category: z.enum(jobCategoryValues, { required_error: "Required" }),
@@ -142,8 +156,8 @@ export const jobListingFormSchema = z
     city: z.union([z.string().min(1).trim(), emptyToUndefined]).optional(),
 
     // Apply via email or URL (at least one required below)
-    applicationEmail: z.union([z.string().email("Invalid email"), emptyToUndefined]).optional(),
-    applicationUrl: z.union([z.string().url("Invalid URL"), emptyToUndefined]).optional(),
+    applicationEmail: emailSchema,
+    applicationUrl: urlSchema,
 
     // If you let users set status on creation, include this; otherwise set on backend.
     // status: z.enum(jobListingStatusValues).default("draft"),
@@ -165,3 +179,158 @@ export const jobListingFormSchema = z
   })
 
 export type JobListingFormValues = z.infer<typeof jobListingFormSchema>
+
+// Job list/query schema (pagination)
+export const jobListQuerySchema = z.object({
+  page: z.number().min(1).default(1),
+  pageSize: z.number().min(1).max(50).default(10),
+  locationRequirement: z.enum(locationRequirementValues).optional(),
+  category: z.enum(jobCategoryValues).optional(),
+  experienceLevel: z.enum(experienceLevelValues).optional(),
+  type: z.enum(jobListingTypeValues).optional(),
+  search: z.string().optional(),
+  city: z.string().optional(),
+})
+export type JobListQueryValues = z.infer<typeof jobListQuerySchema>
+
+//get job by id by alidation schema 
+export const jobGetByIdSchema = z.object({ id: z.string().uuid() })
+export type JobGetByIdValues = z.infer<typeof jobGetByIdSchema>
+
+//CV File Schema 
+export const fileSchema = z.custom<File>(
+  (val) => typeof File !== "undefined" && val instanceof File,
+  "CV is required"
+)
+export const jobApplyFormSchema = z.object({
+  name: nameSchema,
+  email: emailSchema,
+  cv: fileSchema,
+})
+export type JobApplyFormValues = z.infer<typeof jobApplyFormSchema>
+
+//Job Application Schema
+export const jobApplicationCreateSchema = z.object({
+  jobId: z.string().uuid(),
+  jobTitle: z.string().min(1, "Job title is required"),
+  name: nameSchema,
+  email: emailSchema,
+  cv: z.boolean().default(false),
+  cvFilename: z.string().optional(),
+  cvData: z.string().optional(),
+})
+export type JobApplicationCreateValues = z.infer<typeof jobApplicationCreateSchema>
+
+// Service schemas
+export const serviceListingFormSchema = z
+  .object({
+    title: z.string().min(1, "Required").trim(),
+    description: z.string().min(1, "Required").trim(),
+    serviceCategory: z.enum(serviceCategoryValues, { required_error: "Required" }),
+    type: z.string().min(1, "Required").trim(), // subtype like "Dentist", "Plumber"
+    price: z.number().int().positive().min(1, "Price must be at least 1"),
+    priceType: z.enum(priceTypeValues, { required_error: "Required" }),
+
+     // Display information
+     displayName: z.union([z.string().min(1).trim(), emptyToUndefined]).optional(),
+     displayImage: z.union([z.string().url("Invalid URL"), emptyToUndefined]).optional(),
+    
+    // Location
+    stateAbbreviation: z
+      .union([z.string().length(2, "Use 2-letter code"), emptyToUndefined])
+      .optional(),
+    city: z.union([z.string().min(1).trim(), emptyToUndefined]).optional(),
+    address: z.union([z.string().min(1).trim(), emptyToUndefined]).optional(),
+    latitude: z.number().optional(),
+    longitude: z.number().optional(),
+
+    // Contact information
+    phoneNumber: phoneSchema,
+    email: emailSchema,
+    website: urlSchema,
+
+    // Opening hours
+    openingHours: openingHoursSchema.optional(),
+  })
+
+
+export type ServiceListingFormValues = z.infer<typeof serviceListingFormSchema>
+
+// Service list/query schema (pagination)
+export const serviceListQuerySchema = z.object({
+  page: z.number().min(1).default(1),
+  pageSize: z.number().min(1).max(50).default(10),
+  serviceCategory: z.enum(serviceCategoryValues).optional(),
+  type: z.string().optional(),
+  search: z.string().optional(),
+  city: z.string().optional(),
+  stateAbbreviation: z.string().optional(),
+  priceMin: z.number().optional(),
+  priceMax: z.number().optional(),
+  priceType: z.enum(priceTypeValues).optional(),
+})
+export type ServiceListQueryValues = z.infer<typeof serviceListQuerySchema>
+
+// Get service by id validation schema
+export const serviceGetByIdSchema = z.object({ id: z.string().uuid() })
+export type ServiceGetByIdValues = z.infer<typeof serviceGetByIdSchema>
+
+
+
+// Task schemas
+export const taskListingFormSchema = z
+  .object({
+    title: z.string().min(1, "Required").trim(),
+    description: z.string().min(1, "Required").trim(),
+    category: z.enum(taskCategoryValues, { required_error: "Required" }),
+    
+    // Budget: accept number OR numeric string; allow empty -> null
+    budget: z.preprocess((val) => {
+      if (val === "" || val === null || val === undefined) return null
+      if (typeof val === "string" && val.trim() !== "") return Number(val)
+      return val
+    }, z.number().int().positive().min(1).nullable().optional()),
+
+    // Location
+    stateAbbreviation: z
+      .union([z.string().length(2, "Use 2-letter code"), emptyToUndefined])
+      .optional(),
+    city: z.union([z.string().min(1).trim(), emptyToUndefined]).optional(),
+    address: z.union([z.string().min(1).trim(), emptyToUndefined]).optional(),
+    latitude: z.number().optional(),
+    longitude: z.number().optional(),
+
+    // Contact information
+    phoneNumber: phoneSchema,
+    email: emailSchema,
+
+    // Display information
+    displayName: z.union([z.string().min(1).trim(), emptyToUndefined]).optional(),
+    displayImage: z.union([z.string().url("Invalid URL"), emptyToUndefined]).optional(),
+    
+    // Deadline
+    deadline: z.string().min(1, "Deadline is required"), // ISO date string
+
+    // Images
+    images: z.array(z.string()).default([]).optional(),
+  })
+
+export type TaskListingFormValues = z.infer<typeof taskListingFormSchema>
+
+// Task list/query schema (pagination)
+export const taskListQuerySchema = z.object({
+  page: z.number().min(1).default(1),
+  pageSize: z.number().min(1).max(50).default(10),
+  category: z.enum(taskCategoryValues).optional(),
+  status: z.enum(taskStatusValues).optional(),
+  search: z.string().optional(),
+  city: z.string().optional(),
+  stateAbbreviation: z.string().optional(),
+  budgetMin: z.number().optional(),
+  budgetMax: z.number().optional(),
+})
+export type TaskListQueryValues = z.infer<typeof taskListQuerySchema>
+
+// Get task by id validation schema
+export const taskGetByIdSchema = z.object({ id: z.string().uuid() })
+export type TaskGetByIdValues = z.infer<typeof taskGetByIdSchema>
