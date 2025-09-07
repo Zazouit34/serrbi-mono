@@ -48,7 +48,7 @@ export function FilterBar({
   createConfig,
 }: FilterBarProps) {
   const [filters, setFilters] = useState<Record<string, string>>({});
-  const [showFilters, setShowFilters] = useState(true);
+  const [showFilters, setShowFilters] = useState(false);
 
   const handleFilterChange = (key: string, value: string) => {
     const newFilters = { ...filters, [key]: value };
@@ -64,7 +64,7 @@ export function FilterBar({
   return (
     <div className="space-y-4">
       {/* Top search + controls */}
-      <div className="flex flex-col sm:flex-row gap-2 w-full">
+      <div className="flex flex-col gap-2 w-full sm:flex-row">
         {/* Search always on top, full width */}
         <Input
           placeholder="Search..."

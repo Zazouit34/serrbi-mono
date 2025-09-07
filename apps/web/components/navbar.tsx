@@ -184,7 +184,7 @@ export function Navbar() {
         {/* Links row (no border) */}
         <NavigationMenu
           viewport={false}
-          className="overflow-x-auto w-full no-scrollbar"
+          className="overflow-x-auto !w-full no-scrollbar"
         >
           <NavigationMenuList className="flex gap-2 justify-center">
             {DEFAULT_LINKS.map((link) => (
@@ -197,7 +197,7 @@ export function Navbar() {
                     <img
                       src={link.image}
                       alt={link.label}
-                      className="mb-1 w-10 h-10"
+                      className="mb-1 size-12"
                     />
                     {link.label}
                   </Link>
