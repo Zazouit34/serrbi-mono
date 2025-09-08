@@ -135,6 +135,7 @@ export const jobListingFormSchema = z
   .object({
     title: z.string().min(1, "Required").trim(),
     companyName: z.string().min(1, "Required").trim(),
+    companyImage: z.string().url("Invalid URL").optional(),
     description: z.string().min(1, "Required").trim(),
 
     category: z.enum(jobCategoryValues, { required_error: "Required" }),
@@ -234,6 +235,8 @@ export const serviceListingFormSchema = z
      // Display information
      displayName: z.union([z.string().min(1).trim(), emptyToUndefined]).optional(),
      displayImage: z.union([z.string().url("Invalid URL"), emptyToUndefined]).optional(),
+     images: z.array(z.string().url("Invalid URL")).default([]),
+
     
     // Location
     stateAbbreviation: z

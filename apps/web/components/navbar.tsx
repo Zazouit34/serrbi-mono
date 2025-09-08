@@ -1,7 +1,9 @@
 "use client";
 
 import * as React from "react";
+import { usePathname } from "next/navigation";
 import Link from "next/link";
+import { cn } from "@workspace/ui/lib/utils";
 import { Globe2, CircleCheckIcon, CircleIcon } from "lucide-react";
 import {
   NavigationMenu,
@@ -35,6 +37,7 @@ const DEFAULT_LANGUAGES: Array<{ code: string; label: string }> = [
 
 export function Navbar() {
   const [selectedLang, setSelectedLang] = React.useState("en");
+  const pathname = usePathname();
 
   const handleLanguageSelect = (code: string) => {
     setSelectedLang(code);
@@ -59,33 +62,47 @@ export function Navbar() {
               className="hidden justify-center md:flex"
             >
               <NavigationMenuList>
-                {DEFAULT_LINKS.map((link) => (
-                  <NavigationMenuItem key={link.href}>
-                    <NavigationMenuLink asChild>
-                      <Link
-                        href={link.href}
-                        className="flex flex-row gap-2 items-center px-4 py-2 text-sm font-semibold transition-colors text-muted-foreground hover:text-primary"
-                      >
-                        {/* Icon/Image */}
-                        <img
-                          src={link.image}
-                          alt={link.label}
-                          className="object-contain size-16"
-                        />
+                {DEFAULT_LINKS.map((link) => {
+                  const isActive = pathname === link.href;
 
-                        {/* Label + optional badge */}
-                        <div className="flex gap-1 items-center">
-                          <span>{link.label}</span>
-                          {link.badge && (
-                            <span className="text-[10px] font-bold text-white bg-primary rounded px-1">
-                              {link.badge}
-                            </span>
+                  return (
+                    <NavigationMenuItem key={link.href}>
+                      <NavigationMenuLink asChild>
+                        <Link
+                          href={link.href}
+                          className={cn(
+                            "flex flex-row items-center gap-3 px-3 py-2 transition-all duration-300 relative group",
+                            isActive
+                              ? "scale-105 font-semibold text-black"
+                              : "hover:scale-105 text-gray-500"
                           )}
-                        </div>
-                      </Link>
-                    </NavigationMenuLink>
-                  </NavigationMenuItem>
-                ))}
+                        >
+                          <img
+                            src={link.image}
+                            alt={link.label}
+                            className="size-10"
+                          />
+                          <span className="relative">
+                            {link.label}
+                            {link.badge && (
+                              <span className="absolute -top-3 right-0 text-[10px] font-bold text-white bg-primary rounded px-1">
+                                {link.badge}
+                              </span>
+                            )}
+                          </span>
+
+                          {/* underline */}
+                          <div
+                            className={cn(
+                              "absolute bottom-0 left-0 w-full h-[2px] bg-black transition-transform duration-300 ease-in-out",
+                              isActive ? "scale-x-100" : "scale-x-0"
+                            )}
+                          />
+                        </Link>
+                      </NavigationMenuLink>
+                    </NavigationMenuItem>
+                  );
+                })}
               </NavigationMenuList>
             </NavigationMenu>
           </div>
@@ -188,19 +205,26 @@ export function Navbar() {
               <Link
                 key={link.href}
                 href={link.href}
-                className="flex relative flex-col justify-center items-center px-2 py-3 w-20 text-xs font-medium transition-colors hover:text-primary group"
+                className="flex relative flex-col justify-center items-center px-2 py-3 w-20 text-xs font-medium transition-colors hover:text-primary group data-[active=true]:text-primary"
+                data-active={pathname === link.href}
               >
                 <img
                   src={link.image}
                   alt={link.label}
-                  className="mb-1 size-14"
+                  className="mb-1 size-10"
                 />
                 {link.label}
-                <div className="absolute bottom-0 left-0 w-full h-1 bg-primary transform scale-x-0 transition-transform duration-300 ease-in-out group-hover:scale-x-100 data-[active]:scale-x-100" />
-              </Link>
-            ))}
-          </div>
-        </nav>
+                {link.badge && (
+                    <span className="absolute -top-0 -right-1 bg-red-500 text-white text-xs rounded-full px-1 py-0.5 min-w-[16px] h-4 flex items-center justify-center">
+                      {link.badge}
+                    </span>
+                  )}
+                  <div className="absolute bottom-0 left-0 w-full h-1 bg-primary transform scale-x-0 transition-transform duration-300 ease-in-out group-hover:scale-x-100 data-[active=true]:scale-x-100" />
+                </Link>
+              ))}
+              
+            </div>
+          </nav>
       </header>
     </>
   );
