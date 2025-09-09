@@ -106,8 +106,8 @@ export function ServiceListingForm() {
         
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            {/* First row: Title, Service Category, Type */}
-            <div className="grid grid-cols-1 gap-x-4 gap-y-6 items-start md:grid-cols-3">
+            {/* First row: Title, Service Category, Type, Price + PriceType */}
+            <div className="grid grid-cols-1 gap-x-4 gap-y-6 items-start md:grid-cols-4">
               <FormField
                 control={form.control as any}
                 name="title"
@@ -173,62 +173,62 @@ export function ServiceListingForm() {
                   </FormItem>
                 )}
               />
-            </div>
 
-            {/* Price + PriceType fused */}
-            <FormItem>
-              <FormLabel>Price</FormLabel>
-              <div className="flex">
-                {/* Price Input */}
-                <FormField
-                  control={form.control as any}
-                  name="price"
-                  render={({ field }) => (
-                    <FormControl>
-                      <Input
-                        type="number"
-                        placeholder="100"
-                        disabled={isPending}
-                        {...field}
-                        onChange={(e) =>
-                          field.onChange(Number(e.target.value))
-                        }
-                        className="rounded-r-none"
-                      />
-                    </FormControl>
-                  )}
-                />
-
-                {/* PriceType Select */}
-                <FormField
-                  control={form.control as any}
-                  name="priceType"
-                  render={({ field }) => (
-                    <FormControl>
-                      <Select
-                        value={field.value}
-                        onValueChange={field.onChange}
-                      >
-                        <SelectTrigger
+              {/* Price + PriceType fused */}
+              <FormItem>
+                <FormLabel>Price</FormLabel>
+                <div className="flex">
+                  {/* Price Input */}
+                  <FormField
+                    control={form.control as any}
+                    name="price"
+                    render={({ field }) => (
+                      <FormControl>
+                        <Input
+                          type="number"
+                          placeholder="100"
                           disabled={isPending}
-                          className="rounded-l-none w-[140px]"
+                          {...field}
+                          onChange={(e) =>
+                            field.onChange(Number(e.target.value))
+                          }
+                          className="rounded-r-none"
+                        />
+                      </FormControl>
+                    )}
+                  />
+
+                  {/* PriceType Select */}
+                  <FormField
+                    control={form.control as any}
+                    name="priceType"
+                    render={({ field }) => (
+                      <FormControl>
+                        <Select
+                          value={field.value}
+                          onValueChange={field.onChange}
                         >
-                          <SelectValue placeholder="/ type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {priceTypeValues.map((type) => (
-                            <SelectItem key={type} value={type}>
-                              {formatPriceType(type)}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </FormControl>
-                  )}
-                />
-              </div>
-              <FormMessage />
-            </FormItem>
+                          <SelectTrigger
+                            disabled={isPending}
+                            className="rounded-l-none w-[140px]"
+                          >
+                            <SelectValue placeholder="/ type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {priceTypeValues.map((type) => (
+                              <SelectItem key={type} value={type}>
+                                {formatPriceType(type)}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                    )}
+                  />
+                </div>
+                <FormMessage />
+              </FormItem>
+            </div>
 
             {/* City, State, Address Row */}
             <div className="grid grid-cols-1 gap-x-4 gap-y-6 items-start md:grid-cols-3">

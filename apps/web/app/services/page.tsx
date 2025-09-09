@@ -1,4 +1,5 @@
 import { ServiceListing } from "./service-listing/service-listing"
+
 export const dynamic = "force-static"
 
 export default function ServicesPage() {

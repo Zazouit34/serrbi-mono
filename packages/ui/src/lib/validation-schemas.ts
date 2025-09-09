@@ -152,7 +152,7 @@ export const jobListingFormSchema = z
 
     // Optional location bits (US-style state code if you use it)
     stateAbbreviation: z
-      .union([z.string().length(2, "Use 2-letter code"), emptyToUndefined])
+      .union([z.string().length(3, "Use 3-letter code"), emptyToUndefined])
       .optional(),
     city: z.union([z.string().min(1).trim(), emptyToUndefined]).optional(),
 
@@ -240,7 +240,7 @@ export const serviceListingFormSchema = z
     
     // Location
     stateAbbreviation: z
-      .union([z.string().length(2, "Use 2-letter code"), emptyToUndefined])
+      .union([z.string().length(3, "Use 3-letter code"), emptyToUndefined])
       .optional(),
     city: z.union([z.string().min(1).trim(), emptyToUndefined]).optional(),
     address: z.union([z.string().min(1).trim(), emptyToUndefined]).optional(),
@@ -296,7 +296,7 @@ export const taskListingFormSchema = z
 
     // Location
     stateAbbreviation: z
-      .union([z.string().length(2, "Use 2-letter code"), emptyToUndefined])
+      .union([z.string().length(3, "Use 3-letter code"), emptyToUndefined])
       .optional(),
     city: z.union([z.string().min(1).trim(), emptyToUndefined]).optional(),
     address: z.union([z.string().min(1).trim(), emptyToUndefined]).optional(),

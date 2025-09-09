@@ -299,11 +299,11 @@ export function formatJobStatus(status: JobListingStatus) {
 export function formatPriceType(type: PriceType) {
   switch (type) {
     case "fixed":
-      return "Fixed Price";
+      return "Fixed";
     case "hourly":
-      return "Per Hour";
+      return "Hour";
     case "starting_from":
-      return "Starting From";
+      return "Starting";
     default:
       throw new Error(`Unknown price type: ${type satisfies never}`);
   }

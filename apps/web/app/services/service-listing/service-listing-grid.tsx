@@ -20,7 +20,7 @@ export function ServiceListingGrid({ filters }: ServiceListingGridProps) {
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
         {Array.from({ length: 6 }).map((_, i) => (
           <div key={i} className="p-4 rounded-lg border">
             <Skeleton className="w-3/4 h-6" />
@@ -33,7 +33,7 @@ export function ServiceListingGrid({ filters }: ServiceListingGridProps) {
   }
 
   return (
-    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+    <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
       {services.length === 0 ? (
         <p>No services found</p>
       ) : (

@@ -71,10 +71,10 @@ export function Navbar() {
                         <Link
                           href={link.href}
                           className={cn(
-                            "flex flex-row items-center gap-3 px-3 py-2 transition-all duration-300 relative group",
+                            "flex relative flex-row gap-3 items-center px-3 py-2 transition-all duration-300 group",
                             isActive
-                              ? "scale-105 font-semibold text-black"
-                              : "hover:scale-105 text-gray-500"
+                              ? "font-semibold text-black scale-105"
+                              : "text-gray-500 hover:scale-105"
                           )}
                         >
                           <img
@@ -94,7 +94,7 @@ export function Navbar() {
                           {/* underline */}
                           <div
                             className={cn(
-                              "absolute bottom-0 left-0 w-full h-[2px] bg-black transition-transform duration-300 ease-in-out",
+                              "absolute bottom-0 left-0 w-full bg-black transition-transform duration-300 ease-in-out h-[2px]",
                               isActive ? "scale-x-100" : "scale-x-0"
                             )}
                           />
@@ -157,7 +157,7 @@ export function Navbar() {
         {/* Top row: logo + language */}
         <div className="flex justify-between items-center px-4 h-14">
           <Link href="/" className="flex items-center">
-            <SerrbiMark className="w-7 h-7" />
+            <SerrbiLogo className="w-auto h-5" />
           </Link>
 
           <NavigationMenu viewport={false} className="z-50">
