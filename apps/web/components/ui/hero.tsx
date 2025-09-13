@@ -140,7 +140,7 @@ export default function Hero() {
           </AnnouncementEnd>
         </Announcement>
         <h1 className="mb-0 text-balance font-medium text-6xl md:text-7xl xl:text-[5.25rem]">
-          Connect talents to <GradientText text="opportunities" />
+          AI qui connecte aux <GradientText text="opportunities" />
         </h1>
 
         <HeroSearchBar />
@@ -150,7 +150,7 @@ export default function Hero() {
           gigs for freelancers. Connect with opportunities across all industries
           and skill levels.
         </p>
-        
+
         <CarouselMain />
       </div>
     </div>
