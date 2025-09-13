@@ -74,37 +74,33 @@ export function FilterBar({
   return (
     <div className="space-y-4">
       {/* Top search + controls - Centered on large screens */}
-      <div className="flex flex-col gap-2 w-full sm:flex-row sm:justify-center">
-        {/* Search Input - Hero style */}
-        <div className="flex flex-col gap-3 w-full max-w-2xl sm:flex-row sm:gap-0 sm:relative">
-          <div className="relative flex-1">
-            <Input
-              placeholder="Search by role, skills, or keywords.."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-              className="pl-8 pr-4 sm:pr-24 h-16 text-base border-gray-200 focus:border-[#FF040E] focus:ring-[#FF040E] rounded-full"
-            />
-          </div>
+      <div className="flex flex-col gap-4 w-full sm:flex-row sm:justify-center sm:gap-4">
+        {/* Search Input - Hero style - Always relative positioning */}
+        <div className="relative w-full max-w-2xl">
+          <Input
+            placeholder="Search by role, skills, or keywords.."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+            className="pl-8 pr-20 h-16 text-base border-gray-200 focus:border-[#FF040E] focus:ring-[#FF040E] rounded-full w-full"
+          />
 
-          {/* Search Button - Inside on mobile and desktop */}
+          {/* Search Button - Always inside input on both mobile and desktop */}
           <Button
             onClick={handleSearch}
-            className="p-4 w-14 h-14 text-white bg-[#FF040E] rounded-full hover:bg-[#FF040E]/80 focus:ring-black absolute right-1 top-1/2 transform -translate-y-1/2"
+            className="absolute right-1 top-1/2 transform -translate-y-1/2 p-4 w-14 h-14 text-white bg-[#FF040E] rounded-full hover:bg-[#FF040E]/80 focus:ring-black"
           >
             <Search className="text-white size-5" />
           </Button>
         </div>
 
-        {/* Controls stack under on mobile, inline on larger screens */}
-        <div className="flex flex-wrap gap-2 sm:ml-4">
-          <Button
-            onClick={() => setShowFilters(!showFilters)}
-            className="p-4 size-14 rounded-full bg-[#FF040E] hover:bg-[#FF040E]/80"
-          >
-            {showFilters ? <X className="size-5" /> : <Filter className="size-5" />}
-          </Button>
-        </div>
+        {/* Filter Button - Always inline with search */}
+        <Button
+          onClick={() => setShowFilters(!showFilters)}
+          className="p-4 w-14 h-14 rounded-full bg-[#FF040E] hover:bg-[#FF040E]/80 self-start sm:self-center"
+        >
+          {showFilters ? <X className="size-5" /> : <Filter className="size-5" />}
+        </Button>
       </div>
 
       {/* Dynamic filters - Also centered */}
