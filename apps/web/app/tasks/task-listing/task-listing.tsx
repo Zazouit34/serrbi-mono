@@ -27,7 +27,6 @@ export function TaskListing() {
       <FilterBar
         filtersConfig={taskFiltersConfig}
         onFilterChange={(values) => setFilters(values)}
-        createConfig={{ label: "Create a Task Listing", href: "/tasks/task-listing/new" }}
         initialFilters={filters}
       />
 

@@ -27,7 +27,6 @@ export function ServiceListing() {
       <FilterBar
         filtersConfig={serviceFiltersConfig}
         onFilterChange={(values) => setFilters(values)}
-        createConfig={{ label: "Create a Service Listing", href: "/services/service-listing/new" }}
         initialFilters={filters}
       />
 

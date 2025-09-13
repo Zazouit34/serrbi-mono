@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
 import { Input } from "@workspace/ui/components/input";
 import { Button } from "@workspace/ui/components/button";
 import { Search, X, Filter } from "lucide-react";
@@ -74,10 +73,10 @@ export function FilterBar({
 
   return (
     <div className="space-y-4">
-      {/* Top search + controls */}
-      <div className="flex flex-col gap-2 w-full sm:flex-row">
+      {/* Top search + controls - Centered on large screens */}
+      <div className="flex flex-col gap-2 w-full sm:flex-row sm:justify-center">
         {/* Search Input - Hero style */}
-        <div className="flex flex-col gap-3 w-full max-w-2xl sm:flex-row sm:gap-0 sm:relative sm:flex-1">
+        <div className="flex flex-col gap-3 w-full max-w-2xl sm:flex-row sm:gap-0 sm:relative">
           <div className="relative flex-1">
             <Input
               placeholder="Search by role, skills, or keywords.."
@@ -88,17 +87,17 @@ export function FilterBar({
             />
           </div>
 
-          {/* Search Button - Below on mobile, inside on desktop */}
+          {/* Search Button - Inside on mobile and desktop */}
           <Button
             onClick={handleSearch}
-            className="self-start p-4 w-14 h-14 text-white bg-[#FF040E] rounded-full hover:bg-[#FF040E]/80 focus:ring-black sm:absolute sm:right-1 sm:top-1/2 sm:transform sm:-translate-y-1/2"
+            className="p-4 w-14 h-14 text-white bg-[#FF040E] rounded-full hover:bg-[#FF040E]/80 focus:ring-black absolute right-1 top-1/2 transform -translate-y-1/2"
           >
             <Search className="text-white size-5" />
           </Button>
         </div>
 
         {/* Controls stack under on mobile, inline on larger screens */}
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2 sm:ml-4">
           <Button
             onClick={() => setShowFilters(!showFilters)}
             className="p-4 size-14 rounded-full bg-[#FF040E] hover:bg-[#FF040E]/80"
@@ -108,10 +107,10 @@ export function FilterBar({
         </div>
       </div>
 
-      {/* Dynamic filters */}
+      {/* Dynamic filters - Also centered */}
       {showFilters && (
-        <div className="space-y-3">
-          <div className="flex flex-wrap gap-2 justify-start">
+        <div className="flex flex-col items-center space-y-3">
+          <div className="flex flex-wrap gap-2 justify-center max-w-4xl">
             {filtersConfig.map((filter) => (
               <div key={filter.key} className="min-w-[150px]">
                 {filter.type === "select" && (
@@ -135,8 +134,8 @@ export function FilterBar({
             ))}
           </div>
 
-          {/* Reset Filters button - only shown when filters are visible */}
-          <div className="flex justify-start">
+          {/* Reset Filters button - centered */}
+          <div className="flex justify-center">
             <Button variant="ghost" onClick={resetFilters} size="sm">
               Reset Filters
             </Button>
