@@ -14,6 +14,7 @@ import { Container } from "@workspace/ui/components/container";
 
 const fontSans = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <SessionProvider>
