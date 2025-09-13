@@ -271,6 +271,11 @@ enum TaskCategory {
   Education
 }
 
+enum BudgetType {
+  Fixed
+  Negotiable
+}
+
 enum TaskStatus {
   Active
   Done
@@ -287,6 +292,7 @@ model Task {
   phoneNumber       String?
   email             String?
   budget            Int?
+  budgetType        BudgetType?
   city              String?
   stateAbbreviation String?
   address           String?
@@ -296,7 +302,7 @@ model Task {
 
   displayName  String?
   displayImage String?
-  deadline     DateTime
+  deadline     DateTime?
 
   createdAt DateTime @default(now())
 

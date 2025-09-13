@@ -5,9 +5,10 @@ import {
   jobGetByIdSchema,
   jobApplicationCreateSchema,
 } from "@workspace/ui/lib/validation-schemas";
-import { sendJobApplicationEmail } from "../services/email";
+
 import { TRPCError } from "@trpc/server";
 import type { PrismaClient } from "@workspace/db";
+import { inngest } from "@/functions/inngest/client";
 
 export const jobRouter = router({
   createJob: protectedProcedure
@@ -86,8 +87,13 @@ export const jobRouter = router({
       if (category) where.category = category;
       if (experienceLevel) where.experienceLevel = experienceLevel;
       if (type) where.type = type;
-      if (search) where.title = { contains: search, mode: "insensitive" };
-
+      if (search) {
+        where.OR = [
+          { title: { contains: search, mode: "insensitive" } },
+          { description: { contains: search, mode: "insensitive" } },
+          { companyName: { contains: search, mode: "insensitive" } },
+        ];
+      }
 
       const [items, total] = await Promise.all([
         db.job.findMany({
@@ -98,9 +104,11 @@ export const jobRouter = router({
           select: {
             id: true,
             title: true,
-            companyName: true, 
+            companyName: true,
             description: true,
             category: true,
+            applicationUrl: true,
+            applicationEmail: true,
             wage: true,
             stateAbbreviation: true,
             city: true,
@@ -128,6 +136,8 @@ export const jobRouter = router({
           title: true,
           companyName: true,
           description: true,
+          applicationUrl: true,
+          applicationEmail: true,
           category: true,
           city: true,
           stateAbbreviation: true,
@@ -171,15 +181,21 @@ export const jobRouter = router({
       });
       // Send application email with CV attachment
       try {
-        await sendJobApplicationEmail(
-          job.applicationEmail,
-          job.title,
-          job.companyName || "Company",
-          input.name,
-          input.email,
-          input.cvData,
-          input.cvFilename
-        );
+        await inngest.send({
+          name: "email/send",
+          data: {
+            type: "job-application",
+            data: {
+              applicationEmail: job.applicationEmail,
+              jobTitle: job.title,
+              companyName: job.companyName || "Company",
+              applicantName: input.name,
+              applicantEmail: input.email,
+              cvData: input.cvData,
+              cvFilename: input.cvFilename,
+            },
+          },
+        });
       } catch (emailError) {
         console.error("Failed to send application email:", emailError);
         // Don't fail the mutation if email fails

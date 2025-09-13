@@ -3,7 +3,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { trpc } from "@/app/_trpc/client";
 import { useForm } from "react-hook-form";
-import { CloudUpload, Paperclip, ArrowLeft } from "lucide-react";
+import { CloudUpload, Paperclip, ArrowLeft, ExternalLink } from "lucide-react";
 import {
   FileInput,
   FileUploader,
@@ -33,9 +33,11 @@ import {
 export function JobApplyForm({
   jobId,
   jobTitle,
+  applicationUrl
 }: {
   jobId: string;
   jobTitle: string;
+  applicationUrl: string | null;
 }) {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | undefined>("");
@@ -110,6 +112,16 @@ export function JobApplyForm({
     maxSize: 5 * 1024 * 1024,
   };
 
+  const handleApplyClick = () => {
+    if (applicationUrl) {
+      // Redirect to external application URL
+      window.open(applicationUrl, "_blank");
+    } else {
+      // Show the internal form
+      setShowForm(true);
+    }
+  };
+
   return (
     <div className="flex flex-col py-8 w-full">
       {!showForm ? (
@@ -125,8 +137,15 @@ export function JobApplyForm({
 
           {/* Apply button centered */}
           <div className="flex flex-1 justify-center">
-            <Button className="w-48" onClick={() => setShowForm(true)}>
-              Apply
+            <Button className="w-48" onClick={handleApplyClick}>
+              {applicationUrl ? (
+                <>
+                  Apply
+                  <ExternalLink className="ml-2 size-4" />
+                </>
+              ) : (
+                "Apply"
+              )}
             </Button>
           </div>
         </div>

@@ -20,7 +20,7 @@ export function JobListingGrid({ filters }: JobListingGridProps) {
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
         {Array.from({ length: 6 }).map((_, i) => (
           <div key={i} className="p-4 rounded-lg border">
             <Skeleton className="w-3/4 h-6" />
@@ -33,7 +33,7 @@ export function JobListingGrid({ filters }: JobListingGridProps) {
   }
 
   return (
-    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+    <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
       {jobs.length === 0 ? (
         <p>No jobs found</p>
       ) : (

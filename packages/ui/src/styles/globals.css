@@ -131,3 +131,94 @@
   border-radius: 5px; /* Example: slightly rounded corners */
   height: 250px;
 }
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px) rotate(12deg);
+  }
+  50% {
+    transform: translateY(-20px) rotate(12deg);
+  }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+/* Stagger the animation and create depth with different z-index */
+.animate-float:nth-child(1) { 
+  animation-delay: 0s; 
+  z-index: 5; /* Large, front */
+}
+.animate-float:nth-child(2) { 
+  animation-delay: 2s; 
+  z-index: 1; /* Small, back */
+}
+.animate-float:nth-child(3) { 
+  animation-delay: 4s; 
+  z-index: 1; /* Small, back */
+}
+.animate-float:nth-child(4) { 
+  animation-delay: 1s; 
+  z-index: 5; /* Large, front */
+}
+
+/* Custom Marquee Styles */
+.custom-marquee-container {
+  width: 100%;
+  height: 400px;
+  overflow: hidden;
+  position: relative;
+  padding: 24px 0;
+  --gradient-width: 50px; /* Default mobile width */
+}
+
+/* Responsive gradient width */
+@media (min-width: 768px) {
+  .custom-marquee-container {
+    --gradient-width: 100px; /* md: and larger */
+  }
+}
+
+.custom-marquee-content {
+  display: flex;
+  align-items: flex-end;
+  animation: marquee-scroll 20s linear infinite;
+  width: max-content;
+  flex-shrink: 0;
+}
+
+/* Add this to prevent image shrinking */
+.custom-marquee-content > div {
+  flex-shrink: 0; /* Prevent individual image containers from shrinking */
+}
+
+.custom-marquee-gradient-left,
+.custom-marquee-gradient-right {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.custom-marquee-gradient-left {
+  left: -50px; /* Extend beyond container to cover container padding */
+  background: linear-gradient(to right, white, transparent);
+}
+
+.custom-marquee-gradient-right {
+  right: -50px; /* Extend beyond container to cover container padding */
+  background: linear-gradient(to left, white, transparent);
+}
+
+@keyframes marquee-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+

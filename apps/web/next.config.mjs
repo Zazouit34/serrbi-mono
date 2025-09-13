@@ -2,7 +2,7 @@
 const nextConfig = {
   transpilePackages: ["@workspace/ui"],
   images: {
-    domains: ["lh3.googleusercontent.com","imgs.search.brave.com","images.unsplash.com"],
+    domains: ["lh3.googleusercontent.com","imgs.search.brave.com","images.unsplash.com","plus.unsplash.com"],
   },
 }
 

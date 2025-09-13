@@ -82,7 +82,7 @@ export default function ApplyJobPage() {
 
   return (
     <Container>
-      <JobApplyForm jobId={job.id} jobTitle={job.title} />
+      <JobApplyForm jobId={job.id} jobTitle={job.title} applicationUrl={job.applicationUrl} />
 
       <div className="space-y-4">
         {/* Title + location/type */}

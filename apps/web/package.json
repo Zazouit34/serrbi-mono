@@ -32,7 +32,7 @@
     "framer-motion": "^12.23.12",
     "inngest": "^3.40.2",
     "libphonenumber-js": "^1.12.13",
-    "lucide-react": "^0.475.0",
+    "lucide-react": "^0.543.0",
     "motion": "^12.23.12",
     "next": "^15.5.0",
     "next-auth": "5.0.0-beta.29",

@@ -22,6 +22,7 @@ export const taskRouter = router({
             description: input.description,
             category: input.category,
             budget: input.budget || null,
+            budgetType: input.budgetType || null,
             stateAbbreviation: input.stateAbbreviation || null,
             city: input.city || null,
             address: input.address || null,
@@ -31,7 +32,7 @@ export const taskRouter = router({
             email: input.email || null,
             displayName: input.displayName || null,
             displayImage: input.displayImage || null,
-            deadline: new Date(input.deadline),
+            deadline: input.deadline ? new Date(input.deadline) : null,
             images: input.images,
           },
           select: {
@@ -41,6 +42,7 @@ export const taskRouter = router({
             category: true,
             status: true,
             budget: true,
+            budgetType: true,
             stateAbbreviation: true,
             city: true,
             address: true,
@@ -87,13 +89,19 @@ export const taskRouter = router({
       const where: any = {};
       if (category) where.category = category;
       if (status) where.status = status;
-      if (search) where.title = { contains: search, mode: "insensitive" };
       if (city) where.city = { contains: city, mode: "insensitive" };
       if (stateAbbreviation) where.stateAbbreviation = stateAbbreviation;
       if (budgetMin || budgetMax) {
         where.budget = {};
         if (budgetMin) where.budget.gte = budgetMin;
         if (budgetMax) where.budget.lte = budgetMax;
+      }
+      if (search) {
+        where.OR = [
+          { title: { contains: search, mode: "insensitive" } },
+          { description: { contains: search, mode: "insensitive" } },
+          { displayName: { contains: search, mode: "insensitive" } },
+        ];
       }
 
       const [items, total] = await Promise.all([
@@ -109,6 +117,7 @@ export const taskRouter = router({
             category: true,
             status: true,
             budget: true,
+            budgetType: true,
             stateAbbreviation: true,
             city: true,
             address: true,
@@ -142,6 +151,7 @@ export const taskRouter = router({
           category: true,
           status: true,
           budget: true,
+          budgetType: true,
           stateAbbreviation: true,
           city: true,
           address: true,

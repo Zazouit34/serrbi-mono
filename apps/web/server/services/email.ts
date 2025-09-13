@@ -7,6 +7,7 @@ function getResend() {
   return new Resend(key)
 }
 
+// Password reset email
 export async function sendPasswordResetEmail(email: string, token: string) {
   const link = `/reset?token=${encodeURIComponent(token)}`
   await getResend().emails.send({
@@ -27,6 +28,7 @@ export async function sendVerificationEmail(email: string, token: string) {
   })
 }
 
+// Job application email
 export async function sendJobApplicationEmail(
   applicationEmail: string,
   jobTitle: string,
@@ -59,6 +61,7 @@ export async function sendJobApplicationEmail(
   })
 }
 
+// Service booking email
 export async function sendServiceBookingEmail(
   serviceEmail: string,
   serviceTitle: string,
@@ -86,6 +89,43 @@ export async function sendServiceBookingEmail(
       ${message ? `<p><strong>Message:</strong> ${message}</p>` : ''}
       ${preferredDate ? `<p><strong>Preferred Date:</strong> ${preferredDate}</p>` : ''}
       ${preferredTime ? `<p><strong>Preferred Time:</strong> ${preferredTime}</p>` : ''}
+    `,
+  })
+}
+
+// Welcome email
+export async function sendWelcomeEmail(email: string, name: string) {
+  const resend = getResend()
+
+  await resend.emails.send({
+    from: "Serrbi <welcome@resend.dev>",
+    to: email,
+    subject: "Welcome to Serrbi! 🎉",
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h1 style="color: #2563eb;">Welcome to Serrbi, ${name}! 🎉</h1>
+        
+        <p>We're excited to have you join our AI-driven marketplace!</p>
+        
+        <h2>What you can do on Serrbi:</h2>
+        <ul>
+          <li>🔍 <strong>Find Jobs</strong> - Discover opportunities that match your skills</li>
+          <li>🛠️ <strong>Offer Services</strong> - Connect with clients who need your expertise</li>
+          <li>📋 <strong>Post Tasks</strong> - Get help with projects and gigs</li>
+          <li>🤖 <strong>AI Assistant</strong> - Get personalized recommendations</li>
+        </ul>
+        
+        <div style="background: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h3>Getting Started:</h3>
+          <p>1. Complete your profile<br/>
+          2. Browse our marketplace<br/>
+          3. Start connecting with opportunities!</p>
+        </div>
+        
+        <p>If you have any questions, we're here to help!</p>
+        
+        <p>Best regards,<br/>The Serrbi Team</p>
+      </div>
     `,
   })
 }

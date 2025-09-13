@@ -39,9 +39,11 @@ import {
 import {
   taskCategoryValues,
   taskStatusValues,
+  BudgetTypeValues,
 } from "@workspace/ui/lib/task-enum";
 import {
   formatTaskCategory,
+  formatBudgetType,
 } from "@workspace/ui/lib/formatter";
 
 export function TaskListingForm() {
@@ -57,6 +59,7 @@ export function TaskListingForm() {
       description: "",
       category: undefined,
       budget: 0,
+      budgetType: undefined,
       stateAbbreviation: undefined,
       city: undefined,
       address: undefined,
@@ -94,7 +97,7 @@ export function TaskListingForm() {
 
   return (
     <div className="flex justify-center items-center mt-5 w-full">
-      <div className="w-full ">
+      <div className="w-full">
         <div className="mb-6">
           <h1 className="text-2xl font-bold">Create Task Listing</h1>
           <p className="text-muted-foreground">
@@ -153,28 +156,60 @@ export function TaskListingForm() {
                 )}
               />
 
-              <FormField
-                control={form.control as any}
-                name="budget"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel htmlFor="budget">Budget (MAD)</FormLabel>
-                    <FormControl>
-                      <Input
-                        id="budget"
-                        type="number"
-                        placeholder="500"
-                        disabled={isPending}
-                        {...field}
-                        onChange={(e) =>
-                          field.onChange(Number(e.target.value))
-                        }
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {/* Budget + BudgetType fused */}
+              <FormItem>
+                <FormLabel>Budget (MAD)</FormLabel>
+                <div className="flex">
+                  {/* Budget Input */}
+                  <FormField
+                    control={form.control as any}
+                    name="budget"
+                    render={({ field }) => (
+                      <FormControl>
+                        <Input
+                          type="number"
+                          placeholder="500"
+                          disabled={isPending}
+                          {...field}
+                          onChange={(e) =>
+                            field.onChange(Number(e.target.value))
+                          }
+                          className="rounded-r-none"
+                        />
+                      </FormControl>
+                    )}
+                  />
+
+                  {/* BudgetType Select */}
+                  <FormField
+                    control={form.control as any}
+                    name="budgetType"
+                    render={({ field }) => (
+                      <FormControl>
+                        <Select
+                          value={field.value}
+                          onValueChange={field.onChange}
+                        >
+                          <SelectTrigger
+                            disabled={isPending}
+                            className="rounded-l-none w-[140px]"
+                          >
+                            <SelectValue placeholder="/ type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {BudgetTypeValues.map((type) => (
+                              <SelectItem key={type} value={type}>
+                                {formatBudgetType(type)}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                    )}
+                  />
+                </div>
+                <FormMessage />
+              </FormItem>
             </div>
 
             {/* City, State, Address Row */}

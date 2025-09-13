@@ -92,7 +92,7 @@ export function ServiceCard({
       {/* Header */}
       <div className="flex justify-between items-center p-4 pb-0">
         <CardTitle className="font-bold text-md line-clamp-1 md:text-lg">
-          <Link href={`/services/${slugify(service.title)}/${service.id}`}>
+          <Link href={`/services/${slugify(service.serviceCategory)}/${slugify(service.city || 'location')}/${slugify(service.title)}/${service.id}`}>
             {service.title}
           </Link>
         </CardTitle>

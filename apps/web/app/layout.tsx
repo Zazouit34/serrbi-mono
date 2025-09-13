@@ -18,7 +18,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <SessionProvider>
       <html lang="en" suppressHydrationWarning>
-        <body className={`${fontSans.variable} font-sans antialiased`}>
+        <body className={`${fontSans.variable} font-sans antialiased overflow-x-hidden`}>
           <Provider>
             <Providers>
               <Navbar  />

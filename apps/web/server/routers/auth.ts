@@ -5,7 +5,7 @@ import bcrypt from "bcryptjs";
 import { TRPCError } from "@trpc/server";
 import type { PrismaClient } from "@workspace/db"
 import { createResetPasswordToken, getResetPasswordTokenbyToken } from "../services/verification"
-import { sendPasswordResetEmail } from "@/server/services/email"
+import { inngest } from "@/functions/inngest/client";
 
 
 
@@ -39,6 +39,12 @@ export const authRouter = router({
       select: { id: true, name: true, email: true, phone: true, createdAt: true },
     })
 
+    // Trigger welcome workflow
+    await inngest.send({
+      name: "auth/user.registered",
+      data: { user }
+    });
+
     return { success: true, message: "Registration successful", user }
   }),
 
@@ -50,7 +56,13 @@ export const authRouter = router({
     if (!existing) throw new TRPCError({ code: "NOT_FOUND", message: "User not found" })
 
     const token = await createResetPasswordToken(email)
-    await sendPasswordResetEmail(email, token.token)
+    await inngest.send({
+      name: "email/send",
+      data: {
+        type: "password-reset",
+        data: { email, token: token.token }
+      }
+    });
   
     return { success: true, message: "Password reset email sent" }
   }),

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Input } from "@workspace/ui/components/input";
 import { Button } from "@workspace/ui/components/button";
@@ -40,15 +40,22 @@ type FilterBarProps = {
   filtersConfig: FilterConfig[];
   onFilterChange: (filters: Record<string, string>) => void;
   createConfig?: CreateConfig;
+  initialFilters?: Record<string, string>;
 };
 
 export function FilterBar({
   filtersConfig,
   onFilterChange,
   createConfig,
+  initialFilters = {},
 }: FilterBarProps) {
-  const [filters, setFilters] = useState<Record<string, string>>({});
+  const [filters, setFilters] = useState<Record<string, string>>(initialFilters);
   const [showFilters, setShowFilters] = useState(false);
+
+  // Update internal filters when initialFilters change
+  useEffect(() => {
+    setFilters(initialFilters);
+  }, [initialFilters]);
 
   const handleFilterChange = (key: string, value: string) => {
     const newFilters = { ...filters, [key]: value };

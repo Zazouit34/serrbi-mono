@@ -1,8 +1,12 @@
-import { inngest } from "@/functions/inngest/client";
-import { testFunction } from "@/functions/test-function";
 import { serve } from "inngest/next";
+import { inngest } from "@/functions/inngest/client";
+import { sendEmail } from "@/functions/inngest/email-functions";
+import { userRegistrationFlow } from "@/functions/inngest/auth-functions";
 
-export const { GET, POST } = serve({
+export const { GET, POST, PUT } = serve({
   client: inngest,
-  functions: [testFunction],
+  functions: [
+    sendEmail,
+    userRegistrationFlow,
+  ],
 });

@@ -6,7 +6,7 @@ import {
   jobListingTypeValues
 } from "@workspace/ui/lib/job-enum"
 import { serviceCategoryValues, priceTypeValues } from "@workspace/ui/lib/service-enum"
-import { taskCategoryValues, taskStatusValues } from "@workspace/ui/lib/task-enum"
+import { taskCategoryValues, taskStatusValues, BudgetTypeValues } from "@workspace/ui/lib/task-enum"
 import { isValidPhoneNumber } from "libphonenumber-js";
 
 export const emailSchema = z.string().email({ message: 'Invalid email address' })
@@ -293,6 +293,7 @@ export const taskListingFormSchema = z
       if (typeof val === "string" && val.trim() !== "") return Number(val)
       return val
     }, z.number().int().positive().min(1).nullable().optional()),
+    budgetType: z.enum(BudgetTypeValues , { required_error: "Required" }).nullable(),
 
     // Location
     stateAbbreviation: z
@@ -312,7 +313,7 @@ export const taskListingFormSchema = z
     displayImage: z.union([z.string().url("Invalid URL"), emptyToUndefined]).optional(),
     
     // Deadline
-    deadline: z.string().min(1, "Deadline is required"), // ISO date string
+    deadline: z.string().optional(), // ISO date string
 
     // Images
     images: z.array(z.string()).default([]).optional(),

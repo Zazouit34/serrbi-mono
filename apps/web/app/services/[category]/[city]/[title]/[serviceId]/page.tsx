@@ -12,7 +12,6 @@ import {
   Mail, 
   Globe, 
   User,
-  Calendar,
   Clock
 } from "lucide-react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -33,9 +32,8 @@ export default function ServiceDetailsPage() {
     ? Math.max(0, Math.floor((Date.now() - new Date(service.createdAt).getTime()) / (1000 * 60 * 60 * 24)))
     : null;
 
-  const formatPrice = (price: number, priceType: string | null) => {
-    const priceText = `${price} MAD`;
-    return priceType ? `${priceText}/${formatPriceType(priceType as any)}` : priceText;
+  const formatPrice = (price: number| null) => {
+    return `${price} MAD`;
   };
 
   const formatLocation = (city: string | null, stateAbbreviation: string | null, address: string | null) => {
@@ -132,7 +130,7 @@ export default function ServiceDetailsPage() {
               <div className="space-y-1">
                 <div className="flex gap-2 items-center">
                   <User className="size-4 text-muted-foreground" />
-                  <span className="font-medium">{service.displayName || "Service Provider"}</span>
+                  <span className="font-medium">{service.displayName || service.user?.name}</span>
                 </div>
                 {daysAgo !== null && (
                   <div className="flex gap-1 items-center text-sm text-muted-foreground">
@@ -233,9 +231,9 @@ export default function ServiceDetailsPage() {
               <div className="space-y-4">
                 <div className="text-center">
                   <div className="text-3xl font-bold text-foreground">
-                    {formatPrice(service.price, service.priceType)}
+                    {formatPrice(service.price)}
                   </div>
-                  <p className="text-sm text-muted-foreground">Starting price</p>
+                  <p className="text-sm text-muted-foreground">{formatPriceType(service.priceType)}</p>
                 </div>
 
                 {/* Contact Buttons */}

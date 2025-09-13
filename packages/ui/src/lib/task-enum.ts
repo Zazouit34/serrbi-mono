@@ -18,4 +18,10 @@ export const taskCategoryValues = [
     "Cancelled",
   ] as const
   export type TaskStatusValue = (typeof taskStatusValues)[number]
+
+  export const BudgetTypeValues = [
+    "Fixed",
+    "Negotiable",
+  ] as const
+  export type TaskBudgetValue = (typeof BudgetTypeValues)[number]
   

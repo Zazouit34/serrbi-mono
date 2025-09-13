@@ -95,7 +95,6 @@ export const serviceRouter = router({
       const where: any = {};
       if (serviceCategory) where.serviceCategory = serviceCategory;
       if (type) where.type = { contains: type, mode: "insensitive" };
-      if (search) where.title = { contains: search, mode: "insensitive" };
       if (city) where.city = { contains: city, mode: "insensitive" };
       if (stateAbbreviation) where.stateAbbreviation = stateAbbreviation;
       if (priceType) where.priceType = priceType;
@@ -103,6 +102,14 @@ export const serviceRouter = router({
         where.price = {};
         if (priceMin) where.price.gte = priceMin;
         if (priceMax) where.price.lte = priceMax;
+      }
+      if (search) {
+        where.OR = [
+          { title: { contains: search, mode: "insensitive" } },
+          { description: { contains: search, mode: "insensitive" } },
+          { displayName: { contains: search, mode: "insensitive" } },
+          { type: { contains: search, mode: "insensitive" } },
+        ];
       }
 
       const [items, total] = await Promise.all([
@@ -176,6 +183,7 @@ export const serviceRouter = router({
           openingHours: true,
           averageRating: true,
           numberOfReviews: true,
+          user: { select: { name: true, image: true } },
           createdAt: true,
         },
       });
