@@ -12,7 +12,7 @@ export default function JobsPage() {
         <div className="flex gap-4">
           <Link 
             href="/jobs/job-listing/new"
-             className="inline-block px-6 py-3 text-center text-black bg-gradient-to-b from-gray-100 to-white rounded-xl shadow-xl transition-colors"
+             className="inline-block px-6 py-3 text-center text-black bg-gradient-to-b from-gray-100 to-white rounded-xl shadow-xl transition-colors via-white/90"
           >
             Post a Job
           </Link>

@@ -82,7 +82,7 @@ export function FilterBar({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-            className="pl-8 pr-20 h-16 text-base border-gray-200 focus:border-[#FF040E] focus:ring-[#FF040E] rounded-full w-full"
+            className="pl-8 pr-20 h-16 text-base border-gray-200 focus:!border-none focus:!ring-1 focus:!ring-gray-200 rounded-full w-full"
           />
 
           {/* Search Button - Always inside input on both mobile and desktop */}
