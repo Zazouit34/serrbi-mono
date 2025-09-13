@@ -22,7 +22,7 @@ export function JobListing() {
   }, [searchParams]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-10">
       {/* Filters bar */}
 
       <FilterBar

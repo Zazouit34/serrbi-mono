@@ -4,27 +4,27 @@ export const dynamic = "force-static";
 
 export default function JobsPage() {
   return (
-    <div>
-      <div className="flex flex-col items-center space-y-6">
+    <div className="space-y-8">
+      <div className="flex flex-col items-center py-10 space-y-18">
         <h1 className="text-4xl text-foreground font-outfit">
-          Open Jobs
+          Open jobs
         </h1>
         <div className="flex gap-4">
           <Link 
             href="/jobs/job-listing/new"
-            className="px-6 py-3 text-white bg-[#FF040E] rounded-lg hover:bg-[#FF040E]/90 transition-colors inline-block text-center"
+             className="inline-block px-6 py-3 text-center text-white bg-black rounded-full transition-colors hover:bg-gray-800"
           >
             Post a Job
           </Link>
           <Link 
             href="#" 
-            className="inline-block px-6 py-3 text-center text-white bg-black rounded-lg transition-colors hover:bg-gray-800"
+            className="inline-block px-6 py-3 text-center text-white bg-black rounded-full transition-colors hover:bg-gray-800"
           >
             Post Your CV
           </Link>
         </div>
       </div>
-      <div className="grid gap-6 mt-6">
+      <div className="grid gap-6">
         <JobListing />
       </div>
     </div>

@@ -72,7 +72,7 @@ export function HeroSearchBar() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                className="pl-12 pr-4 sm:pr-24 h-12 text-base border-gray-200 focus:border-[#FF040E] focus:ring-[#FF040E] rounded-full"
+                className="pr-4 pl-12 h-12 text-base rounded-full border-gray-200 sm:pr-24 focus:!border-none focus:!ring-1 focus:!ring-black"
               />
             </div>
 
