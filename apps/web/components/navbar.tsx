@@ -15,7 +15,6 @@ import {
 } from "@workspace/ui/components/navigation-menu";
 import { Container } from "@workspace/ui/components/container";
 import { SerrbiLogo } from "./SerrbiLogo";
-import { SerrbiMark } from "./SerrbiMark"; // small version of your logo
 import { UserMenu } from "./user-menu"; // 👈 your existing user menu component
 
 const DEFAULT_LINKS = [
