@@ -7,9 +7,9 @@ export default function ServicesPage() {
   return (
     <div className="space-y-8">
     <div className="flex flex-col items-center py-16 space-y-10">
-      <h1 className="text-5xl text-foreground font-outfit">Open tasks</h1>
+      <h1 className="text-5xl text-foreground font-outfit">Available services</h1>
       <p className="text-xl text-gray-500 font-outfit">
-        Land a job with leading national and international companies.
+        Find a service provider for your needs.
       </p>
       <div className="flex justify-center">
         <Link
