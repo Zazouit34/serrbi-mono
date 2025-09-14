@@ -24,7 +24,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <Providers>
               <Navbar  />
               <MobileNavbar />
-              <main className="pt-10 pb-20 mb-4 md:pb-4">
+              <main className="pt-4 pb-20 mb-4 md:pt-10 md:pb-4">
                 <Container>{children}</Container>
               </main>
               <Toaster />

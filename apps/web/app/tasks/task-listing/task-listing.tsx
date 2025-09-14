@@ -22,7 +22,7 @@ export function TaskListing() {
   }, [searchParams])
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-4 md:space-y-10">
       {/* Filters bar */}
       <FilterBar
         filtersConfig={taskFiltersConfig}

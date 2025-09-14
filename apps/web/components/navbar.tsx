@@ -1,6 +1,8 @@
 "use client";
 
 import * as React from "react";
+import { useState, useEffect } from "react";
+
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { cn } from "@workspace/ui/lib/utils";
@@ -22,7 +24,7 @@ const DEFAULT_LINKS = [
   {
     href: "/services",
     label: "Services",
-    image: "/images/services.png"
+    image: "/images/services.png",
   },
   { href: "/tasks", label: "Tasks", image: "/images/tasks.png" },
 ];
@@ -36,6 +38,16 @@ const DEFAULT_LANGUAGES: Array<{ code: string; label: string }> = [
 export function Navbar() {
   const [selectedLang, setSelectedLang] = React.useState("en");
   const pathname = usePathname();
+
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 10); // trigger after small scroll
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const handleLanguageSelect = (code: string) => {
     setSelectedLang(code);
@@ -80,9 +92,7 @@ export function Navbar() {
                             alt={link.label}
                             className="size-10"
                           />
-                          <span className="relative">
-                            {link.label}
-                          </span>
+                          <span className="relative">{link.label}</span>
 
                           {/* underline */}
                           <div
@@ -147,28 +157,38 @@ export function Navbar() {
 
       {/* Mobile navbar */}
       <header className="sticky top-0 z-50 w-full shadow-sm backdrop-blur bg-background/80 md:hidden">
-        {/* Links row (no border) */}
         <nav className="overflow-x-auto relative w-full no-scrollbar">
           <div className="flex justify-between items-center px-4 w-full">
-            {DEFAULT_LINKS.map((link, index) => (
+            {DEFAULT_LINKS.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                className="flex relative flex-col justify-center items-center px-4 py-3 flex-1 text-xs font-medium transition-colors hover:text-black group data-[active=true]:text-black"
+                className="group flex relative flex-col justify-center items-center px-4 py-3 flex-1 text-xs font-medium transition-colors hover:text-black data-[active=true]:text-black"
                 data-active={pathname === link.href}
               >
+                {/* Icon that hides on scroll */}
                 <img
                   src={link.image}
                   alt={link.label}
-                  className="mb-1 size-10"
+                  className={cn(
+                    "mb-1 transition-all duration-300 ease-in-out size-10",
+                    scrolled
+                      ? "h-0 opacity-0 scale-75"
+                      : "h-10 opacity-100 scale-100"
+                  )}
                 />
                 {link.label}
-                  <div className="absolute bottom-0 left-0 w-full h-1 bg-black transform scale-x-0 transition-transform duration-300 ease-in-out group-hover:scale-x-100 data-[active=true]:scale-x-100" />
-                </Link>
-              ))}
-              
-            </div>
-          </nav>
+                {/* underline */}
+                <div
+                  className="absolute bottom-0 left-1/4 w-1/2 h-0.5 bg-black transform scale-x-0 
+             transition-transform duration-300 ease-in-out 
+             group-hover:scale-x-100 group-data-[active=true]:scale-x-100 
+             sm:left-0 sm:w-full sm:h-1"
+                />
+              </Link>
+            ))}
+          </div>
+        </nav>
       </header>
     </>
   );

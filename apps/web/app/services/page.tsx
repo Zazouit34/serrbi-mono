@@ -1,33 +1,35 @@
-import { ServiceListing } from "./service-listing/service-listing"
+import { ServiceListing } from "./service-listing/service-listing";
 import Link from "next/link";
 
-export const dynamic = "force-static"
+export const dynamic = "force-static";
 
 export default function ServicesPage() {
   return (
-    <div className="space-y-8">
-    <div className="flex flex-col items-center py-16 space-y-10">
-      <h1 className="text-5xl text-foreground font-outfit">Available services</h1>
-      <p className="text-xl text-gray-500 font-outfit">
-        Find a service provider for your needs.
-      </p>
-      <div className="flex justify-center">
-        <Link
-          href="/tasks/task-listing/new"
-          className="inline-block px-6 py-3 text-center text-black rounded-lg transition-all duration-300 hover:shadow-lg hover:scale-105 hover:text-gray-800"
-          style={{
-            boxShadow:
-              "-1px -1px 2px rgba(255, 255, 255, 0.3), 3px 3px 5px rgba(209, 209, 209, 0.705)",
-            color: "rgb(80, 80, 80)",
-          }}
-        >
-          Post a Task
-        </Link>
+    <div className="space-y-4 md:space-y-8">
+      <div className="flex flex-col items-center py-0 space-y-4 md:py-16 md:space-y-10">
+        <h1 className="text-2xl md:text-5xl text-foreground font-outfit">
+          Available services
+        </h1>
+        <p className="text-lg text-gray-500 md:text-xl font-outfit">
+          Find a service provider for your needs.
+        </p>
+        <div className="flex justify-center">
+          <Link
+            href="/tasks/task-listing/new"
+            className="inline-block px-4 py-2 text-sm text-center rounded-lg shadow-sm transition-all duration-300 md:text-base md:px-6 md:py-3 md:shadow-md hover:shadow-lg hover:scale-105 hover:text-gray-800"
+            style={{
+              boxShadow:
+                "-0.5px -0.5px 1px rgba(255, 255, 255, 0.3), 2px 2px 3px rgba(209, 209, 209, 0.6)",
+              color: "rgb(80, 80, 80)",
+            }}
+          >
+            Post a Task
+          </Link>
+        </div>
+      </div>
+      <div className="grid gap-6">
+        <ServiceListing />
       </div>
     </div>
-    <div className="grid gap-6">
-      <ServiceListing />
-    </div>
-    </div>
-  )
-} 
+  );
+}

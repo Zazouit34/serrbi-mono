@@ -31,7 +31,6 @@ export type FilterConfig =
       placeholder?: string;
     };
 
-
 type FilterBarProps = {
   filtersConfig: FilterConfig[];
   onFilterChange: (filters: Record<string, string>) => void;
@@ -43,7 +42,8 @@ export function FilterBar({
   onFilterChange,
   initialFilters = {},
 }: FilterBarProps) {
-  const [filters, setFilters] = useState<Record<string, string>>(initialFilters);
+  const [filters, setFilters] =
+    useState<Record<string, string>>(initialFilters);
   const [searchQuery, setSearchQuery] = useState(initialFilters.search || "");
   const [showFilters, setShowFilters] = useState(false);
 
@@ -74,32 +74,36 @@ export function FilterBar({
   return (
     <div className="space-y-4">
       {/* Top search + controls - Centered on large screens */}
-      <div className="flex flex-col gap-4 w-full sm:flex-row sm:justify-center sm:gap-4">
-        {/* Search Input - Hero style - Always relative positioning */}
-        <div className="relative w-full max-w-2xl">
+      <div className="flex gap-2 items-center w-full sm:flex-row sm:justify-center sm:gap-4">
+        {/* Search Input */}
+        <div className="relative flex-1 max-w-2xl">
           <Input
-            placeholder="Search by role, skills, or keywords.."
+            placeholder="Search roles, skills..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-            className="pl-8 pr-20 h-16 text-base border-gray-200 focus:!border-none focus:!ring-1 focus:!ring-gray-200 rounded-full w-full"
+            onKeyPress={(e) => e.key === "Enter" && handleSearch()}
+            className="pl-6 pr-10 h-10 text-sm border-gray-200 focus:!border-none focus:!ring-1 focus:!ring-gray-200 rounded-full w-full sm:h-16 sm:text-base sm:pl-8 sm:pr-20"
           />
 
-          {/* Search Button - Always inside input on both mobile and desktop */}
+          {/* Search Button */}
           <Button
             onClick={handleSearch}
-            className="absolute right-1 top-1/2 transform -translate-y-1/2 p-4 w-14 h-14 text-white bg-[#FF040E] rounded-full hover:bg-[#FF040E]/80 focus:ring-black"
+            className="absolute right-1 top-1/2 -translate-y-1/2 p-2 w-8 h-8 text-white bg-[#FF040E] rounded-full hover:bg-[#FF040E]/80 focus:ring-black sm:w-14 sm:h-14 sm:p-4"
           >
-            <Search className="text-white size-5" />
+            <Search className="w-3 h-3 text-white sm:w-5 sm:h-5" />
           </Button>
         </div>
 
-        {/* Filter Button - Always inline with search */}
+        {/* Filter Button */}
         <Button
           onClick={() => setShowFilters(!showFilters)}
-          className="p-4 w-14 h-14 rounded-full bg-[#FF040E] hover:bg-[#FF040E]/80 self-start sm:self-center"
+          className="p-2 size-8 rounded-full bg-[#FF040E] hover:bg-[#FF040E]/80 flex items-center justify-center flex-shrink-0 sm:w-14 sm:h-14 sm:p-4"
         >
-          {showFilters ? <X className="size-5" /> : <Filter className="size-5" />}
+          {showFilters ? (
+            <X className="w-3 h-3 sm:w-5 sm:h-5" />
+          ) : (
+            <Filter className="w-3 h-3 sm:w-5 sm:h-5" />
+          )}
         </Button>
       </div>
 
