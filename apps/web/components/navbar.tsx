@@ -22,10 +22,9 @@ const DEFAULT_LINKS = [
   {
     href: "/services",
     label: "Services",
-    image: "/images/services.png",
-    badge: "NEW",
+    image: "/images/services.png"
   },
-  { href: "/tasks", label: "Tasks", image: "/images/tasks.png", badge: "NEW" },
+  { href: "/tasks", label: "Tasks", image: "/images/tasks.png" },
 ];
 
 const DEFAULT_LANGUAGES: Array<{ code: string; label: string }> = [
@@ -83,11 +82,6 @@ export function Navbar() {
                           />
                           <span className="relative">
                             {link.label}
-                            {link.badge && (
-                              <span className="absolute -top-3 right-0 text-[10px] font-bold text-white bg-primary rounded px-1">
-                                {link.badge}
-                              </span>
-                            )}
                           </span>
 
                           {/* underline */}
@@ -153,58 +147,14 @@ export function Navbar() {
 
       {/* Mobile navbar */}
       <header className="sticky top-0 z-50 w-full shadow-sm backdrop-blur bg-background/80 md:hidden">
-        {/* Top row: logo + language */}
-        <div className="flex justify-between items-center px-4 h-14">
-          <Link href="/" className="flex items-center">
-            <SerrbiLogo className="w-auto h-5" />
-          </Link>
-
-          <NavigationMenu viewport={false} className="z-50">
-            <NavigationMenuList>
-              <NavigationMenuItem>
-                <NavigationMenuTrigger className="px-2">
-                  <Globe2 className="mr-2 size-4" />
-                  {DEFAULT_LANGUAGES.find((l) => l.code === selectedLang)
-                    ?.label ?? selectedLang.toUpperCase()}
-                </NavigationMenuTrigger>
-                <NavigationMenuContent>
-                  <ul className="grid w-[200px] gap-4">
-                    <li>
-                      {DEFAULT_LANGUAGES.map((lang) => (
-                        <NavigationMenuLink asChild key={lang.code} >
-                          <Link
-                            href="#"
-                            className="flex-row gap-2 items-center"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              handleLanguageSelect(lang.code);
-                            }}
-                          >
-                            {selectedLang === lang.code ? (
-                              <CircleCheckIcon />
-                            ) : (
-                              <CircleIcon />
-                            )}
-                            {lang.label}
-                          </Link>
-                        </NavigationMenuLink>
-                      ))}
-                    </li>
-                  </ul>
-                </NavigationMenuContent>
-              </NavigationMenuItem>
-            </NavigationMenuList>
-          </NavigationMenu>
-        </div>
-
         {/* Links row (no border) */}
         <nav className="overflow-x-auto relative w-full no-scrollbar">
-          <div className="flex justify-center items-center w-full">
+          <div className="flex justify-between items-center px-4 w-full">
             {DEFAULT_LINKS.map((link, index) => (
               <Link
                 key={link.href}
                 href={link.href}
-                className="flex relative flex-col justify-center items-center px-2 py-3 w-20 text-xs font-medium transition-colors hover:text-primary group data-[active=true]:text-primary"
+                className="flex relative flex-col justify-center items-center px-4 py-3 flex-1 text-xs font-medium transition-colors hover:text-black group data-[active=true]:text-black"
                 data-active={pathname === link.href}
               >
                 <img
@@ -213,12 +163,7 @@ export function Navbar() {
                   className="mb-1 size-10"
                 />
                 {link.label}
-                {link.badge && (
-                    <span className="absolute -top-0 -right-1 bg-red-500 text-white text-xs rounded-full px-1 py-0.5 min-w-[16px] h-4 flex items-center justify-center">
-                      {link.badge}
-                    </span>
-                  )}
-                  <div className="absolute bottom-0 left-0 w-full h-1 bg-primary transform scale-x-0 transition-transform duration-300 ease-in-out group-hover:scale-x-100 data-[active=true]:scale-x-100" />
+                  <div className="absolute bottom-0 left-0 w-full h-1 bg-black transform scale-x-0 transition-transform duration-300 ease-in-out group-hover:scale-x-100 data-[active=true]:scale-x-100" />
                 </Link>
               ))}
               

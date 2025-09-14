@@ -136,7 +136,7 @@ function NavigationMenuLink({
       className={cn(
         // removed bg-accent styles completely
         "flex flex-col items-center gap-1 p-2 text-sm transition-all outline-none",
-        "hover:text-primary focus:text-primary", // keep only text color changes
+        "hover:text-black focus:text-black", // keep only text color changes
         "focus-visible:ring-ring/50 focus-visible:ring-[3px] focus-visible:outline-1", // accessibility
         "[&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground",
         className
