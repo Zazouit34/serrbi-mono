@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useSearchParams } from "next/navigation"
-import { FilterBar } from "@/components/ui/filter-bar"
-import { serviceFiltersConfig } from "@/components/ui/config/service-filters-config"
+import { DualSearchBar } from "@/components/ui/dual-search-bar"
 import { ServiceListingGrid } from "./service-listing-grid"
 
 export function ServiceListing() {
@@ -23,11 +22,11 @@ export function ServiceListing() {
 
   return (
     <div className="space-y-4 md:space-y-10">
-      {/* Filters bar */}
-      <FilterBar
-        filtersConfig={serviceFiltersConfig}
+      {/* Dual Search Bar */}
+      <DualSearchBar
         onFilterChange={(values) => setFilters(values)}
         initialFilters={filters}
+        type="service"
       />
 
       {/* Services grid */}

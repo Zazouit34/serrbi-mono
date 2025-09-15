@@ -7,7 +7,7 @@ export default function ServicesPage() {
   return (
     <div className="space-y-4 md:space-y-8">
       <div className="flex flex-col items-center py-0 space-y-4 md:py-16 md:space-y-10">
-        <h1 className="text-2xl md:text-5xl text-foreground font-outfit">
+        <h1 className="pt-4 text-2xl md:text-5xl text-foreground font-outfit">
           Available services
         </h1>
         <p className="text-lg text-gray-500 md:text-xl font-outfit">
@@ -15,7 +15,7 @@ export default function ServicesPage() {
         </p>
         <div className="flex justify-center">
           <Link
-            href="/tasks/task-listing/new"
+            href="/services/service-listing/new"
             className="inline-block px-4 py-2 text-sm text-center rounded-lg shadow-sm transition-all duration-300 md:text-base md:px-6 md:py-3 md:shadow-md hover:shadow-lg hover:scale-105 hover:text-gray-800"
             style={{
               boxShadow:
@@ -23,7 +23,7 @@ export default function ServicesPage() {
               color: "rgb(80, 80, 80)",
             }}
           >
-            Post a Task
+            Post a service
           </Link>
         </div>
       </div>

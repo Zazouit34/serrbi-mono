@@ -111,6 +111,7 @@ export const taskCategoryStyles: Record<
     color: string;
     icon: React.ComponentType<{ className?: string }>;
     image: string; // 🔹 New field
+    gradient:string;
   }
 > = {
   MultiSector: {
@@ -118,65 +119,80 @@ export const taskCategoryStyles: Record<
     color: "bg-slate-100 text-slate-700 border-slate-300",
     icon: Briefcase,
     image: "https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=600&h=400&fit=crop",
+    gradient: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
   },
   Health: {
     label: "Health",
     color: "bg-red-100 text-red-700 border-red-300",
     icon: HeartPulse,
     image: "https://images.unsplash.com/photo-1588776814546-ec04f39f93d6?w=600&h=400&fit=crop",
+    gradient: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
   },
   Cleaning: {
     label: "Cleaning",
     color: "bg-teal-100 text-teal-700 border-teal-300",
     icon: WashingMachine,
     image: "https://plus.unsplash.com/premium_photo-1678742388597-d9d76a759d14?q=80&w=387&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D?w=600&h=400&fit=crop",
+    gradient: "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
   },
   Construction: {
     label: "Construction",
     color: "bg-orange-100 text-orange-700 border-orange-300",
     icon: Building,
     image: "https://images.unsplash.com/photo-1645651964715-d200ce0939cc?q=80&w=870&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D?w=600&h=400&fit=crop",
+    gradient: "linear-gradient(135deg, #fa709a 0%, #fee140 100%)",
   },
   Auto: {
     label: "Auto",
     color: "bg-gray-100 text-gray-700 border-gray-300",
     icon: Car,
     image: "https://images.unsplash.com/photo-1727893119356-1702fe921cf9?q=80&w=1150&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D?w=600&h=400&fit=crop",
+    gradient: "linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)",
   },
   Tech: {
     label: "Tech",
     color: "bg-blue-100 text-blue-700 border-blue-300",
     icon: Laptop,
     image: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?q=80&w=872&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDF8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D?w=600&h=400&fit=crop",
+    gradient: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
   },
   Finance: {
     label: "Finance",
     color: "bg-emerald-100 text-emerald-700 border-emerald-300",
     icon: Calculator,
     image: "https://plus.unsplash.com/premium_photo-1679922389535-7f4badadc07c?q=80&w=870&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D?w=600&h=400&fit=crop",
+    gradient: "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)",
   },
   Hospitality: {
     label: "Hospitality",
     color: "bg-pink-100 text-pink-700 border-pink-300",
     icon: Utensils,
     image: "https://plus.unsplash.com/premium_photo-1754254908378-b0d6f8f6ca54?q=80&w=870&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D?w=600&h=400&fit=crop",
+    gradient: "linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)",
   },
   Legal: {
     label: "Legal",
     color: "bg-purple-100 text-purple-700 border-purple-300",
     icon: Gavel,
     image: "https://plus.unsplash.com/premium_photo-1695449439526-9cebdbfa1a2c?q=80&w=809&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D?w=600&h=400&fit=crop",
+    gradient: "linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)",
   },
   Education: {
     label: "Education",
     color: "bg-indigo-100 text-indigo-700 border-indigo-300",
     icon: BookOpen,
     image: "https://plus.unsplash.com/premium_photo-1677567996070-68fa4181775a?q=80&w=872&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D?w=600&h=400&fit=crop",
+    gradient: "linear-gradient(135deg, #74b9ff 0%, #0984e3 100%)",
   },
 };
 
 export function formatTaskCategory(category: TaskCategory) {
   return taskCategoryStyles[category].label;
+}
+
+// 🔹 New helper function to get gradient for a category
+export function getTaskCategoryGradient(category: TaskCategory) {
+  return taskCategoryStyles[category].gradient;
 }
 // ------------------------
 // SERVICE  CATEGORY STYLES

@@ -283,7 +283,7 @@ export type ServiceGetByIdValues = z.infer<typeof serviceGetByIdSchema>
 // Task schemas
 export const taskListingFormSchema = z
   .object({
-    title: z.string().min(1, "Required").trim(),
+    title: z.string().optional().nullable(),
     description: z.string().min(1, "Required").trim(),
     category: z.enum(taskCategoryValues, { required_error: "Required" }),
     
@@ -306,11 +306,15 @@ export const taskListingFormSchema = z
 
     // Contact information
     phoneNumber: phoneSchema,
-    email: emailSchema,
+    email: z.string().email().optional().nullable(),
 
     // Display information
     displayName: z.union([z.string().min(1).trim(), emptyToUndefined]).optional(),
     displayImage: z.union([z.string().url("Invalid URL"), emptyToUndefined]).optional(),
+
+    // Background style
+    bgStyle: z.union([z.string().min(1), emptyToUndefined]).optional(),
+
     
     // Deadline
     deadline: z.string().optional(), // ISO date string

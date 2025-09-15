@@ -30,7 +30,6 @@ export function ServiceCard({
     phoneNumber: string | null;
     averageRating: number | null;
     numberOfReviews: number;
-    user?: { name?: string | null; image?: string | null } | null;
   };
   className?: string;
 }) {
@@ -82,110 +81,112 @@ export function ServiceCard({
   };
 
   return (
-  <div className="flex justify-center sm:block">
-    <Card
-      className={cn(
-        "overflow-hidden w-full max-w-xs sm:max-w-none rounded-3xl shadow-md hover:shadow-lg transition-all !py-0",
-        className
-      )}
-    >
-      {/* Header */}
-      <div className="flex justify-between items-center p-4 pb-0">
-        <CardTitle className="font-bold text-md line-clamp-1 md:text-lg">
-          <Link href={`/services/${slugify(service.serviceCategory)}/${slugify(service.city || 'location')}/${slugify(service.title)}/${service.id}`}>
-            {service.title}
-          </Link>
-        </CardTitle>
-        <CategoryBadge
-          category={service.serviceCategory as any}
-          type="service"
-        />
-      </div>
+    <div className="flex justify-center sm:block">
+      <Card
+        className={cn(
+          "overflow-hidden w-full max-w-xs sm:max-w-none rounded-3xl shadow-md hover:shadow-lg transition-all !py-0",
+          className
+        )}
+      >
+        {/* Image carousel */}
+        <div className="px-2 pt-2">
+          <div className="overflow-hidden relative w-full h-48 rounded-xl sm:h-64">
+            <Image
+              src={imagesToShow[currentIndex] || ""}
+              alt={service.title}
+              fill
+              className="object-cover"
+            />
 
-      {/* Image carousel */}
-      <div className="px-4">
-        <div className="overflow-hidden relative w-full h-48 rounded-xl sm:h-64">
-          <Image
-            src={imagesToShow[currentIndex] || ""}
-            alt={service.title}
-            fill
-            className="object-cover"
-          />
+            {/* Navigation arrows */}
+            {imagesToShow.length > 1 && (
+              <>
+                <button
+                  onClick={prevImage}
+                  className="absolute left-3 top-1/2 p-1 rounded-full shadow -translate-y-1/2 bg-white/80"
+                >
+                  <ChevronLeft className="size-4" />
+                </button>
+                <button
+                  onClick={nextImage}
+                  className="absolute right-3 top-1/2 p-1 rounded-full shadow -translate-y-1/2 bg-white/80"
+                >
+                  <ChevronRight className="size-4" />
+                </button>
+              </>
+            )}
 
-          {/* Navigation arrows */}
-          {imagesToShow.length > 1 && (
-            <>
-              <button
-                onClick={prevImage}
-                className="absolute left-3 top-1/2 p-1 rounded-full shadow -translate-y-1/2 bg-white/80"
-              >
-                <ChevronLeft className="size-4" />
-              </button>
-              <button
-                onClick={nextImage}
-                className="absolute right-3 top-1/2 p-1 rounded-full shadow -translate-y-1/2 bg-white/80"
-              >
-                <ChevronRight className="size-4" />
-              </button>
-            </>
-          )}
-
-          {/* Dots */}
-          {imagesToShow.length > 1 && (
-            <div className="flex absolute bottom-2 left-1/2 gap-1 -translate-x-1/2">
-              {imagesToShow.map((_, i) => (
-                <span
-                  key={i}
-                  className={cn(
-                    "w-2 h-2 rounded-full",
-                    i === currentIndex ? "bg-primary" : "bg-white/70"
-                  )}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
-      <CardContent className="px-4 pb-4 space-y-4">
-        {/* Name + Rating + Location */}
-        <div className="flex justify-between items-start text-sm text-gray-700">
-          <div className="flex flex-col">
-            <span className="font-medium">
-              {service.user?.name || "Service Provider"}
-            </span>
-            <div className="flex gap-1 items-center">
-              {service.averageRating && service.averageRating > 0 ? (
-                <>
-                  <Star className="text-yellow-400 size-3 fill-yellow-400" />
-                  <span className="text-sm font-medium">
-                    {service.averageRating.toFixed(1)}
-                  </span>
-                  <span className="text-xs text-foreground/60">
-                    ({service.numberOfReviews})
-                  </span>
-                </>
-              ) : (
-                <span className="flex gap-1 items-center text-xs italic text-foreground/50">
-                  <Star className="size-3 text-foreground/30" />
-                  New · Be the first to review
-                </span>
-              )}
-            </div>
-          </div>
-
-          <div className="flex gap-1 items-center text-xs font-semibold text-foreground/80 md:text-sm">
-            <MapPin className="size-4" />
-            <span>
-              {formatLocation(service.city, service.stateAbbreviation)}
-            </span>
+            {/* Dots */}
+            {imagesToShow.length > 1 && (
+              <div className="flex absolute bottom-2 left-1/2 gap-1 -translate-x-1/2">
+                {imagesToShow.map((_, i) => (
+                  <span
+                    key={i}
+                    className={cn(
+                      "w-2 h-2 rounded-full",
+                      i === currentIndex ? "bg-primary" : "bg-white/70"
+                    )}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="flex justify-between items-center pt-3 border-t">
+        <CardContent className="px-3 pb-4 space-y-3">
+          {/* Title + Category */}
+          <div className="flex justify-between items-center">
+            <CardTitle className="font-bold text-md line-clamp-1 md:text-lg">
+              <Link
+                href={`/services/${slugify(service.serviceCategory)}/${slugify(
+                  service.city || "location"
+                )}/${slugify(service.title)}/${service.id}`}
+              >
+                {service.title}
+              </Link>
+            </CardTitle>
+            <CategoryBadge category={service.serviceCategory as any} type="service" />
+          </div>
+
+          {/* Location + Price */}
+          <div className="flex justify-between items-start text-sm text-gray-700">
+            <div className="flex flex-col">
+              {/* Location */}
+              <div className="flex gap-1 items-center text-xs font-semibold text-foreground/80 md:text-sm">
+                <MapPin className="size-4" />
+                <span>{formatLocation(service.city, service.stateAbbreviation)}</span>
+              </div>
+
+              {/* Rating under location */}
+              <div className="flex gap-1 items-center">
+                {service.averageRating && service.averageRating > 0 ? (
+                  <>
+                    <Star className="text-yellow-400 size-3 fill-yellow-400" />
+                    <span className="text-sm font-medium">
+                      {service.averageRating.toFixed(1)}
+                    </span>
+                    <span className="text-xs text-foreground/60">
+                      ({service.numberOfReviews})
+                    </span>
+                  </>
+                ) : (
+                  <span className="flex gap-1 items-center text-xs italic text-foreground/50">
+                    <Star className="size-3 text-foreground/30" />
+                    New · Be the first to review
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Price on the right */}
+            <div className="text-xs font-semibold md:text-base text-foreground">
+              {formatPrice(service.price, service.priceType)}
+            </div>
+          </div>
+
+          {/* Footer - WhatsApp left / Call right */}
           {service.phoneNumber && (
-            <div className="flex gap-2">
+            <div className="flex justify-between items-center pt-3 border-t">
               <button
                 onClick={() => handleContact("whatsapp")}
                 className="flex items-center gap-1 rounded-md bg-[#25D366] px-3 py-1 text-white text-sm hover:bg-[#1ebe5d] transition"
@@ -202,13 +203,8 @@ export function ServiceCard({
               </button>
             </div>
           )}
-
-          <div className="text-xs font-semibold md:text-base text-foreground">
-            {formatPrice(service.price, service.priceType)}
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 }

@@ -1,5 +1,33 @@
 import { serviceCategoryValues } from "@workspace/ui/lib/service-enum";
 import { FilterConfig } from "@/components/ui/filter-bar";
+import { 
+  Scale, 
+  Stethoscope, 
+  GraduationCap, 
+  Building, 
+  Wrench, 
+  Zap, 
+  Hammer, 
+  Car, 
+  Calculator, 
+  Sparkles, 
+  WashingMachine 
+} from "lucide-react";
+
+// Category icons mapping
+export const categoryIcons = {
+  "Lawyer": Scale,
+  "Doctor": Stethoscope,
+  "Education": GraduationCap,
+  "Architect": Building,
+  "Plumber": Wrench,
+  "Electrician": Zap,
+  "Mason": Hammer,
+  "Mechanic": Car,
+  "Accountant": Calculator,
+  "Esthetician": Sparkles,
+  "Cleaning": WashingMachine,
+} as const;
 
 export const serviceFiltersConfig: FilterConfig[] = [
   {
@@ -9,6 +37,7 @@ export const serviceFiltersConfig: FilterConfig[] = [
     options: serviceCategoryValues.map((category: any) => ({
       label: category,
       value: category,
+      icon: categoryIcons[category as keyof typeof categoryIcons],
     })),
   },
   {

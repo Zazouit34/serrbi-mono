@@ -1,5 +1,31 @@
 import { taskCategoryValues, taskStatusValues } from "@workspace/ui/lib/task-enum";
 import { FilterConfig } from "@/components/ui/filter-bar";
+import { 
+  Briefcase, 
+  HeartPulse, 
+  WashingMachine, 
+  Building, 
+  Car, 
+  Laptop, 
+  Calculator, 
+  Utensils, 
+  Gavel, 
+  BookOpen 
+} from "lucide-react";
+
+// Task category icons mapping - matching the ones from formatter.ts
+export const taskCategoryIcons = {
+  "MultiSector": Briefcase,
+  "Health": HeartPulse,
+  "Cleaning": WashingMachine,
+  "Construction": Building,
+  "Auto": Car,
+  "Tech": Laptop,
+  "Finance": Calculator,
+  "Hospitality": Utensils,
+  "Legal": Gavel,
+  "Education": BookOpen,
+} as const;
 
 export const taskFiltersConfig: FilterConfig[] = [
   {
@@ -9,6 +35,7 @@ export const taskFiltersConfig: FilterConfig[] = [
     options: taskCategoryValues.map((category: any) => ({
       label: category,
       value: category,
+      icon: taskCategoryIcons[category as keyof typeof taskCategoryIcons],
     })),
   },
   {

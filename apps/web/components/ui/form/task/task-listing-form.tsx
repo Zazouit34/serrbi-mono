@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
@@ -19,6 +19,7 @@ import {
 } from "@workspace/ui/components/form";
 import { Button } from "@workspace/ui/components/button";
 import { Input } from "@workspace/ui/components/input";
+import { Textarea } from "@workspace/ui/components/textarea";
 import {
   Select,
   SelectContent,
@@ -28,7 +29,7 @@ import {
 } from "@workspace/ui/components/select";
 
 import { trpc } from "@/app/_trpc/client";
-import { MarkdownEditor } from "@/components/ui/markdown/markdown-editor";
+
 import { StateSelectItems } from "../state-select";
 import { PhoneInput } from "../phone-input";
 
@@ -44,6 +45,7 @@ import {
 import {
   formatTaskCategory,
   formatBudgetType,
+  getTaskCategoryGradient,
 } from "@workspace/ui/lib/formatter";
 
 export function TaskListingForm() {
@@ -55,19 +57,16 @@ export function TaskListingForm() {
   const form = useForm<TaskListingFormValues>({
     resolver: zodResolver(taskListingFormSchema) as any,
     defaultValues: {
-      title: "",
       description: "",
       category: undefined,
       budget: 0,
       budgetType: undefined,
       stateAbbreviation: undefined,
       city: undefined,
-      address: undefined,
       phoneNumber: undefined,
-      email: undefined,
       displayName: undefined,
-      displayImage: undefined,
       deadline: "",
+      bgStyle: undefined,
     },
   });
 
@@ -83,6 +82,19 @@ export function TaskListingForm() {
     },
   });
 
+  // Watch the category field to update bgStyle automatically
+  const selectedCategory = form.watch("category");
+  
+  // Update bgStyle when category changes
+  useEffect(() => {
+    if (selectedCategory) {
+      const gradient = getTaskCategoryGradient(selectedCategory);
+      form.setValue("bgStyle", gradient);
+    } else {
+      form.setValue("bgStyle", undefined);
+    }
+  }, [selectedCategory, form]);
+
   async function onSubmit(values: TaskListingFormValues) {
     setSuccess("");
     setError("");
@@ -95,6 +107,9 @@ export function TaskListingForm() {
     });
   }
 
+  // Get current gradient for the textarea
+  const currentGradient = selectedCategory ? getTaskCategoryGradient(selectedCategory) : undefined;
+
   return (
     <div className="flex justify-center items-center mt-5 w-full">
       <div className="w-full">
@@ -104,23 +119,26 @@ export function TaskListingForm() {
             Fill out the form below to create a new task listing.
           </p>
         </div>
-        
+
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            {/* First row: Title, Category, Budget */}
+            {/* First row: Display Name, Category, Budget */}
             <div className="grid grid-cols-1 gap-x-4 gap-y-6 items-start md:grid-cols-3">
               <FormField
                 control={form.control as any}
-                name="title"
+                name="displayName"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel htmlFor="title">Task Title</FormLabel>
+                    <FormLabel htmlFor="displayName">Name</FormLabel>
                     <FormControl>
                       <Input
-                        id="title"
-                        placeholder="Need a plumber for bathroom repair"
+                        id="displayName"
+                        placeholder="John Doe"
                         disabled={isPending}
-                        {...field}
+                        value={field.value ?? ""}
+                        onChange={(e) =>
+                          field.onChange(e.target.value || undefined)
+                        }
                       />
                     </FormControl>
                     <FormMessage />
@@ -134,10 +152,7 @@ export function TaskListingForm() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Task Category</FormLabel>
-                    <Select
-                      value={field.value}
-                      onValueChange={field.onChange}
-                    >
+                    <Select value={field.value} onValueChange={field.onChange}>
                       <FormControl>
                         <SelectTrigger disabled={isPending} className="w-full">
                           <SelectValue placeholder="Select category" />
@@ -212,7 +227,7 @@ export function TaskListingForm() {
               </FormItem>
             </div>
 
-            {/* City, State, Address Row */}
+            {/* Second row: City, State, Phone Number */}
             <div className="grid grid-cols-1 gap-x-4 gap-y-6 items-start md:grid-cols-3">
               {/* City */}
               <FormField
@@ -246,9 +261,7 @@ export function TaskListingForm() {
                     <FormLabel>State</FormLabel>
                     <Select
                       value={field.value ?? ""}
-                      onValueChange={(val) =>
-                        field.onChange(val || undefined)
-                      }
+                      onValueChange={(val) => field.onChange(val || undefined)}
                     >
                       <FormControl>
                         <SelectTrigger disabled={isPending} className="w-full">
@@ -264,32 +277,7 @@ export function TaskListingForm() {
                 )}
               />
 
-              {/* Address */}
-              <FormField
-                control={form.control as any}
-                name="address"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel htmlFor="address">Address</FormLabel>
-                    <FormControl>
-                      <Input
-                        id="address"
-                        placeholder="123 Main Street"
-                        disabled={isPending}
-                        value={field.value ?? ""}
-                        onChange={(e) =>
-                          field.onChange(e.target.value || undefined)
-                        }
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            {/* Contact Information Row */}
-            <div className="grid grid-cols-1 gap-x-4 gap-y-6 items-start md:grid-cols-3">
+              {/* Phone Number */}
               <FormField
                 control={form.control as any}
                 name="phoneNumber"
@@ -309,54 +297,9 @@ export function TaskListingForm() {
                   </FormItem>
                 )}
               />
-
-              <FormField
-                control={form.control as any}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel htmlFor="email">Email</FormLabel>
-                    <FormControl>
-                      <Input
-                        id="email"
-                        type="email"
-                        placeholder="contact@example.com"
-                        disabled={isPending}
-                        value={field.value ?? ""}
-                        onChange={(e) =>
-                          field.onChange(e.target.value || undefined)
-                        }
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control as any}
-                name="displayName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel htmlFor="displayName">Display Name</FormLabel>
-                    <FormControl>
-                      <Input
-                        id="displayName"
-                        placeholder="John Doe"
-                        disabled={isPending}
-                        value={field.value ?? ""}
-                        onChange={(e) =>
-                          field.onChange(e.target.value || undefined)
-                        }
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
             </div>
 
-            {/* Task Description */}
+            {/* Task Description with Category-based Gradient */}
             <FormField
               control={form.control as any}
               name="description"
@@ -364,8 +307,33 @@ export function TaskListingForm() {
                 <FormItem>
                   <FormLabel>Task Description</FormLabel>
                   <FormControl>
-                    <div className="min-h-[320px]">
-                      <MarkdownEditor markdown={field.value} {...field} />
+                    <div className="space-y-4">
+                      {/* Preview with gradient background */}
+                      {currentGradient && field.value && (
+                        <div
+                          className="flex justify-center items-center p-4 w-full rounded-md transition-all min-h-[100px] text-lg font-bold text-center text-white"
+                          style={{
+                            background: currentGradient,
+                          }}
+                        >
+                          {field.value}
+                        </div>
+                      )}
+                      
+                      {/* Simple textarea */}
+                      <Textarea
+                        placeholder="Describe your task in detail..."
+                        value={field.value}
+                        onChange={field.onChange}
+                        disabled={isPending}
+                        className="min-h-[200px] resize-none"
+                      />
+                      
+                      {selectedCategory && (
+                        <p className="text-sm text-muted-foreground">
+                          ✨ Your task will display with a beautiful {formatTaskCategory(selectedCategory)} gradient background
+                        </p>
+                      )}
                     </div>
                   </FormControl>
                   <FormMessage />

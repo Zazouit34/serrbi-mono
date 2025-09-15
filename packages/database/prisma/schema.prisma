@@ -285,7 +285,7 @@ enum TaskStatus {
 model Task {
   id                String       @id @default(uuid())
   userId            String
-  title             String
+  title             String?
   description       String
   category          TaskCategory
   status            TaskStatus   @default(Active)
@@ -303,6 +303,9 @@ model Task {
   displayName  String?
   displayImage String?
   deadline     DateTime?
+
+  //background style metadata
+  bgStyle      String? //gradient, #ff0303
 
   createdAt DateTime @default(now())
 

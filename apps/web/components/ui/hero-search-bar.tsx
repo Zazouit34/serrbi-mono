@@ -28,9 +28,18 @@ export function HeroSearchBar() {
   };
 
   const tabLabels = {
-    jobs: "Browse jobs",
-    services: "Find services", 
-    tasks: "Complete tasks"
+    jobs: {
+      mobile: "Jobs",
+      desktop: "Browse jobs"
+    },
+    services: {
+      mobile: "Services", 
+      desktop: "Find services"
+    },
+    tasks: {
+      mobile: "Tasks",
+      desktop: "Complete tasks"
+    }
   };
 
   const companyIcons = [
@@ -44,17 +53,20 @@ export function HeroSearchBar() {
     <div className="mx-auto w-full max-w-2xl">
       <div className="overflow-hidden bg-white rounded-2xl">
         {/* Tabs Header - Full width to match search content */}
-        <div className="px-6 pt-4 pb-2">
+        <div className="px-4 pt-3 pb-2 md:px-6 md:pt-4">
           <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as TabType)}>
-            <TabsList className="justify-start w-full h-12 bg-white rounded-full border border-gray-200">
+            <TabsList className="justify-start w-full h-10 bg-white rounded-full border border-gray-200 md:h-12">
               {(["jobs", "services", "tasks"] as TabType[]).map((tab) => {
                 return (
                   <TabsTrigger
                     key={tab}
                     value={tab}
-                    className="text-gray-400 data-[state=active]:text-[#000000] data-[state=active]:border-gray-200 data-[state=active]:bg-transparent rounded-full"
+                    className="text-gray-400 data-[state=active]:text-[#000000] data-[state=active]:border-gray-200 data-[state=active]:bg-transparent rounded-full text-sm md:text-base"
                   >
-                    <span className="font-medium">{tabLabels[tab]}</span>
+                    <span className="font-medium">
+                      <span className="block md:hidden">{tabLabels[tab].mobile}</span>
+                      <span className="hidden md:block">{tabLabels[tab].desktop}</span>
+                    </span>
                   </TabsTrigger>
                 );
               })}
@@ -63,26 +75,26 @@ export function HeroSearchBar() {
         </div>
 
         {/* Search Content - Increased height */}
-        <div className="px-6 pb-4">
-          <div className="flex flex-col gap-3 sm:flex-row sm:gap-0 sm:relative">
+        <div className="px-4 pb-3 md:px-6 md:pb-4">
+          <div className="relative">
             {/* Search Input */}
             <div className="relative flex-1">
               <Input
-                placeholder="Search by role, skills, or keywords.."
+                placeholder="Search by role, skills..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                className="pr-4 pl-12 h-12 text-base rounded-full border-gray-200 sm:pr-24 focus:!border-none focus:!ring-1 focus:!ring-black"
+                className="pr-12 pl-8 h-10 text-base rounded-full border-gray-200 md:h-12 md:pr-24 focus:!border-none focus:!ring-1 focus:!ring-black"
               />
             </div>
 
-            {/* Search Button - Below on mobile, inside on desktop */}
+            {/* Search Button - Always inside on both mobile and desktop */}
             <Button
               onClick={handleSearch}
-              className="self-start px-4 h-10 text-sm font-medium text-white bg-black rounded-full w-fit hover:bg-gray-800 focus:ring-black sm:absolute sm:right-1 sm:top-1/2 sm:transform sm:-translate-y-1/2"
+              className="absolute right-1 top-1/2 px-2 h-8 text-sm font-medium text-white bg-black rounded-full transform -translate-y-1/2 w-fit hover:bg-gray-800 focus:ring-black md:px-4 md:h-10"
             >
-              <Search className="mr-1 size-4" />
-              <span className="pr-2">Search</span>
+              <Search className="size-4" />
+              <span className="hidden md:inline md:ml-1 md:pr-2">Search</span>
             </Button>
           </div>
         </div>

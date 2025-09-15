@@ -54,12 +54,12 @@ export function JobCard({
     <div className="flex justify-center sm:block">
       <Card
         className={cn(
-          "overflow-hidden w-full max-w-xs sm:max-w-none rounded-3xl shadow-md hover:shadow-lg transition-all !py-0",
+          "overflow-hidden w-full sm:max-w-none rounded-3xl shadow-md hover:shadow-lg transition-all !py-0",
           featured && "border-primary/50 bg-primary/5",
           className
         )}
       >
-        <CardContent className="p-4 space-y-4 md:p-6 md:space-y-6">
+        <CardContent className="p-4 space-y-6 md:p-6">
           {/* Top Row: Avatar + Category + Type */}
           <div className="flex justify-between items-start">
             <Avatar className="bg-gray-100 rounded-2xl shadow-sm size-12 sm:size-16">
