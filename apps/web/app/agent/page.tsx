@@ -1,12 +1,10 @@
 "use client"
 
-import { trpc } from "@/app/_trpc/client"
-import { Button } from "@workspace/ui/components/button"
 import AIChatbot  from "@/components/ui/form/ai/ai-chatbot"
 
 export default function AgentPage() {
 
-  const testEvent = trpc.inngest.sendTestEvent.useMutation();
+
 
   return (
    <div>
@@ -19,7 +17,6 @@ export default function AgentPage() {
             <p className="text-muted-foreground">
               Leverage AI agents to streamline your workflow by allowing users to create, edit, and delete jobs.
             </p>
-            <Button onClick={() => testEvent.mutate()}>Send Test Event</Button>
           </div>
           <AIChatbot />
         </div>

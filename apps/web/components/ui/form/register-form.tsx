@@ -17,13 +17,6 @@ import {
   FormMessage,
 } from '@workspace/ui/components/form'
 import { Button } from '@workspace/ui/components/button'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@workspace/ui/components/card'
 import { Input } from '@workspace/ui/components/input'
 import { PasswordInput } from './password-input'
 import { PhoneInput } from './phone-input'
@@ -79,128 +72,132 @@ async function onSubmit(values: RegisterFormValues) {
 }
 
   return (
-    <div className="flex justify-center items-center px-4 w-full h-full min-h-[90vh]">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle className="text-2xl">Register</CardTitle>
-          <CardDescription>
+    <div className="flex flex-col justify-center items-center px-4 py-8">
+      <div className="space-y-6 w-full max-w-md">
+        {/* Header */}
+        <div className='flex flex-col gap-4 justify-center items-center text-center'>
+          <h1 className="text-2xl font-bold">Register</h1>
+          <p className='text-sm text-center text-muted-foreground'>
             Create a new account by filling out the form below.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Form {...form as any}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-              <div className="grid gap-4">
-                {/* Name Field */}
-                <FormField
-                  control={form.control as any}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem className="grid gap-2">
-                      <FormLabel htmlFor="name">Name</FormLabel>
-                      <FormControl>
-                        <Input id="name" placeholder="John Doe" {...field} disabled={isPending} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+          </p>
+        </div>
 
-                {/* Email Field */}
-                <FormField
-                  control={form.control as any}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem className="grid gap-2">
-                      <FormLabel htmlFor="email">Email</FormLabel>
-                      <FormControl>
-                        <Input
-                          id="email"
-                          placeholder="johndoe@mail.com"
-                          disabled={isPending}
-                          type="email"
-                          autoComplete="email"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+        {/* Form */}
+        <Form {...form as any}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <div className="space-y-4">
+              {/* Name Field */}
+              <FormField
+                control={form.control as any}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel htmlFor="name">Name</FormLabel>
+                    <FormControl>
+                      <Input id="name" placeholder="John Doe" {...field} disabled={isPending} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-                {/* Phone Field */}
-                <FormField
-                  control={form.control as any}
-                  name="phone"
-                  render={({ field }) => (
-                    <FormItem className="grid gap-2">
-                      <FormLabel htmlFor="phone">Phone Number</FormLabel>
-                      <FormControl>
-                        <PhoneInput {...field} defaultCountry="MA" international disabled={isPending} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+              {/* Email Field */}
+              <FormField
+                control={form.control as any}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel htmlFor="email">Email</FormLabel>
+                    <FormControl>
+                      <Input
+                        id="email"
+                        placeholder="johndoe@mail.com"
+                        disabled={isPending}
+                        type="email"
+                        autoComplete="email"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-                {/* Password Field */}
-                <FormField
-                  control={form.control as any}
-                  name="password"
-                  render={({ field }) => (
-                    <FormItem className="grid gap-2">
-                      <FormLabel htmlFor="password">Password</FormLabel>
-                      <FormControl>
-                        <PasswordInput
-                          id="password"
-                          placeholder="******"
-                          autoComplete="new-password"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+              {/* Phone Field */}
+              <FormField
+                control={form.control as any}
+                name="phone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel htmlFor="phone">Phone Number</FormLabel>
+                    <FormControl>
+                      <PhoneInput {...field} defaultCountry="MA" international disabled={isPending} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-                {/* Confirm Password Field */}
-                <FormField
-                  control={form.control as any}
-                  name="confirmPassword"
-                  render={({ field }) => (
-                    <FormItem className="grid gap-2">
-                      <FormLabel htmlFor="confirmPassword">
-                        Confirm Password
-                      </FormLabel>
-                      <FormControl>
-                        <PasswordInput
-                          id="confirmPassword"
-                          placeholder="******"
-                          autoComplete="new-password"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormError message={error} />
-                <FormSuccess message={success} />
+              {/* Password Field */}
+              <FormField
+                control={form.control as any}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel htmlFor="password">Password</FormLabel>
+                    <FormControl>
+                      <PasswordInput
+                        id="password"
+                        placeholder="******"
+                        autoComplete="new-password"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-                <Button type="submit" className="w-full" disabled={isPending}>
-                  Register
-                </Button>
-              </div>
-            </form>
-          </Form>
-          <div className="mt-4 text-sm text-center">
-            Already have an account?{' '}
-            <Link href={`/login?callbackUrl=${encodeURIComponent(callbackUrl)}`}className="underline">
-              Login
-            </Link>
-          </div>
-        </CardContent>
-      </Card>
+              {/* Confirm Password Field */}
+              <FormField
+                control={form.control as any}
+                name="confirmPassword"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel htmlFor="confirmPassword">
+                      Confirm Password
+                    </FormLabel>
+                    <FormControl>
+                      <PasswordInput
+                        id="confirmPassword"
+                        placeholder="******"
+                        autoComplete="new-password"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormError message={error} />
+              <FormSuccess message={success} />
+
+              <Button type="submit" className="w-full" disabled={isPending}>
+                Register
+              </Button>
+            </div>
+          </form>
+        </Form>
+        
+        {/* Footer */}
+        <div className="text-sm text-center text-muted-foreground">
+          Already have an account?{' '}
+          <Link href={`/login?callbackUrl=${encodeURIComponent(callbackUrl)}`} className="underline hover:text-primary">
+            Login
+          </Link>
+        </div>
+      </div>
     </div>
   )
 }
