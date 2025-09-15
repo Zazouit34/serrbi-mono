@@ -93,7 +93,7 @@ export function TaskCard({ task, className }: TaskCardProps) {
     <div className="flex justify-center sm:block">
       <Card
         className={cn(
-          "overflow-hidden w-full max-w-xs sm:max-w-none rounded-3xl shadow-md hover:shadow-lg transition-all !py-0",
+          "overflow-hidden w-full sm:max-w-none rounded-3xl shadow-md hover:shadow-lg transition-all !py-0",
           className
         )}
       >
@@ -111,7 +111,7 @@ export function TaskCard({ task, className }: TaskCardProps) {
           </Link>
         </div>
 
-        <CardContent className="px-3 pb-4 space-y-3">
+        <CardContent className="px-3 pb-4 space-y-4">
           {/* Header - User info + Status + Category */}
           <div className="flex justify-between items-center">
             <div className="flex flex-col">
