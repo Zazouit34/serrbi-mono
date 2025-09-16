@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { cn } from "@workspace/ui/lib/utils";
 import { Globe2, CircleCheckIcon, CircleIcon } from "lucide-react";
+import { Sheet, SheetContent, SheetHeader, SheetTrigger } from "@workspace/ui/components/sheet";
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -18,6 +19,12 @@ import {
 import { Container } from "@workspace/ui/components/container";
 import { SerrbiLogo } from "./SerrbiLogo";
 import { UserMenu } from "./user-menu"; // 👈 your existing user menu component
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@workspace/ui/components/dropdown-menu";
 
 const DEFAULT_LINKS = [
   { href: "/jobs", label: "Jobs", image: "/images/jobs.png" },
@@ -157,6 +164,78 @@ export function Navbar() {
 
       {/* Mobile navbar */}
       <header className="sticky top-0 z-50 w-full shadow-sm backdrop-blur bg-background/80 md:hidden">
+        {/* Top row: burger + logo + globe */}
+        <div className="flex justify-between items-center px-4 py-2">
+          {/* Burger menu using shadcn Sheet */}
+          <Sheet>
+            <SheetTrigger asChild>
+              <button className="p-2">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="w-6 h-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 6h16M4 12h16M4 18h16"
+                  />
+                </svg>
+              </button>
+            </SheetTrigger>
+            <SheetContent side="left" className="pl-4 w-64">
+              <SheetHeader>
+                <SerrbiLogo className="h-6" />
+              </SheetHeader>
+              <div className="flex flex-col mt-6 space-y-4">
+                {DEFAULT_LINKS.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className="text-base font-medium text-gray-700 hover:text-black"
+                  >
+                    {link.label}
+                  </Link>
+                ))}
+              </div>
+            </SheetContent>
+          </Sheet>
+
+          {/* Center logo */}
+          <Link href="/">
+            <SerrbiLogo className="h-6" />
+          </Link>
+
+          {/* Language menu (just globe icon) */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="px-2 py-2 rounded-md hover:bg-gray-100">
+                <Globe2 className="size-5" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-[150px]">
+              {DEFAULT_LANGUAGES.map((lang) => (
+                <DropdownMenuItem
+                  key={lang.code}
+                  onClick={() => handleLanguageSelect(lang.code)}
+                  className="flex gap-2 items-center"
+                >
+                  {selectedLang === lang.code ? (
+                    <CircleCheckIcon className="size-4" />
+                  ) : (
+                    <CircleIcon className="size-4" />
+                  )}
+                  {lang.label}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+
+        {/* Bottom row: scroll-hiding icons */}
         <nav className="overflow-x-auto relative w-full no-scrollbar">
           <div className="flex justify-between items-center px-4 w-full">
             {DEFAULT_LINKS.map((link) => (
@@ -166,7 +245,6 @@ export function Navbar() {
                 className="group flex relative flex-col justify-center items-center px-4 py-3 flex-1 text-xs font-medium transition-colors hover:text-black data-[active=true]:text-black"
                 data-active={pathname === link.href}
               >
-                {/* Icon that hides on scroll */}
                 <img
                   src={link.image}
                   alt={link.label}
@@ -178,12 +256,11 @@ export function Navbar() {
                   )}
                 />
                 {link.label}
-                {/* underline */}
                 <div
                   className="absolute bottom-0 left-1/4 w-1/2 h-0.5 bg-black transform scale-x-0 
-             transition-transform duration-300 ease-in-out 
-             group-hover:scale-x-100 group-data-[active=true]:scale-x-100 
-             sm:left-0 sm:w-full sm:h-1"
+            transition-transform duration-300 ease-in-out 
+            group-hover:scale-x-100 group-data-[active=true]:scale-x-100 
+            sm:left-0 sm:w-full sm:h-1"
                 />
               </Link>
             ))}
