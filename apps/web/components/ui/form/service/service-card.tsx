@@ -4,13 +4,17 @@ import Link from "next/link";
 import Image from "next/image";
 import { useState } from "react";
 import { slugify } from "@/lib/slugify";
-import { MapPin, ChevronLeft, ChevronRight, Phone, Star } from "lucide-react";
+import { Star, ChevronLeft, ChevronRight, Phone } from "lucide-react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faWhatsapp } from "@fortawesome/free-brands-svg-icons";
-import { Card, CardContent, CardTitle } from "@workspace/ui/components/card";
 import { cn } from "@workspace/ui/lib/utils";
+import { Button } from "@workspace/ui/components/button";
 import { CategoryBadge } from "@/components/ui/category-badge";
-import { formatPriceType } from "@workspace/ui/lib/formatter";
+import {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+} from "@workspace/ui/components/popover";
 
 export function ServiceCard({
   service,
@@ -23,7 +27,6 @@ export function ServiceCard({
     images?: string[];
     serviceCategory: string;
     price: number;
-    priceType: string | null;
     currency: string;
     stateAbbreviation: string | null;
     city: string | null;
@@ -35,9 +38,8 @@ export function ServiceCard({
 }) {
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  const formatPrice = (price: number, priceType: string | null) => {
-    const priceText = `${price} ${service.currency || "MAD"}`;
-    return priceType ? `${priceText}/${formatPriceType(priceType as any)}` : priceText;
+  const formatPrice = (price: number) => {
+    return `From ${price} ${service.currency || "MAD"}`;
   };
 
   const formatLocation = (
@@ -47,16 +49,7 @@ export function ServiceCard({
     if (city && stateAbbreviation) return `${city}, ${stateAbbreviation}`;
     if (city) return city;
     if (stateAbbreviation) return stateAbbreviation;
-    return "Location not specified";
-  };
-
-  const handleContact = (value: "whatsapp" | "phone") => {
-    if (!service.phoneNumber) return;
-    if (value === "whatsapp") {
-      window.open(`https://wa.me/${service.phoneNumber}`, "_blank");
-    } else if (value === "phone") {
-      window.location.href = `tel:${service.phoneNumber}`;
-    }
+    return "";
   };
 
   const fallbackImages = [
@@ -81,130 +74,119 @@ export function ServiceCard({
   };
 
   return (
-    <div className="flex justify-center sm:block">
-      <Card
-        className={cn(
-          "overflow-hidden w-full sm:max-w-none rounded-3xl shadow-md hover:shadow-lg transition-all !py-0",
-          className
-        )}
-      >
-        {/* Image carousel */}
-        <div className="px-2 pt-2">
-          <div className="overflow-hidden relative w-full h-48 rounded-xl sm:h-64">
-            <Image
-              src={imagesToShow[currentIndex] || ""}
-              alt={service.title}
-              fill
-              className="object-cover"
-            />
+    <div className={cn("w-full cursor-pointer", className)}>
+      {/* Image Section with carousel */}
+      <div className="overflow-hidden relative w-full rounded-xl shadow-md aspect-square">
+        <Image
+          src={imagesToShow[currentIndex] || ""}
+          alt={service.title}
+          fill
+          className="object-cover"
+        />
 
-            {/* Navigation arrows */}
-            {imagesToShow.length > 1 && (
-              <>
-                <button
-                  onClick={prevImage}
-                  className="absolute left-3 top-1/2 p-1 rounded-full shadow -translate-y-1/2 bg-white/80"
-                >
-                  <ChevronLeft className="size-4" />
-                </button>
-                <button
-                  onClick={nextImage}
-                  className="absolute right-3 top-1/2 p-1 rounded-full shadow -translate-y-1/2 bg-white/80"
-                >
-                  <ChevronRight className="size-4" />
-                </button>
-              </>
-            )}
-
-            {/* Dots */}
-            {imagesToShow.length > 1 && (
-              <div className="flex absolute bottom-2 left-1/2 gap-1 -translate-x-1/2">
-                {imagesToShow.map((_, i) => (
-                  <span
-                    key={i}
-                    className={cn(
-                      "w-2 h-2 rounded-full",
-                      i === currentIndex ? "bg-primary" : "bg-white/70"
-                    )}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
+        {/* Category badge */}
+        <div className="absolute top-2 right-2">
+          <CategoryBadge category={service.serviceCategory} type="service" />
         </div>
 
-        <CardContent className="px-3 pb-4 space-y-4">
-          {/* Title + Category */}
+        {/* Navigation arrows */}
+        {imagesToShow.length > 1 && (
+          <>
+            <button
+              onClick={prevImage}
+              className="absolute left-2 top-1/2 p-1 rounded-full shadow -translate-y-1/2 bg-white/80"
+            >
+              <ChevronLeft className="size-4" />
+            </button>
+            <button
+              onClick={nextImage}
+              className="absolute right-2 top-1/2 p-1 rounded-full shadow -translate-y-1/2 bg-white/80"
+            >
+              <ChevronRight className="size-4" />
+            </button>
+          </>
+        )}
+
+        {/* Dots */}
+        {imagesToShow.length > 1 && (
+          <div className="flex absolute bottom-2 left-1/2 gap-1 -translate-x-1/2">
+            {imagesToShow.map((_, i) => (
+              <span
+                key={i}
+                className={cn(
+                  "w-2 h-2 rounded-full",
+                  i === currentIndex ? "bg-primary" : "bg-white/70"
+                )}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* Glass Overlay */}
+        <div className="flex absolute right-0 bottom-0 left-0 flex-col px-3 py-2 rounded-t-md rounded-b-xl backdrop-blur-md bg-gray-900/20">
           <div className="flex justify-between items-center">
-            <CardTitle className="font-bold text-md line-clamp-1 md:text-lg">
+            <div>
               <Link
                 href={`/services/${slugify(service.serviceCategory)}/${slugify(
                   service.city || "location"
                 )}/${slugify(service.title)}/${service.id}`}
               >
-                {service.title}
+                <h3 className="text-sm font-semibold text-white line-clamp-1">
+                  {service.title}
+                </h3>
               </Link>
-            </CardTitle>
-            <CategoryBadge category={service.serviceCategory as any} type="service" />
-          </div>
-
-          {/* Location + Price */}
-          <div className="flex justify-between items-start text-sm text-gray-700">
-            <div className="flex flex-col">
-              {/* Location */}
-              <div className="flex gap-1 items-center text-xs font-semibold text-foreground/80 md:text-sm">
-                <MapPin className="size-4" />
-                <span>{formatLocation(service.city, service.stateAbbreviation)}</span>
-              </div>
-
-              {/* Rating under location */}
-              <div className="flex gap-1 items-center">
-                {service.averageRating && service.averageRating > 0 ? (
-                  <>
-                    <Star className="text-yellow-400 size-3 fill-yellow-400" />
-                    <span className="text-sm font-medium">
-                      {service.averageRating.toFixed(1)}
-                    </span>
-                    <span className="text-xs text-foreground/60">
-                      ({service.numberOfReviews})
-                    </span>
-                  </>
-                ) : (
-                  <span className="flex gap-1 items-center text-xs italic text-foreground/50">
-                    <Star className="size-3 text-foreground/30" />
-                    New · Be the first to review
-                  </span>
-                )}
-              </div>
+              <p className="text-xs font-semibold text-gray-200">
+                {formatLocation(service.city, service.stateAbbreviation)}
+              </p>
             </div>
 
-            {/* Price on the right */}
-            <div className="text-xs font-semibold md:text-base text-foreground">
-              {formatPrice(service.price, service.priceType)}
+            {/* Rating */}
+            <div className="flex gap-1 items-center text-sm font-medium text-white">
+              <Star className="w-3.5 h-3.5 text-gray-200 fill-gray-200" />
+              {service.averageRating
+                ? `${service.averageRating.toFixed(1)} (${service.numberOfReviews})`
+                : "4.8 (12)"}
             </div>
           </div>
+        </div>
+      </div>
 
-          {/* Footer - WhatsApp left / Call right */}
-          {service.phoneNumber && (
-            <div className="flex justify-between items-center pt-3 border-t">
+      {/* Bottom Row */}
+      <div className="flex justify-between items-center px-3 py-4 -mt-2 text-sm text-gray-700 bg-white rounded-b-xl shadow">
+        {/* Contact button */}
+        {service.phoneNumber && (
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm">
+                Contact
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="flex flex-col gap-2 w-40">
               <button
-                onClick={() => handleContact("whatsapp")}
-                className="flex items-center gap-1 rounded-md bg-[#25D366] px-3 py-1 text-white text-sm hover:bg-[#1ebe5d] transition"
+                onClick={() =>
+                  window.open(`https://wa.me/${service.phoneNumber}`, "_blank")
+                }
+                className="flex items-center gap-2 text-sm text-white bg-[#25D366] px-2 py-1 rounded-md hover:bg-[#1ebe5d] transition"
               >
                 <FontAwesomeIcon icon={faWhatsapp} className="size-4" />
                 WhatsApp
               </button>
               <button
-                onClick={() => handleContact("phone")}
-                className="flex gap-1 items-center px-3 py-1 text-sm rounded-md border transition hover:bg-muted"
+                onClick={() => (window.location.href = `tel:${service.phoneNumber}`)}
+                className="flex gap-2 items-center px-2 py-1 text-sm rounded-md border transition hover:bg-gray-100"
               >
-                <Phone className="size-3" />
+                <Phone className="size-4" />
                 Call
               </button>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+            </PopoverContent>
+          </Popover>
+        )}
+
+        {/* Price */}
+        <span className="text-base font-semibold text-gray-900">
+          {formatPrice(service.price)}
+        </span>
+      </div>
     </div>
   );
 }

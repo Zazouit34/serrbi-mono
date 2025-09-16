@@ -16,6 +16,15 @@ export function CategoryBadge({ category, type }: BadgeProps) {
 
   const { label, color, icon: Icon } = styles
 
+  if (type === "task") {
+    return (
+      <span className={cn("inline-flex items-center gap-1.5 px-3 py-0.5 text-xs font-medium", color)}>
+        <Icon className="size-3" />
+        {label}
+      </span>
+    )
+  }
+
   return (
     <span className={cn("inline-flex items-center gap-1.5 rounded-full border px-3 py-0.5 text-xs font-medium", color)}>
       <Icon className="size-3" />

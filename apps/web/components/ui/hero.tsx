@@ -139,8 +139,13 @@ export default function Hero() {
             </AvatarGroup>
           </AnnouncementEnd>
         </Announcement>
-        <h1 className="mb-0 text-balance font-medium text-3xl md:text-5xl xl:text-[5.25rem]">
-          AI qui connecte aux <GradientText className="font-playfair" text="opportunités" />
+        <h1 className="mb-0 text-balance font-medium text-3xl md:text-5xl xl:text-[5.25rem] leading-tight">
+          AI qui Connecte aux{" "}
+          <br className="block sm:hidden" />
+          <GradientText 
+            className="font-playfair text-4xl md:text-6xl xl:text-[6rem] font-semibold" 
+            text="Opportunités" 
+          />
         </h1>
 
         <HeroSearchBar />

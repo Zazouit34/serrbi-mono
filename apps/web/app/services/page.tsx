@@ -1,5 +1,6 @@
 import { ServiceListing } from "./service-listing/service-listing";
 import Link from "next/link";
+import { ExampleServiceCard } from "@/components/ui/form/service/example-card";
 
 export const dynamic = "force-static";
 
