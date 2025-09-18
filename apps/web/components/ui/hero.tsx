@@ -140,15 +140,16 @@ export default function Hero() {
           </AnnouncementEnd>
         </Announcement>
         <h1 className="mb-0 text-balance font-medium text-3xl md:text-5xl xl:text-[5.25rem] leading-tight">
-          AI qui Connecte aux{" "}
-          <br className="block sm:hidden" />
-          <GradientText 
-            className="font-playfair text-4xl md:text-6xl xl:text-[6rem] font-semibold" 
-            text="Opportunités" 
+          AI qui Connecte aux <br />
+          <GradientText
+            className="font-playfair text-4xl md:text-6xl xl:text-[6rem] font-semibold"
+            text="Opportunités"
           />
         </h1>
 
-        <HeroSearchBar />
+        
+          <HeroSearchBar />
+
 
         <p className="mt-0 mb-0 text-lg text-balance text-muted-foreground">
           Serrbi is a unified marketplace where you can find jobs, services, and

@@ -15,6 +15,7 @@ import {
   PopoverTrigger,
   PopoverContent,
 } from "@workspace/ui/components/popover";
+import { FavoriteButton } from "@/components/ui/favorite-button";
 
 export function ServiceCard({
   service,
@@ -84,10 +85,20 @@ export function ServiceCard({
           className="object-cover"
         />
 
-        {/* Category badge */}
-        <div className="absolute top-2 right-2">
+        {/* Category badge - top left */}
+        <div className="absolute top-2 left-2">
           <CategoryBadge category={service.serviceCategory} type="service" />
         </div>
+
+        {/* Favorite button - top right */}
+        <div className="absolute top-2 right-2">
+          <FavoriteButton 
+            serviceId={service.id} 
+            color={[255, 255, 255]}
+            className="p-1 rounded-full backdrop-blur-sm bg-black/20"
+          />
+        </div>
+        
 
         {/* Navigation arrows */}
         {imagesToShow.length > 1 && (

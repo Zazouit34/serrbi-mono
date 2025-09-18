@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { HomeIcon, SearchIcon, SettingsIcon } from "lucide-react";
+import { HomeIcon, SearchIcon, HeartIcon } from "lucide-react";
 import { UserMenuMobile } from "./user-menu-mobile";
 
 /**
@@ -25,9 +25,9 @@ export function MobileNavbar() {
         <span className="text-xs">Search</span>
       </Link>
 
-      <Link href="/settings" prefetch={false} className={itemClass}>
-        <SettingsIcon className="w-6 h-6" />
-        <span className="text-xs">Settings</span>
+      <Link href="/favorites" prefetch={false} className={itemClass}>
+        <HeartIcon className="w-6 h-6" />
+        <span className="text-xs">Favorites</span>
       </Link>
 
       {/* Profile / User menu (dropdown) */}

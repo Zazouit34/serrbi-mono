@@ -9,6 +9,7 @@ import { JobListingInfo } from "./job-listing-info";
 import { Button } from "@workspace/ui/components/button";
 import { CategoryBadge } from "@/components/ui/category-badge";
 import { formatLocationRequirement } from "@workspace/ui/lib/formatter";
+import { FavoriteButton } from "@/components/ui/favorite-button";
 import {
   Avatar,
   AvatarFallback,
@@ -85,19 +86,22 @@ export function JobCard({
             </div>
           </div>
 
-          {/* Company + Days ago */}
-          <div className="flex gap-2 items-center">
-            <span className="text-sm font-semibold text-gray-800 md:text-lg">
-              {job.companyName ?? "Unknown Company"}
-            </span>
-            <span className="flex gap-1 items-center text-xs text-gray-400 md:text-sm">
-              <ClockIcon className="size-3" />
-              {daysAgo !== null
-                ? daysAgo === 0
-                  ? "Today"
-                  : `${daysAgo} day${daysAgo === 1 ? "" : "s"} ago`
-                : ""}
-            </span>
+          {/* Company + Days ago + Favorite */}
+          <div className="flex justify-between items-center">
+            <div className="flex gap-2 items-center">
+              <span className="text-sm font-semibold text-gray-800 md:text-lg">
+                {job.companyName ?? "Unknown Company"}
+              </span>
+              <span className="flex gap-1 items-center text-xs text-gray-400 md:text-sm">
+                <ClockIcon className="size-3" />
+                {daysAgo !== null
+                  ? daysAgo === 0
+                    ? "Today"
+                    : `${daysAgo} day${daysAgo === 1 ? "" : "s"} ago`
+                  : ""}
+              </span>
+            </div>
+            <FavoriteButton jobId={job.id} color={[239, 68, 68]} />
           </div>
 
           {/* Job Title */}

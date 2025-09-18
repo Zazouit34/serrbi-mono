@@ -342,3 +342,26 @@ export type TaskListQueryValues = z.infer<typeof taskListQuerySchema>
 // Get task by id validation schema
 export const taskGetByIdSchema = z.object({ id: z.string().uuid() })
 export type TaskGetByIdValues = z.infer<typeof taskGetByIdSchema>
+
+// Favorite schemas
+export const addFavoriteSchema = z.object({
+  jobId: z.string().uuid().optional(),
+  serviceId: z.string().uuid().optional(),
+  taskId: z.string().uuid().optional(),
+}).refine(
+  (data) => [data.jobId, data.serviceId, data.taskId].filter(Boolean).length === 1,
+  { message: "Exactly one of jobId, serviceId, or taskId must be provided" }
+);
+export type AddFavoriteValues = z.infer<typeof addFavoriteSchema>
+
+export const removeFavoriteSchema = z.object({
+  id: z.string().uuid(),
+});
+export type RemoveFavoriteValues = z.infer<typeof removeFavoriteSchema>
+
+export const getFavoritesSchema = z.object({
+  page: z.number().min(1).default(1),
+  pageSize: z.number().min(1).max(50).default(10),
+  type: z.enum(["job", "service", "task"]).optional(),
+});
+export type GetFavoritesValues = z.infer<typeof getFavoritesSchema>

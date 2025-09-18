@@ -17,44 +17,41 @@ export function HeroSearchBar() {
     // Navigate to the appropriate listing page with search query
     const searchParams = new URLSearchParams();
     if (searchQuery) searchParams.set("search", searchQuery);
-    
+
     const routes = {
       jobs: `/jobs?${searchParams.toString()}`,
       services: `/services?${searchParams.toString()}`,
-      tasks: `/tasks?${searchParams.toString()}`
+      tasks: `/tasks?${searchParams.toString()}`,
     };
-    
+
     window.location.href = routes[activeTab];
   };
 
   const tabLabels = {
-    jobs: {
-      mobile: "Jobs",
-      desktop: "Browse jobs"
-    },
-    services: {
-      mobile: "Services", 
-      desktop: "Find services"
-    },
-    tasks: {
-      mobile: "Tasks",
-      desktop: "Complete tasks"
-    }
+    jobs: "Browse jobs",
+    services: "Find services",
+    tasks: "Complete tasks",
   };
 
   const companyIcons = [
     { icon: FaGoogle, name: "Google" },
     { icon: FaAws, name: "AWS" },
     { icon: FaMicrosoft, name: "Microsoft" },
-    { icon: FaLinkedin, name: "LinkedIn" }
+    { icon: FaLinkedin, name: "LinkedIn" },
   ];
 
   return (
-    <div className="mx-auto w-full max-w-2xl">
+    <div
+      className="-mx-4 w-screen max-w-none sm:mx-0 md:max-w-2xl md:mx-auto"
+      
+    >
       <div className="overflow-hidden bg-white rounded-2xl">
         {/* Tabs Header - Full width to match search content */}
         <div className="px-4 pt-3 pb-2 md:px-6 md:pt-4">
-          <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as TabType)}>
+          <Tabs
+            value={activeTab}
+            onValueChange={(value) => setActiveTab(value as TabType)}
+          >
             <TabsList className="justify-start w-full h-10 bg-white rounded-full border border-gray-200 md:h-12">
               {(["jobs", "services", "tasks"] as TabType[]).map((tab) => {
                 return (
@@ -64,8 +61,7 @@ export function HeroSearchBar() {
                     className="text-gray-400 data-[state=active]:text-[#000000] data-[state=active]:border-gray-200 data-[state=active]:bg-transparent rounded-full text-sm md:text-base"
                   >
                     <span className="font-medium">
-                      <span className="block md:hidden">{tabLabels[tab].mobile}</span>
-                      <span className="hidden md:block">{tabLabels[tab].desktop}</span>
+                      {tabLabels[tab]}
                     </span>
                   </TabsTrigger>
                 );
@@ -83,7 +79,7 @@ export function HeroSearchBar() {
                 placeholder="Search by role, skills..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                onKeyPress={(e) => e.key === "Enter" && handleSearch()}
                 className="pr-12 pl-8 h-10 text-base rounded-full border-gray-200 md:h-12 md:pr-24 focus:!border-none focus:!ring-1 focus:!ring-black"
               />
             </div>
@@ -104,8 +100,8 @@ export function HeroSearchBar() {
           <div className="flex gap-8 justify-center items-center pt-2">
             {companyIcons.map(({ icon: Icon, name }) => (
               <div key={name} className="flex justify-center items-center">
-                <Icon 
-                  className="w-6 h-6 transition-opacity hover:opacity-70" 
+                <Icon
+                  className="w-6 h-6 transition-opacity hover:opacity-70"
                   title={name}
                 />
               </div>
