@@ -1,22 +1,18 @@
 "use client";
-import { User, LogOut, LogIn } from "lucide-react";
+import { User, LogOut, LogIn, Heart } from "lucide-react";
 import { usePathname } from "next/navigation";
-import { Skeleton } from "@workspace/ui/components/skeleton";
 import { buttonVariants } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
 import Link from "next/link";
+import { signOut, useSession } from "next-auth/react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuPortal,
   DropdownMenuSeparator,
   DropdownMenuShortcut,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu";
 import {
@@ -24,19 +20,23 @@ import {
   AvatarFallback,
   AvatarImage,
 } from "@workspace/ui/components/avatar";
-import { useCurrentUser } from "@/hooks/use-current-user";
-import { logout } from "@/lib/actions/auth";
 
 export function UserMenu() {
   const pathname = usePathname();
-  const { user , status } = useCurrentUser();
-  if (status === "loading") {
-    return <Skeleton className="h-8 w-[120px] rounded-md" />
-  }
+  const { data: session, status } = useSession();
+  const user = session?.user;
+
+  const handleLogout = () => {
+    signOut({ callbackUrl: "/" });
+  };
+
+  // Show nothing while loading (no skeleton)
+  if (status === "loading") return null;
+
   return user ? (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Avatar>
+        <Avatar className="cursor-pointer">
           <AvatarImage src={user?.image || ""}/>
           <AvatarFallback className="bg-rose-500">
             <User className="text-white size-4" />
@@ -46,48 +46,23 @@ export function UserMenu() {
       <DropdownMenuContent className="w-56" align="center">
         <DropdownMenuLabel>My Account</DropdownMenuLabel>
         <DropdownMenuGroup>
+          <DropdownMenuItem asChild>
+            <Link href="/favorites" className="flex items-center w-full cursor-pointer">
+              <Heart className="mr-2 size-4" />
+              Favorites
+            </Link>
+          </DropdownMenuItem>
           <DropdownMenuItem>
             Profile
             <DropdownMenuShortcut>⇧⌘P</DropdownMenuShortcut>
           </DropdownMenuItem>
           <DropdownMenuItem>
-            Billing
-            <DropdownMenuShortcut>⌘B</DropdownMenuShortcut>
-          </DropdownMenuItem>
-          <DropdownMenuItem>
             Settings
             <DropdownMenuShortcut>⌘S</DropdownMenuShortcut>
           </DropdownMenuItem>
-          <DropdownMenuItem>
-            Keyboard shortcuts
-            <DropdownMenuShortcut>⌘K</DropdownMenuShortcut>
-          </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <DropdownMenuGroup>
-          <DropdownMenuItem>Team</DropdownMenuItem>
-          <DropdownMenuSub>
-            <DropdownMenuSubTrigger>Invite users</DropdownMenuSubTrigger>
-            <DropdownMenuPortal>
-              <DropdownMenuSubContent>
-                <DropdownMenuItem>Email</DropdownMenuItem>
-                <DropdownMenuItem>Message</DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem>More...</DropdownMenuItem>
-              </DropdownMenuSubContent>
-            </DropdownMenuPortal>
-          </DropdownMenuSub>
-          <DropdownMenuItem>
-            New Team
-            <DropdownMenuShortcut>⌘+T</DropdownMenuShortcut>
-          </DropdownMenuItem>
-        </DropdownMenuGroup>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem>GitHub</DropdownMenuItem>
-        <DropdownMenuItem>Support</DropdownMenuItem>
-        <DropdownMenuItem disabled>API</DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={logout}>
+        <DropdownMenuItem onClick={handleLogout}>
           <LogOut className="mr-2 size-4" />
           Log out
           <DropdownMenuShortcut>⇧⌘Q</DropdownMenuShortcut>
