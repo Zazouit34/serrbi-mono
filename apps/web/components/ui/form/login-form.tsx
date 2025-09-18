@@ -7,6 +7,7 @@ import { useForm } from "react-hook-form";
 import { useState, useTransition } from "react";
 import { useSearchParams } from "next/navigation";
 import { trpc } from "@/app/_trpc/client";
+import { useSession } from "next-auth/react";
 
 import { SerrbiMark } from "../../SerrbiMark";
 import {
@@ -36,6 +37,8 @@ export default function LoginForm() {
   const [error, setError] = useState<string | undefined>("");
   const [success, setSuccess] = useState<string | undefined>("");
   const [isPending, startTransition] = useTransition();
+  
+  const { update } = useSession();
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginFormSchema),
@@ -45,8 +48,10 @@ export default function LoginForm() {
     },
   });
   const loginMutation = trpc.auth.login.useMutation({
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       setSuccess(data.message);
+      // Update session after successful tRPC validation
+      await update();
     },
     onError: (error) => {
       setError(error.message);
@@ -56,11 +61,19 @@ export default function LoginForm() {
   async function onSubmit(values: LoginFormValues) {
     setError("");
     setSuccess("");
-    startTransition(() => {
-      loginCredentials(values.email, values.password, callbackUrl); // redirects to "/"
-    });
-    // keep tRPC validation for UI if you want:
-    loginMutation.mutate(values);
+    
+    try {
+      // First validate with tRPC
+      await loginMutation.mutateAsync(values);
+      
+      // Then do the actual login with server action
+      startTransition(async () => {
+        await loginCredentials(values.email, values.password, callbackUrl);
+        // Session will be updated by the redirect
+      });
+    } catch (error) {
+      // Error handling is already done in mutation callbacks
+    }
   }
   return (
     <div className="flex flex-col justify-center items-center px-4 py-8">
