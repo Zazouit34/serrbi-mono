@@ -8,6 +8,7 @@ import { useState, useTransition } from "react";
 import { useSearchParams } from "next/navigation";
 import { trpc } from "@/app/_trpc/client";
 import { useSession } from "next-auth/react";
+import { signIn } from "next-auth/react";
 
 import { SerrbiMark } from "../../SerrbiMark";
 import {
@@ -48,10 +49,8 @@ export default function LoginForm() {
     },
   });
   const loginMutation = trpc.auth.login.useMutation({
-    onSuccess: async (data) => {
+    onSuccess: (data) => {
       setSuccess(data.message);
-      // Update session after successful tRPC validation
-      await update();
     },
     onError: (error) => {
       setError(error.message);
@@ -62,19 +61,32 @@ export default function LoginForm() {
     setError("");
     setSuccess("");
     
-    try {
-      // First validate with tRPC
-      await loginMutation.mutateAsync(values);
-      
-      // Then do the actual login with server action
-      startTransition(async () => {
-        await loginCredentials(values.email, values.password, callbackUrl);
-        // Session will be updated by the redirect
+    // First do tRPC validation/user creation
+    loginMutation.mutate(values);
+    
+    // Then use NextAuth's client-side signIn for session management
+    startTransition(async () => {
+      const result = await signIn("credentials", {
+        email: values.email,
+        password: values.password,
+        callbackUrl,
+        redirect: false,
       });
-    } catch (error) {
-      // Error handling is already done in mutation callbacks
-    }
+
+      if (result?.error) {
+        setError("Invalid credentials");
+      } else if (result?.ok) {
+        // Success - redirect to update session
+        window.location.href = callbackUrl;
+      }
+    });
   }
+
+  // Update Google login to use client-side signIn
+  const handleGoogleLogin = () => {
+    signIn("google", { callbackUrl });
+  };
+
   return (
     <div className="flex flex-col justify-center items-center px-4 py-8">
       <div className="space-y-6 w-full max-w-md">
@@ -156,7 +168,7 @@ export default function LoginForm() {
                 <Button
                   variant="outline"
                   className="w-full"
-                  onClick={() => loginGoogle(callbackUrl)}
+                  onClick={handleGoogleLogin}
                   type="button"
                 >
                   <FcGoogle className="mr-2 size-4" />
