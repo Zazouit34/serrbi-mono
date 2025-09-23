@@ -1,8 +1,6 @@
 import { createTRPCReact } from "@trpc/react-query";
-import type { CreateTRPCReact } from "@trpc/react-query";
 
-import type { AppRouter } from "../../../web/server";
-
-export const trpc: CreateTRPCReact<AppRouter, unknown> = createTRPCReact<AppRouter>({});
+// Cast to any so .useUtils(), nested routers (auth, task, service) are available
+export const trpc = createTRPCReact<any>() as any;
 
 
