@@ -1,6 +1,6 @@
 import { Inter } from "next/font/google";
 
-import "@workspace/ui/globals.css";
+import "./globals.css"; 
 import { Toaster } from "@workspace/ui/components/sonner";
 import Provider from "@/app/_trpc/provider";
 import { SessionProvider } from "next-auth/react";
