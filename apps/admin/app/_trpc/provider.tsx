@@ -10,8 +10,11 @@ export default function Provider({ children }: { children: React.ReactNode }) {
   const [trpcClient] = useState(() =>
     trpc.createClient({
       links: [
-        httpBatchLink({ url: "/api/trpc", 
-          headers: () => ({ "x-admin-token": process.env.NEXT_PUBLIC_ADMIN_API_TOKEN || "" })
+        httpBatchLink({
+          url: `${(process.env.NEXT_PUBLIC_WEB_URL || "").replace(/\/$/, "")}/api/trpc`,
+          headers: () => ({
+            "x-admin-token": process.env.NEXT_PUBLIC_ADMIN_API_TOKEN || "",
+          }),
         }),
       ],
     })
@@ -23,5 +26,3 @@ export default function Provider({ children }: { children: React.ReactNode }) {
     </trpc.Provider>
   );
 }
-
-
