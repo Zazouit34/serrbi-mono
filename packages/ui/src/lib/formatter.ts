@@ -303,6 +303,10 @@ export function formatJobStatus(status: JobListingStatus) {
   switch (status) {
     case "draft":
       return "Draft";
+    case "pending":
+      return "Pending";
+    case "rejected":
+      return "Rejected";
     case "published":
       return "Published";
     case "delisted":
@@ -333,6 +337,12 @@ export function formatTaskStatus(status: TaskStatus) {
   switch (status) {
     case "Active":
       return "Active";
+    case "Pending":
+      return "Pending";
+    case "Rejected":
+      return "Rejected";
+    case "Published":
+      return "Published";
     case "Done":
       return "Done";
     case "Cancelled":
