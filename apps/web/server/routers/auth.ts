@@ -1,5 +1,5 @@
-import { publicProcedure, router, protectedProcedure } from "../trpc";
-import { loginFormSchema, registerFormSchema, emailFormSchema , tokenFormSchema ,resetPasswordFormSchema} from "@workspace/ui/lib/validation-schemas";
+import { publicProcedure, router, protectedProcedure, adminProcedure } from "../trpc";
+import { loginFormSchema, registerFormSchema, emailFormSchema , tokenFormSchema ,resetPasswordFormSchema, updateUserRoleSchema } from "@workspace/ui/lib/validation-schemas";
 import bcrypt from "bcryptjs";
 
 import { TRPCError } from "@trpc/server";
@@ -111,6 +111,24 @@ export const authRouter = router({
     // ctx.user is injected by protectedProcedure
     return { user: (ctx as any).user, session: ctx.session }
   }),
+
+  // Admin only: list users
+  getUsers: adminProcedure.query(async ({ ctx }) => {
+    const db = ctx.prisma as PrismaClient
+    return db.user.findMany({
+      select: { id: true, name: true, email: true, phone: true, role: true, createdAt: true },
+      orderBy: { createdAt: "desc" },
+    })
+  }),
+
+  // Admin only: update user role
+  updateUserRole: adminProcedure
+    .input(updateUserRoleSchema)
+    .mutation(async ({ ctx, input }) => {
+      const db = ctx.prisma as PrismaClient
+      await db.user.update({ where: { id: input.userId }, data: { role: input.role } })
+      return { success: true }
+    }),
 })
 
 

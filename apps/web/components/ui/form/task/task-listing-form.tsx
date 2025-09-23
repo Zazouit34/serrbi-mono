@@ -189,36 +189,7 @@ export function TaskListingForm() {
                           onChange={(e) =>
                             field.onChange(Number(e.target.value))
                           }
-                          className="rounded-r-none"
                         />
-                      </FormControl>
-                    )}
-                  />
-
-                  {/* BudgetType Select */}
-                  <FormField
-                    control={form.control as any}
-                    name="budgetType"
-                    render={({ field }) => (
-                      <FormControl>
-                        <Select
-                          value={field.value}
-                          onValueChange={field.onChange}
-                        >
-                          <SelectTrigger
-                            disabled={isPending}
-                            className="rounded-l-none w-[140px]"
-                          >
-                            <SelectValue placeholder="/ type" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {BudgetTypeValues.map((type) => (
-                              <SelectItem key={type} value={type}>
-                                {formatBudgetType(type)}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
                       </FormControl>
                     )}
                   />

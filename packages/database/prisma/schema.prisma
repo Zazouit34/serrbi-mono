@@ -17,7 +17,7 @@ datasource db {
 //users roles
 enum Role {
   USER
-  ADMIN
+  ADMIN      // Added for super admin accounts
   COMPANY
 }
 
@@ -56,9 +56,20 @@ enum JobListingType {
 
 enum JobListingStatus {
   draft
-  published
+  pending      // New: Submitted for admin review
+  published    // Approved by admin
+  rejected     // Rejected by admin
   delisted
   expired
+}
+
+// Add Service Status enum
+enum ServiceStatus {
+  draft
+  pending      // New: Submitted for admin review
+  published    // Approved by admin
+  rejected     // Rejected by admin
+  delisted
 }
 
 model User {
@@ -77,6 +88,16 @@ model User {
   tasks     Task[]
   proposals Proposal[]
   favorites Favorite[]
+  
+  // Admin-related fields
+  moderationActions ModerationAction[]
+  notifications     Notification[]
+  
+  // Moderator relations
+  moderatedJobs     Job[]     @relation("JobModerator")
+  moderatedServices Service[] @relation("ServiceModerator")
+  moderatedTasks    Task[]    @relation("TaskModerator")
+  
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
 
@@ -142,18 +163,26 @@ model Job {
   category            JobCategory
   locationRequirement LocationRequirement
   experienceLevel     ExperienceLevel
-  status              JobListingStatus    @default(draft)
+  status              JobListingStatus    @default(pending) // Changed default to pending
   type                JobListingType
   applicationEmail    String
   applicationUrl      String?
   postedAt            DateTime?
+  
+  // Admin moderation fields
+  rejectionReason     String?             // Reason for rejection
+  moderatedAt         DateTime?           // When admin took action
+  moderatedBy         String?             // Admin who took action
+  
   createdAt           DateTime            @default(now())
   updatedAt           DateTime            @updatedAt
 
   // Relations
-  user        User             @relation(fields: [userId], references: [id])
-  application JobApplication[]
-  favorites Favorite[]
+  user              User                 @relation(fields: [userId], references: [id])
+  application       JobApplication[]
+  favorites         Favorite[]
+  moderationActions ModerationAction[]
+  moderator         User?                @relation("JobModerator", fields: [moderatedBy], references: [id])
 
   @@index([locationRequirement])
   @@index([category])
@@ -163,6 +192,8 @@ model Job {
   @@index([title])
   @@index([companyName])
   @@index([city])
+  @@index([createdAt])
+  @@index([moderatedAt])
 }
 
 model JobApplication {
@@ -235,20 +266,33 @@ model Service {
 
   averageRating   Float? @default(0)
   numberOfReviews Int    @default(0)
+  
+  // Add status field for moderation
+  status          ServiceStatus @default(pending)
+  
+  // Admin moderation fields
+  rejectionReason String?       // Reason for rejection
+  moderatedAt     DateTime?     // When admin took action
+  moderatedBy     String?       // Admin who took action
 
   createdAt DateTime @default(now())
 
   // Relations
-  serviceCategory ServiceCategory
-  type            String? // subtype, e.g. "Dentist", "Plumber"
-  user            User             @relation(fields: [userId], references: [id])
-  bookings        ServiceBooking[]
-  favorites       Favorite[]
+  serviceCategory   ServiceCategory
+  type              String? // subtype, e.g. "Dentist", "Plumber"
+  user              User             @relation(fields: [userId], references: [id])
+  bookings          ServiceBooking[]
+  favorites         Favorite[]
+  moderationActions ModerationAction[]
+  moderator         User?            @relation("ServiceModerator", fields: [moderatedBy], references: [id])
 
   @@index([userId])
   @@index([serviceCategory])
   @@index([city])
   @@index([stateAbbreviation])
+  @@index([status])
+  @@index([createdAt])
+  @@index([moderatedAt])
 }
 
 model ServiceBooking {
@@ -290,6 +334,9 @@ enum BudgetType {
 
 enum TaskStatus {
   Active
+  Pending      // New: Submitted for admin review  
+  Published    // Approved by admin (was Active)
+  Rejected     // Rejected by admin
   Done
   Cancelled
 }
@@ -300,7 +347,7 @@ model Task {
   title             String?
   description       String
   category          TaskCategory
-  status            TaskStatus   @default(Active)
+  status            TaskStatus   @default(Pending) // Changed default to Pending
   phoneNumber       String?
   email             String?
   budget            Int?
@@ -318,12 +365,19 @@ model Task {
 
   //background style metadata
   bgStyle      String? //gradient, #ff0303
+  
+  // Admin moderation fields
+  rejectionReason   String?    // Reason for rejection
+  moderatedAt       DateTime?  // When admin took action
+  moderatedBy       String?    // Admin who took action
 
   createdAt DateTime @default(now())
 
-  user      User       @relation(fields: [userId], references: [id])
-  proposals Proposal[]
-  favorites Favorite[]
+  user              User               @relation(fields: [userId], references: [id])
+  proposals         Proposal[]
+  favorites         Favorite[]
+  moderationActions ModerationAction[]
+  moderator         User?              @relation("TaskModerator", fields: [moderatedBy], references: [id])
 
   @@index([userId])
   @@index([status])
@@ -332,6 +386,8 @@ model Task {
   @@index([stateAbbreviation])
   @@index([address])
   @@index([budget])
+  @@index([createdAt])
+  @@index([moderatedAt])
 }
 
 model Proposal {
@@ -366,4 +422,45 @@ model Favorite {
   @@index([jobId])
   @@index([serviceId])
   @@index([taskId])
+}
+
+// New models for admin functionality
+
+model ModerationAction {
+  id        String   @id @default(uuid())
+  adminId   String   // Admin who took the action
+  itemType  String   // "job", "service", "task"
+  itemId    String   // ID of the moderated item
+  action    String   // "approve", "reject"
+  reason    String?  // Reason for rejection
+  createdAt DateTime @default(now())
+
+  admin   User     @relation(fields: [adminId], references: [id])
+  job     Job?     @relation(fields: [itemId], references: [id], map: "ModerationAction_job_fkey")
+  service Service? @relation(fields: [itemId], references: [id], map: "ModerationAction_service_fkey")
+  task    Task?    @relation(fields: [itemId], references: [id], map: "ModerationAction_task_fkey")
+
+  @@index([adminId])
+  @@index([itemType])
+  @@index([itemId])
+  @@index([createdAt])
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String   // User to notify
+  title     String   // Notification title
+  message   String   // Notification content
+  type      String   // "approval", "rejection", "general"
+  read      Boolean  @default(false)
+  itemType  String?  // "job", "service", "task"
+  itemId    String?  // ID of related item
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([read])
+  @@index([createdAt])
+  @@index([type])
 }

@@ -7,6 +7,7 @@ import {
 } from "@workspace/ui/lib/job-enum"
 import { serviceCategoryValues, priceTypeValues } from "@workspace/ui/lib/service-enum"
 import { taskCategoryValues, taskStatusValues, BudgetTypeValues } from "@workspace/ui/lib/task-enum"
+import { roleValues } from "@workspace/ui/lib/role-enum"
 import { isValidPhoneNumber } from "libphonenumber-js";
 
 export const emailSchema = z.string().email({ message: 'Invalid email address' })
@@ -293,7 +294,7 @@ export const taskListingFormSchema = z
       if (typeof val === "string" && val.trim() !== "") return Number(val)
       return val
     }, z.number().int().positive().min(1).nullable().optional()),
-    budgetType: z.enum(BudgetTypeValues , { required_error: "Required" }).nullable(),
+    budgetType: z.enum(BudgetTypeValues).nullable().optional(),
 
     // Location
     stateAbbreviation: z
@@ -365,3 +366,23 @@ export const getFavoritesSchema = z.object({
   type: z.enum(["job", "service", "task"]).optional(),
 });
 export type GetFavoritesValues = z.infer<typeof getFavoritesSchema>
+
+// Moderation schemas
+
+export const moderateApproveSchema = z.object({ id: z.string().uuid() })
+export type ModerateApproveValues = z.infer<typeof moderateApproveSchema>
+
+export const moderateRejectSchema = z.object({
+  id: z.string().uuid(),
+  reason: z.string().min(1, "Reason is required"),
+})
+export type ModerateRejectValues = z.infer<typeof moderateRejectSchema>
+
+// Update user role schema
+
+
+export const updateUserRoleSchema = z.object({
+  userId: z.string().uuid(),
+  role: z.enum(roleValues),
+});
+export type UpdateUserRoleValues = z.infer<typeof updateUserRoleSchema>;

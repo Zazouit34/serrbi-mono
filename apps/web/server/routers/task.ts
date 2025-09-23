@@ -1,13 +1,15 @@
-import { protectedProcedure, router, publicProcedure } from "../trpc";
+import { protectedProcedure, router, publicProcedure, adminProcedure } from "../trpc";
 import {
   taskListingFormSchema,
   taskListQuerySchema,
-  taskGetByIdSchema,
+  moderateApproveSchema,
+  moderateRejectSchema,
 } from "@workspace/ui/lib/validation-schemas";
 import type { PrismaClient } from "@workspace/db";
 import { TRPCError } from "@trpc/server";
 
 export const taskRouter = router({
+  // Create → Pending by default (schema), return review message
   createTask: protectedProcedure
     .input(taskListingFormSchema)
     .mutation(async ({ ctx, input }) => {
@@ -18,7 +20,7 @@ export const taskRouter = router({
         const task = await db.task.create({
           data: {
             userId: user.id,
-            title: input.title,
+            title: input.title ?? null,
             description: input.description,
             category: input.category,
             bgStyle: input.bgStyle || null,
@@ -34,35 +36,17 @@ export const taskRouter = router({
             displayName: input.displayName || null,
             displayImage: input.displayImage || null,
             deadline: input.deadline ? new Date(input.deadline) : null,
-            images: input.images,
+            images: input.images ?? [],
+            // status defaults to Pending via schema
           },
           select: {
-            id: true,
-            title: true,
-            description: true,
-            category: true,
-            status: true,
-            budget: true,
-            budgetType: true,
-            stateAbbreviation: true,
-            city: true,
-            address: true,
-            latitude: true,
-            longitude: true,
-            phoneNumber: true,
-            email: true,
-            bgStyle: true,
-            displayName: true,
-            displayImage: true,
-            deadline: true,
-            images: true,
-            createdAt: true,
+            id: true, title: true, description: true, category: true, status: true, createdAt: true
           },
         });
 
         return {
           success: true,
-          message: "Task created successfully",
+          message: "Your task is under review.",
           task,
         };
       } catch (error) {
@@ -74,6 +58,7 @@ export const taskRouter = router({
       }
     }),
 
+  // Public list → default to Published unless status filter explicitly set
   getTask: publicProcedure
     .input(taskListQuerySchema.optional())
     .query(async ({ ctx, input }) => {
@@ -90,7 +75,10 @@ export const taskRouter = router({
 
       const where: any = {};
       if (category) where.category = category;
+      // if no explicit status filter, show only Published
       if (status) where.status = status;
+      else where.status = "Published";
+
       if (city) where.city = { contains: city, mode: "insensitive" };
       if (stateAbbreviation) where.stateAbbreviation = stateAbbreviation;
       if (budgetMin || budgetMax) {
@@ -113,25 +101,10 @@ export const taskRouter = router({
           skip: (page - 1) * pageSize,
           take: pageSize,
           select: {
-            id: true,
-            title: true,
-            description: true,
-            bgStyle: true,
-            category: true,
-            status: true,
-            budget: true,
-            budgetType: true,
-            stateAbbreviation: true,
-            city: true,
-            address: true,
-            latitude: true,
-            longitude: true,
-            phoneNumber: true,
-            email: true,
-            displayName: true,
-            displayImage: true,
-            deadline: true,
-            images: true,
+            id: true, title: true, description: true, bgStyle: true, category: true, status: true,
+            budget: true, budgetType: true, stateAbbreviation: true, city: true,
+            address: true, latitude: true, longitude: true,
+            phoneNumber: true, email: true, displayName: true, displayImage: true,
             user: { select: { name: true, image: true } },
             createdAt: true,
           },
@@ -141,36 +114,48 @@ export const taskRouter = router({
       return { items, total, page, pageSize };
     }),
 
-  getById: publicProcedure
-    .input(taskGetByIdSchema)
-    .query(async ({ ctx, input }) => {
-      const db = ctx.prisma as any;
-      const task = await db.task.findUnique({
-        where: { id: input.id },
-        select: {
-          id: true,
-          title: true,
-          description: true,
-          category: true,
-          bgStyle: true,
-          status: true,
-          budget: true,
-          budgetType: true,
-          stateAbbreviation: true,
-          city: true,
-          address: true,
-          latitude: true,
-          longitude: true,
-          phoneNumber: true,
-          email: true,
-          displayName: true,
-          displayImage: true,
-          deadline: true,
-          images: true,
-          createdAt: true,
-        },
-      });
-      if (!task) throw new TRPCError({ code: "NOT_FOUND" });
-      return task;
+  // Admin: list pending
+  getPending: adminProcedure.query(async ({ ctx }) => {
+    const db = ctx.prisma as PrismaClient;
+    return db.task.findMany({
+      where: { status: "Pending" },
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true, displayName: true, title: true, description: true, category: true,
+        city: true, stateAbbreviation: true, createdAt: true, phoneNumber: true, email: true,
+      },
+    });
+  }),
+
+  // Admin: approve
+  approve: adminProcedure
+    .input(moderateApproveSchema)
+    .mutation(async ({ ctx, input }) => {
+      const db = ctx.prisma as PrismaClient;
+      const admin = (ctx as any).user;
+      const data: any = { status: "Published", moderatedAt: new Date() };
+      if (admin?.id && admin.id !== "admin-service") data.moderatedBy = admin.id; // avoid FK error
+      const updated = await db.task.update({ where: { id: input.id }, data });
+      if (!updated) throw new TRPCError({ code: "NOT_FOUND" });
+      // TODO: create Notification + email
+      return { success: true };
+    }),
+
+  // Admin: reject
+  reject: adminProcedure
+    .input(moderateRejectSchema)
+    .mutation(async ({ ctx, input }) => {
+      const db = ctx.prisma as PrismaClient;
+      const admin = (ctx as any).user;
+      const data: any = {
+        status: "Rejected",
+        rejectionReason: input.reason,
+        moderatedAt: new Date(),
+      };
+      if (admin?.id && admin.id !== "admin-service") data.moderatedBy = admin.id; // avoid FK error
+      const updated = await db.task.update({ where: { id: input.id }, data });
+      if (!updated) throw new TRPCError({ code: "NOT_FOUND" });
+      // TODO: create Notification + email
+      return { success: true };
     }),
 });

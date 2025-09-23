@@ -20,6 +20,8 @@
     "**/*.tsx",
     ".next/types/**/*.ts",
     "types/**/*.d.ts"
-, "../../packages/ui/src/hooks/use-mobile.ts"  ],
+  ],
   "exclude": ["node_modules"]
 }
+
+

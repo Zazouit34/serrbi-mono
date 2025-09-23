@@ -1,8 +1,10 @@
-import { protectedProcedure, router, publicProcedure } from "../trpc";
+import { protectedProcedure, router, publicProcedure, adminProcedure } from "../trpc";
 import {
   serviceListingFormSchema,
   serviceListQuerySchema,
   serviceGetByIdSchema,
+  moderateApproveSchema,
+  moderateRejectSchema,
 } from "@workspace/ui/lib/validation-schemas";
 import { TRPCError } from "@trpc/server";
 import type { PrismaClient } from "@workspace/db";
@@ -93,6 +95,8 @@ export const serviceRouter = router({
       const db = ctx.prisma as any;
 
       const where: any = {};
+      // default to published
+      where.status = "published";
       if (serviceCategory) where.serviceCategory = serviceCategory;
       if (type) where.type = { contains: type, mode: "insensitive" };
       if (city) where.city = { contains: city, mode: "insensitive" };
@@ -192,5 +196,49 @@ export const serviceRouter = router({
         ...service,
         openingHours: service.openingHours ? JSON.parse(service.openingHours) : null,
       };
+    }),
+
+  // Admin: list pending
+  getPending: adminProcedure.query(async ({ ctx }) => {
+    const db = ctx.prisma as PrismaClient;
+    return db.service.findMany({
+      where: { status: "pending" },
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true, title: true, displayName: true, serviceCategory: true,
+        city: true, stateAbbreviation: true, price: true, phoneNumber: true,
+        email: true, createdAt: true,
+      },
+    });
+  }),
+
+  // Admin: approve
+  approve: adminProcedure
+    .input(moderateApproveSchema)
+    .mutation(async ({ ctx, input }) => {
+      const db = ctx.prisma as PrismaClient;
+      const admin = (ctx as any).user;
+      const data: any = { status: "published", moderatedAt: new Date() };
+      if (admin?.id && admin.id !== "admin-service") data.moderatedBy = admin.id;
+      const updated = await db.service.update({ where: { id: input.id }, data });
+      if (!updated) throw new TRPCError({ code: "NOT_FOUND" });
+      return { success: true };
+    }),
+
+  // Admin: reject
+  reject: adminProcedure
+    .input(moderateRejectSchema)
+    .mutation(async ({ ctx, input }) => {
+      const db = ctx.prisma as PrismaClient;
+      const admin = (ctx as any).user;
+      const data: any = {
+        status: "rejected",
+        rejectionReason: input.reason,
+        moderatedAt: new Date(),
+      };
+      if (admin?.id && admin.id !== "admin-service") data.moderatedBy = admin.id;
+      const updated = await db.service.update({ where: { id: input.id }, data });
+      if (!updated) throw new TRPCError({ code: "NOT_FOUND" });
+      return { success: true };
     }),
 });
