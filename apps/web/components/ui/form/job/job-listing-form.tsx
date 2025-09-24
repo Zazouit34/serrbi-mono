@@ -97,11 +97,11 @@ export function JobListingForm() {
   }
 
   return (
-    <div className="flex justify-center items-center mt-5 w-full">
+    <div className="flex justify-center items-center space-y-4 w-full md:space-y-8">
       <div className="w-full">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold">Create Job Listing</h1>
-          <p className="text-muted-foreground">
+        <div className="flex flex-col justify-center items-center mb-6">
+          <h1 className="text-2xl font-bold font-outfit">Create Job Listing</h1>
+          <p className="text-muted-foreground font-outfit">
             Fill out the form below to create a new job listing.
           </p>
         </div>

@@ -29,7 +29,7 @@ export default function JobsPage() {
           </Link>
 
           <Link
-            href="#"
+            href="/jobs/resume-listing/new"
             className="inline-block px-4 py-2 text-sm text-center rounded-lg shadow-sm transition-all duration-300 md:text-base md:px-6 md:py-3 md:shadow-md hover:shadow-lg hover:scale-105 hover:text-gray-800"
             style={{
               boxShadow:

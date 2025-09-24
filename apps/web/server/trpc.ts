@@ -57,7 +57,7 @@ export const protectedProcedure = t.procedure.use(async ({ ctx, next }) => {
 
   const user = await db.user.findUnique({
     where: { email: ctx.session.user.email },
-    select: { id: true, name: true, email: true, phone: true, image: true, emailVerified: true }
+    select: { id: true, name: true, email: true, phone: true, image: true, emailVerified: true, resumeUrl: true }
   })
   if (!user) throw new TRPCError({ code: "UNAUTHORIZED" })
 

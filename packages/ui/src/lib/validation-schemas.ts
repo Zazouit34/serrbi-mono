@@ -386,3 +386,9 @@ export const updateUserRoleSchema = z.object({
   role: z.enum(roleValues),
 });
 export type UpdateUserRoleValues = z.infer<typeof updateUserRoleSchema>;
+
+//Resume Update Schema
+export const resumeUpdateSchema = z.object({
+  resumeUrl: z.string().url(),
+});
+export type ResumeUpdateValues = z.infer<typeof resumeUpdateSchema>;
