@@ -3,15 +3,18 @@
 import { trpc } from "@/app/_trpc/client";
 
 export default function AdminHome() {
-  // Simple ping: fetch first page of pending jobs to verify wiring (safe even if empty)
-  const { data, isLoading } = trpc.job.getJob.useQuery({ page: 1, pageSize: 1 });
+  const { data: ping, isLoading: pingLoading } =
+    trpc.job.getJob.useQuery({ page: 1, pageSize: 1 }); // reachability only
+
+  const { data: who, error: whoErr, isLoading: whoLoading } =
+    trpc.auth.whoAmI.useQuery(); // admin-only you added
 
   return (
-    <div className="space-y-4">
-      <h1 className="text-2xl font-semibold">Admin</h1>
-      <p className="text-sm text-muted-foreground">
-        tRPC connected: {isLoading ? "loading..." : data ? "yes" : "no"}
-      </p>
+    <div className="space-y-2">
+      <div>tRPC connected: {pingLoading ? "loading..." : ping ? "yes" : "no"}</div>
+      <div>
+        Admin session: {whoLoading ? "checking..." : who ? `yes (${who.id})` : whoErr ? "no" : "no"}
+      </div>
     </div>
   );
 }

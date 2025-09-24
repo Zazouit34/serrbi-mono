@@ -209,4 +209,9 @@ export const authRouter = router({
     });
     return { success: true };
   }),
+
+  whoAmI: adminProcedure.query(async ({ ctx }) => {
+    const { id, role } = (ctx as any).user as { id: string; role: string };
+    return { id, role };
+  }),
 });
