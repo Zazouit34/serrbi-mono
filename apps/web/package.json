@@ -19,6 +19,8 @@
     "@fortawesome/react-fontawesome": "^3.0.2",
     "@hookform/resolvers": "^5.2.1",
     "@mdxeditor/editor": "^3.42.0",
+    "@paddle/paddle-js": "^1.4.2",
+    "@paddle/paddle-node-sdk": "^3.2.1",
     "@shikijs/transformers": "^3.12.2",
     "@supabase/ssr": "^0.7.0",
     "@supabase/supabase-js": "^2.57.4",

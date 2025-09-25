@@ -4,6 +4,7 @@ import { jobRouter } from "./routers/job";
 import { serviceRouter } from "./routers/service";
 import { taskRouter } from "./routers/task";
 import { favoriteRouter } from "./routers/favorite";
+import { subscriptionRouter } from "./routers/subscription";
 
 export const appRouter = router({
   auth: authRouter,
@@ -11,5 +12,6 @@ export const appRouter = router({
   service: serviceRouter,
   task: taskRouter,
   favorite: favoriteRouter,
+  subscription: subscriptionRouter,
 });
 export type AppRouter = typeof appRouter;

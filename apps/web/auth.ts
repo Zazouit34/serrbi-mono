@@ -1,11 +1,10 @@
 import NextAuth, { type NextAuthResult } from 'next-auth'
-import { Role } from '@workspace/db'
+import type { Role } from '@workspace/db'
 import { PrismaAdapter } from "@auth/prisma-adapter"
-import { prisma } from "@workspace/db"
 import authConfig from "./auth.config"
 
 const result = NextAuth({
-  adapter: PrismaAdapter(prisma),
+  adapter: PrismaAdapter((await import("@workspace/db")).prisma),
   session: { strategy: "jwt" },
   ...authConfig,
   
@@ -17,6 +16,7 @@ const result = NextAuth({
 
   events: {
     async linkAccount({ user }) {
+      const { prisma } = await import("@workspace/db")
       await prisma.user.update({
         where: {
           id: user.id
@@ -45,7 +45,7 @@ const result = NextAuth({
     },
     async jwt({ token }) {
      if (!token.sub) return token;
-
+     const { prisma } = await import("@workspace/db")
      const existingUser = await prisma.user.findUnique({
       where: {
         id: token.sub
