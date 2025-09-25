@@ -1,9 +1,10 @@
-import { protectedProcedure, router, publicProcedure } from "../trpc";
+import { protectedProcedure, router, publicProcedure, adminProcedure } from "../trpc";
 import {
   jobListingFormSchema,
   jobListQuerySchema,
   jobGetByIdSchema,
   jobApplicationCreateSchema,
+  jobImportSchema,
 } from "@workspace/ui/lib/validation-schemas";
 
 import { TRPCError } from "@trpc/server";
@@ -70,11 +71,11 @@ export const jobRouter = router({
       }
     }),
 
-  getJob: publicProcedure
+    getJob: publicProcedure
     .input(jobListQuerySchema.optional())
     .query(async ({ ctx, input }) => {
       const page = input?.page ?? 1;
-      const pageSize = input?.pageSize ?? 10;
+      const pageSize = input?.pageSize ?? 12;
       const locationRequirement = input?.locationRequirement;
       const category = input?.category;
       const experienceLevel = input?.experienceLevel;
@@ -98,7 +99,7 @@ export const jobRouter = router({
       const [items, total] = await Promise.all([
         db.job.findMany({
           where,
-          orderBy: { createdAt: "desc" },
+          orderBy: [{ createdAt: "desc" }, { id: "desc" }],
           skip: (page - 1) * pageSize,
           take: pageSize,
           select: {
@@ -207,4 +208,46 @@ export const jobRouter = router({
         applicationId: app.id,
       };
     }),
+    //Bulk Import Jobs
+bulkCreate: adminProcedure
+.input(jobImportSchema)
+.mutation(async ({ ctx, input }) => {
+  const db = ctx.prisma as PrismaClient;
+  const admin = (ctx as any).user as { id?: string };
+
+  let ownerId = admin?.id;
+  if (!ownerId || ownerId === "admin-service") {
+    const byId = process.env.ADMIN_DEFAULT_OWNER_ID;
+    const byEmail = process.env.ADMIN_DEFAULT_OWNER_EMAIL;
+    if (byId) ownerId = byId;
+    else if (byEmail) {
+      const u = await db.user.findUnique({ where: { email: byEmail }, select: { id: true } });
+      if (!u) throw new TRPCError({ code: "BAD_REQUEST", message: "ADMIN_DEFAULT_OWNER_EMAIL not found" });
+      ownerId = u.id;
+    } else {
+      throw new TRPCError({ code: "BAD_REQUEST", message: "No ownerId available for import" });
+    }
+  }
+
+  const data = input.rows.map((r) => ({
+    userId: ownerId!,
+    title: r.title,
+    companyName: r.companyName,
+    companyImage: r.companyImage ?? null,
+    description: r.description,
+    category: r.category,
+    locationRequirement: r.locationRequirement,
+    experienceLevel: r.experienceLevel,
+    type: r.type,
+    wage: r.wage ?? null,
+    stateAbbreviation: r.stateAbbreviation ?? null,
+    city: r.city ?? null,
+    applicationEmail: r.applicationEmail ?? "",
+    applicationUrl: r.applicationUrl ?? null,
+    
+  }));
+
+  await db.job.createMany({ data });
+  return { success: true, count: data.length };
+}),
 });

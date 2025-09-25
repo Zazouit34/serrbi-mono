@@ -4,6 +4,7 @@ import {
   taskListQuerySchema,
   moderateApproveSchema,
   moderateRejectSchema,
+  taskImportSchema,
 } from "@workspace/ui/lib/validation-schemas";
 import type { PrismaClient } from "@workspace/db";
 import { TRPCError } from "@trpc/server";
@@ -63,7 +64,7 @@ export const taskRouter = router({
     .input(taskListQuerySchema.optional())
     .query(async ({ ctx, input }) => {
       const page = input?.page ?? 1;
-      const pageSize = input?.pageSize ?? 10;
+      const pageSize = input?.pageSize ?? 12;
       const category = input?.category;
       const status = input?.status;
       const search = input?.search;
@@ -97,7 +98,7 @@ export const taskRouter = router({
       const [items, total] = await Promise.all([
         db.task.findMany({
           where,
-          orderBy: { createdAt: "desc" },
+          orderBy: [{ createdAt: "desc" }, { id: "desc" }],
           skip: (page - 1) * pageSize,
           take: pageSize,
           select: {
@@ -158,4 +159,51 @@ export const taskRouter = router({
       // TODO: create Notification + email
       return { success: true };
     }),
+
+  // Admin: bulk import tasks
+  bulkCreate: adminProcedure
+  .input(taskImportSchema)
+  .mutation(async ({ ctx, input }) => {
+    const db = ctx.prisma as PrismaClient;
+    const admin = (ctx as any).user as { id?: string };
+
+    let ownerId = admin?.id;
+    if (!ownerId || ownerId === "admin-service") {
+      const byId = process.env.ADMIN_DEFAULT_OWNER_ID;
+      const byEmail = process.env.ADMIN_DEFAULT_OWNER_EMAIL;
+      if (byId) ownerId = byId;
+      else if (byEmail) {
+        const u = await db.user.findUnique({ where: { email: byEmail }, select: { id: true } });
+        if (!u) throw new TRPCError({ code: "BAD_REQUEST", message: "ADMIN_DEFAULT_OWNER_EMAIL not found" });
+        ownerId = u.id;
+      } else {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "No ownerId available for import" });
+      }
+    }
+
+    const data = input.rows.map((r) => ({
+      userId: ownerId!,
+      title: r.title ?? null,
+      description: r.description,
+      category: r.category,
+      bgStyle: r.bgStyle ?? null,
+      budget: r.budget ?? null,
+      budgetType: r.budgetType ?? null,
+      stateAbbreviation: r.stateAbbreviation ?? null,
+      city: r.city ?? null,
+      address: r.address ?? null,
+      latitude: null,
+      longitude: null,
+      phoneNumber: r.phoneNumber ?? null,
+      email: r.email ?? null,
+      displayName: r.displayName ?? null,
+      displayImage: r.displayImage ?? null,
+      deadline: r.deadline ? new Date(r.deadline) : null,
+      images: [],
+      status: r.status ?? "Published",
+    }));
+
+    await db.task.createMany({ data });
+    return { success: true, count: data.length };
+  }),
 });

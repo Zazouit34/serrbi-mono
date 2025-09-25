@@ -5,7 +5,7 @@ import {
   experienceLevelValues,
   jobListingTypeValues
 } from "@workspace/ui/lib/job-enum"
-import { serviceCategoryValues, priceTypeValues } from "@workspace/ui/lib/service-enum"
+import { serviceCategoryValues, priceTypeValues, serviceStatusValues } from "@workspace/ui/lib/service-enum"
 import { taskCategoryValues, taskStatusValues, BudgetTypeValues } from "@workspace/ui/lib/task-enum"
 import { roleValues } from "@workspace/ui/lib/role-enum"
 import { isValidPhoneNumber } from "libphonenumber-js";
@@ -392,3 +392,76 @@ export const resumeUpdateSchema = z.object({
   resumeUrl: z.string().url(),
 });
 export type ResumeUpdateValues = z.infer<typeof resumeUpdateSchema>;
+
+
+//Job bulk Import Schema
+export const jobImportRowSchema = z.object({
+  title: z.string().min(1),
+  companyName: z.string().min(1),
+  companyImage: z.string().url().optional().nullable(),
+  description: z.string().min(1),
+  category: z.enum(jobCategoryValues),
+  type: z.enum(jobListingTypeValues),
+  locationRequirement: z.enum(locationRequirementValues),
+  experienceLevel: z.enum(experienceLevelValues),
+  wage: z.preprocess((val) => {
+    if (val === "" || val === null || val === undefined) return null
+    if (typeof val === "string" && val.trim() !== "") return Number(val)
+    return val
+  }, z.number().int().positive().min(1).nullable().optional()),
+  stateAbbreviation: z.string().length(2).optional().nullable(),
+  city: z.string().optional().nullable(),
+  applicationEmail: z.string().email().optional().nullable(),
+  applicationUrl: z.string().url().optional().nullable(),
+});
+
+export const jobImportSchema = z.object({
+  rows: z.array(jobImportRowSchema).min(1),
+});
+
+export const serviceImportRowSchema = z.object({
+  title: z.string().min(1),
+  description: z.string().min(1),
+  serviceCategory: z.enum(serviceCategoryValues),
+  type: z.string().min(1),
+  price: z.preprocess((val) => {
+    if (val === "" || val === null || val === undefined) return null
+    if (typeof val === "string" && val.trim() !== "") return Number(val)
+    return val
+  }, z.number().int().positive().min(1).nullable().optional()),
+  priceType: z.enum(priceTypeValues).optional(),
+  stateAbbreviation: z.string().length(3).optional().nullable(),
+  city: z.string().optional().nullable(),
+  address: z.string().optional().nullable(),
+  phoneNumber: z.string().optional().nullable(),
+  email: z.string().email().optional().nullable(),
+  website: z.string().url().optional().nullable(),
+  displayName: z.string().optional().nullable(),
+  displayImage: z.string().url().optional().nullable(),
+  images: z.array(z.string().url()).optional().nullable(),
+  status: z.enum(serviceStatusValues).optional().nullable(),
+});
+export const serviceImportSchema = z.object({ rows: z.array(serviceImportRowSchema).min(1) });
+
+export const taskImportRowSchema = z.object({
+  title: z.string().optional().nullable(),
+  description: z.string().min(1),
+  category: z.enum(taskCategoryValues),
+  budget: z.preprocess((val) => {
+    if (val === "" || val === null || val === undefined) return null
+    if (typeof val === "string" && val.trim() !== "") return Number(val)
+    return val
+  }, z.number().int().positive().min(1).nullable().optional()),
+  budgetType: z.enum(BudgetTypeValues).nullable().optional(),
+  stateAbbreviation: z.string().length(3).optional().nullable(),
+  city: z.string().optional().nullable(),
+  address: z.string().optional().nullable(),
+  phoneNumber: z.string().optional().nullable(),
+  email: z.string().email().optional().nullable(),
+  displayName: z.string().optional().nullable(),
+  displayImage: z.string().url().optional().nullable(),
+  bgStyle: z.string().optional().nullable(),
+  deadline: z.string().optional().nullable(), // ISO string
+  status: z.enum(taskStatusValues).optional().nullable(),
+});
+export const taskImportSchema = z.object({ rows: z.array(taskImportRowSchema).min(1) });

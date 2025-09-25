@@ -14,6 +14,9 @@ export const taskCategoryValues = [
   
   export const taskStatusValues = [
     "Active",
+    "Pending",
+    "Rejected",
+    "Published",
     "Done",
     "Cancelled",
   ] as const
@@ -24,4 +27,5 @@ export const taskCategoryValues = [
     "Negotiable",
   ] as const
   export type TaskBudgetValue = (typeof BudgetTypeValues)[number]
+  
   

@@ -82,7 +82,7 @@ export const jobCategoryStyles: Record<
     icon: Users,
   },
   Auto: {
-    label: "Automotive",
+    label: "Auto",
     color: "bg-gray-100 text-gray-700 border-gray-300",
     icon: Car,
   },

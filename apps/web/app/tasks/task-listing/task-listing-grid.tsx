@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect, useMemo, useState } from "react"
 import { trpc } from "@/app/_trpc/client"
 import { TaskCard } from "@/components/ui/form/task/task-card"
 import { Skeleton } from "@workspace/ui/components/skeleton"
@@ -9,16 +10,43 @@ type TaskListingGridProps = {
 }
 
 export function TaskListingGrid({ filters }: TaskListingGridProps) {
+  const [page, setPage] = useState(1)
+  const [items, setItems] = useState<any[]>([])
+  const [total, setTotal] = useState(0)
+
+  // Reset when filters change
+  const filtersKey = useMemo(() => JSON.stringify(filters), [filters])
+  useEffect(() => {
+    setPage(1)
+    setItems([])
+    setTotal(0)
+  }, [filtersKey])
+
   const queryInput = {
     ...filters,
-    page: 1,
-    pageSize: 10,
+    page,
+    pageSize: 12,
   }
 
-  const { data, isLoading } = trpc.task.getTask.useQuery(queryInput)
-  const task = data?.items ?? []
+  const { data, isLoading, isFetching } = trpc.task.getTask.useQuery(queryInput, {
+    placeholderData: (prev) => prev,
+  })
 
-  if (isLoading) {
+  // Append page results safely
+  useEffect(() => {
+    if (!data || data.page !== page) return
+    setTotal(data.total)
+    setItems((prev) =>
+      page === 1
+        ? data.items
+        : [...prev, ...data.items.filter((n: any) => !prev.some((p: any) => p.id === n.id))]
+    )
+  }, [data, page])
+
+  const hasMore = items.length < total
+  const loadingMore = isFetching && items.length > 0
+
+  if (isLoading && items.length === 0) {
     return (
       <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
         {Array.from({ length: 6 }).map((_, i) => (
@@ -33,11 +61,25 @@ export function TaskListingGrid({ filters }: TaskListingGridProps) {
   }
 
   return (
-    <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-      {task.length === 0 ? (
-        <p>No tasks found</p>
-      ) : (
-        task.map((t: any) => <TaskCard key={t.id} task={t} />)
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+        {items.length === 0 ? (
+          <p>No tasks found</p>
+        ) : (
+          items.map((t: any) => <TaskCard key={t.id} task={t} />)
+        )}
+      </div>
+
+      {hasMore && (
+        <div className="flex justify-center">
+          <button
+            className="px-4 py-2 text-sm font-medium rounded-md border hover:bg-gray-50 disabled:opacity-50"
+            onClick={() => setPage((p) => p + 1)}
+            disabled={loadingMore}
+          >
+            {loadingMore ? "Loading..." : "Load more"}
+          </button>
+        </div>
       )}
     </div>
   )

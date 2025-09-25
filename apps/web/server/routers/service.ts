@@ -5,6 +5,7 @@ import {
   serviceGetByIdSchema,
   moderateApproveSchema,
   moderateRejectSchema,
+  serviceImportSchema,
 } from "@workspace/ui/lib/validation-schemas";
 import { TRPCError } from "@trpc/server";
 import type { PrismaClient } from "@workspace/db";
@@ -83,7 +84,7 @@ export const serviceRouter = router({
     .input(serviceListQuerySchema.optional())
     .query(async ({ ctx, input }) => {
       const page = input?.page ?? 1;
-      const pageSize = input?.pageSize ?? 10;
+      const pageSize = input?.pageSize ?? 12;
       const serviceCategory = input?.serviceCategory;
       const type = input?.type;
       const search = input?.search;
@@ -119,7 +120,7 @@ export const serviceRouter = router({
       const [items, total] = await Promise.all([
         db.service.findMany({
           where,
-          orderBy: { createdAt: "desc" },
+          orderBy: [{ createdAt: "desc" }, { id: "desc" }],
           skip: (page - 1) * pageSize,
           take: pageSize,
           select: {
@@ -241,4 +242,52 @@ export const serviceRouter = router({
       if (!updated) throw new TRPCError({ code: "NOT_FOUND" });
       return { success: true };
     }),
+
+  // Admin: bulk import services
+  bulkCreate: adminProcedure
+  .input(serviceImportSchema)
+  .mutation(async ({ ctx, input }) => {
+    const db = ctx.prisma as PrismaClient;
+    const admin = (ctx as any).user as { id?: string };
+
+    let ownerId = admin?.id;
+    if (!ownerId || ownerId === "admin-service") {
+      const byId = process.env.ADMIN_DEFAULT_OWNER_ID;
+      const byEmail = process.env.ADMIN_DEFAULT_OWNER_EMAIL;
+      if (byId) ownerId = byId;
+      else if (byEmail) {
+        const u = await db.user.findUnique({ where: { email: byEmail }, select: { id: true } });
+        if (!u) throw new TRPCError({ code: "BAD_REQUEST", message: "ADMIN_DEFAULT_OWNER_EMAIL not found" });
+        ownerId = u.id;
+      } else {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "No ownerId available for import" });
+      }
+    }
+
+    const data = input.rows.map((r) => ({
+      userId: ownerId!,
+      title: r.title,
+      displayName: r.displayName ?? null,
+      displayImage: r.displayImage ?? null,
+      images: [],
+      description: r.description,
+      serviceCategory: r.serviceCategory,
+      type: r.type,
+      price: r.price ?? 0,
+      priceType: r.priceType ?? "fixed",
+      stateAbbreviation: r.stateAbbreviation ?? null,
+      city: r.city ?? null,
+      address: r.address ?? null,
+      latitude: null,
+      longitude: null,
+      phoneNumber: r.phoneNumber ?? null,
+      email: r.email ?? null,
+      website: r.website ?? null,
+      openingHours: null,
+      status: r.status ?? "published",
+    }));
+
+    await db.service.createMany({ data });
+    return { success: true, count: data.length };
+  }),
 });
