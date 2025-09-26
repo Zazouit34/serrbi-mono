@@ -23,6 +23,12 @@ import {
   FileInput,
 } from "@/components/ui/form/job/file-input";
 import { useRouter } from "next/navigation";
+import { parsePDF } from "@/app/utils/pdf/prase-pdf";
+import {
+  scoreResume,
+  type ResumeScore,
+} from "@/app/utils/pdf/score-calculator";
+import { ResumeScoreCard } from "@/components/ui/pdf/resume-score-card";
 
 // 🔹 Only validate the file input
 const fileSchema = z.object({
@@ -39,6 +45,9 @@ export default function ResumeListingForm() {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | undefined>("");
   const [success, setSuccess] = useState<string | undefined>("");
+  const [resumeScore, setResumeScore] = useState<ResumeScore | null>(null);
+  const [analyzing, setAnalyzing] = useState(false);
+
   const router = useRouter();
 
   const form = useForm<FormValues>({
@@ -100,8 +109,10 @@ export default function ResumeListingForm() {
     <div className="space-y-4 w-full max-w-2xl md:space-y-8">
       <div className="flex flex-col items-center">
         <h1 className="text-2xl font-bold font-outfit">Upload Resume</h1>
-        <p className="text-muted-foreground font-outfit">
+        <p className="text-center text-muted-foreground font-outfit">
           Upload your PDF resume to attach it to your profile.
+          <br />
+          and get an instant CV score analysis.
         </p>
       </div>
 
@@ -110,8 +121,8 @@ export default function ResumeListingForm() {
           <p className="text-sm">Current resume:</p>
 
           <FileUploader
-            value={[]}                // dummy provider state
-            onValueChange={() => {}}  // no-op
+            value={[]} // dummy provider state
+            onValueChange={() => {}} // no-op
             dropzoneOptions={{
               accept: { "application/pdf": [".pdf"] },
               maxFiles: 1,
@@ -122,9 +133,16 @@ export default function ResumeListingForm() {
               <FileUploaderItem index={0} className="w-full [&>button]:hidden">
                 <div className="flex justify-between items-center w-full">
                   <span className="truncate">
-                    {decodeURIComponent(currentUrl.split("/").pop() || "resume.pdf")}
+                    {decodeURIComponent(
+                      currentUrl.split("/").pop() || "resume.pdf"
+                    )}
                   </span>
-                  <a href={currentUrl} target="_blank" rel="noreferrer" className="text-sm text-black underline">
+                  <a
+                    href={currentUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-sm text-black underline"
+                  >
                     Open
                   </a>
                 </div>
@@ -149,19 +167,21 @@ export default function ResumeListingForm() {
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           {/* 🔹 Just display user name & email (readonly) */}
-          <FormItem>
-            <FormLabel>Name</FormLabel>
-            <FormControl>
-              <Input value={session?.user?.name || ""} disabled readOnly />
-            </FormControl>
-          </FormItem>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <FormItem>
+              <FormLabel>Name</FormLabel>
+              <FormControl>
+                <Input value={session?.user?.name || ""} disabled readOnly />
+              </FormControl>
+            </FormItem>
 
-          <FormItem>
-            <FormLabel>Email</FormLabel>
-            <FormControl>
-              <Input value={session?.user?.email || ""} disabled readOnly />
-            </FormControl>
-          </FormItem>
+            <FormItem>
+              <FormLabel>Email</FormLabel>
+              <FormControl>
+                <Input value={session?.user?.email || ""} disabled readOnly />
+              </FormControl>
+            </FormItem>
+          </div>
 
           {/* 🔹 Actual file upload */}
           {!hasResume && (
@@ -174,7 +194,20 @@ export default function ResumeListingForm() {
                   <FormControl>
                     <FileUploader
                       value={field.value}
-                      onValueChange={field.onChange}
+                      onValueChange={(files) => {
+                        field.onChange(files);
+                        const f = files?.[0];
+                        if (f) {
+                          setAnalyzing(true);
+                          parsePDF(f)
+                            .then((text) => setResumeScore(scoreResume(text)))
+                            .catch((e) => console.warn("PDF parse failed:", e))
+                            .finally(() => setAnalyzing(false));
+                        } else {
+                          setResumeScore(null);
+                          setAnalyzing(false);
+                        }
+                      }}
                       dropzoneOptions={{
                         accept: { "application/pdf": [".pdf"] },
                         maxFiles: 1,
@@ -188,13 +221,24 @@ export default function ResumeListingForm() {
                             <span className="text-black">click to browse</span>
                           </p>
                         </FileInput>
+
+                        {resumeScore || analyzing ? (
+                          <div className="mt-3 w-full">
+                            <ResumeScoreCard
+                              score={resumeScore?.score ?? 0}
+                              suggestions={resumeScore?.suggestions ?? []}
+                              loading={analyzing}
+                            />
+                          </div>
+                        ) : null}
+
                         {field.value?.map((f: File, i: number) => (
                           <FileUploaderItem
                             key={i}
                             index={i}
                             className="w-full"
-                            data-size={f.size} // pass size so prettyBytes can render
-                            progress={100} // show progress bar (100% = done)
+                            data-size={f.size}
+                            progress={100}
                           >
                             {f.name}
                           </FileUploaderItem>
