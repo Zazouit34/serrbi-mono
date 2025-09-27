@@ -370,7 +370,7 @@ model Task {
   deadline     DateTime?
 
   //background style metadata
-  bgStyle String? //gradient, #ff0303
+  bgStyle String? //gradient
 
   // Admin moderation fields
   rejectionReason String? // Reason for rejection
