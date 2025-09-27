@@ -1,6 +1,6 @@
 'use client';
 
-import { initializePaddle, Paddle } from '@paddle/paddle-js';
+import { initializePaddle, Paddle, CurrencyCode } from '@paddle/paddle-js';
 
 let paddleInstance: Paddle | undefined;
 
@@ -19,14 +19,19 @@ export async function getPaddleInstance(config: PaddleConfig): Promise<Paddle> {
     return paddleInstance;
   }
 
-  paddleInstance = await initializePaddle({
+  const instance = await initializePaddle({
     environment: config.environment || 'sandbox',
     token: config.token,
     pwCustomer: config.pwCustomer,
     eventCallback: config.eventCallback,
   });
 
-  return paddleInstance;
+  if (!instance) {
+    throw new Error('Failed to initialize Paddle');
+  }
+
+  paddleInstance = instance;
+  return instance;
 }
 
 export class PaddleClient {
@@ -56,12 +61,24 @@ export class PaddleClient {
       throw new Error('Paddle not initialized. Call initialize() first.');
     }
 
+    // Fix customer type to match Paddle's expected format
+    let customer: any = undefined;
+    if (options.customer) {
+      if (options.customer.email && !options.customer.id) {
+        customer = { email: options.customer.email };
+      } else if (options.customer.id && !options.customer.email) {
+        customer = { id: options.customer.id };
+      } else if (options.customer.email && options.customer.id) {
+        customer = { id: options.customer.id };
+      }
+    }
+
     return this.paddle.Checkout.open({
       items: options.items.map(item => ({
         priceId: item.priceId,
         quantity: item.quantity || 1,
       })),
-      customer: options.customer,
+      customer,
       customData: options.customData,
       settings: {
         successUrl: options.successUrl,
@@ -98,13 +115,21 @@ export class PaddleClient {
       countryCode: string;
       postalCode?: string;
     };
-    currencyCode?: string;
+    currencyCode?: CurrencyCode; // fix: use Paddle's union type
   }) {
     if (!this.paddle) {
       throw new Error('Paddle not initialized. Call initialize() first.');
     }
 
-    return this.paddle.PricePreview(options);
+    return this.paddle.PricePreview({
+      items: options.items.map(item => ({
+        priceId: item.priceId,
+        quantity: item.quantity || 1,
+      })),
+      customerId: options.customerId,
+      address: options.address,
+      currencyCode: options.currencyCode,
+    });
   }
 
   /**
