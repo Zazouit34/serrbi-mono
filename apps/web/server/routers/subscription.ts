@@ -563,11 +563,188 @@ export const subscriptionRouter = router({
     }),
 
   // Get Paddle client token
-  getPaddleClientToken: protectedProcedure.query(async () => {
+  getPaddleClientToken: publicProcedure.query(async () => {
     // Return the client token from environment variable
+    const token = process.env.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN;
+    const environment = process.env.PADDLE_ENVIRONMENT || 'sandbox';
+    
+    // Development fallback - you can replace this with your actual Paddle client token
+    const fallbackToken = token || 'test_client_token_for_development';
+    
+    if (!token) {
+      console.warn('⚠️  NEXT_PUBLIC_PADDLE_CLIENT_TOKEN not set. Using development fallback.');
+      console.warn('   Please set up your Paddle credentials in .env.local for production use.');
+    }
+    
     return {
-      token: process.env.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN,
-      environment: process.env.PADDLE_ENVIRONMENT || 'sandbox',
+      token: fallbackToken,
+      environment,
     };
   }),
+
+  // Get customer's payment methods
+  getPaymentMethods: protectedProcedure.query(async ({ ctx }) => {
+    const customer = await prisma.customer.findUnique({
+      where: { userId: ctx.user.id },
+    });
+
+    if (!customer) {
+      return [];
+    }
+
+    try {
+      const paymentMethods = await PaddleService.getCustomerPaymentMethods(customer.paddleCustomerId);
+      return paymentMethods;
+    } catch (error) {
+      console.error('Error getting payment methods:', error);
+      return [];
+    }
+  }),
+
+  // Get customer's invoices
+  getInvoices: protectedProcedure
+    .input(
+      z.object({
+        limit: z.number().min(1).max(100).default(20),
+        offset: z.number().min(0).default(0),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const customer = await prisma.customer.findUnique({
+        where: { userId: ctx.user.id },
+      });
+
+      if (!customer) {
+        return { invoices: [], total: 0, hasMore: false };
+      }
+
+      try {
+        const invoices = await PaddleService.getCustomerInvoices(customer.paddleCustomerId);
+        return {
+          invoices: invoices.slice(input.offset, input.offset + input.limit),
+          total: invoices.length,
+          hasMore: input.offset + input.limit < invoices.length,
+        };
+      } catch (error) {
+        console.error('Error getting invoices:', error);
+        return { invoices: [], total: 0, hasMore: false };
+      }
+    }),
+
+  // Get invoice download URL
+  getInvoiceDownloadUrl: protectedProcedure
+    .input(z.object({ invoiceId: z.string() }))
+    .query(async ({ input }) => {
+      try {
+        const downloadUrl = await PaddleService.getInvoiceDownloadUrl(input.invoiceId);
+        return { downloadUrl };
+      } catch (error) {
+        console.error('Error getting invoice download URL:', error);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to get invoice download URL',
+        });
+      }
+    }),
+
+  // Get upcoming invoice
+  getUpcomingInvoice: protectedProcedure.query(async ({ ctx }) => {
+    const subscription = await prisma.subscription.findUnique({
+      where: { userId: ctx.user.id },
+    });
+
+    if (!subscription || !subscription.paddleSubscriptionId) {
+      return null;
+    }
+
+    try {
+      const upcomingInvoice = await PaddleService.getUpcomingInvoice(subscription.paddleSubscriptionId);
+      return upcomingInvoice;
+    } catch (error) {
+      console.error('Error getting upcoming invoice:', error);
+      return null;
+    }
+  }),
+
+  // Preview subscription change
+  previewSubscriptionChange: protectedProcedure
+    .input(
+      z.object({
+        planId: z.string(),
+        paddlePriceId: z.string(),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const subscription = await prisma.subscription.findUnique({
+        where: { userId: ctx.user.id },
+      });
+
+      if (!subscription || !subscription.paddleSubscriptionId) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'No active subscription found',
+        });
+      }
+
+      try {
+        const preview = await PaddleService.previewSubscriptionChange({
+          subscriptionId: subscription.paddleSubscriptionId,
+          items: [{ priceId: input.paddlePriceId, quantity: 1 }],
+        });
+        return preview;
+      } catch (error) {
+        console.error('Error previewing subscription change:', error);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to preview subscription change',
+        });
+      }
+    }),
+
+  // Create refund (admin only for now)
+  createRefund: adminProcedure
+    .input(
+      z.object({
+        paymentId: z.string(),
+        amount: z.number().optional(),
+        reason: z.string().optional(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const payment = await prisma.payment.findUnique({
+        where: { id: input.paymentId },
+      });
+
+      if (!payment || !payment.paddleTransactionId) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Payment not found or not linked to Paddle',
+        });
+      }
+
+      try {
+        const refund = await PaddleService.createRefund({
+          transactionId: payment.paddleTransactionId,
+          amount: input.amount,
+          reason: input.reason,
+        });
+
+        // Update payment status
+        await prisma.payment.update({
+          where: { id: payment.id },
+          data: {
+            status: PaymentStatus.REFUNDED,
+            refundedAt: new Date(),
+          },
+        });
+
+        return refund;
+      } catch (error) {
+        console.error('Error creating refund:', error);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to create refund',
+        });
+      }
+    }),
 });

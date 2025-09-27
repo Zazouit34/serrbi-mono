@@ -98,6 +98,11 @@ model User {
   moderatedJobs     Job[]     @relation("JobModerator")
   moderatedServices Service[] @relation("ServiceModerator")
   moderatedTasks    Task[]    @relation("TaskModerator")
+  
+  // Subscription relations
+  subscription      Subscription?
+  customer          Customer?
+  payments          Payment[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -244,7 +249,7 @@ model Service {
 
   displayName  String?
   displayImage String?
-  images       String[]
+  images       String
 
   title       String
   description String
@@ -358,7 +363,7 @@ model Task {
   address           String?
   latitude          Float?
   longitude         Float?
-  images            String[]
+  images            String
 
   displayName  String?
   displayImage String?
@@ -437,9 +442,9 @@ model ModerationAction {
   createdAt DateTime @default(now())
 
   admin   User     @relation(fields: [adminId], references: [id])
-  job     Job?     @relation(fields: [itemId], references: [id], map: "ModerationAction_job_fkey")
-  service Service? @relation(fields: [itemId], references: [id], map: "ModerationAction_service_fkey")
-  task    Task?    @relation(fields: [itemId], references: [id], map: "ModerationAction_task_fkey")
+  job     Job?     @relation(fields: [itemId], references: [id], map: "ModerationAction_jobId_fkey")
+  service Service? @relation(fields: [itemId], references: [id], map: "ModerationAction_serviceId_fkey")
+  task    Task?    @relation(fields: [itemId], references: [id], map: "ModerationAction_taskId_fkey")
 
   @@index([adminId])
   @@index([itemType])
@@ -464,4 +469,187 @@ model Notification {
   @@index([read])
   @@index([createdAt])
   @@index([type])
+}
+
+// Subscription System Models
+
+enum SubscriptionPlan {
+  FREE
+  BASIC
+  PREMIUM
+  ENTERPRISE
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  PAUSED
+  PAST_DUE
+  CANCELED
+  TRIALING
+  UNPAID
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  REFUNDED
+  DISPUTED
+}
+
+enum WebhookEventType {
+  SUBSCRIPTION_CREATED
+  SUBSCRIPTION_UPDATED
+  SUBSCRIPTION_CANCELED
+  SUBSCRIPTION_PAUSED
+  SUBSCRIPTION_RESUMED
+  PAYMENT_SUCCESS
+  PAYMENT_FAILED
+  PAYMENT_REFUNDED
+  INVOICE_PAYMENT_SUCCEEDED
+  INVOICE_PAYMENT_FAILED
+}
+
+model SubscriptionPlanConfig {
+  id          String          @id @default(uuid())
+  name        SubscriptionPlan @unique
+  displayName String
+  description String?
+  price       Int             // Price in cents
+  currency    String          @default("USD")
+  interval    String          // "month" or "year"
+  
+  // Feature limits
+  maxJobListings     Int?     // null = unlimited
+  maxServiceListings Int?     // null = unlimited  
+  maxTaskListings    Int?     // null = unlimited
+  featuredListings   Boolean  @default(false)
+  prioritySupport    Boolean  @default(false)
+  analyticsAccess    Boolean  @default(false)
+  
+  // Paddle specific fields
+  paddlePriceId String?       // Paddle price ID
+  paddleProductId String?     // Paddle product ID
+  
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  subscriptions Subscription[]
+  
+  @@index([name])
+  @@index([isActive])
+}
+
+model Subscription {
+  id                    String             @id @default(uuid())
+  userId                String             @unique
+  planId                String
+  
+  // Paddle specific fields
+  paddleSubscriptionId  String?            @unique
+  paddleCustomerId      String?
+  
+  status                SubscriptionStatus @default(TRIALING)
+  currentPeriodStart    DateTime?
+  currentPeriodEnd      DateTime?
+  trialStart            DateTime?
+  trialEnd              DateTime?
+  canceledAt            DateTime?
+  pausedAt              DateTime?
+  
+  // Usage tracking
+  jobListingsUsed       Int                @default(0)
+  serviceListingsUsed   Int                @default(0)
+  taskListingsUsed      Int                @default(0)
+  
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
+  
+  // Relations
+  user                  User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan                  SubscriptionPlanConfig @relation(fields: [planId], references: [id])
+  payments              Payment[]
+  
+  @@index([userId])
+  @@index([status])
+  @@index([paddleSubscriptionId])
+  @@index([currentPeriodEnd])
+  @@index([createdAt])
+}
+
+model Customer {
+  id                String    @id @default(uuid())
+  userId            String    @unique
+  paddleCustomerId  String    @unique
+  
+  // Paddle customer data
+  email             String?
+  name              String?
+  
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([paddleCustomerId])
+  @@index([userId])
+}
+
+model Payment {
+  id                   String        @id @default(uuid())
+  subscriptionId       String?
+  userId               String
+  
+  // Paddle payment data
+  paddlePaymentId      String?       @unique
+  paddleTransactionId  String?       @unique
+  
+  amount               Int           // Amount in cents
+  currency             String        @default("USD")
+  status               PaymentStatus @default(PENDING)
+  
+  // Payment details
+  description          String?
+  paymentMethod        String?       // "card", "paypal", etc.
+  failureReason        String?
+  
+  // Timestamps
+  paidAt               DateTime?
+  refundedAt           DateTime?
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+  
+  // Relations
+  user                 User          @relation(fields: [userId], references: [id])
+  subscription         Subscription? @relation(fields: [subscriptionId], references: [id])
+  
+  @@index([userId])
+  @@index([subscriptionId])
+  @@index([status])
+  @@index([paddlePaymentId])
+  @@index([createdAt])
+}
+
+model WebhookEvent {
+  id            String           @id @default(uuid())
+  eventType     WebhookEventType
+  eventId       String           @unique // Paddle event ID for deduplication
+  
+  // Event data
+  data          Json             // Raw webhook data from Paddle
+  processed     Boolean          @default(false)
+  processedAt   DateTime?
+  
+  // Error handling
+  attempts      Int              @default(0)
+  lastError     String?
+  
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  
+  @@index([eventType])
+  @@index([processed])
+  @@index([createdAt])
+  @@index([attempts])
 }

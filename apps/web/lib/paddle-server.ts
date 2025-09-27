@@ -296,4 +296,112 @@ export class PaddleService {
       throw error;
     }
   }
+
+  /**
+   * Get customer's payment methods
+   */
+  static async getCustomerPaymentMethods(customerId: string) {
+    try {
+      const paymentMethods = await this.paddle.customers.getPaymentMethods(customerId);
+      return paymentMethods;
+    } catch (error) {
+      console.error('Error getting customer payment methods:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get invoices for a customer
+   */
+  static async getCustomerInvoices(customerId: string) {
+    try {
+      const invoices = await this.paddle.invoices.list({
+        customerId: [customerId],
+      });
+      return invoices;
+    } catch (error) {
+      console.error('Error getting customer invoices:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get invoice PDF download URL
+   */
+  static async getInvoiceDownloadUrl(invoiceId: string) {
+    try {
+      const invoice = await this.paddle.invoices.get(invoiceId);
+      return invoice.downloadUrl;
+    } catch (error) {
+      console.error('Error getting invoice download URL:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Create refund for a transaction
+   */
+  static async createRefund({
+    transactionId,
+    amount,
+    reason,
+  }: {
+    transactionId: string;
+    amount?: number; // Optional, if not provided will refund full amount
+    reason?: string;
+  }) {
+    try {
+      const refundData: any = {
+        transactionId,
+      };
+
+      if (amount) {
+        refundData.amount = amount;
+      }
+
+      if (reason) {
+        refundData.reason = reason;
+      }
+
+      const refund = await this.paddle.transactions.createRefund(refundData);
+      return refund;
+    } catch (error) {
+      console.error('Error creating refund:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get subscription's upcoming invoice
+   */
+  static async getUpcomingInvoice(subscriptionId: string) {
+    try {
+      const invoice = await this.paddle.subscriptions.getUpcomingInvoice(subscriptionId);
+      return invoice;
+    } catch (error) {
+      console.error('Error getting upcoming invoice:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Preview subscription changes (for upgrades/downgrades)
+   */
+  static async previewSubscriptionChange({
+    subscriptionId,
+    items,
+  }: {
+    subscriptionId: string;
+    items: Array<{ priceId: string; quantity: number }>;
+  }) {
+    try {
+      const preview = await this.paddle.subscriptions.previewUpdate(subscriptionId, {
+        items,
+      });
+      return preview;
+    } catch (error) {
+      console.error('Error previewing subscription change:', error);
+      throw error;
+    }
+  }
 }

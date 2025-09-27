@@ -1,106 +1,72 @@
-import { NextRequest, NextResponse } from "next/server";
-import { PaddleService } from "@/lib/paddle-server";
+import { inngest } from "./client";
 import { prisma } from "@workspace/db";
-import { WebhookEventType, PaymentStatus, SubscriptionStatus } from "@workspace/db";
+import { PaddleService } from "@/lib/paddle-server";
 
-export async function POST(req: NextRequest) {
-  try {
-    const signature = req.headers.get("paddle-signature");
-    if (!signature) {
-      return new NextResponse("Missing signature", { status: 400 });
-    }
-
-    const rawBody = await req.text();
-    const secret = process.env.PADDLE_WEBHOOK_SECRET;
-    if (!secret) {
-      return new NextResponse("Missing webhook secret", { status: 500 });
-    }
-
-    const verified = PaddleService.verifyWebhookSignature(signature, rawBody, secret);
-    if (!verified) {
-      return new NextResponse("Invalid signature", { status: 401 });
-    }
-
-    const event = JSON.parse(rawBody);
-    const eventId = event.eventId || event.id;
-
-    // Store webhook event for audit trail
-    await prisma.webhookEvent.upsert({
-      where: { eventId },
-      create: {
-        eventId,
-        eventType: mapEventType(event.eventType),
-        data: event,
-        processed: false,
-      },
-      update: {
-        attempts: { increment: 1 },
-        lastError: null,
-      },
-    });
-
-    // Process the event
-    await processWebhookEvent(event);
-
-    // Mark as processed
-    await prisma.webhookEvent.update({
-      where: { eventId },
-      data: {
-        processed: true,
-        processedAt: new Date(),
-      },
-    });
-
-    return NextResponse.json({ ok: true });
-  } catch (err) {
-    console.error("Paddle webhook error", err);
-    
-    // Update webhook event with error
-    try {
-      const event = JSON.parse(await req.text());
-      const eventId = event.eventId || event.id;
-      await prisma.webhookEvent.update({
-        where: { eventId },
-        data: {
-          lastError: err instanceof Error ? err.message : "Unknown error",
-          attempts: { increment: 1 },
+// Process failed webhook events with retry logic
+export const processFailedWebhooks = inngest.createFunction(
+  { id: "process-failed-webhooks" },
+  { cron: "0 */5 * * *" }, // Run every 5 minutes
+  async ({ step }) => {
+    return await step.run("process-failed-webhooks", async () => {
+      // Get failed webhook events that haven't been processed and haven't exceeded max attempts
+      const failedEvents = await prisma.webhookEvent.findMany({
+        where: {
+          processed: false,
+          attempts: { lt: 5 }, // Max 5 attempts
+          createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) }, // Only retry events from last 24 hours
         },
+        orderBy: { createdAt: 'asc' },
+        take: 10, // Process 10 at a time
       });
-    } catch (updateErr) {
-      console.error("Failed to update webhook event with error:", updateErr);
-    }
 
-    return new NextResponse("Webhook error", { status: 500 });
+      const results = [];
+
+      for (const event of failedEvents) {
+        try {
+          // Parse the event data
+          const eventData = event.data as any;
+          
+          // Process the event based on its type
+          await processWebhookEvent(eventData);
+          
+          // Mark as processed
+          await prisma.webhookEvent.update({
+            where: { id: event.id },
+            data: {
+              processed: true,
+              processedAt: new Date(),
+              lastError: null,
+            },
+          });
+          
+          results.push({ eventId: event.eventId, status: 'success' });
+        } catch (error) {
+          // Update error information
+          await prisma.webhookEvent.update({
+            where: { id: event.id },
+            data: {
+              attempts: { increment: 1 },
+              lastError: error instanceof Error ? error.message : "Unknown error",
+            },
+          });
+          
+          results.push({ 
+            eventId: event.eventId, 
+            status: 'failed', 
+            error: error instanceof Error ? error.message : "Unknown error" 
+          });
+        }
+      }
+
+      return {
+        processed: results.length,
+        results,
+      };
+    });
   }
-}
+);
 
-function mapEventType(eventType: string): WebhookEventType {
-  switch (eventType) {
-    case "subscription.created":
-      return WebhookEventType.SUBSCRIPTION_CREATED;
-    case "subscription.updated":
-      return WebhookEventType.SUBSCRIPTION_UPDATED;
-    case "subscription.canceled":
-      return WebhookEventType.SUBSCRIPTION_CANCELED;
-    case "subscription.paused":
-      return WebhookEventType.SUBSCRIPTION_PAUSED;
-    case "subscription.resumed":
-      return WebhookEventType.SUBSCRIPTION_RESUMED;
-    case "transaction.completed":
-      return WebhookEventType.PAYMENT_SUCCESS;
-    case "transaction.payment_failed":
-      return WebhookEventType.PAYMENT_FAILED;
-    case "transaction.refunded":
-      return WebhookEventType.PAYMENT_REFUNDED;
-    case "invoice.payment_succeeded":
-      return WebhookEventType.INVOICE_PAYMENT_SUCCEEDED;
-    case "invoice.payment_failed":
-      return WebhookEventType.INVOICE_PAYMENT_FAILED;
-    default:
-      return WebhookEventType.SUBSCRIPTION_UPDATED; // fallback
-  }
-}
-
+// Process individual webhook event
 async function processWebhookEvent(event: any) {
   const eventType = event.eventType;
   const data = event.data;
@@ -171,7 +137,7 @@ async function handleTransactionCompleted(data: any) {
       paddleTransactionId: data.id,
       amount: data.totals?.grandTotal ?? 0,
       currency: data.currencyCode ?? "USD",
-      status: PaymentStatus.SUCCEEDED,
+      status: "SUCCEEDED",
       description: data.items?.[0]?.name || "Subscription payment",
       paymentMethod: data.paymentMethod?.type,
       paidAt: new Date(data.createdAt),
@@ -195,7 +161,7 @@ async function handlePaymentFailed(data: any) {
           paddleTransactionId: data.id,
           amount: data.totals?.grandTotal ?? 0,
           currency: data.currencyCode ?? "USD",
-          status: PaymentStatus.FAILED,
+          status: "FAILED",
           description: data.items?.[0]?.name || "Subscription payment",
           paymentMethod: data.paymentMethod?.type,
           failureReason: data.failureReason,
@@ -214,7 +180,7 @@ async function handlePaymentRefunded(data: any) {
     await prisma.payment.update({
       where: { id: payment.id },
       data: {
-        status: PaymentStatus.REFUNDED,
+        status: "REFUNDED",
         refundedAt: new Date(data.createdAt),
       },
     });
@@ -222,8 +188,6 @@ async function handlePaymentRefunded(data: any) {
 }
 
 async function handleSubscriptionCreated(data: any) {
-  // This is typically handled by the frontend when creating subscriptions
-  // But we can update existing subscriptions if needed
   const subscription = await prisma.subscription.findFirst({
     where: { paddleSubscriptionId: data.id },
   });
@@ -232,7 +196,7 @@ async function handleSubscriptionCreated(data: any) {
     await prisma.subscription.update({
       where: { id: subscription.id },
       data: {
-        status: data.status?.toUpperCase() as SubscriptionStatus,
+        status: data.status?.toUpperCase(),
         currentPeriodStart: data.currentBillingPeriod?.startsAt,
         currentPeriodEnd: data.currentBillingPeriod?.endsAt,
         trialStart: data.trialPeriod?.startsAt,
@@ -251,7 +215,7 @@ async function handleSubscriptionUpdated(data: any) {
     await prisma.subscription.update({
       where: { id: subscription.id },
       data: {
-        status: data.status?.toUpperCase() as SubscriptionStatus,
+        status: data.status?.toUpperCase(),
         currentPeriodStart: data.currentBillingPeriod?.startsAt,
         currentPeriodEnd: data.currentBillingPeriod?.endsAt,
         trialStart: data.trialPeriod?.startsAt,
@@ -270,7 +234,7 @@ async function handleSubscriptionCanceled(data: any) {
     await prisma.subscription.update({
       where: { id: subscription.id },
       data: {
-        status: SubscriptionStatus.CANCELED,
+        status: "CANCELED",
         canceledAt: new Date(),
       },
     });
@@ -286,7 +250,7 @@ async function handleSubscriptionPaused(data: any) {
     await prisma.subscription.update({
       where: { id: subscription.id },
       data: {
-        status: SubscriptionStatus.PAUSED,
+        status: "PAUSED",
         pausedAt: new Date(),
       },
     });
@@ -302,7 +266,7 @@ async function handleSubscriptionResumed(data: any) {
     await prisma.subscription.update({
       where: { id: subscription.id },
       data: {
-        status: SubscriptionStatus.ACTIVE,
+        status: "ACTIVE",
         pausedAt: null,
       },
     });
@@ -310,7 +274,6 @@ async function handleSubscriptionResumed(data: any) {
 }
 
 async function handleInvoicePaymentSucceeded(data: any) {
-  // Handle successful invoice payments
   const subscriptionId = data.subscriptionId;
   
   if (subscriptionId) {
@@ -326,7 +289,7 @@ async function handleInvoicePaymentSucceeded(data: any) {
           paddleTransactionId: data.id,
           amount: data.totals?.grandTotal ?? 0,
           currency: data.currencyCode ?? "USD",
-          status: PaymentStatus.SUCCEEDED,
+          status: "SUCCEEDED",
           description: "Invoice payment",
           paidAt: new Date(data.createdAt),
         },
@@ -351,7 +314,7 @@ async function handleInvoicePaymentFailed(data: any) {
           paddleTransactionId: data.id,
           amount: data.totals?.grandTotal ?? 0,
           currency: data.currencyCode ?? "USD",
-          status: PaymentStatus.FAILED,
+          status: "FAILED",
           description: "Invoice payment",
           failureReason: data.failureReason,
         },
@@ -359,6 +322,3 @@ async function handleInvoicePaymentFailed(data: any) {
     }
   }
 }
-
-export const dynamic = "force-dynamic";
-

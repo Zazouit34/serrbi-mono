@@ -4,13 +4,32 @@ import { trpc } from "@/app/_trpc/client";
 import { Button } from "@workspace/ui/components/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui/components/card";
 import { Separator } from "@workspace/ui/components/separator";
+import { Badge } from "@workspace/ui/components/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@workspace/ui/components/table";
 import { paddleClient } from "@/lib/paddle-client";
 import { toast } from "sonner";
+import { useState } from "react";
+import { PaymentStatus } from "@workspace/db";
 
 export default function BillingPage() {
   const utils = trpc.useUtils();
   const { data: sub } = trpc.subscription.getCurrentSubscription.useQuery();
   const tokenData = trpc.subscription.getPaddleClientToken.useQuery();
+  const [paymentHistoryPage, setPaymentHistoryPage] = useState(0);
+  
+  const { data: paymentHistory, isLoading: loadingPayments } = trpc.subscription.getPaymentHistory.useQuery({
+    limit: 10,
+    offset: paymentHistoryPage * 10,
+  });
+
+  const { data: invoices, isLoading: loadingInvoices } = trpc.subscription.getInvoices.useQuery({
+    limit: 10,
+    offset: 0,
+  });
+
+  const { data: upcomingInvoice } = trpc.subscription.getUpcomingInvoice.useQuery();
+
+  const { data: paymentMethods } = trpc.subscription.getPaymentMethods.useQuery();
 
   const pause = trpc.subscription.pauseSubscription.useMutation({
     onSuccess: async () => {
@@ -65,6 +84,28 @@ export default function BillingPage() {
     }
   };
 
+  const getStatusBadge = (status: PaymentStatus) => {
+    switch (status) {
+      case PaymentStatus.SUCCEEDED:
+        return <Badge variant="default" className="bg-green-500">Paid</Badge>;
+      case PaymentStatus.FAILED:
+        return <Badge variant="destructive">Failed</Badge>;
+      case PaymentStatus.REFUNDED:
+        return <Badge variant="secondary">Refunded</Badge>;
+      case PaymentStatus.PENDING:
+        return <Badge variant="outline">Pending</Badge>;
+      default:
+        return <Badge variant="outline">{status}</Badge>;
+    }
+  };
+
+  const formatAmount = (amount: number, currency: string) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: currency,
+    }).format(amount / 100);
+  };
+
   return (
     <div className="space-y-8">
       <div>
@@ -101,6 +142,182 @@ export default function BillingPage() {
             </div>
           ) : (
             <div className="text-muted-foreground">No active subscription</div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Payment History</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {loadingPayments ? (
+            <div className="text-sm text-muted-foreground">Loading payment history...</div>
+          ) : paymentHistory?.payments && paymentHistory.payments.length > 0 ? (
+            <div className="space-y-4">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Description</TableHead>
+                    <TableHead>Amount</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Payment Method</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {paymentHistory.payments.map((payment) => (
+                    <TableRow key={payment.id}>
+                      <TableCell className="text-sm">
+                        {payment.paidAt ? new Date(payment.paidAt).toLocaleDateString() : 
+                         payment.createdAt ? new Date(payment.createdAt).toLocaleDateString() : '-'}
+                      </TableCell>
+                      <TableCell className="text-sm">
+                        {payment.description || 'Subscription payment'}
+                      </TableCell>
+                      <TableCell className="text-sm font-medium">
+                        {formatAmount(payment.amount, payment.currency)}
+                      </TableCell>
+                      <TableCell>
+                        {getStatusBadge(payment.status)}
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {payment.paymentMethod || '-'}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              
+              {paymentHistory.hasMore && (
+                <div className="flex justify-center pt-4">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setPaymentHistoryPage(prev => prev + 1)}
+                  >
+                    Load More
+                  </Button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="text-sm text-muted-foreground">No payment history found.</div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Payment Methods</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {paymentMethods && paymentMethods.length > 0 ? (
+            <div className="space-y-4">
+              {paymentMethods.map((method: any) => (
+                <div key={method.id} className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-gray-100 rounded flex items-center justify-center">
+                      {method.type === 'card' ? '💳' : '🏦'}
+                    </div>
+                    <div>
+                      <div className="font-medium">
+                        {method.type === 'card' ? 
+                          `${method.card?.brand?.toUpperCase()} •••• ${method.card?.last4}` : 
+                          method.type
+                        }
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        {method.type === 'card' && method.card?.expiryMonth && method.card?.expiryYear ? 
+                          `Expires ${method.card.expiryMonth}/${method.card.expiryYear}` : 
+                          'Payment method'
+                        }
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {method.isDefault && (
+                      <Badge variant="default">Default</Badge>
+                    )}
+                    <Button variant="outline" size="sm">
+                      Remove
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-sm text-muted-foreground">No payment methods found.</div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Invoices</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {upcomingInvoice && (
+            <div className="mb-6 p-4 bg-blue-50 rounded-lg">
+              <h4 className="font-medium text-blue-900">Upcoming Invoice</h4>
+              <p className="text-sm text-blue-700">
+                Next billing date: {upcomingInvoice.dueDate ? new Date(upcomingInvoice.dueDate).toLocaleDateString() : 'N/A'}
+              </p>
+              <p className="text-sm text-blue-700">
+                Amount: {formatAmount(upcomingInvoice.totals?.grandTotal || 0, upcomingInvoice.currencyCode || 'USD')}
+              </p>
+            </div>
+          )}
+
+          {loadingInvoices ? (
+            <div className="text-sm text-muted-foreground">Loading invoices...</div>
+          ) : invoices?.invoices && invoices.invoices.length > 0 ? (
+            <div className="space-y-4">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Invoice #</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Amount</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {invoices.invoices.map((invoice: any) => (
+                    <TableRow key={invoice.id}>
+                      <TableCell className="text-sm font-medium">
+                        {invoice.invoiceNumber || invoice.id.slice(-8)}
+                      </TableCell>
+                      <TableCell className="text-sm">
+                        {invoice.createdAt ? new Date(invoice.createdAt).toLocaleDateString() : '-'}
+                      </TableCell>
+                      <TableCell className="text-sm font-medium">
+                        {formatAmount(invoice.totals?.grandTotal || 0, invoice.currencyCode || 'USD')}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={invoice.status === 'paid' ? 'default' : 'outline'}>
+                          {invoice.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => {
+                            // Open invoice download URL
+                            window.open(invoice.downloadUrl, '_blank');
+                          }}
+                        >
+                          Download
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          ) : (
+            <div className="text-sm text-muted-foreground">No invoices found.</div>
           )}
         </CardContent>
       </Card>
