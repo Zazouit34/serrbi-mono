@@ -260,10 +260,10 @@ export default function BillingPage() {
             <div className="mb-6 p-4 bg-blue-50 rounded-lg">
               <h4 className="font-medium text-blue-900">Upcoming Invoice</h4>
               <p className="text-sm text-blue-700">
-                Next billing date: {upcomingInvoice && typeof upcomingInvoice === 'object' && upcomingInvoice !== null && 'dueDate' in upcomingInvoice && upcomingInvoice.dueDate ? new Date(upcomingInvoice.dueDate).toLocaleDateString() : 'N/A'}
+                Next billing date: N/A
               </p>
               <p className="text-sm text-blue-700">
-                Amount: {upcomingInvoice && typeof upcomingInvoice === 'object' && upcomingInvoice !== null && 'totals' in upcomingInvoice ? formatAmount(upcomingInvoice.totals?.grandTotal || 0, upcomingInvoice.currencyCode || 'USD') : 'N/A'}
+                Amount: N/A
               </p>
             </div>
           )}
