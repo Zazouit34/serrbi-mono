@@ -38,7 +38,7 @@ export const subscriptionRouter = router({
         );
 
         // Update local subscription status if changed
-        if (paddleSubscription.status !== subscription.status) {
+        if (paddleSubscription.status.toString() !== subscription.status) {
           await prisma.subscription.update({
             where: { id: subscription.id },
             data: {
@@ -352,7 +352,7 @@ export const subscriptionRouter = router({
 
     return {
       subscriptionId: subscription.id,
-      transactionId: transaction?.transactionId || transaction?.id || undefined,
+      transactionId: transaction?.id || undefined,
     };
   }),
 

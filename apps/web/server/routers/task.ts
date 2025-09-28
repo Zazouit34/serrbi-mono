@@ -37,7 +37,7 @@ export const taskRouter = router({
             displayName: input.displayName || null,
             displayImage: input.displayImage || null,
             deadline: input.deadline ? new Date(input.deadline) : null,
-            images: input.images ?? [],
+            images: JSON.stringify(input.images ?? []),
             // status defaults to Pending via schema
           },
           select: {
@@ -199,7 +199,7 @@ export const taskRouter = router({
       displayName: r.displayName ?? null,
       displayImage: r.displayImage ?? null,
       deadline: r.deadline ? new Date(r.deadline) : null,
-      images: [],
+      images: JSON.stringify([]),
       status: r.status ?? "Published",
     }));
 
