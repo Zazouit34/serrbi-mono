@@ -1,9 +1,14 @@
 "use client";
 
-import pdfToText from "react-pdftotext";
-
 export async function parsePDF(file: File): Promise<string> {
+  // Ensure we're in the browser environment
+  if (typeof window === 'undefined') {
+    throw new Error("PDF parsing is only available in the browser");
+  }
+  
   try {
+    // Dynamic import to avoid SSR issues
+    const { default: pdfToText } = await import("react-pdftotext");
     const fullText = await pdfToText(file);
    
     return fullText.trim();
