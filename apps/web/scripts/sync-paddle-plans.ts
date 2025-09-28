@@ -16,10 +16,10 @@ async function main() {
   const products = await PaddleService.getProducts();
 
   // get all prices once (optional), else fetch per product
-  for (const product of (products?.data || products || [])) {
+  for (const product of products || []) {
     // Fetch prices for product
     const pricesResponse = await PaddleService.getPrices(product.id);
-    const prices = pricesResponse?.data || pricesResponse || [];
+    const prices = pricesResponse || [];
 
     // Prefer recurring monthly
     const recurringMonthly = prices.find((p: any) => p.billingCycle?.interval === "month");
