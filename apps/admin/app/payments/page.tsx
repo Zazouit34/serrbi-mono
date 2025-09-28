@@ -35,7 +35,7 @@ export default function AdminPaymentsPage() {
       setRefundReason("");
       utils.subscription.getAllSubscriptions.invalidate();
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast.error(error.message);
     },
   });
@@ -73,7 +73,7 @@ export default function AdminPaymentsPage() {
   };
 
   // Flatten payments from all subscriptions
-  const allPayments = payments?.subscriptions?.flatMap(sub => sub.payments) || [];
+  const allPayments = payments?.subscriptions?.flatMap((sub: any) => sub.payments) || [];
 
   return (
     <div className="space-y-8">

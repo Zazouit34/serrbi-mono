@@ -3,16 +3,17 @@ import { router, publicProcedure, protectedProcedure, adminProcedure } from "@/s
 import { TRPCError } from "@trpc/server";
 import { PaddleService } from "@/lib/paddle-server";
 import { prisma } from "@workspace/db";
+import { PrismaClient } from "@workspace/db";
 import { SubscriptionPlan, SubscriptionStatus, PaymentStatus } from "@workspace/db";
 
 export const subscriptionRouter = router({
   // Get available plans
-  getPlans: publicProcedure.query(async () => {
-    const plans = await prisma.subscriptionPlanConfig.findMany({
+  getPlans: publicProcedure.query(async ({ ctx }) => {
+    const db = ctx.prisma as PrismaClient;
+    const plans = await db.subscriptionPlanConfig.findMany({
       where: { isActive: true },
       orderBy: { price: 'asc' },
     });
-
     return plans;
   }),
 

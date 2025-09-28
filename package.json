@@ -4,10 +4,14 @@
   "private": true,
   "scripts": {
     "build": "turbo build",
+    "build:web": "cd apps/web && npm run build",
     "clean": "rm -rf node_modules apps/*/.next apps/*/.turbo .turbo",
     "dev": "turbo dev",
     "lint": "turbo lint",
-    "format": "prettier --write \"**/*.{ts,tsx,md}\""
+    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "db:generate": "cd packages/database && npx prisma generate",
+    "db:push": "cd packages/database && npx prisma db push",
+    "db:migrate": "cd packages/database && npx prisma migrate deploy"
   },
   "devDependencies": {
     "@workspace/eslint-config": "workspace:*",

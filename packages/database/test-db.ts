@@ -7,11 +7,11 @@ async function test() {
     console.log('Testing database connection...');
     
     // Try to create a simple table first
-    await prisma.$executeRaw`CREATE TABLE IF NOT EXISTS test (id INTEGER PRIMARY KEY, name TEXT)`;
+    await prisma.$executeRaw`CREATE TABLE IF NOT EXISTS test (id SERIAL PRIMARY KEY, name TEXT)`;
     console.log('Test table created');
     
     // Insert test data
-    await prisma.$executeRaw`INSERT INTO test (name) VALUES ('hello')`;
+    await prisma.$executeRaw`INSERT INTO test (id, name) VALUES (1, 'hello')`;
     console.log('Test data inserted');
     
     // Query test data
