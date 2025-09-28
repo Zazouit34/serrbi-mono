@@ -56,8 +56,10 @@ async function testPaddleIntegration() {
     if (process.env.PADDLE_API_KEY) {
       console.log('6. Testing Paddle API connection...');
       try {
-        const products = await PaddleService.getProducts();
-        console.log('✅ Paddle API connection successful, found', products.length, 'products\n');
+        const productsResponse = await PaddleService.getProducts();
+        const products = productsResponse && 'data' in productsResponse ? productsResponse.data : [];
+        const productCount = Array.isArray(products) ? products.length : 0;
+        console.log('✅ Paddle API connection successful, found', productCount, 'products\n');
       } catch (error) {
         console.log('⚠️  Paddle API connection failed:', error.message);
         console.log('This might be due to invalid API key or network issues\n');

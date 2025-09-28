@@ -13,13 +13,29 @@ function toCents(amount?: number | null): number | null {
 }
 
 async function main() {
-  const products = await PaddleService.getProducts();
+  const productsResponse = await PaddleService.getProducts();
+  
+  // Check if the response has data property or is iterable
+  if (!productsResponse || typeof productsResponse !== 'object') {
+    console.log('No products found');
+    return;
+  }
+
+  // Try to access products from the response
+  const products = 'data' in productsResponse ? (productsResponse as any).data : [];
+  
+  if (!Array.isArray(products)) {
+    console.log('Products is not an array');
+    return;
+  }
 
   // get all prices once (optional), else fetch per product
-  for (const product of products || []) {
+  for (const product of products) {
     // Fetch prices for product
     const pricesResponse = await PaddleService.getPrices(product.id);
-    const prices = pricesResponse || [];
+    
+    // Try to access prices from the response
+    const prices = pricesResponse && 'data' in pricesResponse ? (pricesResponse as any).data : [];
 
     // Prefer recurring monthly
     const recurringMonthly = prices.find((p: any) => p.billingCycle?.interval === "month");
