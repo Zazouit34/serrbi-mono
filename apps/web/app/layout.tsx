@@ -4,6 +4,9 @@ import "@workspace/ui/globals.css";
 import "@mdxeditor/editor/style.css"
 import { Toaster } from "@workspace/ui/components/sonner";
 
+// Polyfill for Node 18 compatibility
+import "../polyfills.js";
+
 import { SessionProvider } from "next-auth/react";
 import { Providers } from "@/components/providers";
 import Provider from "@/app/_trpc/provider";

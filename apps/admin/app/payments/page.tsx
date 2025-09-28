@@ -103,7 +103,7 @@ export default function AdminPaymentsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {allPayments.map((payment) => (
+                {allPayments.map((payment: any) => (
                   <TableRow key={payment.id}>
                     <TableCell className="text-sm font-mono">
                       {payment.id.slice(-8)}
