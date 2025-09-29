@@ -11,7 +11,7 @@ import { PaddleService } from './lib/paddle-server.js';
 import { prisma } from '@workspace/db';
 
 async function testPaddleIntegration() {
-  console.log('🧪 Testing Paddle Integration...\n');
+ 
 
   try {
     // Test 1: Paddle Service Initialization
