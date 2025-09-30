@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { router, publicProcedure, protectedProcedure, adminProcedure } from "@/server/trpc";
 import { TRPCError } from "@trpc/server";
-import { PaddleService } from "@/lib/paddle-server";
+import { PaddleService } from "@/lib/paddle/server";
 import { prisma } from "@workspace/db";
 import { PrismaClient } from "@workspace/db";
 import { SubscriptionPlan, SubscriptionStatus, PaymentStatus } from "@workspace/db";
@@ -30,21 +30,25 @@ export const subscriptionRouter = router({
       },
     });
 
-    // If subscription exists and has Paddle ID, fetch latest status from Paddle
+    // If subscription exists and has Paddle ID, sync with Paddle
     if (subscription?.paddleSubscriptionId) {
       try {
         const paddleSubscription = await PaddleService.getSubscription(
           subscription.paddleSubscriptionId
         );
 
-        // Update local subscription status if changed
+        // Update local subscription if status changed
         if (paddleSubscription.status.toString() !== subscription.status) {
           await prisma.subscription.update({
             where: { id: subscription.id },
             data: {
               status: paddleSubscription.status as SubscriptionStatus,
-              currentPeriodStart: paddleSubscription.currentBillingPeriod?.startsAt,
-              currentPeriodEnd: paddleSubscription.currentBillingPeriod?.endsAt,
+              currentPeriodStart: paddleSubscription.currentBillingPeriod?.startsAt 
+                ? new Date(paddleSubscription.currentBillingPeriod.startsAt) 
+                : subscription.currentPeriodStart,
+              currentPeriodEnd: paddleSubscription.currentBillingPeriod?.endsAt 
+                ? new Date(paddleSubscription.currentBillingPeriod.endsAt) 
+                : subscription.currentPeriodEnd,
             },
           });
         }
@@ -56,42 +60,11 @@ export const subscriptionRouter = router({
     return subscription;
   }),
 
-  // Create or get Paddle customer
-  createOrGetCustomer: protectedProcedure.mutation(async ({ ctx }) => {
-    // Check if customer already exists
-    const existingCustomer = await prisma.customer.findUnique({
-      where: { userId: ctx.user.id },
-    });
-
-    if (existingCustomer) {
-      return existingCustomer;
-    }
-
-    // Create new Paddle customer
-    const paddleCustomer = await PaddleService.createCustomer(
-      ctx.user.email,
-      ctx.user.name
-    );
-
-    // Save to database
-    const customer = await prisma.customer.create({
-      data: {
-        userId: ctx.user.id,
-        paddleCustomerId: paddleCustomer.id,
-        email: paddleCustomer.email,
-        name: paddleCustomer.name,
-      },
-    });
-
-    return customer;
-  }),
-
-  // Create a new subscription
+  // Create a new subscription (for free plan or after Paddle checkout)
   createSubscription: protectedProcedure
     .input(
       z.object({
         planId: z.string(),
-        paddlePriceId: z.string(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -112,27 +85,6 @@ export const subscriptionRouter = router({
         });
       }
 
-      // Get or create Paddle customer
-      let customer = await prisma.customer.findUnique({
-        where: { userId: ctx.user.id },
-      });
-
-      if (!customer) {
-        const paddleCustomer = await PaddleService.createCustomer(
-          ctx.user.email,
-          ctx.user.name
-        );
-
-        customer = await prisma.customer.create({
-          data: {
-            userId: ctx.user.id,
-            paddleCustomerId: paddleCustomer.id,
-            email: paddleCustomer.email,
-            name: paddleCustomer.name,
-          },
-        });
-      }
-
       // Get plan details
       const plan = await prisma.subscriptionPlanConfig.findUnique({
         where: { id: input.planId },
@@ -145,46 +97,40 @@ export const subscriptionRouter = router({
         });
       }
 
-      // Create subscription in Paddle
-      const paddleSubscription = await PaddleService.createSubscription({
-        customerId: customer.paddleCustomerId,
-        items: [{ priceId: input.paddlePriceId, quantity: 1 }],
-        trialPeriod: plan.name !== SubscriptionPlan.FREE ? {
-          frequency: 7,
-          interval: 'day',
-        } : undefined,
-      });
+      // For free plan, create subscription directly
+      if (plan.price === 0) {
+        const subscription = await prisma.subscription.create({
+          data: {
+            userId: ctx.user.id,
+            planId: input.planId,
+            status: SubscriptionStatus.ACTIVE,
+            currentPeriodStart: new Date(),
+            currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
+          },
+          include: { plan: true },
+        });
 
-      // Create subscription in database
-      const subscription = await prisma.subscription.create({
-        data: {
-          userId: ctx.user.id,
-          planId: input.planId,
-          paddleSubscriptionId: paddleSubscription.id,
-          paddleCustomerId: customer.paddleCustomerId,
-          status: paddleSubscription.status as SubscriptionStatus,
-          currentPeriodStart: paddleSubscription.currentBillingPeriod?.startsAt,
-          currentPeriodEnd: paddleSubscription.currentBillingPeriod?.endsAt,
-          trialStart: paddleSubscription.trialPeriod?.startsAt,
-          trialEnd: paddleSubscription.trialPeriod?.endsAt,
-        },
-        include: { plan: true },
-      });
+        return subscription;
+      }
 
-      return subscription;
+      // For paid plans, this should be called after Paddle webhook
+      throw new TRPCError({
+        code: 'BAD_REQUEST',
+        message: 'Paid plans must be subscribed through Paddle checkout',
+      });
     }),
 
-  // Update subscription (upgrade/downgrade)
+  // Update subscription (change plan)
   updateSubscription: protectedProcedure
     .input(
       z.object({
         planId: z.string(),
-        paddlePriceId: z.string(),
       })
     )
     .mutation(async ({ ctx, input }) => {
       const subscription = await prisma.subscription.findUnique({
         where: { userId: ctx.user.id },
+        include: { plan: true },
       });
 
       if (!subscription) {
@@ -194,28 +140,49 @@ export const subscriptionRouter = router({
         });
       }
 
-      if (!subscription.paddleSubscriptionId) {
+      const newPlan = await prisma.subscriptionPlanConfig.findUnique({
+        where: { id: input.planId },
+      });
+
+      if (!newPlan) {
         throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: 'Subscription not linked to Paddle',
+          code: 'NOT_FOUND',
+          message: 'Plan not found',
         });
       }
 
-      // Update in Paddle
-      const paddleSubscription = await PaddleService.updateSubscription({
-        subscriptionId: subscription.paddleSubscriptionId,
-        items: [{ priceId: input.paddlePriceId, quantity: 1 }],
-      });
+      // If subscription has Paddle ID, update in Paddle
+      if (subscription.paddleSubscriptionId && newPlan.paddlePriceId) {
+        try {
+          const paddleSubscription = await PaddleService.updateSubscription({
+            subscriptionId: subscription.paddleSubscriptionId,
+            items: [{ priceId: newPlan.paddlePriceId, quantity: 1 }],
+          });
 
-      // Update in database
+          // Update in database
+          const updatedSubscription = await prisma.subscription.update({
+            where: { id: subscription.id },
+            data: {
+              planId: input.planId,
+              status: paddleSubscription.status as SubscriptionStatus,
+            },
+            include: { plan: true },
+          });
+
+          return updatedSubscription;
+        } catch (error) {
+          console.error('Error updating subscription in Paddle:', error);
+          throw new TRPCError({
+            code: 'INTERNAL_SERVER_ERROR',
+            message: 'Failed to update subscription',
+          });
+        }
+      }
+
+      // For free tier, update directly
       const updatedSubscription = await prisma.subscription.update({
         where: { id: subscription.id },
-        data: {
-          planId: input.planId,
-          status: paddleSubscription.status as SubscriptionStatus,
-          currentPeriodStart: paddleSubscription.currentBillingPeriod?.startsAt,
-          currentPeriodEnd: paddleSubscription.currentBillingPeriod?.endsAt,
-        },
+        data: { planId: input.planId },
         include: { plan: true },
       });
 
@@ -241,34 +208,42 @@ export const subscriptionRouter = router({
         });
       }
 
-      if (!subscription.paddleSubscriptionId) {
-        // If no Paddle subscription, just cancel in database
-        return await prisma.subscription.update({
-          where: { id: subscription.id },
-          data: {
-            status: SubscriptionStatus.CANCELED,
-            canceledAt: new Date(),
-          },
-        });
+      // If has Paddle subscription, cancel in Paddle
+      if (subscription.paddleSubscriptionId) {
+        try {
+          const paddleSubscription = await PaddleService.cancelSubscription(
+            subscription.paddleSubscriptionId,
+            input.immediately ? 'immediately' : 'next_billing_period'
+          );
+
+          const updatedSubscription = await prisma.subscription.update({
+            where: { id: subscription.id },
+            data: {
+              status: paddleSubscription.status as SubscriptionStatus,
+              canceledAt: new Date(),
+            },
+            include: { plan: true },
+          });
+
+          return updatedSubscription;
+        } catch (error) {
+          console.error('Error canceling subscription in Paddle:', error);
+          throw new TRPCError({
+            code: 'INTERNAL_SERVER_ERROR',
+            message: 'Failed to cancel subscription',
+          });
+        }
       }
 
-      // Cancel in Paddle
-      const paddleSubscription = await PaddleService.cancelSubscription(
-        subscription.paddleSubscriptionId,
-        input.immediately ? 'immediately' : 'next_billing_period'
-      );
-
-      // Update in database
-      const updatedSubscription = await prisma.subscription.update({
+      // For free tier, cancel directly
+      return await prisma.subscription.update({
         where: { id: subscription.id },
         data: {
-          status: paddleSubscription.status as SubscriptionStatus,
+          status: SubscriptionStatus.CANCELED,
           canceledAt: new Date(),
         },
         include: { plan: true },
       });
-
-      return updatedSubscription;
     }),
 
   // Pause subscription
@@ -284,22 +259,28 @@ export const subscriptionRouter = router({
       });
     }
 
-    // Pause in Paddle
-    const paddleSubscription = await PaddleService.pauseSubscription(
-      subscription.paddleSubscriptionId
-    );
+    try {
+      const paddleSubscription = await PaddleService.pauseSubscription(
+        subscription.paddleSubscriptionId
+      );
 
-    // Update in database
-    const updatedSubscription = await prisma.subscription.update({
-      where: { id: subscription.id },
-      data: {
-        status: paddleSubscription.status as SubscriptionStatus,
-        pausedAt: new Date(),
-      },
-      include: { plan: true },
-    });
+      const updatedSubscription = await prisma.subscription.update({
+        where: { id: subscription.id },
+        data: {
+          status: paddleSubscription.status as SubscriptionStatus,
+          pausedAt: new Date(),
+        },
+        include: { plan: true },
+      });
 
-    return updatedSubscription;
+      return updatedSubscription;
+    } catch (error) {
+      console.error('Error pausing subscription in Paddle:', error);
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'Failed to pause subscription',
+      });
+    }
   }),
 
   // Resume subscription
@@ -315,45 +296,28 @@ export const subscriptionRouter = router({
       });
     }
 
-    // Resume in Paddle
-    const paddleSubscription = await PaddleService.resumeSubscription(
-      subscription.paddleSubscriptionId
-    );
+    try {
+      const paddleSubscription = await PaddleService.resumeSubscription(
+        subscription.paddleSubscriptionId
+      );
 
-    // Update in database
-    const updatedSubscription = await prisma.subscription.update({
-      where: { id: subscription.id },
-      data: {
-        status: paddleSubscription.status as SubscriptionStatus,
-        pausedAt: null,
-      },
-      include: { plan: true },
-    });
+      const updatedSubscription = await prisma.subscription.update({
+        where: { id: subscription.id },
+        data: {
+          status: paddleSubscription.status as SubscriptionStatus,
+          pausedAt: null,
+        },
+        include: { plan: true },
+      });
 
-    return updatedSubscription;
-  }),
-
-  // Get transaction for updating payment method
-  getUpdatePaymentMethodTransaction: protectedProcedure.query(async ({ ctx }) => {
-    const subscription = await prisma.subscription.findUnique({
-      where: { userId: ctx.user.id },
-    });
-
-    if (!subscription || !subscription.paddleSubscriptionId) {
+      return updatedSubscription;
+    } catch (error) {
+      console.error('Error resuming subscription in Paddle:', error);
       throw new TRPCError({
-        code: 'NOT_FOUND',
-        message: 'No active subscription found',
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'Failed to resume subscription',
       });
     }
-
-    const transaction = await PaddleService.getPaymentMethodUpdateTransaction(
-      subscription.paddleSubscriptionId
-    );
-
-    return {
-      subscriptionId: subscription.id,
-      transactionId: transaction?.id || undefined,
-    };
   }),
 
   // Get payment history
@@ -457,7 +421,6 @@ export const subscriptionRouter = router({
 
       // Free tier or no subscription
       if (!subscription || subscription.plan.name === SubscriptionPlan.FREE) {
-        // Count existing listings for free tier limits
         let count = 0;
         let limit = 0;
 
@@ -469,7 +432,7 @@ export const subscriptionRouter = router({
                 status: { in: ['published', 'pending'] },
               },
             });
-            limit = 3; // Free tier limit
+            limit = 3;
             break;
           case 'service':
             count = await prisma.service.count({
@@ -478,7 +441,7 @@ export const subscriptionRouter = router({
                 status: { in: ['published', 'pending'] },
               },
             });
-            limit = 1; // Free tier limit
+            limit = 1;
             break;
           case 'task':
             count = await prisma.task.count({
@@ -487,7 +450,7 @@ export const subscriptionRouter = router({
                 status: { in: ['Active', 'Pending', 'Published'] },
               },
             });
-            limit = 2; // Free tier limit
+            limit = 2;
             break;
         }
 
@@ -561,191 +524,5 @@ export const subscriptionRouter = router({
         total,
         hasMore: input.offset + input.limit < total,
       };
-    }),
-
-  // Get Paddle client token
-  getPaddleClientToken: publicProcedure.query(async () => {
-    // Return the client token from environment variable
-    const token = process.env.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN;
-    const environment = process.env.PADDLE_ENVIRONMENT || 'sandbox';
-    
-    // Development fallback - you can replace this with your actual Paddle client token
-    const fallbackToken = token || 'test_client_token_for_development';
-    
-    if (!token) {
-      console.warn('⚠️  NEXT_PUBLIC_PADDLE_CLIENT_TOKEN not set. Using development fallback.');
-      console.warn('   Please set up your Paddle credentials in .env.local for production use.');
-    }
-    
-    return {
-      token: fallbackToken,
-      environment,
-    };
-  }),
-
-  // Get customer's payment methods
-  getPaymentMethods: protectedProcedure.query(async ({ ctx }) => {
-    const customer = await prisma.customer.findUnique({
-      where: { userId: ctx.user.id },
-    });
-
-    if (!customer) {
-      return [];
-    }
-
-    try {
-      const paymentMethods = await PaddleService.getCustomerPaymentMethods(customer.paddleCustomerId);
-      return paymentMethods;
-    } catch (error) {
-      console.error('Error getting payment methods:', error);
-      return [];
-    }
-  }),
-
-  // Get customer's invoices
-  getInvoices: protectedProcedure
-    .input(
-      z.object({
-        limit: z.number().min(1).max(100).default(20),
-        offset: z.number().min(0).default(0),
-      })
-    )
-    .query(async ({ ctx, input }) => {
-      const customer = await prisma.customer.findUnique({
-        where: { userId: ctx.user.id },
-      });
-
-      if (!customer) {
-        return { invoices: [], total: 0, hasMore: false };
-      }
-
-      try {
-        const invoices = await PaddleService.getCustomerInvoices(customer.paddleCustomerId);
-        return {
-          invoices: invoices.slice(input.offset, input.offset + input.limit),
-          total: invoices.length,
-          hasMore: input.offset + input.limit < invoices.length,
-        };
-      } catch (error) {
-        console.error('Error getting invoices:', error);
-        return { invoices: [], total: 0, hasMore: false };
-      }
-    }),
-
-  // Get invoice download URL
-  getInvoiceDownloadUrl: protectedProcedure
-    .input(z.object({ invoiceId: z.string() }))
-    .query(async ({ input }) => {
-      try {
-        const downloadUrl = await PaddleService.getInvoiceDownloadUrl(input.invoiceId);
-        return { downloadUrl };
-      } catch (error) {
-        console.error('Error getting invoice download URL:', error);
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to get invoice download URL',
-        });
-      }
-    }),
-
-  // Get upcoming invoice
-  getUpcomingInvoice: protectedProcedure.query(async ({ ctx }) => {
-    const subscription = await prisma.subscription.findUnique({
-      where: { userId: ctx.user.id },
-    });
-
-    if (!subscription || !subscription.paddleSubscriptionId) {
-      return null;
-    }
-
-    try {
-      const upcomingInvoice = await PaddleService.getUpcomingInvoice(subscription.paddleSubscriptionId);
-      return upcomingInvoice;
-    } catch (error) {
-      console.error('Error getting upcoming invoice:', error);
-      return null;
-    }
-  }),
-
-  // Preview subscription change
-  previewSubscriptionChange: protectedProcedure
-    .input(
-      z.object({
-        planId: z.string(),
-        paddlePriceId: z.string(),
-      })
-    )
-    .query(async ({ ctx, input }) => {
-      const subscription = await prisma.subscription.findUnique({
-        where: { userId: ctx.user.id },
-      });
-
-      if (!subscription || !subscription.paddleSubscriptionId) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'No active subscription found',
-        });
-      }
-
-      try {
-        const preview = await PaddleService.previewSubscriptionChange({
-          subscriptionId: subscription.paddleSubscriptionId,
-          items: [{ priceId: input.paddlePriceId, quantity: 1 }],
-        });
-        return preview;
-      } catch (error) {
-        console.error('Error previewing subscription change:', error);
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to preview subscription change',
-        });
-      }
-    }),
-
-  // Create refund (admin only for now)
-  createRefund: adminProcedure
-    .input(
-      z.object({
-        paymentId: z.string(),
-        amount: z.number().optional(),
-        reason: z.string().optional(),
-      })
-    )
-    .mutation(async ({ input }) => {
-      const payment = await prisma.payment.findUnique({
-        where: { id: input.paymentId },
-      });
-
-      if (!payment || !payment.paddleTransactionId) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Payment not found or not linked to Paddle',
-        });
-      }
-
-      try {
-        const refund = await PaddleService.createRefund({
-          transactionId: payment.paddleTransactionId,
-          amount: input.amount,
-          reason: input.reason,
-        });
-
-        // Update payment status
-        await prisma.payment.update({
-          where: { id: payment.id },
-          data: {
-            status: PaymentStatus.REFUNDED,
-            refundedAt: new Date(),
-          },
-        });
-
-        return refund;
-      } catch (error) {
-        console.error('Error creating refund:', error);
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to create refund',
-        });
-      }
     }),
 });

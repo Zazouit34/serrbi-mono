@@ -24,7 +24,7 @@ async function main() {
       price: 990, // $9.90
       currency: "USD",
       interval: "month",
-      paddlePriceId: process.env.PADDLE_PRICE_ID_BASIC || null,
+      paddlePriceId: process.env.PADDLE_PRICE_ID_BASIC || "pri_01k6armqs400c4kj2vwxvnen4q",
       maxJobListings: 10,
       maxServiceListings: 5,
       maxTaskListings: 10,
@@ -40,7 +40,7 @@ async function main() {
       price: 2990, // $29.90
       currency: "USD",
       interval: "month",
-      paddlePriceId: process.env.PADDLE_PRICE_ID_PREMIUM || null,
+      paddlePriceId: process.env.PADDLE_PRICE_ID_PREMIUM || "pri_01k6arsdkxzzcjn97712rvp3ye",
       maxJobListings: 100,
       maxServiceListings: 50,
       maxTaskListings: 100,
@@ -87,7 +87,7 @@ async function main() {
     });
   }
 
-  console.log("Seeded subscription plans.");
+  console.log("✅ Seeded subscription plans with Paddle price IDs.");
 }
 
 main()
@@ -98,5 +98,3 @@ main()
   .finally(async () => {
     await prisma.$disconnect();
   });
-
-
