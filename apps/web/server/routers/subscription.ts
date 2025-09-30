@@ -4,7 +4,7 @@ import { TRPCError } from "@trpc/server";
 import { PaddleService } from "@/lib/paddle/server";
 import { prisma } from "@workspace/db";
 import { PrismaClient } from "@workspace/db";
-import { SubscriptionPlan, SubscriptionStatus, PaymentStatus } from "@workspace/db";
+import { SubscriptionPlan, SubscriptionStatus } from "@workspace/db";
 
 export const subscriptionRouter = router({
   // Get available plans
