@@ -74,6 +74,28 @@ export const authRouter = router({
         },
       });
 
+      // Automatically assign free subscription to new users
+      try {
+        const freePlan = await db.subscriptionPlanConfig.findFirst({
+          where: { name: "FREE" },
+        });
+
+        if (freePlan) {
+          await db.subscription.create({
+            data: {
+              userId: user.id,
+              planId: freePlan.id,
+              status: "ACTIVE",
+              currentPeriodStart: new Date(),
+              currentPeriodEnd: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year for free plan
+            },
+          });
+        }
+      } catch (error) {
+        console.error("Error creating free subscription for new user:", error);
+        // Don't fail registration if subscription creation fails
+      }
+
       // Trigger welcome workflow
       await inngest.send({
         name: "auth/user.registered",
