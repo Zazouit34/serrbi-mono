@@ -220,17 +220,15 @@ export default function SubscriptionPageClient() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold">Choose your plan</h1>
-        <p className="text-muted-foreground">Upgrade to unlock more listings and features.</p>
+      <div className="flex flex-col justify-center items-center">
+        <h1 className="text-3xl font-bold font-outfit">Choose your plan</h1>
+        <p className="text-muted-foreground font-outfit">Upgrade to unlock more listings and features.</p>
         <div className="mt-3 text-sm">
           <Link href="/account/billing" className="text-[#FF040E] hover:underline">
             Manage billing
           </Link>
         </div>
       </div>
-
-      {(loadingPlans || loadingSub) && <div>Loading plans...</div>}
       {plansError && (
         <div className="text-sm text-red-500">Failed to load plans. Please refresh.</div>
       )}

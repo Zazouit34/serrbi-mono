@@ -4,7 +4,14 @@ import { applyAndNotify } from "@/server/services/job-application";
 
 async function getCandidates() {
   return prisma.user.findMany({
-    where: { resumeUrl: { not: null } },
+    where: {
+      resumeUrl: { not: null },
+      customer: {
+        is: {
+          paddleCustomerId: { not: "" }
+        }
+      }
+    },
     select: { id: true },
   });
 }
