@@ -10,6 +10,7 @@ import {
 import { TRPCError } from "@trpc/server";
 import type { PrismaClient } from "@workspace/db";
 import { inngest } from "@/functions/inngest/client";
+import { applyAndNotify } from "@/server/services/job-application";
 
 export const jobRouter = router({
   createJob: protectedProcedure
@@ -55,6 +56,11 @@ export const jobRouter = router({
             status: true,
             createdAt: true,
           },
+        });
+        // Emit background event for auto-apply
+        await inngest.send({
+          name: "job/created",
+          data: { jobId: job.id },
         });
 
         return {
@@ -158,55 +164,16 @@ export const jobRouter = router({
     .input(jobApplicationCreateSchema)
     .mutation(async ({ ctx, input }) => {
       const db = ctx.prisma as PrismaClient;
-
-      const job = await db.job.findUnique({
-        where: { id: input.jobId },
-        select: {
-          id: true,
-          title: true,
-          applicationEmail: true,
-          companyName: true,
-        },
+      // Reuse centralized service to ensure identical behavior across manual & auto flows
+      const result = await applyAndNotify({
+        db,
+        jobId: input.jobId,
+        name: input.name,
+        email: input.email,
+        cvData: input.cvData,
+        cvFilename: input.cvFilename,
       });
-      if (!job)
-        throw new TRPCError({ code: "NOT_FOUND", message: "Job not found" });
-
-      const app = await db.jobApplication.create({
-        data: {
-          jobId: input.jobId,
-          jobTitle: input.jobTitle,
-          name: input.name,
-          email: input.email,
-          cv: input.cv,
-        },
-      });
-      // Send application email with CV attachment
-      try {
-        await inngest.send({
-          name: "email/send",
-          data: {
-            type: "job-application",
-            data: {
-              applicationEmail: job.applicationEmail,
-              jobTitle: job.title,
-              companyName: job.companyName || "Company",
-              applicantName: input.name,
-              applicantEmail: input.email,
-              cvData: input.cvData,
-              cvFilename: input.cvFilename,
-            },
-          },
-        });
-      } catch (emailError) {
-        console.error("Failed to send application email:", emailError);
-        // Don't fail the mutation if email fails
-      }
-
-      return {
-        success: true,
-        message: "Application submitted",
-        applicationId: app.id,
-      };
+      return result;
     }),
     //Bulk Import Jobs
 bulkCreate: adminProcedure
@@ -248,6 +215,10 @@ bulkCreate: adminProcedure
   }));
 
   await db.job.createMany({ data });
+  await inngest.send({
+    name: "jobs/imported",
+    data: { importedAt: new Date().toISOString() },
+  });
   return { success: true, count: data.length };
 }),
 });

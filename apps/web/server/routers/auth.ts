@@ -197,6 +197,10 @@ export const authRouter = router({
         where: { id: user.id },
         data: { resumeUrl: input.resumeUrl },
       });
+      await inngest.send({
+        name: "user/resume.updated",
+        data: { userId: user.id },
+      });
       return { success: true };
     }),
   // clear resume
