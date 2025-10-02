@@ -213,9 +213,10 @@ export function JobListingForm() {
                 control={form.control as any}
                 name="tags"
                 render={({ field }) => {
-                  const currentCategory = (form.getValues() as any).category as string | undefined;
-                  const suggestions: string[] = currentCategory ? (keywordsByCategory as any)[currentCategory] ?? [] : [];
                   const [tagInput, setTagInput] = useState("");
+                  const currentCategory = form.watch("category");
+                  const suggestions: string[] = currentCategory ? (keywordsByCategory as any)[currentCategory] ?? [] : [];
+                  
                   const addTag = (t: string) => {
                     if (!t) return;
                     const next = Array.from(new Set([...(field.value ?? []), t]));
