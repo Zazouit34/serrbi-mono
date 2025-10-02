@@ -144,6 +144,9 @@ export const jobListingFormSchema = z
     experienceLevel: z.enum(experienceLevelValues, { required_error: "Required" }),
     type: z.enum(jobListingTypeValues, { required_error: "Required" }),
 
+    // Skill/stack tags used for auto-apply and filtering
+    tags: z.array(z.string()).default([]).optional(),
+
     // Wage: accept number OR numeric string; allow empty -> null
     wage: z.preprocess((val) => {
       if (val === "" || val === null || val === undefined) return null

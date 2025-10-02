@@ -36,6 +36,7 @@ export const jobRouter = router({
             locationRequirement: input.locationRequirement,
             experienceLevel: input.experienceLevel,
             type: input.type,
+            tags: (input as any).tags ?? [],
             wage: input.wage || null,
             stateAbbreviation: input.stateAbbreviation || null,
             city: input.city || null,

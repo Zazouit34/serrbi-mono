@@ -30,6 +30,8 @@ import {
 import { trpc } from "@/app/_trpc/client";
 import { MarkdownEditor } from "@/components/ui/markdown/markdown-editor";
 import { StateSelectItems } from "../state-select";
+import keywordsByCategory from "@workspace/ui/data/auto-apply-keyword.json";
+import { Tags, TagsTrigger, TagsValue, TagsContent, TagsInput, TagsList, TagsEmpty, TagsGroup, TagsItem } from "@workspace/ui/components/ui/shadcn-io/tags";
 
 import {
   jobListingFormSchema,
@@ -64,6 +66,7 @@ export function JobListingForm() {
       locationRequirement: undefined,
       experienceLevel: undefined,
       type: undefined,
+      tags: [],
       wage: null,
       stateAbbreviation: undefined,
       city: undefined,
@@ -108,8 +111,8 @@ export function JobListingForm() {
         
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            {/* First row: Title, Company Name, Wage, Category */}
-            <div className="grid grid-cols-1 gap-x-4 gap-y-6 items-start md:grid-cols-4">
+            {/* First row: Title, Company Name, Wage, Category, Tags */}
+            <div className="grid grid-cols-1 gap-x-4 gap-y-6 items-start md:grid-cols-5">
               <FormField
                 control={form.control as any}
                 name="title"
@@ -203,6 +206,61 @@ export function JobListingForm() {
                     <FormMessage />
                   </FormItem>
                 )}
+              />
+
+              {/* Tags selector bound to form tags */}
+              <FormField
+                control={form.control as any}
+                name="tags"
+                render={({ field }) => {
+                  const currentCategory = (form.getValues() as any).category as string | undefined;
+                  const suggestions: string[] = currentCategory ? (keywordsByCategory as any)[currentCategory] ?? [] : [];
+                  const [tagInput, setTagInput] = useState("");
+                  const addTag = (t: string) => {
+                    if (!t) return;
+                    const next = Array.from(new Set([...(field.value ?? []), t]));
+                    field.onChange(next);
+                    setTagInput("");
+                  };
+                  const removeTag = (t: string) => {
+                    const next = (field.value ?? []).filter((k: string) => k !== t);
+                    field.onChange(next);
+                  };
+                  return (
+                    <FormItem>
+                      <FormLabel>Tags</FormLabel>
+                      <FormControl>
+                        <div>
+                          <Tags value={tagInput} setValue={setTagInput} className="w-full">
+                            <TagsTrigger>
+                              {(field.value ?? []).map((k: string) => (
+                                <TagsValue key={k} onRemove={() => removeTag(k)}>
+                                  {k}
+                                </TagsValue>
+                              ))}
+                            </TagsTrigger>
+                            <TagsContent>
+                              <TagsInput placeholder="Search tags..." />
+                              <TagsList>
+                                <TagsEmpty>No tags found.</TagsEmpty>
+                                <TagsGroup heading="Suggestions">
+                                  {suggestions
+                                    .filter((s) => !(field.value ?? []).includes(s))
+                                    .map((s) => (
+                                      <TagsItem key={s} onSelect={() => addTag(s)}>
+                                        {s}
+                                      </TagsItem>
+                                    ))}
+                                </TagsGroup>
+                              </TagsList>
+                            </TagsContent>
+                          </Tags>
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  );
+                }}
               />
             </div>
             {/* Second row: City, State, Location, Job Type, Experience */}
