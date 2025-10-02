@@ -12,6 +12,7 @@ import {
   resetPasswordFormSchema,
   updateUserRoleSchema,
   resumeUpdateSchema,
+  autoApplyPrefsSchema
 } from "@workspace/ui/lib/validation-schemas";
 import bcrypt from "bcryptjs";
 
@@ -22,6 +23,8 @@ import {
   getResetPasswordTokenbyToken,
 } from "../services/verification";
 import { inngest } from "@/functions/inngest/client";
+
+
 
 export const authRouter = router({
   // Keep login for compatibility with existing UI
@@ -95,12 +98,6 @@ export const authRouter = router({
         console.error("Error creating free subscription for new user:", error);
         // Don't fail registration if subscription creation fails
       }
-
-      // Trigger welcome workflow
-      await inngest.send({
-        name: "auth/user.registered",
-        data: { user },
-      });
 
       return { success: true, message: "Registration successful", user };
     }),
@@ -240,4 +237,33 @@ export const authRouter = router({
     const { id, role } = (ctx as any).user as { id: string; role: string };
     return { id, role };
   }),
+
+  //auto-apply
+  getAutoApplyPrefs: protectedProcedure.query(async ({ ctx }) => {
+    const db = ctx.prisma as PrismaClient;
+    const u = await db.user.findUnique({
+      where: { id: (ctx as any).user.id },
+      select: {
+        autoApplyEnabled: true,
+        autoApplyCategory: true,
+        autoApplyKeywords: true,
+      },
+    });
+    return u ?? { autoApplyEnabled: false, autoApplyCategory: null, autoApplyKeywords: [], autoApplyMinMatches: 2 };
+  }),
+  
+  updateAutoApplyPrefs: protectedProcedure
+    .input(autoApplyPrefsSchema)
+    .mutation(async ({ ctx, input }) => {
+      const db = ctx.prisma as PrismaClient;
+      await db.user.update({
+        where: { id: (ctx as any).user.id },
+        data: {
+          autoApplyEnabled: input.enabled,
+          autoApplyCategory: input.category,
+          autoApplyKeywords: input.keywords,
+        },
+      });
+      return { success: true };
+    }),
 });

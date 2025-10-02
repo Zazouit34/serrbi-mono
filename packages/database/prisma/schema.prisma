@@ -34,6 +34,11 @@ model User {
   subscription      Subscription?
   moderatedTasks    Task[]             @relation("TaskModerator")
   tasks             Task[]
+  autoApplyEnabled     Boolean       @default(false)
+  autoApplyCategory    JobCategory?  // single category
+  autoApplyKeywords    String[]      // user-selected tags
+ 
+
 
   @@index([email])
   @@index([role])
@@ -105,6 +110,7 @@ model Job {
   moderatedBy         String?
   createdAt           DateTime            @default(now())
   updatedAt           DateTime            @updatedAt
+  tags                String[]            @default([])  //skill tags
   favorites           Favorite?
   moderator           User?               @relation("JobModerator", fields: [moderatedBy], references: [id])
   user                User                @relation(fields: [userId], references: [id])

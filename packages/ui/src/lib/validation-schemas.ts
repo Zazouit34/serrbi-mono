@@ -465,3 +465,11 @@ export const taskImportRowSchema = z.object({
   status: z.enum(taskStatusValues).optional().nullable(),
 });
 export const taskImportSchema = z.object({ rows: z.array(taskImportRowSchema).min(1) });
+
+//Auto Apply Schema
+export const autoApplyPrefsSchema = z.object({
+  enabled: z.boolean(),
+  category: z.enum(jobCategoryValues).nullable(),
+  keywords: z.array(z.string()).max(100)
+});
+export type AutoApplyPrefsValues = z.infer<typeof autoApplyPrefsSchema>;

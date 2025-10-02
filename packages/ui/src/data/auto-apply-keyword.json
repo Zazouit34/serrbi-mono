@@ -1,0 +1,12 @@
+{
+    "Tech": ["react","nextjs","typescript","javascript","node","express","python","django","java","spring","aws","docker","kubernetes","graphql","postgres","mongodb","ml","ai","pytorch","tensorflow","devops","ci","cd","tailwind","vite"],
+    "Finance": ["accounting","audit","excel","fp&a","budgeting","tax","reconciliation"],
+    "Hospitality": ["front desk","customer service","barista","housekeeping","waiter","chef"],
+    "Construction": ["carpentry","plumbing","masonry","electrical","hvac","blueprints"],
+    "Education": ["teaching","curriculum","lesson plan","assessment","tutoring"],
+    "Legal": ["contract","litigation","compliance","due diligence"],
+    "Health": ["patient care","nursing","clinic","medical records"],
+    "Cleaning": ["deep clean","janitorial","sanitation","disinfection"],
+    "Auto": ["mechanic","diagnostics","oil change","brakes"],
+    "Other": []
+  }
