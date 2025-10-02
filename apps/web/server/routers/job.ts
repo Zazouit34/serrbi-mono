@@ -238,9 +238,11 @@ export const jobRouter = router({
       );
 
       // Emit one event per job
-      await inngest.send(
-        created.map((j) => ({ name: "job/created", data: { jobId: j.id } }))
-      );
+      const events = created.map((j) => ({ 
+        name: "job/created", 
+        data: { jobId: j.id } 
+      }));
+      await inngest.send(events);
       return { success: true, count: data.length };
     }),
 });
