@@ -1,368 +1,211 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@workspace/db';
-import { SubscriptionStatus, PaymentStatus } from '@workspace/db';
-import crypto from 'crypto';
+import { NextResponse } from "next/server";
+import { getPaddleInstance } from "@/lib/paddle/server";
+import { prisma, SubscriptionStatus } from "@workspace/db";
 
-/**
- * Verify Paddle webhook signature
- */
-function verifyWebhookSignature(
-  payload: string,
-  signature: string | null,
-  secret: string
-): boolean {
-  if (!signature) {
-    return false;
-  }
+const paddle = getPaddleInstance();
+const webhookSecret = process.env.PADDLE_WEBHOOK_SECRET!;
 
-  try {
-    // Extract timestamp and signature from Paddle signature header
-    const parts = signature.split(';').map(part => part.split('='));
-    const ts = parts[0]?.[1];
-    const h1 = parts[1]?.[1];
-    
-    if (!ts || !h1) {
-      return false;
-    }
-    
-    // Create expected signature
-    const signedPayload = `${ts}:${payload}`;
-    const expectedSignature = crypto
-      .createHmac('sha256', secret)
-      .update(signedPayload)
-      .digest('hex');
-
-    // Compare signatures
-    return crypto.timingSafeEqual(
-      Buffer.from(h1),
-      Buffer.from(expectedSignature)
-    );
-  } catch (error) {
-    console.error('Error verifying webhook signature:', error);
-    return false;
+// Map Paddle status to Prisma enum
+function mapPaddleStatus(paddleStatus: string | undefined) {
+  switch ((paddleStatus || "").toLowerCase()) {
+    case "active":
+      return SubscriptionStatus.ACTIVE;
+    case "canceled":
+    case "cancelled":
+      return SubscriptionStatus.CANCELED;
+    case "paused":
+      return SubscriptionStatus.PAUSED;
+    case "past_due":
+    case "past-due":
+      return SubscriptionStatus.PAST_DUE;
+    case "trialing":
+    case "trial":
+      return SubscriptionStatus.TRIALING;
+    case "unpaid":
+      return SubscriptionStatus.UNPAID;
+    default:
+      return SubscriptionStatus.ACTIVE;
   }
 }
 
-/**
- * Handle Paddle webhook events
- */
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
   try {
-    const signature = req.headers.get('paddle-signature');
-    const webhookSecret = process.env.PADDLE_WEBHOOK_SECRET;
-
-    if (!webhookSecret) {
-      console.error('PADDLE_WEBHOOK_SECRET not configured');
-      return NextResponse.json(
-        { error: 'Webhook secret not configured' },
-        { status: 500 }
-      );
-    }
-
-    // Get raw body for signature verification
     const rawBody = await req.text();
-    
-    // Verify signature
-    const isValid = signature ? verifyWebhookSignature(rawBody, signature, webhookSecret) : false;
-    
-    if (!isValid) {
-      console.error('Invalid webhook signature');
-      return NextResponse.json(
-        { error: 'Invalid signature' },
-        { status: 401 }
-      );
+
+    // ✅ Get the Paddle signature header
+    const signature = req.headers.get("paddle-signature");
+    if (!signature) {
+      console.error("Missing paddle-signature header");
+      return NextResponse.json({ error: "Missing signature" }, { status: 400 });
     }
 
-    // Parse the event
-    const event = JSON.parse(rawBody);
-    const { event_type, data } = event;
+    // ✅ Verify webhook & parse the event
+    // In SDK >=1.4, unmarshal takes (rawBody, signature, webhookSecret)
+    const event = await paddle.webhooks.unmarshal(rawBody, signature, webhookSecret);
 
-    console.log(`📥 Received Paddle webhook: ${event_type}`);
+    // ✅ Relax the strict typing to avoid “no overlap” errors
+    const eventType = (event as any).eventType as string;
+    const data = (event as any).data;
 
-    // Handle different event types
-    switch (event_type) {
-      case 'subscription.created':
-        await handleSubscriptionCreated(data);
-        break;
+    console.log("🔔 Paddle webhook received:", eventType);
 
-      case 'subscription.updated':
-        await handleSubscriptionUpdated(data);
-        break;
+    // Helper: get Paddle IDs and user
+    const getUserIdFromPayload = async (): Promise<string | null> => {
+      const custom =
+        data?.custom_data ?? data?.customData ?? data?.passthrough ?? {};
+      let userId = custom?.userId ?? custom?.user_id ?? null;
 
-      case 'subscription.canceled':
-        await handleSubscriptionCanceled(data);
-        break;
+      if (!userId) {
+        const email =
+          data?.customer?.email ??
+          data?.customer_email ??
+          data?.email ??
+          data?.user_email ??
+          null;
+        if (email) {
+          const user = await prisma.user.findUnique({ where: { email } });
+          if (user) userId = user.id;
+        }
+      }
+      return userId ?? null;
+    };
 
-      case 'subscription.paused':
-        await handleSubscriptionPaused(data);
-        break;
+    const getPaddleCustomerId = () =>
+      data?.customer_id ?? data?.customer?.id ?? null;
 
-      case 'subscription.resumed':
-        await handleSubscriptionResumed(data);
-        break;
+    const getPaddleSubscriptionId = () =>
+      data?.id ?? data?.subscription_id ?? data?.subscription?.id ?? null;
 
-      case 'transaction.completed':
-        await handleTransactionCompleted(data);
-        break;
+    const getPriceId = () =>
+      data?.items?.[0]?.price?.id ??
+      data?.items?.[0]?.price_id ??
+      data?.price_id ??
+      data?.plan_id ??
+      null;
 
-      case 'transaction.payment_failed':
-        await handleTransactionFailed(data);
-        break;
+    // ✅ Handle subscription.created
+    if (
+      eventType === "subscription.created" ||
+      eventType === "subscription_created"
+    ) {
+      const userId = await getUserIdFromPayload();
+      if (!userId) return NextResponse.json({ received: true });
 
-      default:
-        console.log(`Unhandled event type: ${event_type}`);
-    }
+      const paddleCustomerId = String(getPaddleCustomerId() ?? "");
+      const priceId = getPriceId();
 
-    return NextResponse.json({ received: true });
-  } catch (error) {
-    console.error('Error processing webhook:', error);
-    return NextResponse.json(
-      { error: 'Webhook processing failed' },
-      { status: 500 }
-    );
-  }
-}
-
-/**
- * Handle subscription.created event
- */
-async function handleSubscriptionCreated(data: any) {
-  try {
-    const customData = data.custom_data || {};
-    const userId = customData.userId;
-
-    if (!userId) {
-      console.error('No userId in custom_data');
-      return;
-    }
-
-    // Get or create customer
-    let customer = await prisma.customer.findFirst({
-      where: { paddleCustomerId: data.customer_id },
-    });
-
-    if (!customer) {
-      customer = await prisma.customer.create({
-        data: {
+      await prisma.customer.upsert({
+        where: { paddleCustomerId },
+        update: {
           userId,
-          paddleCustomerId: data.customer_id,
-          email: data.customer?.email || '',
-          name: data.customer?.name || null,
+          email: data?.customer?.email ?? data?.customer_email ?? undefined,
+          name: data?.customer?.name ?? null,
+        },
+        create: {
+          userId,
+          paddleCustomerId,
+          email: data?.customer?.email ?? data?.customer_email ?? undefined,
+          name: data?.customer?.name ?? null,
         },
       });
+
+      const plan = priceId
+        ? await prisma.subscriptionPlanConfig.findFirst({
+            where: { paddlePriceId: String(priceId) },
+          })
+        : null;
+
+      const paddleSubscriptionId = String(getPaddleSubscriptionId() ?? "");
+      await prisma.subscription.upsert({
+        where: { paddleSubscriptionId },
+        create: {
+          userId,
+          planId: plan?.id ?? "",
+          paddleSubscriptionId,
+          paddleCustomerId,
+          status: mapPaddleStatus(data?.status),
+          currentPeriodStart:
+            data?.current_billing_period?.starts_at
+              ? new Date(data.current_billing_period.starts_at)
+              : null,
+          currentPeriodEnd:
+            data?.current_billing_period?.ends_at
+              ? new Date(data.current_billing_period.ends_at)
+              : null,
+        },
+        update: {
+          planId: plan?.id ?? "",
+          status: mapPaddleStatus(data?.status),
+          currentPeriodStart:
+            data?.current_billing_period?.starts_at
+              ? new Date(data.current_billing_period.starts_at)
+              : undefined,
+          currentPeriodEnd:
+            data?.current_billing_period?.ends_at
+              ? new Date(data.current_billing_period.ends_at)
+              : undefined,
+        },
+      });
+
+      console.log("✅ subscription.created handled:", paddleSubscriptionId);
+      return NextResponse.json({ received: true });
     }
 
-    // Find the plan by paddle price ID
-    const priceId = data.items?.[0]?.price?.id;
-    const plan = await prisma.subscriptionPlanConfig.findFirst({
-      where: { paddlePriceId: priceId },
-    });
+    // ✅ Handle subscription.updated
+    if (
+      eventType === "subscription.updated" ||
+      eventType === "subscription_updated"
+    ) {
+      const paddleSubscriptionId = String(getPaddleSubscriptionId() ?? "");
+      const priceId = getPriceId();
+      const plan = priceId
+        ? await prisma.subscriptionPlanConfig.findFirst({
+            where: { paddlePriceId: String(priceId) },
+          })
+        : null;
 
-    if (!plan) {
-      console.error(`No plan found for price ID: ${priceId}`);
-      return;
+      await prisma.subscription.updateMany({
+        where: { paddleSubscriptionId },
+        data: {
+          planId: plan?.id ?? undefined,
+          status: mapPaddleStatus(data?.status),
+          currentPeriodStart:
+            data?.current_billing_period?.starts_at
+              ? new Date(data.current_billing_period.starts_at)
+              : undefined,
+          currentPeriodEnd:
+            data?.current_billing_period?.ends_at
+              ? new Date(data.current_billing_period.ends_at)
+              : undefined,
+        },
+      });
+
+      console.log("🔄 subscription.updated handled:", paddleSubscriptionId);
+      return NextResponse.json({ received: true });
     }
 
-    // Create or update subscription
-    await prisma.subscription.upsert({
-      where: { userId },
-      create: {
-        userId,
-        planId: plan.id,
-        paddleSubscriptionId: data.id,
-        paddleCustomerId: data.customer_id,
-        status: mapPaddleStatus(data.status),
-        currentPeriodStart: new Date(data.current_billing_period?.starts_at),
-        currentPeriodEnd: new Date(data.current_billing_period?.ends_at),
-      },
-      update: {
-        planId: plan.id,
-        paddleSubscriptionId: data.id,
-        paddleCustomerId: data.customer_id,
-        status: mapPaddleStatus(data.status),
-        currentPeriodStart: new Date(data.current_billing_period?.starts_at),
-        currentPeriodEnd: new Date(data.current_billing_period?.ends_at),
-      },
-    });
+    // ✅ Handle subscription.canceled
+    if (
+      eventType === "subscription.canceled" ||
+      eventType === "subscription_cancelled"
+    ) {
+      const paddleSubscriptionId = String(getPaddleSubscriptionId() ?? "");
+      await prisma.subscription.updateMany({
+        where: { paddleSubscriptionId },
+        data: {
+          status: SubscriptionStatus.CANCELED,
+          canceledAt: new Date(),
+        },
+      });
 
-    console.log(`✅ Subscription created for user ${userId}`);
-  } catch (error) {
-    console.error('Error handling subscription.created:', error);
-  }
-}
-
-/**
- * Handle subscription.updated event
- */
-async function handleSubscriptionUpdated(data: any) {
-  try {
-    const subscription = await prisma.subscription.findFirst({
-      where: { paddleSubscriptionId: data.id },
-    });
-
-    if (!subscription) {
-      console.error(`No subscription found for Paddle ID: ${data.id}`);
-      return;
+      console.log("❌ subscription.canceled handled:", paddleSubscriptionId);
+      return NextResponse.json({ received: true });
     }
 
-    // Find the plan by paddle price ID
-    const priceId = data.items?.[0]?.price?.id;
-    const plan = await prisma.subscriptionPlanConfig.findFirst({
-      where: { paddlePriceId: priceId },
-    });
-
-    await prisma.subscription.update({
-      where: { id: subscription.id },
-      data: {
-        planId: plan?.id || subscription.planId,
-        status: mapPaddleStatus(data.status),
-        currentPeriodStart: new Date(data.current_billing_period?.starts_at),
-        currentPeriodEnd: new Date(data.current_billing_period?.ends_at),
-      },
-    });
-
-    console.log(`✅ Subscription updated: ${data.id}`);
-  } catch (error) {
-    console.error('Error handling subscription.updated:', error);
+    console.log("Unhandled Paddle event:", eventType);
+    return NextResponse.json({ received: true });
+  } catch (err) {
+    console.error("❌ Paddle webhook error:", err);
+    return NextResponse.json({ error: "Webhook error" }, { status: 400 });
   }
-}
-
-/**
- * Handle subscription.canceled event
- */
-async function handleSubscriptionCanceled(data: any) {
-  try {
-    await prisma.subscription.updateMany({
-      where: { paddleSubscriptionId: data.id },
-      data: {
-        status: SubscriptionStatus.CANCELED,
-        canceledAt: new Date(),
-      },
-    });
-
-    console.log(`✅ Subscription canceled: ${data.id}`);
-  } catch (error) {
-    console.error('Error handling subscription.canceled:', error);
-  }
-}
-
-/**
- * Handle subscription.paused event
- */
-async function handleSubscriptionPaused(data: any) {
-  try {
-    await prisma.subscription.updateMany({
-      where: { paddleSubscriptionId: data.id },
-      data: {
-        status: SubscriptionStatus.PAUSED,
-        pausedAt: new Date(),
-      },
-    });
-
-    console.log(`✅ Subscription paused: ${data.id}`);
-  } catch (error) {
-    console.error('Error handling subscription.paused:', error);
-  }
-}
-
-/**
- * Handle subscription.resumed event
- */
-async function handleSubscriptionResumed(data: any) {
-  try {
-    await prisma.subscription.updateMany({
-      where: { paddleSubscriptionId: data.id },
-      data: {
-        status: SubscriptionStatus.ACTIVE,
-        pausedAt: null,
-      },
-    });
-
-    console.log(`✅ Subscription resumed: ${data.id}`);
-  } catch (error) {
-    console.error('Error handling subscription.resumed:', error);
-  }
-}
-
-/**
- * Handle transaction.completed event
- */
-async function handleTransactionCompleted(data: any) {
-  try {
-    const subscription = await prisma.subscription.findFirst({
-      where: { paddleSubscriptionId: data.subscription_id },
-    });
-
-    if (!subscription) {
-      console.error(`No subscription found for transaction: ${data.id}`);
-      return;
-    }
-
-    // Create payment record
-    await prisma.payment.create({
-      data: {
-        userId: subscription.userId,
-        subscriptionId: subscription.id,
-        paddlePaymentId: data.payments?.[0]?.id || data.id,
-        paddleTransactionId: data.id,
-        amount: parseInt(data.details?.totals?.total || '0'),
-        currency: data.currency_code || 'USD',
-        status: PaymentStatus.SUCCEEDED,
-        paymentMethod: data.payments?.[0]?.method_details?.type || 'unknown',
-        paidAt: new Date(data.billed_at || data.created_at),
-      },
-    });
-
-    console.log(`✅ Payment recorded for transaction: ${data.id}`);
-  } catch (error) {
-    console.error('Error handling transaction.completed:', error);
-  }
-}
-
-/**
- * Handle transaction.payment_failed event
- */
-async function handleTransactionFailed(data: any) {
-  try {
-    const subscription = await prisma.subscription.findFirst({
-      where: { paddleSubscriptionId: data.subscription_id },
-    });
-
-    if (!subscription) {
-      console.error(`No subscription found for failed transaction: ${data.id}`);
-      return;
-    }
-
-    // Create failed payment record
-    await prisma.payment.create({
-      data: {
-        userId: subscription.userId,
-        subscriptionId: subscription.id,
-        paddleTransactionId: data.id,
-        amount: parseInt(data.details?.totals?.total || '0'),
-        currency: data.currency_code || 'USD',
-        status: PaymentStatus.FAILED,
-        paymentMethod: data.payments?.[0]?.method_details?.type || 'unknown',
-      },
-    });
-
-    console.log(`⚠️ Payment failed for transaction: ${data.id}`);
-  } catch (error) {
-    console.error('Error handling transaction.payment_failed:', error);
-  }
-}
-
-/**
- * Map Paddle subscription status to our internal status
- */
-function mapPaddleStatus(paddleStatus: string): SubscriptionStatus {
-  const statusMap: Record<string, SubscriptionStatus> = {
-    active: SubscriptionStatus.ACTIVE,
-    canceled: SubscriptionStatus.CANCELED,
-    paused: SubscriptionStatus.PAUSED,
-    past_due: SubscriptionStatus.PAST_DUE,
-    trialing: SubscriptionStatus.TRIALING,
-  };
-
-  return statusMap[paddleStatus] || SubscriptionStatus.ACTIVE;
 }
