@@ -4,7 +4,7 @@ import { SubscriptionStatus, PaymentStatus } from '@workspace/db';
 import crypto from 'crypto';
 
 /**
- * Verify Paddle webhook signature
+Verify Paddle webhook signature
  */
 function verifyWebhookSignature(
   payload: string,
