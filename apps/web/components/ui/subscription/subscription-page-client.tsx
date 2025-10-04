@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { trpc } from "@/app/_trpc/client";
 import { Button } from "@workspace/ui/components/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@workspace/ui/components/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui/components/card";
 import { Badge } from "@workspace/ui/components/badge";
 import { Check, Loader2 } from "lucide-react";
 import { useSession } from "next-auth/react";
@@ -138,7 +138,7 @@ export default function SubscriptionPageClient() {
         customer: {
           email: session.user.email || undefined,
         },
-        successUrl: `${window.location.origin}/subscription/success`,
+        successUrl: `${window.location.origin}/account/auto-apply`,
       });
     } catch (error: any) {
       toast.error(error.message || 'Failed to start checkout');

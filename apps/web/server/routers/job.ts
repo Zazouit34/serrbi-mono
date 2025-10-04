@@ -1,9 +1,4 @@
-import {
-  protectedProcedure,
-  router,
-  publicProcedure,
-  adminProcedure,
-} from "../trpc";
+import { protectedProcedure, router, publicProcedure, adminProcedure } from "../trpc";
 import {
   jobListingFormSchema,
   jobListQuerySchema,
@@ -36,7 +31,7 @@ export const jobRouter = router({
             locationRequirement: input.locationRequirement,
             experienceLevel: input.experienceLevel,
             type: input.type,
-            tags: input.tags ?? [],
+            tags: input.tags || [],
             wage: input.wage || null,
             stateAbbreviation: input.stateAbbreviation || null,
             city: input.city || null,
@@ -50,8 +45,8 @@ export const jobRouter = router({
             companyName: true,
             companyImage: true,
             description: true,
-            category: true,
             tags: true,
+            category: true,
             locationRequirement: true,
             experienceLevel: true,
             type: true,
@@ -84,7 +79,7 @@ export const jobRouter = router({
       }
     }),
 
-  getJob: publicProcedure
+    getJob: publicProcedure
     .input(jobListQuerySchema.optional())
     .query(async ({ ctx, input }) => {
       const page = input?.page ?? 1;
@@ -124,8 +119,8 @@ export const jobRouter = router({
             applicationUrl: true,
             applicationEmail: true,
             wage: true,
-            tags: true,
             stateAbbreviation: true,
+            tags: true,
             city: true,
             type: true,
             experienceLevel: true,
@@ -184,65 +179,50 @@ export const jobRouter = router({
       });
       return result;
     }),
-  //Bulk Import Jobs
-  bulkCreate: adminProcedure
-    .input(jobImportSchema)
-    .mutation(async ({ ctx, input }) => {
-      const db = ctx.prisma as PrismaClient;
-      const admin = (ctx as any).user as { id?: string };
+    //Bulk Import Jobs
+bulkCreate: adminProcedure
+.input(jobImportSchema)
+.mutation(async ({ ctx, input }) => {
+  const db = ctx.prisma as PrismaClient;
+  const admin = (ctx as any).user as { id?: string };
 
-      let ownerId = admin?.id;
-      if (!ownerId || ownerId === "admin-service") {
-        const byId = process.env.ADMIN_DEFAULT_OWNER_ID;
-        const byEmail = process.env.ADMIN_DEFAULT_OWNER_EMAIL;
-        if (byId) ownerId = byId;
-        else if (byEmail) {
-          const u = await db.user.findUnique({
-            where: { email: byEmail },
-            select: { id: true },
-          });
-          if (!u)
-            throw new TRPCError({
-              code: "BAD_REQUEST",
-              message: "ADMIN_DEFAULT_OWNER_EMAIL not found",
-            });
-          ownerId = u.id;
-        } else {
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: "No ownerId available for import",
-          });
-        }
-      }
+  let ownerId = admin?.id;
+  if (!ownerId || ownerId === "admin-service") {
+    const byId = process.env.ADMIN_DEFAULT_OWNER_ID;
+    const byEmail = process.env.ADMIN_DEFAULT_OWNER_EMAIL;
+    if (byId) ownerId = byId;
+    else if (byEmail) {
+      const u = await db.user.findUnique({ where: { email: byEmail }, select: { id: true } });
+      if (!u) throw new TRPCError({ code: "BAD_REQUEST", message: "ADMIN_DEFAULT_OWNER_EMAIL not found" });
+      ownerId = u.id;
+    } else {
+      throw new TRPCError({ code: "BAD_REQUEST", message: "No ownerId available for import" });
+    }
+  }
 
-      const data = input.rows.map((r) => ({
-        userId: ownerId!,
-        title: r.title,
-        companyName: r.companyName,
-        companyImage: r.companyImage ?? null,
-        description: r.description,
-        category: r.category,
-        locationRequirement: r.locationRequirement,
-        experienceLevel: r.experienceLevel,
-        type: r.type,
-        wage: r.wage ?? null,
-        stateAbbreviation: r.stateAbbreviation ?? null,
-        city: r.city ?? null,
-        applicationEmail: r.applicationEmail ?? "",
-        applicationUrl: r.applicationUrl ?? null,
-      }));
+  const data = input.rows.map((r) => ({
+    userId: ownerId!,
+    title: r.title,
+    companyName: r.companyName,
+    companyImage: r.companyImage ?? null,
+    description: r.description,
+    category: r.category,
+    locationRequirement: r.locationRequirement,
+    experienceLevel: r.experienceLevel,
+    type: r.type,
+    wage: r.wage ?? null,
+    stateAbbreviation: r.stateAbbreviation ?? null,
+    city: r.city ?? null,
+    applicationEmail: r.applicationEmail ?? "",
+    applicationUrl: r.applicationUrl ?? null,
+    
+  }));
 
-      // Create all jobs and get their IDs automically, then emit one event per job
-      const created = await db.$transaction(
-        data.map((d) => db.job.create({ data: d, select: { id: true } }))
-      );
-
-      // Emit one event per job
-      const events = created.map((j) => ({ 
-        name: "job/created", 
-        data: { jobId: j.id } 
-      }));
-      await inngest.send(events);
-      return { success: true, count: data.length };
-    }),
+  await db.job.createMany({ data });
+  await inngest.send({
+    name: "jobs/imported",
+    data: { importedAt: new Date().toISOString() },
+  });
+  return { success: true, count: data.length };
+}),
 });
