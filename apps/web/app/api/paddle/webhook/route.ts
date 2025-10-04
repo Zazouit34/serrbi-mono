@@ -5,7 +5,7 @@ import crypto from 'crypto';
 
 /**
 Verify Paddle webhook signature
- */
+**/
 function verifyWebhookSignature(
   payload: string,
   signature: string | null,

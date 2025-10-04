@@ -6,11 +6,24 @@ async function getCandidates(category: any) {
   return prisma.user.findMany({
     where: {
       resumeUrl: { not: null },
-      //customer: { is: { paddleCustomerId: { not: "" } } },
       autoApplyEnabled: true,
       autoApplyCategory: category,
+      subscription: {
+        is: {
+          status: "ACTIVE",
+          planId: {
+            in: [
+              "9e3b09e3-88c8-4ca6-a2a8-78b501fc8a28", // Basic
+              "ee62299a-4591-4cec-a7a9-41d04c4aa70b", // Premium
+            ],
+          },
+        },
+      },
     },
-    select: { id: true, autoApplyKeywords: true },
+    select: {
+      id: true,
+      autoApplyKeywords: true,
+    },
   });
 }
 
@@ -84,7 +97,9 @@ export const autoApplyOnJobsImported = inngest.createFunction(
       const users = await getCandidates(job.category);
 
       // Build tokens from both tags and title+description
-      const textTokens = tokenize(`${job.title ?? ""} ${job.description ?? ""}`);
+      const textTokens = tokenize(
+        `${job.title ?? ""} ${job.description ?? ""}`
+      );
       const tagTokens = new Set((job.tags ?? []).map((t) => t.toLowerCase()));
       const jobTokens = new Set<string>([...tagTokens, ...textTokens]);
 
