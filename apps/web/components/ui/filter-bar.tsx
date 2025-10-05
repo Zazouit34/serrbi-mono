@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Input } from "@workspace/ui/components/input";
 import { Button } from "@workspace/ui/components/button";
-import { Search,  Filter } from "lucide-react";
+import { Search, Filter, Check } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -19,10 +19,16 @@ import {
   DialogTrigger,
   DialogFooter,
 } from "@workspace/ui/components/dialog";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@workspace/ui/components/popover";
 
 export type FilterOption = {
   label: string;
   value: string;
+  icon?: React.ComponentType<any>;
 };
 
 export type FilterConfig =
@@ -37,6 +43,12 @@ export type FilterConfig =
       label: string;
       type: "input";
       placeholder?: string;
+    }
+  | {
+      key: string;
+      label: string;
+      type: "popover";
+      options: FilterOption[];
     };
 
 type FilterBarProps = {
@@ -54,6 +66,7 @@ export function FilterBar({
   const [tempFilters, setTempFilters] = useState<Record<string, string>>(initialFilters);
   const [searchQuery, setSearchQuery] = useState(initialFilters.search || "");
   const [showFiltersDialog, setShowFiltersDialog] = useState(false);
+  const [dialogPopoverStates, setDialogPopoverStates] = useState<Record<string, boolean>>({});
 
   // Update internal filters when initialFilters change
   useEffect(() => {
@@ -70,6 +83,11 @@ export function FilterBar({
 
   const handleTempFilterChange = (key: string, value: string) => {
     setTempFilters(prev => ({ ...prev, [key]: value }));
+  };
+
+  const handleDialogPopoverFilterChange = (key: string, value: string) => {
+    setTempFilters(prev => ({ ...prev, [key]: value }));
+    setDialogPopoverStates(prev => ({ ...prev, [key]: false }));
   };
 
   const applyFilters = () => {
@@ -139,6 +157,7 @@ export function FilterBar({
                     <label className="text-sm font-medium text-gray-700">
                       {filter.label}
                     </label>
+                    
                     {filter.type === "select" && (
                       <Select
                         value={tempFilters[filter.key] || ""}
@@ -156,6 +175,7 @@ export function FilterBar({
                         </SelectContent>
                       </Select>
                     )}
+                    
                     {filter.type === "input" && (
                       <Input
                         placeholder={filter.placeholder || filter.label}
@@ -163,6 +183,71 @@ export function FilterBar({
                         onChange={(e) => handleTempFilterChange(filter.key, e.target.value)}
                         className="w-full"
                       />
+                    )}
+                    
+                    {filter.type === "popover" && (
+                      <Popover 
+                        open={dialogPopoverStates[filter.key] || false} 
+                        onOpenChange={(open) => setDialogPopoverStates(prev => ({ ...prev, [filter.key]: open }))}
+                      >
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className="w-full justify-start"
+                          >
+                            {tempFilters[filter.key] ? (() => {
+                              const selectedOption = filter.options.find(opt => opt.value === tempFilters[filter.key]);
+                              const IconComponent = selectedOption?.icon;
+                              return (
+                                <div className="flex gap-2 items-center">
+                                  {IconComponent && (
+                                    <IconComponent className="w-4 h-4 text-red-600" />
+                                  )}
+                                  <span className="font-medium text-red-700">
+                                    {selectedOption?.label}
+                                  </span>
+                                </div>
+                              );
+                            })() : (
+                              <span className="text-gray-500">
+                                Select {filter.label}
+                              </span>
+                            )}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="p-4 w-80" align="start">
+                          <div className="space-y-3">
+                            <h4 className="text-sm font-medium text-gray-900">{filter.label}</h4>
+                            <div className="flex flex-wrap gap-2">
+                              {filter.options.map((option) => {
+                                const IconComponent = option.icon;
+                                const isSelected = tempFilters[filter.key] === option.value;
+                                return (
+                                  <Button
+                                    key={option.value}
+                                    variant="outline"
+                                    size="sm"
+                                    className={`inline-flex items-center gap-1.5 h-8 px-3 rounded-full text-xs font-medium transition-colors ${
+                                      isSelected 
+                                        ? 'bg-red-50 border-red-500 text-red-700' 
+                                        : 'hover:bg-gray-50 border-gray-200 text-gray-700'
+                                    }`}
+                                    onClick={() => handleDialogPopoverFilterChange(filter.key, option.value)}
+                                  >
+                                    {IconComponent && (
+                                      <IconComponent className={`w-3 h-3 ${isSelected ? 'text-red-600' : 'text-gray-500'}`} />
+                                    )}
+                                    <span>{option.label}</span>
+                                    {isSelected && (
+                                      <Check className="w-3 h-3 text-red-500" />
+                                    )}
+                                  </Button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        </PopoverContent>
+                      </Popover>
                     )}
                   </div>
                 ))}

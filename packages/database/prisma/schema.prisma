@@ -389,7 +389,7 @@ model Payment {
   paddlePaymentId     String?       @unique
   paddleTransactionId String?       @unique
   amount              Int
-  currency            String        @default("USD")
+  currency            String      
   status              PaymentStatus @default(PENDING)
   description         String?
   paymentMethod       String?

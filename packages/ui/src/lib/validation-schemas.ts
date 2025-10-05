@@ -7,7 +7,7 @@ import {
 } from "@workspace/ui/lib/job-enum"
 import { serviceCategoryValues, priceTypeValues, serviceStatusValues } from "@workspace/ui/lib/service-enum"
 import { taskCategoryValues, taskStatusValues, BudgetTypeValues } from "@workspace/ui/lib/task-enum"
-import { roleValues } from "@workspace/ui/lib/role-enum"
+import { roleValues } from "@workspace/ui/lib/role-enum";
 import { isValidPhoneNumber } from "libphonenumber-js";
 
 export const emailSchema = z.string().email({ message: 'Invalid email address' })

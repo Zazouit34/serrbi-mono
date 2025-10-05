@@ -4,30 +4,45 @@ import { useEffect, useMemo, useState } from "react";
 import { trpc } from "@/app/_trpc/client";
 import { Switch } from "@workspace/ui/components/switch";
 import { Label } from "@workspace/ui/components/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@workspace/ui/components/select";
-// adjust if your package re-export differs:
-import { Tags, TagsTrigger, TagsValue, TagsContent, TagsInput, TagsList, TagsEmpty, TagsGroup, TagsItem } from "@workspace/ui/components/ui/shadcn-io/tags";
-import keywordsByCategory from "@workspace/ui/data/auto-apply-keyword.json";
 import { Button } from "@workspace/ui/components/button";
-import { jobCategoryValues } from "@workspace/ui/lib/job-enum";
 import { toast } from "sonner";
+
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@workspace/ui/components/popover";
+import { Check } from "lucide-react";
+
+import { jobCategoryValues } from "@workspace/ui/lib/job-enum";
+
+import { jobCategoryIcons } from "@/components/ui/config/job-filters-config";
+import { formatJobCategory } from "@workspace/ui/lib/formatter";
+
+import {
+  Tags,
+  TagsTrigger,
+  TagsValue,
+  TagsContent,
+  TagsInput,
+  TagsList,
+  TagsEmpty,
+  TagsGroup,
+  TagsItem,
+} from "@workspace/ui/components/ui/shadcn-io/tags";
+
+import keywordsByCategory from "@workspace/ui/data/auto-apply-keyword.json";
 
 type JobCategory = (typeof jobCategoryValues)[number];
 
 export default function AutoApplySettingsPage() {
   const { data, refetch } = trpc.auth.getAutoApplyPrefs.useQuery();
   const mutation = trpc.auth.updateAutoApplyPrefs.useMutation();
+
   const [enabled, setEnabled] = useState(false);
   const [category, setCategory] = useState<JobCategory | null>(null);
   const [keywords, setKeywords] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState("");
-
 
   // helpers
   const addTag = (t: string) => {
@@ -66,6 +81,7 @@ export default function AutoApplySettingsPage() {
 
   return (
     <div className="space-y-6 max-w-2xl">
+      {/* 🔘 Enable Auto-apply */}
       <div className="flex gap-3 items-center">
         <Label htmlFor="auto-apply">Auto-apply</Label>
         <Switch
@@ -75,26 +91,68 @@ export default function AutoApplySettingsPage() {
         />
       </div>
 
+      {/* 🧩 Category Popover */}
       <div className="space-y-2">
         <Label>Job Category</Label>
-        <Select
-          value={category ?? ""}
-          onValueChange={(v) => setCategory(v as JobCategory)}
-          disabled={!enabled}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Select category" />
-          </SelectTrigger>
-          <SelectContent>
-            {jobCategoryValues.map((c) => (
-              <SelectItem key={c} value={c}>
-                {c}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              className="w-1/3 justify-start"
+              disabled={!enabled}
+            >
+              {category ? (
+                <div className="flex items-center gap-2">
+                  {(() => {
+                    const Icon =
+                      jobCategoryIcons[
+                        category as keyof typeof jobCategoryIcons
+                      ];
+                    return Icon ? (
+                      <Icon className="w-4 h-4 text-black" />
+                    ) : null;
+                  })()}
+                  <span className="text-sm font-medium text-black">
+                    {formatJobCategory(category)}
+                  </span>
+                </div>
+              ) : (
+                <span className="text-muted-foreground">Select Category</span>
+              )}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-80 p-4">
+            <div className="flex flex-wrap gap-2">
+              {jobCategoryValues.map((c) => {
+                const Icon =
+                  jobCategoryIcons[c as keyof typeof jobCategoryIcons];
+                const selected = category === c;
+                return (
+                  <Button
+                    key={c}
+                    variant="outline"
+                    size="sm"
+                    className={`rounded-full text-xs font-medium h-8 px-3 ${
+                      selected
+                        ? "bg-white/80 border-black text-black"
+                        : "hover:bg-gray-50 border-gray-200 text-gray-700"
+                    }`}
+                    onClick={() => setCategory(c)}
+                  >
+                    {Icon && <Icon className="w-3 h-3 mr-1 text-black" />}
+                    {formatJobCategory(c)}
+                    {selected && (
+                      <Check className="w-3 h-3 ml-1 text-black" />
+                    )}
+                  </Button>
+                );
+              })}
+            </div>
+          </PopoverContent>
+        </Popover>
       </div>
 
+      {/* 🏷️ Tags */}
       <div className="space-y-2">
         <Label>Tags (keywords)</Label>
         <Tags value={tagInput} setValue={setTagInput} className="w-full">
@@ -122,7 +180,9 @@ export default function AutoApplySettingsPage() {
           </TagsContent>
         </Tags>
       </div>
-      <Button onClick={save} disabled={mutation.isPending}>
+
+      {/* 💾 Save */}
+      <Button onClick={save} disabled={mutation.isPending} className="bg-black hover:bg-black/80">
         Save preferences
       </Button>
     </div>

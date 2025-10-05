@@ -306,7 +306,7 @@ async function handleTransactionCompleted(data: any) {
         paddlePaymentId: data.payments?.[0]?.id || data.id,
         paddleTransactionId: data.id,
         amount: parseInt(data.details?.totals?.total || '0'),
-        currency: data.currency_code || 'USD',
+        currency: data.details?.totals?.currency_code || data.currency_code || 'EUR',
         status: PaymentStatus.SUCCEEDED,
         paymentMethod: data.payments?.[0]?.method_details?.type || 'unknown',
         paidAt: new Date(data.billed_at || data.created_at),

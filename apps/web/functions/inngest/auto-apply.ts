@@ -1,5 +1,5 @@
 import { inngest } from "./client";
-import { prisma } from "@workspace/db";
+import { prisma, SubscriptionStatus } from "@workspace/db";
 import { applyAndNotify } from "@/server/services/job-application";
 
 async function getCandidates(category: any) {
@@ -10,7 +10,7 @@ async function getCandidates(category: any) {
       autoApplyCategory: category,
       subscription: {
         is: {
-          status: "ACTIVE",
+          status: SubscriptionStatus.ACTIVE,
           planId: {
             in: [
               "9e3b09e3-88c8-4ca6-a2a8-78b501fc8a28", // Basic

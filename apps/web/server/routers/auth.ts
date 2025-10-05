@@ -18,6 +18,7 @@ import bcrypt from "bcryptjs";
 
 import { TRPCError } from "@trpc/server";
 import type { PrismaClient } from "@workspace/db";
+import { SubscriptionStatus } from "@workspace/db";
 import {
   createResetPasswordToken,
   getResetPasswordTokenbyToken,
@@ -88,7 +89,7 @@ export const authRouter = router({
             data: {
               userId: user.id,
               planId: freePlan.id,
-              status: "ACTIVE",
+              status: SubscriptionStatus.ACTIVE,
               currentPeriodStart: new Date(),
               currentPeriodEnd: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year for free plan
             },
