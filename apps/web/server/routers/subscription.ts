@@ -185,14 +185,20 @@ export const subscriptionRouter = router({
       if (subscription.paddleSubscriptionId) {
         try {
           const paddleSubscription = await PaddleService.cancelSubscription(
-            subscription.paddleSubscriptionId,
-            input.immediately ? "immediately" : "next_billing_period"
+            subscription.paddleSubscriptionId
           );
+
+          const paddleStatus =
+            paddleSubscription.status?.toLowerCase() || "canceled";
 
           return db.subscription.update({
             where: { id: subscription.id },
             data: {
-              status: paddleSubscription.status as SubscriptionStatus,
+              status:
+                paddleStatus.includes("cancel") ||
+                paddleStatus.includes("inactive")
+                  ? SubscriptionStatus.CANCELED
+                  : SubscriptionStatus.ACTIVE,
               canceledAt: new Date(),
             },
             include: { plan: true },
@@ -245,10 +251,14 @@ export const subscriptionRouter = router({
         subscription.paddleSubscriptionId
       );
 
+      const paddleStatus = paddleSubscription.status?.toLowerCase() || "paused";
+
       return db.subscription.update({
         where: { id: subscription.id },
         data: {
-          status: paddleSubscription.status as SubscriptionStatus,
+          status: paddleStatus.includes("pause")
+            ? SubscriptionStatus.PAUSED
+            : SubscriptionStatus.ACTIVE,
           pausedAt: new Date(),
         },
         include: { plan: true },

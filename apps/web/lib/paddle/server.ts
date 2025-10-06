@@ -99,7 +99,6 @@ export class PaddleService {
    */
   static async cancelSubscription(
     subscriptionId: string,
-    effectiveFrom: 'immediately' | 'next_billing_period' = 'next_billing_period'
   ) {
     try {
       const subscription = await this.paddle.subscriptions.cancel(
