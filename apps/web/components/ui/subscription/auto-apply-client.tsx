@@ -32,12 +32,16 @@ import {
 } from "@workspace/ui/components/ui/shadcn-io/tags";
 
 import keywordsByCategory from "@workspace/ui/data/auto-apply-keyword.json";
+import { Progress } from "@workspace/ui/components/progress";
 
 type JobCategory = (typeof jobCategoryValues)[number];
 
 export default function AutoApplySettingsPage() {
   const { data, refetch } = trpc.auth.getAutoApplyPrefs.useQuery();
   const mutation = trpc.auth.updateAutoApplyPrefs.useMutation();
+
+  // NEW: fetch auto-apply stats (count this month)
+  const { data: stats, refetch: refetchStats } = trpc.auth.getAutoApplyStats.useQuery();
 
   const [enabled, setEnabled] = useState(false);
   const [category, setCategory] = useState<JobCategory | null>(null);
@@ -74,10 +78,17 @@ export default function AutoApplySettingsPage() {
       });
       toast.success("Preferences saved");
       refetch();
+      refetchStats();
     } catch (e: any) {
       toast.error(e?.message || "Failed to save");
     }
   };
+
+  // Visual indicator scaling (UI-only). We don't have a stored limit — so this is purely a visual "activity" bar.
+  // We pick a display cap (e.g. 20) so the bar fills reasonably; this does not impose any limit server-side.
+  const displayCap = 20;
+  const appliedCount = stats?.appliedCount ?? 0;
+  const pct = Math.min((appliedCount / displayCap) * 100, 100);
 
   return (
     <div className="space-y-6 max-w-2xl">
@@ -179,6 +190,26 @@ export default function AutoApplySettingsPage() {
             </TagsList>
           </TagsContent>
         </Tags>
+      </div>
+
+      {/* —— Auto-apply stats (server-side count) —— */}
+      <div className="mt-4">
+        <Label>Auto-apply activity (this month)</Label>
+        <div className="mt-2 p-3 rounded-lg border bg-white">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-sm text-muted-foreground">Auto-applied</div>
+              <div className="text-lg font-semibold">{appliedCount}</div>
+            </div>
+
+            <div className="w-48">
+              <Progress value={pct} className="h-2" />
+              <div className="text-xs text-muted-foreground mt-1">
+                Visual activity (no quota). {appliedCount} this month.
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* 💾 Save */}

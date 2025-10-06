@@ -12,7 +12,7 @@ import {
   resetPasswordFormSchema,
   updateUserRoleSchema,
   resumeUpdateSchema,
-  autoApplyPrefsSchema
+  autoApplyPrefsSchema,
 } from "@workspace/ui/lib/validation-schemas";
 import bcrypt from "bcryptjs";
 
@@ -24,8 +24,6 @@ import {
   getResetPasswordTokenbyToken,
 } from "../services/verification";
 import { inngest } from "@/functions/inngest/client";
-
-
 
 export const authRouter = router({
   // Keep login for compatibility with existing UI
@@ -91,7 +89,9 @@ export const authRouter = router({
               planId: freePlan.id,
               status: SubscriptionStatus.ACTIVE,
               currentPeriodStart: new Date(),
-              currentPeriodEnd: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year for free plan
+              currentPeriodEnd: new Date(
+                Date.now() + 365 * 24 * 60 * 60 * 1000
+              ), // 1 year for free plan
             },
           });
         }
@@ -250,9 +250,16 @@ export const authRouter = router({
         autoApplyKeywords: true,
       },
     });
-    return u ?? { autoApplyEnabled: false, autoApplyCategory: null, autoApplyKeywords: [], autoApplyMinMatches: 2 };
+    return (
+      u ?? {
+        autoApplyEnabled: false,
+        autoApplyCategory: null,
+        autoApplyKeywords: [],
+        autoApplyMinMatches: 2,
+      }
+    );
   }),
-  
+
   updateAutoApplyPrefs: protectedProcedure
     .input(autoApplyPrefsSchema)
     .mutation(async ({ ctx, input }) => {
@@ -267,4 +274,29 @@ export const authRouter = router({
       });
       return { success: true };
     }),
+
+  //auto apply stats
+  getAutoApplyStats: protectedProcedure.query(async ({ ctx }) => {
+    const db = ctx.prisma as PrismaClient;
+    const user = (ctx as any).user;
+
+    // start of current month (local time)
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+    startOfMonth.setMinutes(0);
+    startOfMonth.setSeconds(0);
+    startOfMonth.setMilliseconds(0);
+
+    // Count jobApplication rows for this user (by email) since start of month.
+    // We use email because jobApplication records only store email in your current applyAndNotify
+    const appliedCount = await db.jobApplication.count({
+      where: {
+        email: user.email,
+        createdAt: { gte: startOfMonth },
+      },
+    });
+
+    return { appliedCount };
+  }),
 });
