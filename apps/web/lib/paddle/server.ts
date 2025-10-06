@@ -105,7 +105,7 @@ export class PaddleService {
       const subscription = await this.paddle.subscriptions.cancel(
         subscriptionId,
         {
-          effectiveFrom,
+          effectiveFrom: 'immediately',
         }
       );
       return subscription;
@@ -123,7 +123,7 @@ export class PaddleService {
       const subscription = await this.paddle.subscriptions.pause(
         subscriptionId,
         {
-          effectiveFrom: 'next_billing_period',
+          effectiveFrom: 'immediately',
         }
       );
       return subscription;
