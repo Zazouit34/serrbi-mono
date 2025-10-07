@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Uppy from "@uppy/core";
 import AwsS3 from "@uppy/aws-s3";
 
@@ -14,7 +14,8 @@ function createUppyPDFUploader(
   onUploadSuccess: (url: string) => void,
   onUploadError?: (error: string) => void
 ) {
-  const uppy = new Uppy({
+  // typed as `any` to avoid some overly strict Uppy plugin typings in TS
+  const uppy: any = new Uppy({
     restrictions: {
       maxNumberOfFiles: 1,
       maxFileSize: 2 * 1024 * 1024, // 2MB
@@ -23,69 +24,81 @@ function createUppyPDFUploader(
     autoProceed: true,
   });
 
-  // Store public URLs for files
+  // map file.id -> public URL returned by your server
   const publicUrls = new Map<string, string>();
 
-  uppy.use(AwsS3, {
-    async getUploadParameters(file) {
+  // Use AwsS3 plugin. Cast to `any` to avoid TypeScript mismatch between AwsS3
+  // options shape and the project's @uppy types (this does not change runtime).
+  uppy.use(AwsS3 as any, {
+    // when Uppy wants to upload a file, it calls getUploadParameters(file)
+    // we call our server route to get a presigned PUT URL and a publicUrl
+    getUploadParameters: async (file: any) => {
       try {
         const response = await fetch("/api/upload/presigned-url", {
           method: "POST",
-          credentials: "include", // Include cookies for authentication
+          credentials: "include",
           headers: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
             filename: file.name,
-            contentType: file.type,
+            contentType: file.type || "application/pdf",
             fileType: "resume",
           }),
         });
 
         if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.error || "Failed to get upload URL");
+          const body = await response.json().catch(() => ({}));
+          throw new Error(body?.error || "Failed to get upload URL");
         }
 
         const data = await response.json();
-        
-        // Store public URL for later use
-        if (file.id) {
+
+        // store public url to emit it later when upload-success fires
+        if (file?.id && data?.publicUrl) {
           publicUrls.set(file.id, data.publicUrl);
         }
 
         return {
+          // Uppy expects method/url/fields (for form uploads). Using PUT to the presigned URL.
           method: "PUT",
           url: data.presignedUrl,
-          headers: {
-            "Content-Type": file.type!,
-          },
           fields: {},
+          headers: {
+            // put the content type; fallback to pdf if missing
+            "Content-Type": file.type || "application/pdf",
+          },
         };
-      } catch (error) {
-        console.error("Error getting presigned URL:", error);
-        throw error;
+      } catch (err: any) {
+        console.error("Error getting presigned URL:", err);
+        throw err;
       }
     },
   });
 
-  // Handle successful uploads
-  uppy.on("upload-success", async (file, response) => {
-    if (file?.id) {
+  // When Uppy reports upload-success, read the publicUrl we stored earlier
+  uppy.on("upload-success", (file: any) => {
+    try {
+      if (!file?.id) {
+        onUploadError?.("Upload succeeded but missing file id");
+        return;
+      }
       const publicUrl = publicUrls.get(file.id);
       if (publicUrl) {
         onUploadSuccess(publicUrl);
         publicUrls.delete(file.id);
       } else {
-        onUploadError?.("Failed to retrieve file URL");
+        onUploadError?.("Failed to retrieve public URL for uploaded file");
       }
+    } catch (err: any) {
+      console.error("Error in upload-success handler:", err);
+      onUploadError?.(err?.message || "Unknown upload success handling error");
     }
   });
 
-  // Handle upload errors
-  uppy.on("upload-error", (file, error) => {
+  uppy.on("upload-error", (file: any, error: any) => {
     console.error("Upload error:", error);
-    onUploadError?.(error.message || "Upload failed");
+    onUploadError?.(error?.message || "Upload failed");
   });
 
   return uppy;
@@ -96,40 +109,63 @@ export function UppyPDFUploader({
   onUploadError,
   note,
 }: UppyPDFUploaderProps) {
-  const [uppy] = useState(() => 
+  // create uppy once
+  const [uppy] = useState<any>(() =>
     createUppyPDFUploader(onUploadSuccess, onUploadError)
   );
+
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  uppy.on("file-added", (file) => {
-    setSelectedFile(file.name);
-    setUploading(true);
-  });
+  // register lightweight UI-related listeners here and clean up on unmount
+  useEffect(() => {
+    const handleFileAdded = (file: any) => {
+      setSelectedFile(file?.name || null);
+      setUploading(true);
+    };
 
-  uppy.on("upload-success", () => {
-    setUploading(false);
-  });
+    const handleSuccess = () => {
+      setUploading(false);
+    };
 
-  uppy.on("upload-error", () => {
-    setUploading(false);
-  });
+    const handleError = () => {
+      setUploading(false);
+    };
+
+    uppy.on("file-added", handleFileAdded);
+    uppy.on("upload-success", handleSuccess);
+    uppy.on("upload-error", handleError);
+
+    return () => {
+      uppy.off("file-added", handleFileAdded);
+      uppy.off("upload-success", handleSuccess);
+      uppy.off("upload-error", handleError);
+      // close Uppy instance to release resources
+      try {
+        uppy.close();
+      } catch (err) {
+        // ignore close errors
+      }
+    };
+  }, [uppy]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (files && files.length > 0) {
-      try {
-        uppy.addFile({
-          name: files[0].name,
-          type: files[0].type,
-          data: files[0],
-        });
-      } catch (err) {
-        console.error("Error adding file:", err);
-        onUploadError?.("Failed to add file");
-      }
+    if (!files || files.length === 0) return;
+    try {
+      uppy.addFile({
+        name: files[0]?.name,
+        type: files[0]?.type,
+        data: files[0],
+      });
+    } catch (err) {
+      console.error("Error adding file:", err);
+      onUploadError?.("Failed to add file");
+    } finally {
+      // reset input so same file can be selected again if needed
+      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
 
@@ -147,27 +183,25 @@ export function UppyPDFUploader({
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
-    
     const files = e.dataTransfer.files;
-    if (files && files.length > 0) {
-      try {
-        uppy.addFile({
-          name: files[0].name,
-          type: files[0].type,
-          data: files[0],
-        });
-      } catch (err) {
-        console.error("Error adding file:", err);
-        onUploadError?.("Failed to add file");
-      }
+    if (!files || files.length === 0) return;
+    try {
+      uppy.addFile({
+        name: files[0]?.name,
+        type: files[0]?.type,
+        data: files[0],
+      });
+    } catch (err) {
+      console.error("Error adding file:", err);
+      onUploadError?.("Failed to add file");
     }
   };
 
   return (
     <div className="w-full">
-      <div 
+      <div
         className={`flex flex-col items-center justify-center w-full p-12 text-center border-2 border-dashed rounded-lg transition-colors cursor-pointer ${
-          dragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-400 hover:border-gray-500'
+          dragActive ? "border-blue-500 bg-blue-50" : "border-gray-400 hover:border-gray-500"
         }`}
         onClick={() => fileInputRef.current?.click()}
         onDragEnter={handleDrag}
@@ -198,4 +232,3 @@ export function UppyPDFUploader({
     </div>
   );
 }
-

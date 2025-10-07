@@ -13,8 +13,15 @@ const s3Client = new S3Client({
   },
 });
 
+// Define file configuration type
+interface FileConfig {
+  allowedTypes: string[];
+  maxSize: number;
+  folder: string;
+}
+
 // File type configurations
-const FILE_CONFIGS = {
+const FILE_CONFIGS: Record<"image" | "resume", FileConfig> = {
   image: {
     allowedTypes: ["image/jpeg", "image/jpg", "image/png", "image/webp"],
     maxSize: 5 * 1024 * 1024, // 5MB
@@ -25,7 +32,7 @@ const FILE_CONFIGS = {
     maxSize: 2 * 1024 * 1024, // 2MB
     folder: "resumes",
   },
-} as const;
+};
 
 type FileType = keyof typeof FILE_CONFIGS;
 
@@ -42,12 +49,13 @@ export async function POST(req: NextRequest) {
     // Authenticate user
     const session = await auth();
     console.log("Session in presigned-url route:", JSON.stringify(session, null, 2));
-    
+
     if (!session?.user?.id) {
       console.error("Auth failed - session:", session);
-      return NextResponse.json({ 
-        error: "Unauthorized - Please log in to upload files" 
-      }, { status: 401 });
+      return NextResponse.json(
+        { error: "Unauthorized - Please log in to upload files" },
+        { status: 401 }
+      );
     }
 
     // Parse request body
@@ -72,8 +80,8 @@ export async function POST(req: NextRequest) {
 
     const config = FILE_CONFIGS[fileType as FileType];
 
-    // Validate content type
-    if (!config.allowedTypes.includes(contentType)) {
+    // ✅ Validate content type (fixed typing)
+    if (!config.allowedTypes.includes(String(contentType))) {
       return NextResponse.json(
         {
           error: `Invalid content type for ${fileType}. Allowed: ${config.allowedTypes.join(", ")}`,
@@ -88,8 +96,6 @@ export async function POST(req: NextRequest) {
     const uniqueFilename = `${uuidv4()}.${extension}`;
 
     // Determine S3 folder structure
-    // For jobs/services: /{category}/{folder}/{filename}
-    // For resumes: /resumes/{userId}/{filename}
     let key: string;
     if (fileType === "resume") {
       key = `resumes/${session.user.id}/${uniqueFilename}`;
@@ -128,4 +134,3 @@ export async function POST(req: NextRequest) {
     );
   }
 }
-

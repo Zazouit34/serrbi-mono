@@ -90,53 +90,35 @@ export default function ResumeListingForm() {
         </p>
       </div>
 
-      {hasResume ? (
+      {/* ✅ Show current resume if already uploaded */}
+      {hasResume && (
         <div className="space-y-2">
           <p className="text-sm">Current resume:</p>
-
-          <FileUploader
-            value={[]} // dummy provider state
-            onValueChange={() => {}} // no-op
-            dropzoneOptions={{
-              accept: { "application/pdf": [".pdf"] },
-              maxFiles: 1,
-              maxSize: 5 * 1024 * 1024,
-            }}
-          >
-            <FileUploaderContent className="p-2 rounded-md border">
-              <FileUploaderItem index={0} className="w-full [&>button]:hidden">
-                <div className="flex justify-between items-center w-full">
-                  <span className="truncate">
-                    {decodeURIComponent(
-                      currentUrl.split("/").pop() || "resume.pdf"
-                    )}
-                  </span>
-                  <a
-                    href={currentUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-sm text-black underline"
-                  >
-                    Open
-                  </a>
-                </div>
-              </FileUploaderItem>
-            </FileUploaderContent>
-          </FileUploader>
-
-          <div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => clearResume.mutate()}
-              disabled={clearResume.isPending}
-              className="mt-2"
-            >
-              Remove current resume
-            </Button>
+          <div className="flex justify-between items-center border p-2 rounded-md">
+            <span className="truncate">
+              {decodeURIComponent(currentUrl.split("/").pop() || "resume.pdf")}
+            </span>
+            <div className="flex gap-3">
+              <a
+                href={currentUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="text-sm text-black underline"
+              >
+                Open
+              </a>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => clearResume.mutate()}
+                disabled={clearResume.isPending}
+              >
+                Remove
+              </Button>
+            </div>
           </div>
         </div>
-      ) : null}
+      )}
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -157,7 +139,7 @@ export default function ResumeListingForm() {
             </FormItem>
           </div>
 
-          {/* Resume Upload with Uppy */}
+          {/* ✅ Resume Upload with Uppy */}
           {!hasResume && (
             <FormField
               control={form.control as any}
