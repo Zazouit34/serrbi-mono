@@ -5792,6 +5792,9 @@ packages:
   preact@10.24.3:
     resolution: {integrity: sha512-Z2dPnBnMUfyQfSQ+GBdsGa16hz35YmLmtTLhM169uW944hYL6xzTYkJjC07j+Wosz733pMWx0fgON3JNw1jJQA==}
 
+  preact@10.27.2:
+    resolution: {integrity: sha512-5SYSgFKSyhCbk6SrXyMpqjb5+MQBgfvEKE/OC+PujcY34sOpqtr+0AZQtPYx5IA6VxynQ7rUPCtKzyovpj9Bpg==}
+
   prebuild-install@7.1.3:
     resolution: {integrity: sha512-8Mf2cbV7x1cXPUILADGI3wuhfqWvtiLA1iclTDbFRZkgRQS0NqsPZphna9V+HyTEadheuPmjaJMsbzKQFOzLug==}
     engines: {node: '>=10'}
@@ -6677,6 +6680,11 @@ packages:
 
   use-sync-external-store@1.5.0:
     resolution: {integrity: sha512-Rb46I4cGGVBmjamjphe8L/UnvJD+uPPtTkNvX5mZgqdbavhI4EbgIWJiIHXJ8bc/i9EQGPRh4DwEURJ552Do0A==}
+    peerDependencies:
+      react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+
+  use-sync-external-store@1.6.0:
+    resolution: {integrity: sha512-Pp6GSwGP/NrPIrxVFAIkOQeyw8lFenOHijQWkUTrDvrF4ALqylP2C/KCkeS9dpUM3KvYRQhna5vt7IL95+ZQ9w==}
     peerDependencies:
       react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
 
@@ -9701,7 +9709,7 @@ snapshots:
   '@radix-ui/react-use-is-hydrated@0.1.0(@types/react@19.1.12)(react@19.1.1)':
     dependencies:
       react: 19.1.1
-      use-sync-external-store: 1.5.0(react@19.1.1)
+      use-sync-external-store: 1.6.0(react@19.1.1)
     optionalDependencies:
       '@types/react': 19.1.12
 
@@ -10615,7 +10623,7 @@ snapshots:
     dependencies:
       '@uppy/core': 5.0.2
       '@uppy/utils': 7.0.2
-      preact: 10.24.3
+      preact: 10.27.2
 
   '@uppy/aws-s3@5.0.1(@uppy/core@5.0.2)':
     dependencies:
@@ -10629,7 +10637,7 @@ snapshots:
       '@uppy/core': 5.0.2
       '@uppy/provider-views': 5.0.2(@uppy/core@5.0.2)
       '@uppy/utils': 7.0.2
-      preact: 10.24.3
+      preact: 10.27.2
 
   '@uppy/companion-client@5.0.1(@uppy/core@5.0.2)':
     dependencies:
@@ -10648,7 +10656,7 @@ snapshots:
       '@uppy/webcam': 5.0.1(@uppy/core@5.0.2)
       clsx: 2.1.1
       dequal: 2.0.3
-      preact: 10.24.3
+      preact: 10.27.2
       pretty-bytes: 6.1.1
 
   '@uppy/core@5.0.2':
@@ -10660,7 +10668,7 @@ snapshots:
       mime-match: 1.0.2
       namespace-emitter: 2.0.1
       nanoid: 5.1.6
-      preact: 10.24.3
+      preact: 10.27.2
 
   '@uppy/dashboard@5.0.2(@uppy/core@5.0.2)':
     dependencies:
@@ -10672,7 +10680,7 @@ snapshots:
       classnames: 2.5.1
       lodash: 4.17.21
       nanoid: 5.1.6
-      preact: 10.24.3
+      preact: 10.27.2
       shallow-equal: 3.1.0
 
   '@uppy/drop-target@4.0.1(@uppy/core@5.0.2)':
@@ -10686,7 +10694,7 @@ snapshots:
       '@uppy/core': 5.0.2
       '@uppy/provider-views': 5.0.2(@uppy/core@5.0.2)
       '@uppy/utils': 7.0.2
-      preact: 10.24.3
+      preact: 10.27.2
 
   '@uppy/facebook@5.0.1(@uppy/core@5.0.2)':
     dependencies:
@@ -10694,7 +10702,7 @@ snapshots:
       '@uppy/core': 5.0.2
       '@uppy/provider-views': 5.0.2(@uppy/core@5.0.2)
       '@uppy/utils': 7.0.2
-      preact: 10.24.3
+      preact: 10.27.2
 
   '@uppy/google-drive@5.0.1(@uppy/core@5.0.2)':
     dependencies:
@@ -10702,14 +10710,14 @@ snapshots:
       '@uppy/core': 5.0.2
       '@uppy/provider-views': 5.0.2(@uppy/core@5.0.2)
       '@uppy/utils': 7.0.2
-      preact: 10.24.3
+      preact: 10.27.2
 
   '@uppy/image-editor@4.0.1(@uppy/core@5.0.2)':
     dependencies:
       '@uppy/core': 5.0.2
       '@uppy/utils': 7.0.2
       cropperjs: 1.6.2
-      preact: 10.24.3
+      preact: 10.27.2
 
   '@uppy/instagram@5.0.1(@uppy/core@5.0.2)':
     dependencies:
@@ -10717,7 +10725,7 @@ snapshots:
       '@uppy/core': 5.0.2
       '@uppy/provider-views': 5.0.2(@uppy/core@5.0.2)
       '@uppy/utils': 7.0.2
-      preact: 10.24.3
+      preact: 10.27.2
 
   '@uppy/onedrive@5.0.1(@uppy/core@5.0.2)':
     dependencies:
@@ -10725,7 +10733,7 @@ snapshots:
       '@uppy/core': 5.0.2
       '@uppy/provider-views': 5.0.2(@uppy/core@5.0.2)
       '@uppy/utils': 7.0.2
-      preact: 10.24.3
+      preact: 10.27.2
 
   '@uppy/provider-views@5.0.2(@uppy/core@5.0.2)':
     dependencies:
@@ -10734,17 +10742,17 @@ snapshots:
       classnames: 2.5.1
       nanoid: 5.1.6
       p-queue: 8.1.1
-      preact: 10.24.3
+      preact: 10.27.2
 
   '@uppy/react@5.1.0(@uppy/core@5.0.2)(@uppy/dashboard@5.0.2(@uppy/core@5.0.2))(@uppy/screen-capture@5.0.1(@uppy/core@5.0.2))(@uppy/webcam@5.0.1(@uppy/core@5.0.2))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
     dependencies:
       '@uppy/components': 1.0.3
       '@uppy/core': 5.0.2
       '@uppy/utils': 7.0.2
-      preact: 10.24.3
+      preact: 10.27.2
       react: 19.1.1
       react-dom: 19.1.1(react@19.1.1)
-      use-sync-external-store: 1.5.0(react@19.1.1)
+      use-sync-external-store: 1.6.0(react@19.1.1)
     optionalDependencies:
       '@uppy/dashboard': 5.0.2(@uppy/core@5.0.2)
       '@uppy/screen-capture': 5.0.1(@uppy/core@5.0.2)
@@ -10768,7 +10776,7 @@ snapshots:
     dependencies:
       '@uppy/core': 5.0.2
       '@uppy/utils': 7.0.2
-      preact: 10.24.3
+      preact: 10.27.2
 
   '@uppy/store-default@5.0.0': {}
 
@@ -10784,7 +10792,7 @@ snapshots:
       '@uppy/core': 5.0.2
       '@uppy/provider-views': 5.0.2(@uppy/core@5.0.2)
       '@uppy/utils': 7.0.2
-      preact: 10.24.3
+      preact: 10.27.2
 
   '@uppy/url@5.0.1(@uppy/core@5.0.2)':
     dependencies:
@@ -10792,7 +10800,7 @@ snapshots:
       '@uppy/core': 5.0.2
       '@uppy/utils': 7.0.2
       nanoid: 5.1.6
-      preact: 10.24.3
+      preact: 10.27.2
 
   '@uppy/utils@7.0.2':
     dependencies:
@@ -10804,7 +10812,7 @@ snapshots:
       '@uppy/core': 5.0.2
       '@uppy/utils': 7.0.2
       is-mobile: 4.0.0
-      preact: 10.24.3
+      preact: 10.27.2
 
   '@uppy/zoom@4.0.1(@uppy/core@5.0.2)':
     dependencies:
@@ -10812,7 +10820,7 @@ snapshots:
       '@uppy/core': 5.0.2
       '@uppy/provider-views': 5.0.2(@uppy/core@5.0.2)
       '@uppy/utils': 7.0.2
-      preact: 10.24.3
+      preact: 10.27.2
 
   '@use-gesture/core@10.3.1': {}
 
@@ -13723,6 +13731,8 @@ snapshots:
 
   preact@10.24.3: {}
 
+  preact@10.27.2: {}
+
   prebuild-install@7.1.3:
     dependencies:
       detect-libc: 2.0.4
@@ -14836,6 +14846,10 @@ snapshots:
       react: 19.1.1
 
   use-sync-external-store@1.5.0(react@19.1.1):
+    dependencies:
+      react: 19.1.1
+
+  use-sync-external-store@1.6.0(react@19.1.1):
     dependencies:
       react: 19.1.1
 

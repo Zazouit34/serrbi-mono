@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react";
 import Uppy from "@uppy/core";
-import AwsS3 from "@uppy/aws-s3";
+import AwsS3, { type AwsS3UploadParameters } from "@uppy/aws-s3";
 
 interface UppyImageUploaderProps {
   onUploadSuccess: (url: string) => void;
@@ -29,15 +29,15 @@ function createUppyImageUploader(
     autoProceed: true,
   });
 
-  // Store public URLs for files
   const publicUrls = new Map<string, string>();
 
   uppy.use(AwsS3, {
-    async getUploadParameters(file) {
+    shouldUseMultipart: false, // 👈 use simple PUT upload (not multipart)
+    async getUploadParameters(file): Promise<AwsS3UploadParameters> {
       try {
         const response = await fetch("/api/upload/presigned-url", {
           method: "POST",
-          credentials: "include", // Include cookies for authentication
+          credentials: "include",
           headers: {
             "Content-Type": "application/json",
           },
@@ -55,19 +55,16 @@ function createUppyImageUploader(
         }
 
         const data = await response.json();
-        
-        // Store public URL for later use
-        if (file.id) {
-          publicUrls.set(file.id, data.publicUrl);
-        }
+
+        if (file.id) publicUrls.set(file.id, data.publicUrl);
 
         return {
           method: "PUT",
           url: data.presignedUrl,
+          fields: {}, // required, even if empty
           headers: {
-            "Content-Type": file.type!,
+            "Content-Type": file.type || "application/octet-stream",
           },
-          fields: {},
         };
       } catch (error) {
         console.error("Error getting presigned URL:", error);
@@ -76,8 +73,8 @@ function createUppyImageUploader(
     },
   });
 
-  // Handle successful uploads
-  uppy.on("upload-success", async (file, response) => {
+  // ✅ Handle success and error events
+  uppy.on("upload-success", (file) => {
     if (file?.id) {
       const publicUrl = publicUrls.get(file.id);
       if (publicUrl) {
@@ -89,7 +86,6 @@ function createUppyImageUploader(
     }
   });
 
-  // Handle upload errors
   uppy.on("upload-error", (file, error) => {
     console.error("Upload error:", error);
     onUploadError?.(error.message || "Upload failed");
@@ -106,7 +102,7 @@ export function UppyImageUploader({
   allowedFileTypes = [".jpg", ".jpeg", ".png", ".webp"],
   note,
 }: UppyImageUploaderProps) {
-  const [uppy] = useState(() => 
+  const [uppy] = useState(() =>
     createUppyImageUploader(category, maxFiles, allowedFileTypes, onUploadSuccess, onUploadError)
   );
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
@@ -115,26 +111,21 @@ export function UppyImageUploader({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   uppy.on("file-added", (file) => {
-    setSelectedFile(file.name);
+    setSelectedFile(file.name || "");
     setUploading(true);
   });
 
-  uppy.on("upload-success", () => {
-    setUploading(false);
-  });
-
-  uppy.on("upload-error", () => {
-    setUploading(false);
-  });
+  uppy.on("upload-success", () => setUploading(false));
+  uppy.on("upload-error", () => setUploading(false));
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files && files.length > 0) {
       try {
         uppy.addFile({
-          name: files[0].name,
-          type: files[0].type,
-          data: files[0],
+          name: files[0]?.name || "",
+          type: files[0]?.type,
+          data: files[0] as File,
         });
       } catch (err) {
         console.error("Error adding file:", err);
@@ -157,14 +148,14 @@ export function UppyImageUploader({
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
-    
+
     const files = e.dataTransfer.files;
     if (files && files.length > 0) {
       try {
         uppy.addFile({
-          name: files[0].name,
-          type: files[0].type,
-          data: files[0],
+          name: files[0]?.name || "",
+          type: files[0]?.type,
+          data: files[0] as File,
         });
       } catch (err) {
         console.error("Error adding file:", err);
@@ -177,9 +168,9 @@ export function UppyImageUploader({
 
   return (
     <div className="w-full">
-      <div 
+      <div
         className={`flex flex-col items-center justify-center w-full p-12 text-center border-2 border-dashed rounded-lg transition-colors cursor-pointer ${
-          dragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-400 hover:border-gray-500'
+          dragActive ? "border-blue-500 bg-blue-50" : "border-gray-400 hover:border-gray-500"
         }`}
         onClick={() => fileInputRef.current?.click()}
         onDragEnter={handleDrag}
@@ -204,10 +195,7 @@ export function UppyImageUploader({
           </p>
         )}
       </div>
-      {note && (
-        <p className="mt-2 text-xs text-muted-foreground text-center">{note}</p>
-      )}
+      {note && <p className="mt-2 text-xs text-muted-foreground text-center">{note}</p>}
     </div>
   );
 }
-
