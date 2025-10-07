@@ -412,7 +412,7 @@ export default function SubscriptionPageClient() {
         <div className="mt-3 text-sm">
           <Link
             href="/account/billing"
-            className="text-[#FF040E] hover:underline"
+            className="text-blue-500 hover:underline"
           >
             Manage billing
           </Link>

@@ -1,8 +1,8 @@
 "use client";
-import { User, LogOut, LogIn, Heart } from "lucide-react";
+import { User, LogOut, LogIn, Heart, Wallet, Zap } from "lucide-react";
 import { usePathname } from "next/navigation";
-import { buttonVariants } from "@workspace/ui/components/button"
-import { cn } from "@workspace/ui/lib/utils"
+import { buttonVariants } from "@workspace/ui/components/button";
+import { cn } from "@workspace/ui/lib/utils";
 import Link from "next/link";
 import { signOut, useSession } from "next-auth/react";
 import {
@@ -37,7 +37,7 @@ export function UserMenu() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Avatar className="cursor-pointer">
-          <AvatarImage src={user?.image || ""}/>
+          <AvatarImage src={user?.image || ""} />
           <AvatarFallback className="bg-rose-500">
             <User className="text-white size-4" />
           </AvatarFallback>
@@ -47,19 +47,33 @@ export function UserMenu() {
         <DropdownMenuLabel>My Account</DropdownMenuLabel>
         <DropdownMenuGroup>
           <DropdownMenuItem asChild>
-            <Link href="/favorites" className="flex items-center w-full cursor-pointer">
+            <Link
+              href="/favorites"
+              className="flex items-center w-full cursor-pointer"
+            >
               <Heart className="mr-2 size-4" />
               Favorites
             </Link>
           </DropdownMenuItem>
-          <DropdownMenuItem>
-            Profile
-            <DropdownMenuShortcut>⇧⌘P</DropdownMenuShortcut>
+          <DropdownMenuItem asChild>
+            <Link
+              href="/subscription"
+              className="flex items-center w-full cursor-pointer"
+            >
+              <Wallet className="mr-2 size-4" />
+              Plans
+            </Link>
           </DropdownMenuItem>
-          <DropdownMenuItem>
-            Settings
-            <DropdownMenuShortcut>⌘S</DropdownMenuShortcut>
+          <DropdownMenuItem asChild>
+            <Link
+              href="/account/auto-apply"
+              className="flex items-center w-full cursor-pointer"
+            >
+              <Zap className="mr-2 size-4" />
+              Auto Apply
+            </Link>
           </DropdownMenuItem>
+        
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleLogout}>

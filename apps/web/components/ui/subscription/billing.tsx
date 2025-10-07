@@ -19,6 +19,7 @@ import {
   TableRow,
 } from "@workspace/ui/components/table";
 import { toast } from "sonner";
+import { Progress } from "@workspace/ui/components/progress";
 import { useState } from "react";
 import { PaymentStatus } from "@workspace/db";
 import { Loader2 } from "lucide-react";
@@ -26,6 +27,9 @@ import { Loader2 } from "lucide-react";
 export default function BillingPageClient() {
   const utils = trpc.useUtils();
   const { data: sub } = trpc.subscription.getCurrentSubscription.useQuery();
+  const { data: usage } = trpc.subscription.getUsageStats.useQuery(undefined, {
+    enabled: !!sub,
+  });
   const [paymentHistoryPage, setPaymentHistoryPage] = useState(0);
 
   const { data: paymentHistory, isLoading: loadingPayments } =
@@ -124,17 +128,14 @@ export default function BillingPageClient() {
             <div className="space-y-4">
               <div className="flex justify-between items-start">
                 <div className="space-y-1">
-                  <div className="text-2xl font-semibold">
-                    {sub.plan.name}
-                  </div>
+                  <div className="text-2xl font-semibold">{sub.plan.name}</div>
                   <div className="flex gap-2 items-center">
                     <span className="text-sm text-muted-foreground">
                       Status:
                     </span>
                     {getSubscriptionStatusBadge(sub.status)}
                   </div>
-                  <div className="text-lg font-medium">
-                  </div>
+                  <div className="text-lg font-medium"></div>
                 </div>
                 <div className="flex flex-col gap-2">
                   {sub.status === "PAUSED" ? (
@@ -304,31 +305,87 @@ export default function BillingPageClient() {
           <CardTitle>Plan Features</CardTitle>
         </CardHeader>
         <CardContent>
-          {sub?.plan ? (
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-              <div className="p-4 rounded-lg border">
-                <div className="text-2xl font-bold">
-                  {sub.plan.maxJobListings}
-                </div>
-                <div className="text-sm text-muted-foreground">
+          {sub?.plan && usage ? (
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+              {/* Job Listings */}
+              <div className="p-4 rounded-lg border space-y-2">
+                <div className="text-sm font-medium text-muted-foreground">
                   Job Listings
                 </div>
+                <p className="text-lg font-semibold">
+                  {usage.jobListingsUsed}/{usage.jobListingsLimit || "∞"}
+                </p>
+                <Progress
+                  value={
+                    usage.jobListingsLimit
+                      ? (usage.jobListingsUsed / usage.jobListingsLimit) * 100
+                      : 0
+                  }
+                  className="h-2 bg-gray-200"
+                />
+                <p className="text-xs text-muted-foreground">
+                  {usage.jobListingsLimit
+                    ? `${Math.max(
+                        usage.jobListingsLimit - usage.jobListingsUsed,
+                        0
+                      )} remaining`
+                    : "Unlimited"}
+                </p>
               </div>
-              <div className="p-4 rounded-lg border">
-                <div className="text-2xl font-bold">
-                  {sub.plan.maxServiceListings}
-                </div>
-                <div className="text-sm text-muted-foreground">
+
+              {/* Service Listings */}
+              <div className="p-4 rounded-lg border space-y-2">
+                <div className="text-sm font-medium text-muted-foreground">
                   Service Listings
                 </div>
+                <p className="text-lg font-semibold">
+                  {usage.serviceListingsUsed}/
+                  {usage.serviceListingsLimit || "∞"}
+                </p>
+                <Progress
+                  value={
+                    usage.serviceListingsLimit
+                      ? (usage.serviceListingsUsed /
+                          usage.serviceListingsLimit) *
+                        100
+                      : 0
+                  }
+                  className="h-2 bg-gray-200"
+                />
+                <p className="text-xs text-muted-foreground">
+                  {usage.serviceListingsLimit
+                    ? `${Math.max(
+                        usage.serviceListingsLimit - usage.serviceListingsUsed,
+                        0
+                      )} remaining`
+                    : "Unlimited"}
+                </p>
               </div>
-              <div className="p-4 rounded-lg border">
-                <div className="text-2xl font-bold">
-                  {sub.plan.maxTaskListings}
-                </div>
-                <div className="text-sm text-muted-foreground">
+
+              {/* Task Listings */}
+              <div className="p-4 rounded-lg border space-y-2">
+                <div className="text-sm font-medium text-muted-foreground">
                   Task Listings
                 </div>
+                <p className="text-lg font-semibold">
+                  {usage.taskListingsUsed}/{usage.taskListingsLimit || "∞"}
+                </p>
+                <Progress
+                  value={
+                    usage.taskListingsLimit
+                      ? (usage.taskListingsUsed / usage.taskListingsLimit) * 100
+                      : 0
+                  }
+                  className="h-2 bg-gray-200"
+                />
+                <p className="text-xs text-muted-foreground">
+                  {usage.taskListingsLimit
+                    ? `${Math.max(
+                        usage.taskListingsLimit - usage.taskListingsUsed,
+                        0
+                      )} remaining`
+                    : "Unlimited"}
+                </p>
               </div>
             </div>
           ) : (
