@@ -59,10 +59,16 @@ export function ServiceCard({
     "https://images.unsplash.com/photo-1513224502586-d1e602410265?w=400&auto=format&fit=crop",
   ];
 
-  const imagesToShow =
-    service.images && service.images.length > 0
-      ? service.images
-      : fallbackImages;
+  const imagesToShow = (() => {
+    // Priority: displayImage > images array > fallback images
+    if (service.displayImage) {
+      return [service.displayImage];
+    }
+    if (service.images && service.images.length > 0) {
+      return service.images;
+    }
+    return fallbackImages;
+  })();
 
   const nextImage = () => {
     setCurrentIndex((prev) => (prev + 1) % imagesToShow.length);

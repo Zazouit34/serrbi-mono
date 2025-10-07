@@ -65,14 +65,11 @@ export function JobCard({
           <div className="flex justify-between items-start">
             <Avatar className="bg-gray-100 rounded-2xl shadow-sm size-12 sm:size-16">
               <AvatarImage
-                src={
-                  job.companyImage ??
-                  "https://imgs.search.brave.com/ZeYvSfT6KWIIw3qLEhIDlXkspf0psLFy9fHz0_S5GZY/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly93d3cu/Y2l0eXBuZy5jb20v/cHVibGljL3VwbG9h/ZHMvcHJldmlldy9k/b3dubG9hZC1oZC1t/ZXRhLWZhY2Vib29r/LWxvZ28tcG5nLTcw/MTc1MTY5NDc3NzA2/N2hxcXdtM2Rvcmgu/cG5n"
-                }
+                src={job.companyImage || undefined}
                 alt={job.companyName ?? "Company"}
               />
-              <AvatarFallback>
-                {job.companyName?.slice(0, 1) ?? "C"}
+              <AvatarFallback className="bg-gray-200 text-gray-600 font-semibold">
+                {job.companyName?.slice(0, 2).toUpperCase() ?? "CO"}
               </AvatarFallback>
             </Avatar>
 

@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { FormError } from "../form-error";
 import { FormSuccess } from "../form-success";
 import { LoadingSwap } from "../loading-swap";
@@ -49,8 +50,10 @@ import {
   formatExperienceLevel,
   formatJobType,
 } from "@workspace/ui/lib/formatter";
+import { UppyImageUploader } from "@/components/ui/uppy-image-uploader";
 
 export function JobListingForm() {
+  const { data: session, status } = useSession();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | undefined>("");
   const [success, setSuccess] = useState<string | undefined>("");
@@ -61,6 +64,7 @@ export function JobListingForm() {
     defaultValues: {
       title: "",
       companyName: "",
+      companyImage: undefined,
       description: "",
       category: undefined,
       locationRequirement: undefined,
@@ -97,6 +101,16 @@ export function JobListingForm() {
         // Error handled by onError
       }
     });
+  }
+
+  // Handle authentication after all hooks are called
+  if (status === "loading") {
+    return <div className="flex justify-center items-center min-h-[400px]">Loading...</div>;
+  }
+
+  if (status === "unauthenticated") {
+    router.push("/login?callbackUrl=/jobs/job-listing/new");
+    return <div className="flex justify-center items-center min-h-[400px]">Redirecting to login...</div>;
   }
 
   return (
@@ -480,6 +494,42 @@ export function JobListingForm() {
                   <FormControl>
                     <div className="min-h-[320px]">
                       <MarkdownEditor markdown={field.value} {...field} />
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Company Logo Upload */}
+            <FormField
+              control={form.control as any}
+              name="companyImage"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Company Logo</FormLabel>
+                  <FormControl>
+                    <div>
+                      <UppyImageUploader
+                        category="jobs"
+                        onUploadSuccess={(url) => {
+                          field.onChange(url);
+                          setSuccess("Image uploaded successfully!");
+                          setTimeout(() => setSuccess(""), 2000);
+                        }}
+                        onUploadError={(err) => {
+                          setError(err);
+                          setTimeout(() => setError(""), 3000);
+                        }}
+                        note="Company logo image up to 5 MB • JPG, PNG, WEBP"
+                      />
+                      {field.value && (
+                        <div className="mt-2">
+                          <p className="text-sm text-muted-foreground">
+                            Current image: {field.value.split("/").pop()}
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </FormControl>
                   <FormMessage />

@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { FormError } from "../form-error";
 import { FormSuccess } from "../form-success";
 import { LoadingSwap } from "../loading-swap";
@@ -44,8 +45,10 @@ import {
   formatServiceCategory,
   formatPriceType,
 } from "@workspace/ui/lib/formatter";
+import { UppyImageUploader } from "@/components/ui/uppy-image-uploader";
 
 export function ServiceListingForm() {
+  const { data: session, status } = useSession();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | undefined>("");
   const [success, setSuccess] = useState<string | undefined>("");
@@ -60,6 +63,9 @@ export function ServiceListingForm() {
       type: "",
       price: 0,
       priceType: undefined,
+      displayName: undefined,
+      displayImage: undefined,
+      images: [],
       stateAbbreviation: undefined,
       city: undefined,
       address: undefined,
@@ -92,6 +98,16 @@ export function ServiceListingForm() {
         // Error handled by onError
       }
     });
+  }
+
+  // Handle authentication after all hooks are called
+  if (status === "loading") {
+    return <div className="flex justify-center items-center min-h-[400px]">Loading...</div>;
+  }
+
+  if (status === "unauthenticated") {
+    router.push("/login?callbackUrl=/services/service-listing/new");
+    return <div className="flex justify-center items-center min-h-[400px]">Redirecting to login...</div>;
   }
 
   return (
@@ -385,6 +401,42 @@ export function ServiceListingForm() {
                   <FormControl>
                     <div className="min-h-[320px]">
                       <MarkdownEditor markdown={field.value} {...field} />
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Service Images Upload */}
+            <FormField
+              control={form.control as any}
+              name="displayImage"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Service Image</FormLabel>
+                  <FormControl>
+                    <div>
+                      <UppyImageUploader
+                        category="services"
+                        onUploadSuccess={(url) => {
+                          field.onChange(url);
+                          setSuccess("Image uploaded successfully!");
+                          setTimeout(() => setSuccess(""), 2000);
+                        }}
+                        onUploadError={(err) => {
+                          setError(err);
+                          setTimeout(() => setError(""), 3000);
+                        }}
+                        note="Service image up to 5 MB • JPG, PNG, WEBP"
+                      />
+                      {field.value && (
+                        <div className="mt-2">
+                          <p className="text-sm text-muted-foreground">
+                            Current image: {field.value.split("/").pop()}
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </FormControl>
                   <FormMessage />

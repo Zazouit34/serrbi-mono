@@ -16,12 +16,6 @@ import {
   FormLabel,
   FormMessage,
 } from "@workspace/ui/components/form";
-import {
-  FileUploader,
-  FileUploaderContent,
-  FileUploaderItem,
-  FileInput,
-} from "@/components/ui/form/job/file-input";
 import { useRouter } from "next/navigation";
 import { parsePDF } from "@/app/utils/pdf/prase-pdf";
 import {
@@ -29,16 +23,14 @@ import {
   type ResumeScore,
 } from "@/app/utils/pdf/score-calculator";
 import { ResumeScoreCard } from "@/components/ui/pdf/resume-score-card";
+import { UppyPDFUploader } from "@/components/ui/uppy-pdf-uploader";
 
-// 🔹 Only validate the file input
-const fileSchema = z.object({
-  file: z
-    .array(z.instanceof(File))
-    .min(1, "Please upload a PDF")
-    .max(1, "Only one file allowed"),
+// Schema for resume URL
+const resumeSchema = z.object({
+  resumeUrl: z.string().url("Invalid URL").optional(),
 });
 
-type FormValues = z.infer<typeof fileSchema>;
+type FormValues = z.infer<typeof resumeSchema>;
 
 export default function ResumeListingForm() {
   const { data: session } = useSession();
@@ -51,8 +43,8 @@ export default function ResumeListingForm() {
   const router = useRouter();
 
   const form = useForm<FormValues>({
-    resolver: zodResolver(fileSchema as any) as any,
-    defaultValues: { file: [] },
+    resolver: zodResolver(resumeSchema as any) as any,
+    defaultValues: { resumeUrl: undefined },
   });
 
   const setResumeUrl = trpc.auth.updateResume.useMutation({
@@ -72,35 +64,17 @@ export default function ResumeListingForm() {
     setError("");
     setSuccess("");
 
-    const file = values.file?.[0];
-    if (!file) {
-      setError("Please select a PDF resume.");
-      return;
-    }
-    if (file.type !== "application/pdf") {
-      setError("Only PDF files are allowed.");
+    if (!values.resumeUrl) {
+      setError("Please upload a PDF resume.");
       return;
     }
 
     startTransition(async () => {
       try {
-        const fd = new FormData();
-        fd.append("file", file);
-
-        const res = await fetch("/api/resume/upload", {
-          method: "POST",
-          body: fd,
-        });
-        const json = await res.json();
-        if (!res.ok) {
-          setError(json.error || "Upload failed");
-          return;
-        }
-
-        await setResumeUrl.mutateAsync({ resumeUrl: json.url });
+        await setResumeUrl.mutateAsync({ resumeUrl: values.resumeUrl! });
         router.push("/jobs");
       } catch (e: any) {
-        setError(e?.message || "Upload failed");
+        setError(e?.message || "Failed to save resume");
       }
     });
   }
@@ -183,68 +157,36 @@ export default function ResumeListingForm() {
             </FormItem>
           </div>
 
-          {/* 🔹 Actual file upload */}
+          {/* Resume Upload with Uppy */}
           {!hasResume && (
             <FormField
               control={form.control as any}
-              name="file"
+              name="resumeUrl"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Resume (PDF)</FormLabel>
                   <FormControl>
-                    <FileUploader
-                      value={field.value}
-                      onValueChange={(files) => {
-                        field.onChange(files);
-                        const f = files?.[0];
-                        if (f) {
-                          setAnalyzing(true);
-                          parsePDF(f)
-                            .then((text) => setResumeScore(scoreResume(text)))
-                            .catch((e) => console.warn("PDF parse failed:", e))
-                            .finally(() => setAnalyzing(false));
-                        } else {
-                          setResumeScore(null);
-                          setAnalyzing(false);
-                        }
-                      }}
-                      dropzoneOptions={{
-                        accept: { "application/pdf": [".pdf"] },
-                        maxFiles: 1,
-                        maxSize: 5 * 1024 * 1024,
-                      }}
-                    >
-                      <FileUploaderContent>
-                        <FileInput className="flex flex-col justify-center items-center p-12 text-center rounded-lg border-2 border-gray-400 border-dashed">
+                    <div>
+                      <UppyPDFUploader
+                        onUploadSuccess={(url) => {
+                          field.onChange(url);
+                          setSuccess("Resume uploaded successfully!");
+                          setTimeout(() => setSuccess(""), 2000);
+                        }}
+                        onUploadError={(err) => {
+                          setError(err);
+                          setTimeout(() => setError(""), 3000);
+                        }}
+                        note="Upload your resume (PDF, max 2 MB)"
+                      />
+                      {field.value && (
+                        <div className="mt-2">
                           <p className="text-sm text-muted-foreground">
-                            Drag & drop your PDF here, or{" "}
-                            <span className="text-black">click to browse</span>
+                            Current resume: {field.value.split("/").pop()}
                           </p>
-                        </FileInput>
-
-                        {resumeScore || analyzing ? (
-                          <div className="mt-3 w-full">
-                            <ResumeScoreCard
-                              score={resumeScore?.score ?? 0}
-                              suggestions={resumeScore?.suggestions ?? []}
-                              loading={analyzing}
-                            />
-                          </div>
-                        ) : null}
-
-                        {field.value?.map((f: File, i: number) => (
-                          <FileUploaderItem
-                            key={i}
-                            index={i}
-                            className="w-full"
-                            data-size={f.size}
-                            progress={100}
-                          >
-                            {f.name}
-                          </FileUploaderItem>
-                        ))}
-                      </FileUploaderContent>
-                    </FileUploader>
+                        </div>
+                      )}
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>

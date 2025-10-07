@@ -1,7 +1,7 @@
 import { Inter } from "next/font/google";
 
 import "@workspace/ui/globals.css";
-import "@mdxeditor/editor/style.css"
+import "@mdxeditor/editor/style.css";
 import { Toaster } from "@workspace/ui/components/sonner";
 
 // Polyfill for Node 18 compatibility

@@ -11,7 +11,10 @@
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "db:generate": "cd packages/database && npx prisma generate",
     "db:push": "cd packages/database && npx prisma db push",
-    "db:migrate": "cd packages/database && npx prisma migrate deploy"
+    "db:migrate": "cd packages/database && npx prisma migrate deploy",
+    "seed": "node seed-database.js",
+    "seed:force": "node seed-database.js --force",
+    "clear-seed": "node clear-seed-data.js"
   },
   "devDependencies": {
     "@workspace/eslint-config": "workspace:*",

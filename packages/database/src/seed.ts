@@ -1,6 +1,11 @@
 import { prisma } from "./client";
 
+
 async function main() {
+  console.log("🌱 Starting database seeding...");
+
+
+  // Subscription plans
   const plans = [
     {
       name: "FREE",
@@ -88,7 +93,7 @@ async function main() {
   }
 
   console.log("✅ Seeded subscription plans with Paddle price IDs.");
-}
+  
 
 main()
   .catch((e) => {
