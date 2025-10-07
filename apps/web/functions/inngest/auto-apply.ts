@@ -1,5 +1,6 @@
 import { inngest } from "./client";
 import { prisma, SubscriptionStatus } from "@workspace/db";
+import { PLANS } from "@/lib/plans"
 import { applyAndNotify } from "@/server/services/job-application";
 
 async function getCandidates(category: any) {
@@ -12,10 +13,7 @@ async function getCandidates(category: any) {
         is: {
           status: SubscriptionStatus.ACTIVE,
           planId: {
-            in: [
-              "9e3b09e3-88c8-4ca6-a2a8-78b501fc8a28", // Basic
-              "ee62299a-4591-4cec-a7a9-41d04c4aa70b", // Premium
-            ],
+            in: [PLANS.BASIC.id, PLANS.PREMIUM.id], 
           },
         },
       },

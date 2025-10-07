@@ -16,6 +16,8 @@ import {
 } from "@workspace/ui/lib/validation-schemas";
 import bcrypt from "bcryptjs";
 
+import { PLANS } from "@/lib/plans";
+
 import { TRPCError } from "@trpc/server";
 import type { PrismaClient } from "@workspace/db";
 import { SubscriptionStatus } from "@workspace/db";
@@ -279,12 +281,12 @@ export const authRouter = router({
   getAutoApplyStats: protectedProcedure.query(async ({ ctx }) => {
     const db = ctx.prisma as PrismaClient;
     const user = ctx.user;
-  
+
     // start of current month
     const startOfMonth = new Date();
     startOfMonth.setDate(1);
     startOfMonth.setHours(0, 0, 0, 0);
-  
+
     // Get all job applications for this user this month
     const apps = await db.jobApplication.findMany({
       where: {
@@ -304,9 +306,45 @@ export const authRouter = router({
         },
       },
     });
-  
+
     const appliedCount = apps.length;
-  
+
     return { appliedCount, recent: apps };
-  }),  
+  }),
+
+  //track user planId
+  getUserSubscriptionStatus: protectedProcedure.query(async ({ ctx }) => {
+    const db = ctx.prisma as PrismaClient;
+    const userId = ctx.user.id;
+
+    const subscription = await db.subscription.findFirst({
+      where: {
+        userId,
+        status: SubscriptionStatus.ACTIVE,
+      },
+      select: {
+        planId: true,
+        plan: { select: { name: true } },
+      },
+    });
+
+    // ✅ Always return eligible in both cases
+    if (!subscription) {
+      return {
+        active: false,
+        plan: null,
+        eligible: false, 
+      };
+    }
+
+    const eligiblePlans = [PLANS.BASIC.id, PLANS.PREMIUM.id];
+
+    const isEligible = eligiblePlans.includes(subscription.planId);
+
+    return {
+      active: true,
+      plan: subscription.plan.name,
+      eligible: isEligible,
+    };
+  }),
 });

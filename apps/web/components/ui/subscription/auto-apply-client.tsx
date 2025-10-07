@@ -1,24 +1,22 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { trpc } from "@/app/_trpc/client";
 import { Switch } from "@workspace/ui/components/switch";
 import { Label } from "@workspace/ui/components/label";
 import { Button } from "@workspace/ui/components/button";
 import { toast } from "sonner";
-
+import { Loader2, Check } from "lucide-react";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@workspace/ui/components/popover";
-import { Check } from "lucide-react";
 
 import { jobCategoryValues } from "@workspace/ui/lib/job-enum";
-
 import { jobCategoryIcons } from "@/components/ui/config/job-filters-config";
 import { formatJobCategory } from "@workspace/ui/lib/formatter";
-
 import {
   Tags,
   TagsTrigger,
@@ -30,26 +28,38 @@ import {
   TagsGroup,
   TagsItem,
 } from "@workspace/ui/components/ui/shadcn-io/tags";
+import { Progress } from "@workspace/ui/components/progress";
 
 import keywordsByCategory from "@workspace/ui/data/auto-apply-keyword.json";
-import { Progress } from "@workspace/ui/components/progress";
 
 type JobCategory = (typeof jobCategoryValues)[number];
 
 export default function AutoApplySettingsPage() {
-  const { data, refetch } = trpc.auth.getAutoApplyPrefs.useQuery();
+  const router = useRouter();
+
+  // ✅ Always call hooks — no conditions here
+  const {
+    data: subscription,
+    isLoading: subLoading,
+  } = trpc.auth.getUserSubscriptionStatus.useQuery();
+
+  const { data, refetch } = trpc.auth.getAutoApplyPrefs.useQuery(undefined, {
+    enabled: !!subscription?.eligible, // only runs when eligible
+  });
   const mutation = trpc.auth.updateAutoApplyPrefs.useMutation();
 
-  // NEW: fetch auto-apply stats (count this month)
   const { data: stats, refetch: refetchStats } =
-    trpc.auth.getAutoApplyStats.useQuery();
+    trpc.auth.getAutoApplyStats.useQuery(undefined, {
+      enabled: !!subscription?.eligible, // only runs when eligible
+    });
 
+  // ✅ Hooks always consistent
   const [enabled, setEnabled] = useState(false);
   const [category, setCategory] = useState<JobCategory | null>(null);
   const [keywords, setKeywords] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState("");
 
-  // helpers
+  // Tag handlers
   const addTag = (t: string) => {
     if (!t) return;
     if (!keywords.includes(t)) setKeywords([...keywords, t]);
@@ -57,7 +67,6 @@ export default function AutoApplySettingsPage() {
   };
   const removeTag = (t: string) => setKeywords(keywords.filter((k) => k !== t));
 
-  // effects
   useEffect(() => {
     if (data) {
       setEnabled(!!data.autoApplyEnabled);
@@ -72,11 +81,7 @@ export default function AutoApplySettingsPage() {
 
   const save = async () => {
     try {
-      await mutation.mutateAsync({
-        enabled,
-        category,
-        keywords,
-      });
+      await mutation.mutateAsync({ enabled, category, keywords });
       toast.success("Preferences saved");
       refetch();
       refetchStats();
@@ -85,12 +90,43 @@ export default function AutoApplySettingsPage() {
     }
   };
 
-  // Visual indicator scaling (UI-only). We don't have a stored limit — so this is purely a visual "activity" bar.
-  // We pick a display cap (e.g. 20) so the bar fills reasonably; this does not impose any limit server-side.
+  // Progress bar — purely visual
   const displayCap = 20;
   const appliedCount = stats?.appliedCount ?? 0;
   const pct = Math.min((appliedCount / displayCap) * 100, 100);
 
+  // 🌀 While checking subscription
+  if (subLoading) {
+    return (
+      <div className="flex h-[60vh] items-center justify-center">
+        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  // 🚫 Not eligible — safe to conditionally render *after* hooks
+  if (!subscription?.eligible) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[70vh] text-center space-y-4">
+        <h2 className="text-2xl font-semibold text-black">
+          Auto-Apply is for paid members only
+        </h2>
+        <p className="text-muted-foreground max-w-md">
+          Upgrade to a <span className="font-medium text-black">Basic</span> or{" "}
+          <span className="font-medium text-black">Premium</span> plan to unlock
+          automatic job applications and save time.
+        </p>
+        <Button
+          onClick={() => router.push("/subscription")}
+          className="bg-black text-white hover:bg-black/80 transition"
+        >
+          View Plans
+        </Button>
+      </div>
+    );
+  }
+
+  // ✅ Eligible user — show normal UI
   return (
     <div className="space-y-6 max-w-2xl">
       {/* 🔘 Enable Auto-apply */}
@@ -191,11 +227,10 @@ export default function AutoApplySettingsPage() {
         </Tags>
       </div>
 
-      {/* —— Auto-apply stats (server-side count) —— */}
+      {/* 📊 Auto-apply stats */}
       <div className="mt-4">
         <Label>Auto-apply activity (this month)</Label>
         <div className="mt-2 p-4 rounded-xl border bg-white/70 backdrop-blur-sm shadow-sm space-y-4">
-          {/* header */}
           <div className="flex items-center justify-between">
             <div>
               <div className="text-sm text-muted-foreground">Auto-applied</div>
@@ -209,7 +244,6 @@ export default function AutoApplySettingsPage() {
             </div>
           </div>
 
-          {/* recent list */}
           {stats?.recent && stats.recent.length > 0 && (
             <div className="border-t pt-3 space-y-2">
               <div className="text-sm font-medium text-muted-foreground">
