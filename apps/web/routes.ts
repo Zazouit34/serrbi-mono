@@ -19,7 +19,9 @@ export const publicRoutes =[
 export const privateRoutes = [
     "/agent",
     "/jobs/job-listing/new",
-    "/jobs/resume-listing/new"
+    "/jobs/resume-listing/new",
+    "/account/billing",
+    "/account/auto-apply"
 ]
 
 /**

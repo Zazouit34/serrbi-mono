@@ -41,7 +41,8 @@ export default function AutoApplySettingsPage() {
   const mutation = trpc.auth.updateAutoApplyPrefs.useMutation();
 
   // NEW: fetch auto-apply stats (count this month)
-  const { data: stats, refetch: refetchStats } = trpc.auth.getAutoApplyStats.useQuery();
+  const { data: stats, refetch: refetchStats } =
+    trpc.auth.getAutoApplyStats.useQuery();
 
   const [enabled, setEnabled] = useState(false);
   const [category, setCategory] = useState<JobCategory | null>(null);
@@ -152,9 +153,7 @@ export default function AutoApplySettingsPage() {
                   >
                     {Icon && <Icon className="w-3 h-3 mr-1 text-black" />}
                     {formatJobCategory(c)}
-                    {selected && (
-                      <Check className="w-3 h-3 ml-1 text-black" />
-                    )}
+                    {selected && <Check className="w-3 h-3 ml-1 text-black" />}
                   </Button>
                 );
               })}
@@ -195,25 +194,64 @@ export default function AutoApplySettingsPage() {
       {/* —— Auto-apply stats (server-side count) —— */}
       <div className="mt-4">
         <Label>Auto-apply activity (this month)</Label>
-        <div className="mt-2 p-3 rounded-lg border bg-white">
+        <div className="mt-2 p-4 rounded-xl border bg-white/70 backdrop-blur-sm shadow-sm space-y-4">
+          {/* header */}
           <div className="flex items-center justify-between">
             <div>
               <div className="text-sm text-muted-foreground">Auto-applied</div>
               <div className="text-lg font-semibold">{appliedCount}</div>
             </div>
-
             <div className="w-48">
               <Progress value={pct} className="h-2" />
               <div className="text-xs text-muted-foreground mt-1">
-                Visual activity (no quota). {appliedCount} this month.
+                {appliedCount} applications this month
               </div>
             </div>
           </div>
+
+          {/* recent list */}
+          {stats?.recent && stats.recent.length > 0 && (
+            <div className="border-t pt-3 space-y-2">
+              <div className="text-sm font-medium text-muted-foreground">
+                Recent auto-applies
+              </div>
+              <ul className="space-y-2">
+                {stats.recent.map((app) => (
+                  <li
+                    key={app.id}
+                    className="flex justify-between items-center border rounded-lg p-2 hover:bg-gray-50 transition-colors"
+                  >
+                    <div className="text-sm">
+                      <span className="font-medium text-black">
+                        {app.job?.title || "Unknown Job"}
+                      </span>
+                      {app.job?.companyName && (
+                        <span className="text-muted-foreground">
+                          {" "}
+                          — {app.job.companyName}
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {new Date(app.createdAt).toLocaleDateString(undefined, {
+                        month: "short",
+                        day: "numeric",
+                      })}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
       </div>
 
       {/* 💾 Save */}
-      <Button onClick={save} disabled={mutation.isPending} className="bg-black hover:bg-black/80">
+      <Button
+        onClick={save}
+        disabled={mutation.isPending}
+        className="bg-black hover:bg-black/80"
+      >
         Save preferences
       </Button>
     </div>

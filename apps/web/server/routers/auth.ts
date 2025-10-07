@@ -278,25 +278,35 @@ export const authRouter = router({
   //auto apply stats
   getAutoApplyStats: protectedProcedure.query(async ({ ctx }) => {
     const db = ctx.prisma as PrismaClient;
-    const user = (ctx as any).user;
-
-    // start of current month (local time)
+    const user = ctx.user;
+  
+    // start of current month
     const startOfMonth = new Date();
     startOfMonth.setDate(1);
     startOfMonth.setHours(0, 0, 0, 0);
-    startOfMonth.setMinutes(0);
-    startOfMonth.setSeconds(0);
-    startOfMonth.setMilliseconds(0);
-
-    // Count jobApplication rows for this user (by email) since start of month.
-    // We use email because jobApplication records only store email in your current applyAndNotify
-    const appliedCount = await db.jobApplication.count({
+  
+    // Get all job applications for this user this month
+    const apps = await db.jobApplication.findMany({
       where: {
         email: user.email,
         createdAt: { gte: startOfMonth },
       },
+      orderBy: { createdAt: "desc" },
+      take: 5, // limit to latest 5 for now
+      select: {
+        id: true,
+        createdAt: true,
+        job: {
+          select: {
+            title: true,
+            companyName: true,
+          },
+        },
+      },
     });
-
-    return { appliedCount };
-  }),
+  
+    const appliedCount = apps.length;
+  
+    return { appliedCount, recent: apps };
+  }),  
 });
