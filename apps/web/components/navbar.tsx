@@ -6,8 +6,7 @@ import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { cn } from "@workspace/ui/lib/utils";
-import { Globe2, CircleCheckIcon, CircleIcon } from "lucide-react";
-import { Sheet, SheetContent, SheetHeader, SheetTrigger } from "@workspace/ui/components/sheet";
+import { Globe2, CircleCheckIcon, CircleIcon, Wallet, Zap, Menu } from "lucide-react";
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -35,6 +34,12 @@ const DEFAULT_LINKS = [
   },
   { href: "/tasks", label: "Tasks", image: "/images/tasks.png" },
 ];
+
+const LINKS = [
+  { href:"/subscription", label: "Plans", icon: Wallet },
+  { href:"/account/auto-apply", label: "Auto-apply", icon: Zap },
+  
+]
 
 const DEFAULT_LANGUAGES: Array<{ code: string; label: string }> = [
   { code: "fr", label: "Français" },
@@ -166,43 +171,24 @@ export function Navbar() {
       <header className="sticky top-0 z-50 w-full shadow-sm backdrop-blur bg-background/80 md:hidden">
         {/* Top row: burger + logo + globe */}
         <div className="flex justify-between items-center px-4 py-2">
-          {/* Burger menu using shadcn Sheet */}
-          <Sheet>
-            <SheetTrigger asChild>
+          {/* Burger menu using DropdownMenu */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
               <button className="p-2">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="w-6 h-6"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M4 6h16M4 12h16M4 18h16"
-                  />
-                </svg>
+                <Menu className="w-6 h-6" />
               </button>
-            </SheetTrigger>
-            <SheetContent side="left" className="pl-4 w-64">
-              <SheetHeader>
-                <SerrbiLogo className="h-6" />
-              </SheetHeader>
-              <div className="flex flex-col mt-6 space-y-4">
-                {DEFAULT_LINKS.map((link) => (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    className="text-base font-medium text-gray-700 hover:text-black"
-                  >
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-56">
+              {LINKS.map((link) => (
+                <DropdownMenuItem key={link.href} className="p-0">
+                  <Link href={link.href} className="flex items-center gap-2 w-full px-2 py-1.5">
+                    {link.icon && <link.icon className="size-4" />}
                     {link.label}
                   </Link>
-                ))}
-              </div>
-            </SheetContent>
-          </Sheet>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
 
           {/* Center logo */}
           <Link href="/">

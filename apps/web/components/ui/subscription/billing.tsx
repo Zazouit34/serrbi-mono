@@ -109,7 +109,7 @@ export default function BillingPageClient() {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="mx-auto space-y-8">
       <div className="flex flex-col justify-center items-center">
         <h1 className="text-3xl font-bold font-outfit">
           Billing & Subscription
@@ -119,25 +119,31 @@ export default function BillingPageClient() {
         </p>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Current Plan</CardTitle>
+      <Card className="border border-gray-200/60 shadow-sm bg-gradient-to-br from-white to-gray-50 rounded-2xl">
+        <CardHeader className="pb-2">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-lg font-semibold text-gray-900">
+              Current Plan
+            </CardTitle>
+            {getSubscriptionStatusBadge(sub?.status || "")}
+          </div>
         </CardHeader>
-        <CardContent>
+
+        <CardContent className="space-y-6">
           {sub ? (
-            <div className="space-y-4">
-              <div className="flex justify-between items-start">
-                <div className="space-y-1">
-                  <div className="text-2xl font-semibold">{sub.plan.name}</div>
-                  <div className="flex gap-2 items-center">
-                    <span className="text-sm text-muted-foreground">
-                      Status:
-                    </span>
-                    {getSubscriptionStatusBadge(sub.status)}
-                  </div>
-                  <div className="text-lg font-medium"></div>
+            <>
+              {/* Plan name + period */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-2xl font-bold text-gray-900">
+                    {sub.plan.name}
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    Billed {sub.plan.interval || "monthly"}
+                  </p>
                 </div>
-                <div className="flex flex-col gap-2">
+
+                <div className="flex gap-2">
                   {sub.status === "PAUSED" ? (
                     <Button
                       onClick={() => resume.mutate()}
@@ -145,11 +151,11 @@ export default function BillingPageClient() {
                     >
                       {resume.isPending ? (
                         <>
-                          <Loader2 className="mr-2 w-4 h-4 animate-spin" />
+                          <Loader2 className="mr-2 w-4 h-4 animate-spin" />{" "}
                           Resuming...
                         </>
                       ) : (
-                        "Resume Subscription"
+                        "Resume"
                       )}
                     </Button>
                   ) : sub.status === "ACTIVE" && sub.plan.price > 0 ? (
@@ -161,11 +167,11 @@ export default function BillingPageClient() {
                       >
                         {pause.isPending ? (
                           <>
-                            <Loader2 className="mr-2 w-4 h-4 animate-spin" />
+                            <Loader2 className="mr-2 w-4 h-4 animate-spin" />{" "}
                             Pausing...
                           </>
                         ) : (
-                          "Pause Subscription"
+                          "Pause"
                         )}
                       </Button>
                       <Button
@@ -175,11 +181,11 @@ export default function BillingPageClient() {
                       >
                         {cancel.isPending ? (
                           <>
-                            <Loader2 className="mr-2 w-4 h-4 animate-spin" />
+                            <Loader2 className="mr-2 w-4 h-4 animate-spin" />{" "}
                             Canceling...
                           </>
                         ) : (
-                          "Cancel Subscription"
+                          "Cancel"
                         )}
                       </Button>
                     </>
@@ -187,27 +193,27 @@ export default function BillingPageClient() {
                 </div>
               </div>
 
-              <Separator />
+              {/* Divider */}
+              <Separator className="my-4" />
 
-              <div className="grid grid-cols-1 gap-4 text-sm md:grid-cols-2">
+              {/* Billing details */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
                 <div>
-                  <div className="text-muted-foreground">Billing Period</div>
-                  <div className="font-medium">
-                    {sub.currentPeriodStart
-                      ? new Date(sub.currentPeriodStart).toLocaleDateString()
-                      : "-"}
-                    {" → "}
-                    {sub.currentPeriodEnd
-                      ? new Date(sub.currentPeriodEnd).toLocaleDateString()
-                      : "-"}
-                  </div>
+                  <p className="text-muted-foreground">Billing Period</p>
+                  <p className="font-medium text-gray-900">
+                    {new Date(
+                      sub.currentPeriodStart || ""
+                    ).toLocaleDateString()}{" "}
+                    →{" "}
+                    {new Date(sub.currentPeriodEnd || "").toLocaleDateString()}
+                  </p>
                 </div>
                 {sub.paddleSubscriptionId && (
                   <div>
-                    <div className="text-muted-foreground">Subscription ID</div>
-                    <div className="font-mono text-xs">
+                    <p className="text-muted-foreground">Subscription ID</p>
+                    <p className="font-mono text-xs text-gray-700">
                       {sub.paddleSubscriptionId}
-                    </div>
+                    </p>
                   </div>
                 )}
               </div>
@@ -215,183 +221,147 @@ export default function BillingPageClient() {
               {sub.canceledAt && (
                 <div className="p-3 bg-yellow-50 rounded-lg border border-yellow-200">
                   <p className="text-sm text-yellow-800">
-                    Your subscription will end on{" "}
+                    Ends on{" "}
                     {new Date(sub.currentPeriodEnd || "").toLocaleDateString()}.
-                    You'll continue to have access until then.
+                    You’ll retain access until then.
                   </p>
                 </div>
               )}
-            </div>
+            </>
           ) : (
-            <div className="text-muted-foreground">
+            <p className="text-muted-foreground">
               No active subscription.{" "}
               <a href="/subscription" className="text-primary hover:underline">
                 Choose a plan
               </a>{" "}
               to get started.
-            </div>
+            </p>
           )}
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="border border-gray-200/60 shadow-sm bg-white/60 rounded-2xl">
         <CardHeader>
-          <CardTitle>Payment History</CardTitle>
+          <CardTitle className="text-lg font-semibold text-gray-900">
+            Payment History
+          </CardTitle>
         </CardHeader>
         <CardContent>
           {loadingPayments ? (
-            <div className="flex justify-center items-center py-8">
-              <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+            <div className="flex justify-center py-10">
+              <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
             </div>
-          ) : paymentHistory?.payments && paymentHistory.payments.length > 0 ? (
-            <div className="space-y-4">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead>Amount</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Payment Method</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {paymentHistory.payments.map((payment) => (
-                    <TableRow key={payment.id}>
-                      <TableCell className="text-sm">
-                        {payment.paidAt
-                          ? new Date(payment.paidAt).toLocaleDateString()
-                          : payment.createdAt
-                            ? new Date(payment.createdAt).toLocaleDateString()
-                            : "-"}
-                      </TableCell>
-                      <TableCell className="text-sm">
-                        {payment.description ||
-                          `${payment.subscription?.plan?.displayName || "Subscription"} payment`}
-                      </TableCell>
-                      <TableCell className="text-sm font-medium">
-                        {formatAmount(payment.amount, payment.currency)}
-                      </TableCell>
-                      <TableCell>{getStatusBadge(payment.status)}</TableCell>
-                      <TableCell className="text-sm capitalize text-muted-foreground">
-                        {payment.paymentMethod?.replace("_", " ") || "-"}
-                      </TableCell>
+          ) : paymentHistory?.payments?.length ? (
+            <>
+              <div className="overflow-hidden rounded-lg border border-gray-100">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-gray-50/50">
+                      <TableHead>Date</TableHead>
+                      <TableHead>Description</TableHead>
+                      <TableHead>Amount</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Method</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {paymentHistory.payments.map((p) => (
+                      <TableRow
+                        key={p.id}
+                        className="hover:bg-gray-50 transition-colors"
+                      >
+                        <TableCell>
+                          {new Date(
+                            p.paidAt || p.createdAt
+                          ).toLocaleDateString()}
+                        </TableCell>
+                        <TableCell>
+                          {p.description || p.subscription?.plan?.displayName}
+                        </TableCell>
+                        <TableCell className="font-medium">
+                          {formatAmount(p.amount, p.currency)}
+                        </TableCell>
+                        <TableCell>{getStatusBadge(p.status)}</TableCell>
+                        <TableCell className="text-muted-foreground capitalize">
+                          {p.paymentMethod?.replace("_", " ") || "-"}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
 
               {paymentHistory.hasMore && (
                 <div className="flex justify-center pt-4">
                   <Button
                     variant="outline"
-                    onClick={() => setPaymentHistoryPage((prev) => prev + 1)}
+                    onClick={() => setPaymentHistoryPage((p) => p + 1)}
                   >
                     Load More
                   </Button>
                 </div>
               )}
-            </div>
+            </>
           ) : (
-            <div className="py-8 text-sm text-center text-muted-foreground">
-              No payment history available yet.
+            <div className="py-8 text-center text-sm text-muted-foreground">
+              No payment history yet.
             </div>
           )}
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="border border-gray-200/60 shadow-sm bg-white/60 rounded-2xl">
         <CardHeader>
-          <CardTitle>Plan Features</CardTitle>
+          <CardTitle className="text-lg font-semibold text-gray-900">
+            Plan Features
+          </CardTitle>
         </CardHeader>
         <CardContent>
           {sub?.plan && usage ? (
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-              {/* Job Listings */}
-              <div className="p-4 rounded-lg border space-y-2">
-                <div className="text-sm font-medium text-muted-foreground">
-                  Job Listings
-                </div>
-                <p className="text-lg font-semibold">
-                  {usage.jobListingsUsed}/{usage.jobListingsLimit || "∞"}
-                </p>
-                <Progress
-                  value={
-                    usage.jobListingsLimit
-                      ? (usage.jobListingsUsed / usage.jobListingsLimit) * 100
-                      : 0
-                  }
-                  className="h-2 bg-gray-200"
-                />
-                <p className="text-xs text-muted-foreground">
-                  {usage.jobListingsLimit
-                    ? `${Math.max(
-                        usage.jobListingsLimit - usage.jobListingsUsed,
-                        0
-                      )} remaining`
-                    : "Unlimited"}
-                </p>
-              </div>
-
-              {/* Service Listings */}
-              <div className="p-4 rounded-lg border space-y-2">
-                <div className="text-sm font-medium text-muted-foreground">
-                  Service Listings
-                </div>
-                <p className="text-lg font-semibold">
-                  {usage.serviceListingsUsed}/
-                  {usage.serviceListingsLimit || "∞"}
-                </p>
-                <Progress
-                  value={
-                    usage.serviceListingsLimit
-                      ? (usage.serviceListingsUsed /
-                          usage.serviceListingsLimit) *
-                        100
-                      : 0
-                  }
-                  className="h-2 bg-gray-200"
-                />
-                <p className="text-xs text-muted-foreground">
-                  {usage.serviceListingsLimit
-                    ? `${Math.max(
-                        usage.serviceListingsLimit - usage.serviceListingsUsed,
-                        0
-                      )} remaining`
-                    : "Unlimited"}
-                </p>
-              </div>
-
-              {/* Task Listings */}
-              <div className="p-4 rounded-lg border space-y-2">
-                <div className="text-sm font-medium text-muted-foreground">
-                  Task Listings
-                </div>
-                <p className="text-lg font-semibold">
-                  {usage.taskListingsUsed}/{usage.taskListingsLimit || "∞"}
-                </p>
-                <Progress
-                  value={
-                    usage.taskListingsLimit
-                      ? (usage.taskListingsUsed / usage.taskListingsLimit) * 100
-                      : 0
-                  }
-                  className="h-2 bg-gray-200"
-                />
-                <p className="text-xs text-muted-foreground">
-                  {usage.taskListingsLimit
-                    ? `${Math.max(
-                        usage.taskListingsLimit - usage.taskListingsUsed,
-                        0
-                      )} remaining`
-                    : "Unlimited"}
-                </p>
-              </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {[
+                {
+                  label: "Job Listings",
+                  used: usage.jobListingsUsed,
+                  limit: usage.jobListingsLimit,
+                },
+                {
+                  label: "Service Listings",
+                  used: usage.serviceListingsUsed,
+                  limit: usage.serviceListingsLimit,
+                },
+                {
+                  label: "Task Listings",
+                  used: usage.taskListingsUsed,
+                  limit: usage.taskListingsLimit,
+                },
+              ].map((item) => {
+                const pct = item.limit ? (item.used / item.limit) * 100 : 0;
+                return (
+                  <div
+                    key={item.label}
+                    className="rounded-xl border border-gray-100 bg-gradient-to-br from-gray-50 to-white p-4 shadow-sm hover:shadow transition"
+                  >
+                    <div className="text-sm font-medium text-muted-foreground">
+                      {item.label}
+                    </div>
+                    <div className="text-xl font-semibold text-gray-900">
+                      {item.used}/{item.limit || "∞"}
+                    </div>
+                    <Progress value={pct} className="h-2 mt-2 bg-gray-200" />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {item.limit
+                        ? `${Math.max(item.limit - item.used, 0)} remaining`
+                        : "Unlimited"}
+                    </p>
+                  </div>
+                );
+              })}
             </div>
           ) : (
-            <div className="text-sm text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               Subscribe to a plan to see your features.
-            </div>
+            </p>
           )}
         </CardContent>
       </Card>

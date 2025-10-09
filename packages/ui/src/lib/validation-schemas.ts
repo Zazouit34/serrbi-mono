@@ -210,7 +210,7 @@ export const fileSchema = z.custom<File>(
 export const jobApplyFormSchema = z.object({
   name: nameSchema,
   email: emailSchema,
-  cv: fileSchema,
+  cv: fileSchema.optional(),
 })
 export type JobApplyFormValues = z.infer<typeof jobApplyFormSchema>
 
@@ -223,6 +223,7 @@ export const jobApplicationCreateSchema = z.object({
   cv: z.boolean().default(false),
   cvFilename: z.string().optional(),
   cvData: z.string().optional(),
+  resumeUrl: z.string().url().optional(),
 })
 export type JobApplicationCreateValues = z.infer<typeof jobApplicationCreateSchema>
 

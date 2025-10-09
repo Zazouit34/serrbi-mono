@@ -63,15 +63,11 @@ export function UserMenuMobile() {
 
       <DropdownMenuContent align="center" className="w-44">
         <DropdownMenuItem asChild>
-          <Link href="/profile">Profile</Link>
+          <Link href="/account/auto-apply">Auto-apply</Link>
         </DropdownMenuItem>
 
         <DropdownMenuItem asChild>
-          <Link href="/settings">Settings</Link>
-        </DropdownMenuItem>
-
-        <DropdownMenuItem asChild>
-          <Link href="/billing">Billing</Link>
+          <Link href="account/billing">Billing</Link>
         </DropdownMenuItem>
 
         <DropdownMenuSeparator />

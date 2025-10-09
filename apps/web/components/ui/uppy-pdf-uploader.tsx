@@ -1,234 +1,182 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import {
+  useState,
+  useRef,
+  useEffect,
+  forwardRef,
+  useImperativeHandle,
+} from "react";
 import Uppy from "@uppy/core";
 import AwsS3 from "@uppy/aws-s3";
+import { Trash2 } from "lucide-react";
+import { format } from "date-fns";
+import { cn } from "@workspace/ui/lib/utils";
 
-interface UppyPDFUploaderProps {
-  onUploadSuccess: (url: string) => void;
-  onUploadError?: (error: string) => void;
-  note?: string;
+export interface UppyPDFUploaderHandle {
+  startUpload: () => Promise<string | null>; // returns public URL after upload
+  clearFile: () => void;
+  getFile: () => File | null;
 }
 
-function createUppyPDFUploader(
-  onUploadSuccess: (url: string) => void,
-  onUploadError?: (error: string) => void
-) {
-  // typed as `any` to avoid some overly strict Uppy plugin typings in TS
-  const uppy: any = new Uppy({
+interface UppyPDFUploaderProps {
+  onFileSelect?: (file: File) => void; // ✅ triggers local analysis
+  note?: string;
+  onUploadError?: (error: string) => void;
+  onUploadSuccess?: (url: string, file: File) => void;
+}
+
+function createUppyInstance() {
+  return new Uppy({
     restrictions: {
       maxNumberOfFiles: 1,
-      maxFileSize: 2 * 1024 * 1024, // 2MB
+      maxFileSize: 2 * 1024 * 1024,
       allowedFileTypes: [".pdf", "application/pdf"],
     },
-    autoProceed: true,
+    autoProceed: false,
   });
+}
 
-  // map file.id -> public URL returned by your server
-  const publicUrls = new Map<string, string>();
+export const UppyPDFUploader = forwardRef<
+  UppyPDFUploaderHandle,
+  UppyPDFUploaderProps
+>(({ onFileSelect, onUploadSuccess, onUploadError, note }, ref) => {
+  const [uppy] = useState(() => createUppyInstance());
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [progress, setProgress] = useState(0);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  // Use AwsS3 plugin. Cast to `any` to avoid TypeScript mismatch between AwsS3
-  // options shape and the project's @uppy types (this does not change runtime).
-  uppy.use(AwsS3 as any, {
-    // when Uppy wants to upload a file, it calls getUploadParameters(file)
-    // we call our server route to get a presigned PUT URL and a publicUrl
-    getUploadParameters: async (file: any) => {
+  // 🌀 Simulated progress animation (visual only)
+  useEffect(() => {
+    if (!selectedFile) return;
+    setProgress(0);
+    const interval = setInterval(() => {
+      setProgress((p) => {
+        if (p >= 100) {
+          clearInterval(interval);
+          return 100;
+        }
+        return p + 4; // ⬆️ faster increment
+      });
+    }, 25); // ⬇️ shorter delay
+    return () => clearInterval(interval);
+  }, [selectedFile]);
+
+  useImperativeHandle(ref, () => ({
+    async startUpload() {
+      if (!selectedFile) return null;
+
+      // Real upload to S3 only happens here when user confirms
       try {
-        const response = await fetch("/api/upload/presigned-url", {
+        const res = await fetch("/api/upload/presigned-url", {
           method: "POST",
-          credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            filename: file.name,
-            contentType: file.type || "application/pdf",
+            filename: selectedFile.name,
+            contentType: selectedFile.type,
             fileType: "resume",
           }),
         });
 
-        if (!response.ok) {
-          const body = await response.json().catch(() => ({}));
-          throw new Error(body?.error || "Failed to get upload URL");
-        }
+        if (!res.ok) throw new Error("Failed to get presigned URL");
 
-        const data = await response.json();
+        const data = await res.json();
 
-        // store public url to emit it later when upload-success fires
-        if (file?.id && data?.publicUrl) {
-          publicUrls.set(file.id, data.publicUrl);
-        }
-
-        return {
-          // Uppy expects method/url/fields (for form uploads). Using PUT to the presigned URL.
+        await fetch(data.presignedUrl, {
           method: "PUT",
-          url: data.presignedUrl,
-          fields: {},
-          headers: {
-            // put the content type; fallback to pdf if missing
-            "Content-Type": file.type || "application/pdf",
-          },
-        };
+          headers: { "Content-Type": selectedFile.type },
+          body: selectedFile,
+        });
+
+        const publicUrl = data.publicUrl;
+        onUploadSuccess?.(publicUrl, selectedFile);
+        return publicUrl;
       } catch (err: any) {
-        console.error("Error getting presigned URL:", err);
-        throw err;
+        onUploadError?.(err.message || "Upload failed");
+        return null;
       }
     },
-  });
+    clearFile: () => {
+      setSelectedFile(null);
+      setProgress(0);
+      uppy.cancelAll();
+      uppy.getFiles().forEach((f: any) => uppy.removeFile(f.id));
+    },
+    getFile: () => selectedFile,
+  }));
 
-  // When Uppy reports upload-success, read the publicUrl we stored earlier
-  uppy.on("upload-success", (file: any) => {
+  const handleSelectFile = (file: File) => {
     try {
-      if (!file?.id) {
-        onUploadError?.("Upload succeeded but missing file id");
-        return;
-      }
-      const publicUrl = publicUrls.get(file.id);
-      if (publicUrl) {
-        onUploadSuccess(publicUrl);
-        publicUrls.delete(file.id);
-      } else {
-        onUploadError?.("Failed to retrieve public URL for uploaded file");
-      }
-    } catch (err: any) {
-      console.error("Error in upload-success handler:", err);
-      onUploadError?.(err?.message || "Unknown upload success handling error");
-    }
-  });
-
-  uppy.on("upload-error", (file: any, error: any) => {
-    console.error("Upload error:", error);
-    onUploadError?.(error?.message || "Upload failed");
-  });
-
-  return uppy;
-}
-
-export function UppyPDFUploader({
-  onUploadSuccess,
-  onUploadError,
-  note,
-}: UppyPDFUploaderProps) {
-  // create uppy once
-  const [uppy] = useState<any>(() =>
-    createUppyPDFUploader(onUploadSuccess, onUploadError)
-  );
-
-  const [selectedFile, setSelectedFile] = useState<string | null>(null);
-  const [uploading, setUploading] = useState(false);
-  const [dragActive, setDragActive] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
-
-  // register lightweight UI-related listeners here and clean up on unmount
-  useEffect(() => {
-    const handleFileAdded = (file: any) => {
-      setSelectedFile(file?.name || null);
-      setUploading(true);
-    };
-
-    const handleSuccess = () => {
-      setUploading(false);
-    };
-
-    const handleError = () => {
-      setUploading(false);
-    };
-
-    uppy.on("file-added", handleFileAdded);
-    uppy.on("upload-success", handleSuccess);
-    uppy.on("upload-error", handleError);
-
-    return () => {
-      uppy.off("file-added", handleFileAdded);
-      uppy.off("upload-success", handleSuccess);
-      uppy.off("upload-error", handleError);
-      // close Uppy instance to release resources
-      try {
-        uppy.close();
-      } catch (err) {
-        // ignore close errors
-      }
-    };
-  }, [uppy]);
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
-    try {
-      uppy.addFile({
-        name: files[0]?.name,
-        type: files[0]?.type,
-        data: files[0],
-      });
-    } catch (err) {
-      console.error("Error adding file:", err);
-      onUploadError?.("Failed to add file");
-    } finally {
-      // reset input so same file can be selected again if needed
-      if (fileInputRef.current) fileInputRef.current.value = "";
+      setSelectedFile(file);
+      onFileSelect?.(file); // trigger local scoring
+    } catch {
+      onUploadError?.("Invalid file");
     }
   };
 
-  const handleDrag = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.type === "dragenter" || e.type === "dragover") {
-      setDragActive(true);
-    } else if (e.type === "dragleave") {
-      setDragActive(false);
-    }
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (f) handleSelectFile(f);
   };
 
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragActive(false);
-    const files = e.dataTransfer.files;
-    if (!files || files.length === 0) return;
-    try {
-      uppy.addFile({
-        name: files[0]?.name,
-        type: files[0]?.type,
-        data: files[0],
-      });
-    } catch (err) {
-      console.error("Error adding file:", err);
-      onUploadError?.("Failed to add file");
-    }
+  const handleRemove = () => {
+    setSelectedFile(null);
+    setProgress(0);
+    uppy.cancelAll();
+    uppy.getFiles().forEach((f: any) => uppy.removeFile(f.id));
   };
 
   return (
     <div className="w-full">
-      <div
-        className={`flex flex-col items-center justify-center w-full p-12 text-center border-2 border-dashed rounded-lg transition-colors cursor-pointer ${
-          dragActive ? "border-blue-500 bg-blue-50" : "border-gray-400 hover:border-gray-500"
-        }`}
-        onClick={() => fileInputRef.current?.click()}
-        onDragEnter={handleDrag}
-        onDragLeave={handleDrag}
-        onDragOver={handleDrag}
-        onDrop={handleDrop}
-      >
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept=".pdf,application/pdf"
-          onChange={handleFileChange}
-          className="hidden"
-        />
-        <p className="text-sm text-muted-foreground">
-          Drag & drop your PDF here, or{" "}
-          <span className="text-black font-medium">click to browse</span>
-        </p>
-        {selectedFile && (
-          <p className="mt-2 text-xs text-green-600">
-            {uploading ? `Uploading: ${selectedFile}...` : `Selected: ${selectedFile}`}
+      {!selectedFile ? (
+        <div
+          className="flex flex-col items-center justify-center w-full p-12 text-center border-2 border-dashed rounded-lg cursor-pointer hover:border-gray-500 transition"
+          onClick={() => fileInputRef.current?.click()}
+        >
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".pdf,application/pdf"
+            className="hidden"
+            onChange={handleChange}
+          />
+          <p className="text-sm text-muted-foreground">
+            Drag & drop your PDF here, or{" "}
+            <span className="text-black font-medium">click to browse</span>
           </p>
-        )}
-      </div>
+        </div>
+      ) : (
+        <div className="flex items-center gap-4 border rounded-lg p-3 bg-white shadow-sm relative">
+          <div className="flex items-center justify-center h-10 w-10 bg-red-600 text-white font-semibold rounded-md">
+            PDF
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="truncate font-medium text-sm">{selectedFile.name}</p>
+            <p className="text-xs text-muted-foreground">
+              Added on {format(new Date(), "PP")}
+            </p>
+            <div className="relative mt-2 h-2 bg-gray-200 rounded-full overflow-hidden">
+              <div
+                className={cn(
+                  "absolute left-0 top-0 h-full bg-gradient-to-r from-black to-black/80 transition-all duration-300 ease-in-out"
+                )}
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+          </div>
+
+          <Trash2
+            className="w-4 h-4 text-gray-500 hover:text-red-600 cursor-pointer"
+            onClick={handleRemove}
+          />
+        </div>
+      )}
+
       {note && (
         <p className="mt-2 text-xs text-muted-foreground text-center">{note}</p>
       )}
     </div>
   );
-}
+});
+
+UppyPDFUploader.displayName = "UppyPDFUploader";

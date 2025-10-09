@@ -38,10 +38,8 @@ export default function AutoApplySettingsPage() {
   const router = useRouter();
 
   // ✅ Always call hooks — no conditions here
-  const {
-    data: subscription,
-    isLoading: subLoading,
-  } = trpc.auth.getUserSubscriptionStatus.useQuery();
+  const { data: subscription, isLoading: subLoading } =
+    trpc.auth.getUserSubscriptionStatus.useQuery();
 
   const { data, refetch } = trpc.auth.getAutoApplyPrefs.useQuery(undefined, {
     enabled: !!subscription?.eligible, // only runs when eligible
@@ -129,9 +127,19 @@ export default function AutoApplySettingsPage() {
   // ✅ Eligible user — show normal UI
   return (
     <div className="space-y-6 max-w-2xl">
-      {/* 🔘 Enable Auto-apply */}
-      <div className="flex gap-3 items-center">
-        <Label htmlFor="auto-apply">Auto-apply</Label>
+      {/* 🔘 Auto-apply toggle */}
+      <div className="flex items-center justify-between p-4 border rounded-xl bg-white/70 backdrop-blur-sm shadow-sm">
+        <div>
+          <Label
+            htmlFor="auto-apply"
+            className="text-base font-medium text-black"
+          >
+            Auto-apply
+          </Label>
+          <p className="text-sm text-muted-foreground">
+            Automatically apply to matching jobs in your category
+          </p>
+        </div>
         <Switch
           id="auto-apply"
           checked={enabled}
@@ -139,143 +147,137 @@ export default function AutoApplySettingsPage() {
         />
       </div>
 
-      {/* 🧩 Category Popover */}
-      <div className="space-y-2">
-        <Label>Job Category</Label>
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              className="w-1/3 justify-start"
-              disabled={!enabled}
-            >
-              {category ? (
-                <div className="flex items-center gap-2">
-                  {(() => {
-                    const Icon =
-                      jobCategoryIcons[
-                        category as keyof typeof jobCategoryIcons
-                      ];
-                    return Icon ? (
-                      <Icon className="w-4 h-4 text-black" />
-                    ) : null;
-                  })()}
-                  <span className="text-sm font-medium text-black">
-                    {formatJobCategory(category)}
-                  </span>
-                </div>
-              ) : (
-                <span className="text-muted-foreground">Select Category</span>
-              )}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-80 p-4">
-            <div className="flex flex-wrap gap-2">
-              {jobCategoryValues.map((c) => {
-                const Icon =
-                  jobCategoryIcons[c as keyof typeof jobCategoryIcons];
-                const selected = category === c;
-                return (
-                  <Button
-                    key={c}
-                    variant="outline"
-                    size="sm"
-                    className={`rounded-full text-xs font-medium h-8 px-3 ${
-                      selected
-                        ? "bg-white/80 border-black text-black"
-                        : "hover:bg-gray-50 border-gray-200 text-gray-700"
-                    }`}
-                    onClick={() => setCategory(c)}
-                  >
-                    {Icon && <Icon className="w-3 h-3 mr-1 text-black" />}
-                    {formatJobCategory(c)}
-                    {selected && <Check className="w-3 h-3 ml-1 text-black" />}
-                  </Button>
-                );
-              })}
-            </div>
-          </PopoverContent>
-        </Popover>
+      <hr className="my-6 border-t border-gray-200" />
+
+      {/* 🧩 Job Categories */}
+      <div className="space-y-3">
+        <Label className="text-base font-medium text-black">Job Category</Label>
+        <div className="flex flex-wrap gap-2">
+          {jobCategoryValues.map((c) => {
+            const Icon = jobCategoryIcons[c as keyof typeof jobCategoryIcons];
+            const selected = category === c;
+            return (
+              <button
+                key={c}
+                disabled={!enabled}
+                onClick={() => setCategory(c)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-sm transition ${
+                  selected
+                    ? "border-black bg-white/80 text-black shadow-sm"
+                    : "border-gray-200 text-gray-700 hover:bg-gray-50"
+                } ${!enabled ? "opacity-50 cursor-not-allowed" : ""}`}
+              >
+                {Icon && <Icon className="w-3.5 h-3.5 text-black" />}
+                {formatJobCategory(c)}
+                {selected && <Check className="w-3 h-3 text-black" />}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
-      {/* 🏷️ Tags */}
-      <div className="space-y-2">
-        <Label>Tags (keywords)</Label>
-        <Tags value={tagInput} setValue={setTagInput} className="w-full">
-          <TagsTrigger>
-            {keywords.map((k) => (
-              <TagsValue key={k} onRemove={() => removeTag(k)}>
-                {k}
-              </TagsValue>
-            ))}
-          </TagsTrigger>
-          <TagsContent>
-            <TagsInput placeholder="Search tags..." />
-            <TagsList>
-              <TagsEmpty>No tags found.</TagsEmpty>
-              <TagsGroup heading="Suggestions">
-                {suggestions
-                  .filter((s) => !keywords.includes(s))
-                  .map((s) => (
-                    <TagsItem key={s} onSelect={() => addTag(s)}>
-                      {s}
-                    </TagsItem>
-                  ))}
-              </TagsGroup>
-            </TagsList>
-          </TagsContent>
-        </Tags>
+      <hr className="my-6 border-t border-gray-200" />
+
+      {/* 🏷️ Tags (keywords) */}
+      <div className="space-y-3">
+        <Label className="text-base font-medium text-black">
+          Tags (keywords)
+        </Label>
+        {category ? (
+          <div className="flex flex-wrap gap-2">
+            {suggestions.map((tag) => {
+              const selected = keywords.includes(tag);
+              return (
+                <button
+                  key={tag}
+                  disabled={!enabled}
+                  onClick={() =>
+                    setKeywords((prev) =>
+                      selected ? prev.filter((k) => k !== tag) : [...prev, tag]
+                    )
+                  }
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-sm transition ${
+                    selected
+                      ? "border-black bg-white/80 text-black shadow-sm"
+                      : "border-gray-200 text-gray-700 hover:bg-gray-50"
+                  } ${!enabled ? "opacity-50 cursor-not-allowed" : ""}`}
+                >
+                  {selected && <Check className="w-3 h-3 text-black" />}
+                  {tag}
+                </button>
+              );
+            })}
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            Select a job category to view relevant tags.
+          </p>
+        )}
       </div>
+
+      <hr className="my-6 border-t border-gray-200" />
 
       {/* 📊 Auto-apply stats */}
-      <div className="mt-4">
-        <Label>Auto-apply activity (this month)</Label>
-        <div className="mt-2 p-4 rounded-xl border bg-white/70 backdrop-blur-sm shadow-sm space-y-4">
+      <div className="space-y-3">
+        <Label className="text-base font-medium text-black">
+          Auto-apply activity (this month)
+        </Label>
+
+        <div className="p-4 rounded-xl border bg-white/70 backdrop-blur-sm shadow-sm space-y-4">
+          {/* Top summary row */}
           <div className="flex items-center justify-between">
             <div>
-              <div className="text-sm text-muted-foreground">Auto-applied</div>
-              <div className="text-lg font-semibold">{appliedCount}</div>
-            </div>
-            <div className="w-48">
-              <Progress value={pct} className="h-2" />
-              <div className="text-xs text-muted-foreground mt-1">
-                {appliedCount} applications this month
+              <div className="text-sm text-muted-foreground">
+                Auto-applied jobs
               </div>
+              <div className="text-2xl font-semibold text-black">
+                {appliedCount}
+              </div>
+            </div>
+            <div className="flex flex-col items-end">
+              <Progress value={pct} className="h-2 w-40" />
+              <span className="text-xs text-muted-foreground mt-1">
+                {appliedCount} of {displayCap} jobs this month
+              </span>
             </div>
           </div>
 
+          {/* Divider */}
           {stats?.recent && stats.recent.length > 0 && (
-            <div className="border-t pt-3 space-y-2">
-              <div className="text-sm font-medium text-muted-foreground">
-                Recent auto-applies
-              </div>
-              <ul className="space-y-2">
-                {stats.recent.map((app) => (
-                  <li
-                    key={app.id}
-                    className="flex justify-between items-center border rounded-lg p-2 hover:bg-gray-50 transition-colors"
-                  >
-                    <div className="text-sm">
-                      <span className="font-medium text-black">
-                        {app.job?.title || "Unknown Job"}
-                      </span>
-                      {app.job?.companyName && (
-                        <span className="text-muted-foreground">
-                          {" "}
-                          — {app.job.companyName}
+            <>
+              <hr className="border-t border-gray-200" />
+              <div className="space-y-2">
+                <div className="text-sm font-medium text-muted-foreground">
+                  Recent auto-applies
+                </div>
+                <ul className="space-y-2">
+                  {stats.recent.slice(0, 5).map((app) => (
+                    <li
+                      key={app.id}
+                      className="flex justify-between items-center rounded-lg border p-2 hover:bg-gray-50 transition-colors"
+                    >
+                      <div className="text-sm">
+                        <span className="font-medium text-black">
+                          {app.job?.title || "Unknown Job"}
                         </span>
-                      )}
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      {new Date(app.createdAt).toLocaleDateString(undefined, {
-                        month: "short",
-                        day: "numeric",
-                      })}
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </div>
+                        {app.job?.companyName && (
+                          <span className="text-muted-foreground">
+                            {" "}
+                            — {app.job.companyName}
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {new Date(app.createdAt).toLocaleDateString(undefined, {
+                          month: "short",
+                          day: "numeric",
+                        })}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </>
           )}
         </div>
       </div>

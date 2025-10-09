@@ -9,9 +9,10 @@ export async function parsePDF(file: File): Promise<string> {
   try {
     // Dynamic import to avoid SSR issues
     const { default: pdfToText } = await import("react-pdftotext");
-    const fullText = await pdfToText(file);
+    const fullText = await pdfToText(file); 
+    
+    return fullText.replace(/\s+/g, " ").trim();
    
-    return fullText.trim();
   } catch (error) {
     console.error("Error parsing PDF:", error);
     throw new Error("Failed to parse PDF file");

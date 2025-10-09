@@ -77,7 +77,7 @@ export async function POST(req: NextRequest) {
     const event = JSON.parse(rawBody);
     const { event_type, data } = event;
 
-    console.log(`📥 Received Paddle webhook: ${event_type}`);
+   
 
     // Handle different event types
     switch (event_type) {
@@ -110,7 +110,7 @@ export async function POST(req: NextRequest) {
         break;
 
       default:
-        console.log(`Unhandled event type: ${event_type}`);
+        
     }
 
     return NextResponse.json({ received: true });
@@ -185,7 +185,7 @@ async function handleSubscriptionCreated(data: any) {
       },
     });
 
-    console.log(`✅ Subscription created for user ${userId}`);
+   
   } catch (error) {
     console.error('Error handling subscription.created:', error);
   }
@@ -221,7 +221,7 @@ async function handleSubscriptionUpdated(data: any) {
       },
     });
 
-    console.log(`✅ Subscription updated: ${data.id}`);
+  
   } catch (error) {
     console.error('Error handling subscription.updated:', error);
   }
@@ -240,7 +240,7 @@ async function handleSubscriptionCanceled(data: any) {
       },
     });
 
-    console.log(`✅ Subscription canceled: ${data.id}`);
+   
   } catch (error) {
     console.error('Error handling subscription.canceled:', error);
   }
@@ -259,7 +259,7 @@ async function handleSubscriptionPaused(data: any) {
       },
     });
 
-    console.log(`✅ Subscription paused: ${data.id}`);
+  
   } catch (error) {
     console.error('Error handling subscription.paused:', error);
   }
@@ -278,7 +278,7 @@ async function handleSubscriptionResumed(data: any) {
       },
     });
 
-    console.log(`✅ Subscription resumed: ${data.id}`);
+   
   } catch (error) {
     console.error('Error handling subscription.resumed:', error);
   }
@@ -313,7 +313,7 @@ async function handleTransactionCompleted(data: any) {
       },
     });
 
-    console.log(`✅ Payment recorded for transaction: ${data.id}`);
+   
   } catch (error) {
     console.error('Error handling transaction.completed:', error);
   }
@@ -346,7 +346,7 @@ async function handleTransactionFailed(data: any) {
       },
     });
 
-    console.log(`⚠️ Payment failed for transaction: ${data.id}`);
+  
   } catch (error) {
     console.error('Error handling transaction.payment_failed:', error);
   }

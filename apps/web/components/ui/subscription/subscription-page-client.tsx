@@ -9,6 +9,7 @@ import {
   CardHeader,
   CardTitle,
   CardDescription,
+  CardFooter,
 } from "@workspace/ui/components/card";
 import { Check, Loader2, CheckCircle2 } from "lucide-react";
 import { useSession } from "next-auth/react";
@@ -165,6 +166,20 @@ export default function SubscriptionPageClient() {
     }
   };
 
+  type PlanKey = "free" | "basic" | "premium";
+
+  const PLAN_ICONS: Record<PlanKey, string> = {
+    free: "/images/free.png",
+    basic: "/images/basic.png",
+    premium: "/images/premium.png",
+  };
+
+  const PLAN_SUBTEXT: Record<PlanKey, string> = {
+    free: "Best for individuals getting started.",
+    basic: "Best for small teams and growing use.",
+    premium: "Best for businesses that need more power.",
+  };
+
   const PlanCard = ({ plan }: { plan: any }) => {
     const features: string[] = [
       `${plan.maxJobListings} job listings`,
@@ -184,6 +199,13 @@ export default function SubscriptionPageClient() {
       paddlePrice?.data?.details?.lineItems?.[0]?.formattedTotals?.total ||
       (plan.price > 0 ? `$${(plan.price / 100).toFixed(2)}` : "Free");
 
+    const planKey = (
+      plan.displayName ||
+      plan.name ||
+      "basic"
+    ).toLowerCase() as PlanKey;
+    const subtext = PLAN_SUBTEXT[planKey];
+
     return (
       <div
         className={`relative flex flex-col gap-6 overflow-hidden rounded-2xl border p-6 shadow transition-all duration-300 ${
@@ -192,11 +214,23 @@ export default function SubscriptionPageClient() {
             : "bg-white hover:shadow-lg"
         }`}
       >
-        <h2 className="text-xl font-semibold">
-          {plan.displayName || plan.name}
-        </h2>
+        <div className="flex items-center justify-center gap-5">
+          <div className="flex items-center justify-center h-16 w-16 rounded-2xl bg-white/80 backdrop-blur-sm shadow-[0_2px_8px_rgba(0,0,0,0.05)]">
+            <img
+              src={PLAN_ICONS[planKey]}
+              alt={`${plan.displayName || plan.name} icon`}
+              width={64}
+              height={64}
+              className="h-14 w-14 object-contain"
+            />
+          </div>
 
-        <div className="relative h-12">
+          <h2 className="text-2xl font-semibold">
+            {plan.displayName || plan.name}
+          </h2>
+        </div>
+
+        <div className="relative">
           <div className="text-4xl font-semibold">
             {displayPrice}
             {plan.price > 0 && (
@@ -205,7 +239,7 @@ export default function SubscriptionPageClient() {
               </span>
             )}
           </div>
-          {paddlePrice && plan.price > 0 && (
+          {/* {paddlePrice && plan.price > 0 && (
             <div className="mt-1 text-sm text-muted-foreground">
               {
                 paddlePrice.data?.details?.lineItems?.[0]?.formattedTotals
@@ -213,20 +247,22 @@ export default function SubscriptionPageClient() {
               }{" "}
               + tax
             </div>
-          )}
+          )}*/}
+          <div className="mt-2 text-sm text-muted-foreground">{subtext}</div>
         </div>
 
-        <div className="flex-1 space-y-2">
-          <p className="text-sm font-medium text-muted-foreground">
-            {plan.description}
-          </p>
+        <div className="mt-4 mb-2 h-px w-full bg-gray-200" />
+
+        <div className="flex-1">
           <ul className="space-y-2">
             {features.map((feature, idx) => (
               <li
                 key={idx}
-                className="flex items-center gap-2 text-sm text-foreground/70"
+                className="flex items-center gap-2 text-sm text-foreground/80"
               >
-                <Check strokeWidth={1.5} size={16} className="text-green-600" />
+                <span className="inline-flex h-4 w-4 items-center justify-center rounded-[4px] bg-black">
+                  <Check size={10} strokeWidth={3} className="text-white" />
+                </span>
                 {feature}
               </li>
             ))}
@@ -271,32 +307,28 @@ export default function SubscriptionPageClient() {
 
     const isActive = subscription.status === "ACTIVE";
 
+    const USAGE_ICONS = {
+      jobs: "/images/jobs.png",
+      services: "/images/services.png",
+      tasks: "/images/tasks.png",
+    };
+
     return (
       <div className="grid gap-6 md:grid-cols-2 mt-10">
         {/* Current Subscription Card */}
-        <Card
-          className={`relative overflow-hidden border ${
-            isActive
-              ? "border-blue-500 bg-gradient-to-br from-blue-50 to-white"
-              : "border-border bg-white"
-          }`}
-        >
-          {isActive && (
-            <div className="absolute top-0 right-0 p-3">
-              <CheckCircle2 className="h-6 w-6 text-blue-500" />
-            </div>
-          )}
+        <Card className="border border-gray-200 bg-white rounded-2xl shadow-sm">
           <CardHeader>
             <CardTitle className="text-lg font-semibold">
-              Current Subscription
+              Current Plan
             </CardTitle>
-            <CardDescription>Your active plan details</CardDescription>
+            <CardDescription>Your active subscription details</CardDescription>
           </CardHeader>
+
           <CardContent className="space-y-6">
             <div className="space-y-2">
               <p className="text-base font-medium">
                 Plan:{" "}
-                <span className="font-semibold text-blue-600">
+                <span className="font-semibold text-foreground">
                   {subscription.plan?.displayName || subscription.plan?.name}
                 </span>
               </p>
@@ -308,92 +340,134 @@ export default function SubscriptionPageClient() {
             {subscription.currentPeriodEnd && (
               <p className="text-sm text-muted-foreground">
                 Next billing date:{" "}
-                <span className="font-medium">
+                <span className="font-medium text-foreground">
                   {format(new Date(subscription.currentPeriodEnd), "PPP")}
                 </span>
               </p>
             )}
+            <hr className="my-2 border-t border-gray-200" />
           </CardContent>
+          <CardFooter>
+            <Button
+              asChild
+              className="w-full bg-black text-white hover:bg-black/90 rounded-lg"
+            >
+              <Link href="/account/billing">Manage Subscription</Link>
+            </Button>
+          </CardFooter>
         </Card>
 
         {/* Usage Card */}
-        <Card className="border border-border bg-white">
+        <Card className="border border-gray-200 bg-white rounded-2xl shadow-sm">
           <CardHeader>
             <CardTitle className="text-lg font-semibold">Usage</CardTitle>
-            <CardDescription>Track your current plan limits</CardDescription>
+            <CardDescription>Track your plan limits</CardDescription>
           </CardHeader>
+
           <CardContent>
             {usage ? (
               <div className="space-y-5">
                 {/* Jobs */}
-                <div>
-                  <p className="text-sm font-medium">
-                    Jobs: {usage.jobListingsUsed}/
-                    {usage.jobListingsLimit || "∞"}
-                  </p>
-                  <Progress
-                    value={
-                      usage?.jobListingsLimit
-                        ? (usage.jobListingsUsed / usage.jobListingsLimit) * 100
-                        : 0
-                    }
-                    className="h-2 bg-gray-200"
+                <div className="flex items-start gap-3">
+                  <img
+                    src={USAGE_ICONS.jobs}
+                    alt="Jobs"
+                    className="w-8 h-8 object-contain opacity-90"
                   />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {usage?.jobListingsLimit != null
-                      ? `${Math.max(usage.jobListingsLimit - usage.jobListingsUsed, 0)} remaining this month`
-                      : "Unlimited"}
-                  </p>
+                  <div className="flex-1 space-y-1.5">
+                    <p className="text-sm font-medium">
+                      Jobs: {usage.jobListingsUsed}/
+                      {usage.jobListingsLimit || "∞"}
+                    </p>
+                    <Progress
+                      value={
+                        usage?.jobListingsLimit
+                          ? (usage.jobListingsUsed / usage.jobListingsLimit) *
+                            100
+                          : 0
+                      }
+                      className="h-2 bg-gray-200"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      {usage?.jobListingsLimit != null
+                        ? `${Math.max(
+                            usage.jobListingsLimit - usage.jobListingsUsed,
+                            0
+                          )} remaining this month`
+                        : "Unlimited"}
+                    </p>
+                  </div>
                 </div>
 
                 {/* Services */}
-                <div>
-                  <p className="text-sm font-medium">
-                    Services: {usage.serviceListingsUsed}/
-                    {usage.serviceListingsLimit || "∞"}
-                  </p>
-                  <Progress
-                    value={
-                      usage?.serviceListingsLimit
-                        ? (usage.serviceListingsUsed /
-                            usage.serviceListingsLimit) *
-                          100
-                        : 0
-                    }
-                    className="h-2 bg-gray-200"
+                <div className="flex items-start gap-3">
+                  <img
+                    src={USAGE_ICONS.services}
+                    alt="Services"
+                    className="w-8 h-8 object-contain opacity-90"
                   />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {usage?.serviceListingsLimit != null
-                      ? `${Math.max(usage.serviceListingsLimit - usage.serviceListingsUsed, 0)} remaining this month`
-                      : "Unlimited"}
-                  </p>
+                  <div className="flex-1 space-y-1.5">
+                    <p className="text-sm font-medium">
+                      Services: {usage.serviceListingsUsed}/
+                      {usage.serviceListingsLimit || "∞"}
+                    </p>
+                    <Progress
+                      value={
+                        usage?.serviceListingsLimit
+                          ? (usage.serviceListingsUsed /
+                              usage.serviceListingsLimit) *
+                            100
+                          : 0
+                      }
+                      className="h-2 bg-gray-200"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      {usage?.serviceListingsLimit != null
+                        ? `${Math.max(
+                            usage.serviceListingsLimit -
+                              usage.serviceListingsUsed,
+                            0
+                          )} remaining this month`
+                        : "Unlimited"}
+                    </p>
+                  </div>
                 </div>
 
                 {/* Tasks */}
-                <div>
-                  <p className="text-sm font-medium">
-                    Tasks: {usage.taskListingsUsed}/
-                    {usage.taskListingsLimit || "∞"}
-                  </p>
-                  <Progress
-                    value={
-                      usage?.taskListingsLimit
-                        ? (usage.taskListingsUsed / usage.taskListingsLimit) *
-                          100
-                        : 0
-                    }
-                    className="h-2 bg-gray-200"
+                <div className="flex items-start gap-3">
+                  <img
+                    src={USAGE_ICONS.tasks}
+                    alt="Tasks"
+                    className="w-8 h-8 object-contain opacity-90"
                   />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {usage?.taskListingsLimit != null
-                      ? `${Math.max(usage.taskListingsLimit - usage.taskListingsUsed, 0)} remaining this month`
-                      : "Unlimited"}
-                  </p>
+                  <div className="flex-1 space-y-1.5">
+                    <p className="text-sm font-medium">
+                      Tasks: {usage.taskListingsUsed}/
+                      {usage.taskListingsLimit || "∞"}
+                    </p>
+                    <Progress
+                      value={
+                        usage?.taskListingsLimit
+                          ? (usage.taskListingsUsed / usage.taskListingsLimit) *
+                            100
+                          : 0
+                      }
+                      className="h-2 bg-gray-200"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      {usage?.taskListingsLimit != null
+                        ? `${Math.max(
+                            usage.taskListingsLimit - usage.taskListingsUsed,
+                            0
+                          )} remaining this month`
+                        : "Unlimited"}
+                    </p>
+                  </div>
                 </div>
               </div>
             ) : (
               <div className="text-sm text-muted-foreground">
-                No usage data.
+                No usage data available.
               </div>
             )}
           </CardContent>
@@ -409,14 +483,6 @@ export default function SubscriptionPageClient() {
         <p className="text-muted-foreground font-outfit">
           Upgrade to unlock more listings and features.
         </p>
-        <div className="mt-3 text-sm">
-          <Link
-            href="/account/billing"
-            className="text-blue-500 hover:underline"
-          >
-            Manage billing
-          </Link>
-        </div>
       </div>
 
       {plansError && (

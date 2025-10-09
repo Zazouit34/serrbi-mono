@@ -1,6 +1,7 @@
 "use client";
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { trpc } from "@/app/_trpc/client";
 import { useForm } from "react-hook-form";
 import { CloudUpload, Paperclip, ArrowLeft, ExternalLink } from "lucide-react";
@@ -39,6 +40,7 @@ export function JobApplyForm({
   jobTitle: string;
   applicationUrl: string | null;
 }) {
+  const { data: session } = useSession();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | undefined>("");
   const [success, setSuccess] = useState<string | undefined>("");
@@ -50,6 +52,25 @@ export function JobApplyForm({
     resolver: zodResolver(jobApplyFormSchema),
     defaultValues: { name: "", email: "" },
   });
+
+  // Fetch current user info when logged in (includes resumeUrl via protectedProcedure)
+  const userQuery = trpc.auth.userData.useQuery(undefined, {
+    enabled: !!session?.user?.email,
+  });
+  const resumeUrl = userQuery.data?.user?.resumeUrl as string | undefined;
+  const hasSavedResume = !!resumeUrl;
+
+  // Prefill name/email for logged-in user
+  useEffect(() => {
+    const u = userQuery.data?.user as { name?: string | null; email?: string | null } | undefined;
+    if (u?.email || u?.name) {
+      form.reset({
+        name: u?.name ?? "",
+        email: u?.email ?? "",
+        cv: undefined as any,
+      });
+    }
+  }, [userQuery.data?.user, form]);
 
   const submitApplicationMutation = trpc.job.submitApplication.useMutation({
     onSuccess: (data) => {
@@ -93,6 +114,7 @@ export function JobApplyForm({
           cv: !!cvFile,
           cvData,
           cvFilename,
+          resumeUrl: !cvFile && hasSavedResume ? resumeUrl : undefined,
         });
       } catch {
         // handled in onError
@@ -101,15 +123,10 @@ export function JobApplyForm({
   }
 
   const dropZoneConfig = {
-    accept: {
-      "application/pdf": [".pdf"],
-      "application/msword": [".doc"],
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
-        [".docx"],
-    },
+    accept: { "application/pdf": [".pdf"] },
     maxFiles: 1,
     multiple: false,
-    maxSize: 5 * 1024 * 1024,
+    maxSize: 2 * 1024 * 1024, // 2MB to match Uppy
   };
 
   const handleApplyClick = () => {
@@ -196,54 +213,76 @@ export function JobApplyForm({
                 />
               </div>
 
-              {/* CV Upload */}
-              <FormField
-                control={form.control}
-                name="cv"
-                render={() => (
-                  <FormItem>
-                    <FormLabel>CV upload (PDF or Word)</FormLabel>
-                    <FormControl>
-                      <FileUploader
-                        value={cvFile ? [cvFile] : []}
-                        onValueChange={(files) => {
-                          const f = files?.[0] ?? null;
-                          setCvFile(f);
-                          form.setValue("cv", f as any, {
-                            shouldValidate: true,
-                          });
-                        }}
-                        dropzoneOptions={dropZoneConfig}
-                        className="relative p-2 rounded-lg"
-                      >
-                        <FileInput className="outline-dashed outline-1 outline-slate-500">
-                          <div className="flex flex-col justify-center items-center p-8 w-full">
-                            <CloudUpload className="w-10 h-10 text-gray-500" />
-                            <p className="mb-1 text-sm text-gray-500">
-                              <span className="font-semibold">
-                                Click to upload
-                              </span>{" "}
-                              or drag and drop
-                            </p>
-                            <p className="text-xs text-gray-500">
-                              Accepted: PDF, DOC, DOCX • Max 5MB
-                            </p>
-                          </div>
-                        </FileInput>
-                        <FileUploaderContent>
-                          {cvFile && (
-                            <FileUploaderItem index={0}>
-                              <Paperclip className="w-4 h-4 stroke-current" />
-                              <span>{cvFile.name}</span>
-                            </FileUploaderItem>
-                          )}
-                        </FileUploaderContent>
-                      </FileUploader>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {/* CV (saved or upload) */}
+              {hasSavedResume ? (
+                <div className="space-y-2">
+                  <FormLabel>Resume</FormLabel>
+                  <div className="flex justify-between items-center p-2 rounded-md border">
+                    <span className="truncate">
+                      {(() => {
+                        try {
+                          const last = new URL(resumeUrl!).pathname.split("/").pop() || "resume.pdf";
+                          return decodeURIComponent(last);
+                        } catch {
+                          return resumeUrl!.split("/").pop() || "resume.pdf";
+                        }
+                      })()}
+                    </span>
+                    <a
+                      href={resumeUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-sm text-black underline"
+                    >
+                      Open
+                    </a>
+                  </div>
+                </div>
+              ) : (
+                <FormField
+                  control={form.control}
+                  name="cv"
+                  render={() => (
+                    <FormItem>
+                      <FormLabel>CV upload (PDF or Word)</FormLabel>
+                      <FormControl>
+                        <FileUploader
+                          value={cvFile ? [cvFile] : []}
+                          onValueChange={(files) => {
+                            const f = files?.[0] ?? null;
+                            setCvFile(f);
+                            form.setValue("cv", f as any, {
+                              shouldValidate: true,
+                            });
+                          }}
+                          dropzoneOptions={dropZoneConfig}
+                          className="relative p-2 rounded-lg"
+                        >
+                          <FileInput className="outline-dashed outline-1 outline-slate-500">
+                            <div className="flex flex-col justify-center items-center p-8 w-full">
+                              <CloudUpload className="w-10 h-10 text-gray-500" />
+                              <p className="mb-1 text-sm text-gray-500">
+                                <span className="font-semibold">Click to upload</span>{" "}
+                                or drag and drop
+                              </p>
+                              <p className="text-xs text-gray-500">Accepted: PDF • Max 2MB</p>
+                            </div>
+                          </FileInput>
+                          <FileUploaderContent>
+                            {cvFile && (
+                              <FileUploaderItem index={0}>
+                                <Paperclip className="w-4 h-4 stroke-current" />
+                                <span>{cvFile.name}</span>
+                              </FileUploaderItem>
+                            )}
+                          </FileUploaderContent>
+                        </FileUploader>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
 
               <FormError message={error} />
               <FormSuccess message={success} />

@@ -73,7 +73,6 @@ export default function ResetPasswordPreview() {
     startTransition(async () => {
       try {
         // Assuming an async reset password function
-        console.log(values)
         resetPassword.mutate({
         token: token || '',
         password: values.password,

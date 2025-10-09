@@ -118,7 +118,7 @@ export default function Hero() {
       />
 
       <div className="flex relative z-10 flex-col gap-8 justify-center items-center">
-        <Announcement>
+        <Announcement className="text-[14px]">
           <AnnouncementTag className="ml-1 font-semibold text-white bg-gradient-to-r from-red-500 via-pink-500 to-rose-500">
             New
           </AnnouncementTag>
@@ -139,10 +139,10 @@ export default function Hero() {
             </AvatarGroup>
           </AnnouncementEnd>
         </Announcement>
-        <h1 className="mb-0 text-balance font-medium text-3xl md:text-5xl xl:text-[5.25rem] leading-tight">
+        <h1 className="mb-0 text-balance font-medium text-4xl md:text-[80px] xl:text-[80px] leading-tight">
           AI qui Connecte aux <br />
           <GradientText
-            className="font-playfair text-4xl md:text-6xl xl:text-[6rem] font-semibold"
+            className="font-playfair text-5xl md:text-[80px] xl:text-[80px] font-semibold"
             text="Opportunités"
           />
         </h1>
@@ -151,7 +151,7 @@ export default function Hero() {
           <HeroSearchBar />
 
 
-        <p className="mt-0 mb-0 text-lg text-balance text-muted-foreground">
+        <p className="mt-0 mb-0 text-[16px] text-balance text-muted-foreground">
           Serrbi is a unified marketplace where you can find jobs, services, and
           gigs for freelancers. Connect with opportunities across all industries
           and skill levels.

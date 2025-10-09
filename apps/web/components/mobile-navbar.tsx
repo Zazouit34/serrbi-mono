@@ -20,9 +20,9 @@ export function MobileNavbar() {
         <span className="text-xs">Home</span>
       </Link>
 
-      <Link href="/search" prefetch={false} className={itemClass}>
+      <Link href="/jobs" prefetch={false} className={itemClass}>
         <SearchIcon className="w-6 h-6" />
-        <span className="text-xs">Search</span>
+        <span className="text-xs">Explore</span>
       </Link>
 
       <Link href="/favorites" prefetch={false} className={itemClass}>

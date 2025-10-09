@@ -48,8 +48,7 @@ export async function POST(req: NextRequest) {
   try {
     // Authenticate user
     const session = await auth();
-    console.log("Session in presigned-url route:", JSON.stringify(session, null, 2));
-
+  
     if (!session?.user?.id) {
       console.error("Auth failed - session:", session);
       return NextResponse.json(

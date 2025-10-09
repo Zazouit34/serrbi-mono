@@ -12,6 +12,11 @@ import {
 import { JobListingInfo } from "@/components/ui/form/job/job-listing-info";
 import { Skeleton } from "@workspace/ui/components/skeleton";
 import { ClockIcon } from "lucide-react";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@workspace/ui/components/avatar";
 
 export default function ApplyJobPage() {
   const { jobId } = useParams<{ jobId: string }>();
@@ -87,7 +92,18 @@ export default function ApplyJobPage() {
       <div className="space-y-4">
         {/* Title + location/type */}
         <div className="flex justify-between items-start">
-          <h1 className="text-2xl font-bold">{job.title}</h1>
+          <div className="flex items-center gap-3">
+            <Avatar className="bg-gray-100 rounded-2xl shadow-sm size-16">
+              <AvatarImage
+                src={job.companyImage || undefined}
+                alt={job.companyName ?? "Company"}
+              />
+              <AvatarFallback className="bg-gray-200 text-gray-600 font-semibold">
+                {(job.companyName?.slice(0, 2) || "CO").toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            <h1 className="text-2xl font-bold">{job.title}</h1>
+          </div>
           <div className="flex gap-2">
             <span className="inline-flex items-center gap-1.5 rounded-full border px-3 py-0.5 text-xs text-foreground/80">
               {formatLocationRequirement(job.locationRequirement as any)}

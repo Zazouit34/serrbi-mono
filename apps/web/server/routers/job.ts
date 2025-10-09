@@ -178,6 +178,7 @@ export const jobRouter = router({
         email: input.email,
         cvData: input.cvData,
         cvFilename: input.cvFilename,
+        resumeUrl: input.resumeUrl,
       });
       return result;
     }),
