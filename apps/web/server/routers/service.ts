@@ -23,13 +23,13 @@ export const serviceRouter = router({
             userId: user.id,
             title: input.title,
             displayName: input.displayName || null,
-            displayImage: input.displayImage || null,
-            images: JSON.stringify(input.images),
+            displayImage: input.displayImage || null, // optional again
+            images: JSON.stringify(input.images), // images required by schema
             description: input.description,
             serviceCategory: input.serviceCategory,
             type: input.type,
             price: input.price,
-            priceType: input.priceType,
+            // priceType removed
             stateAbbreviation: input.stateAbbreviation || null,
             city: input.city || null,
             address: input.address || null,
@@ -50,7 +50,7 @@ export const serviceRouter = router({
             serviceCategory: true,
             type: true,
             price: true,
-            priceType: true,
+            // priceType removed
             stateAbbreviation: true,
             city: true,
             address: true,
@@ -92,7 +92,7 @@ export const serviceRouter = router({
       const stateAbbreviation = input?.stateAbbreviation;
       const priceMin = input?.priceMin;
       const priceMax = input?.priceMax;
-      const priceType = input?.priceType;
+      // priceType removed
       const db = ctx.prisma as any;
 
       const where: any = {};
@@ -102,7 +102,7 @@ export const serviceRouter = router({
       if (type) where.type = { contains: type, mode: "insensitive" };
       if (city) where.city = { contains: city, mode: "insensitive" };
       if (stateAbbreviation) where.stateAbbreviation = stateAbbreviation;
-      if (priceType) where.priceType = priceType;
+      // if (priceType) where.priceType = priceType; // removed
       if (priceMin || priceMax) {
         where.price = {};
         if (priceMin) where.price.gte = priceMin;
@@ -123,7 +123,7 @@ export const serviceRouter = router({
           orderBy: [{ createdAt: "desc" }, { id: "desc" }],
           skip: (page - 1) * pageSize,
           take: pageSize,
-        select: {
+          select: {
           id: true,
           title: true,
           displayName: true,
@@ -133,7 +133,7 @@ export const serviceRouter = router({
           serviceCategory: true,
           type: true,
           price: true,
-          priceType: true,
+            // priceType removed
           stateAbbreviation: true,
           city: true,
           address: true,
@@ -270,25 +270,25 @@ export const serviceRouter = router({
 
     const data = input.rows.map((r) => ({
       userId: ownerId!,
-      title: r.title,
-      displayName: r.displayName ?? null,
-      displayImage: r.displayImage ?? null,
+      title: r.title as any,
+      displayName: (r.displayName ?? null) as any,
+      displayImage: (r.displayImage ?? null) as any,
       images: JSON.stringify([]),
-      description: r.description,
-      serviceCategory: r.serviceCategory,
-      type: r.type,
-      price: r.price ?? 0,
-      priceType: r.priceType ?? "fixed",
-      stateAbbreviation: r.stateAbbreviation ?? null,
-      city: r.city ?? null,
-      address: r.address ?? null,
+      description: r.description as any,
+      serviceCategory: r.serviceCategory as any,
+      type: r.type as any,
+      price: (r.price ?? 0) as any,
+      // priceType removed
+      stateAbbreviation: (r.stateAbbreviation ?? null) as any,
+      city: (r.city ?? null) as any,
+      address: (r.address ?? null) as any,
       latitude: null,
       longitude: null,
-      phoneNumber: r.phoneNumber ?? null,
-      email: r.email ?? null,
-      website: r.website ?? null,
+      phoneNumber: (r.phoneNumber ?? null) as any,
+      email: (r.email ?? null) as any,
+      website: (r.website ?? null) as any,
       openingHours: null,
-      status: r.status ?? "published",
+      status: (r.status ?? "published") as any,
     }));
 
     await db.service.createMany({ data });

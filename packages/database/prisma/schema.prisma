@@ -37,6 +37,7 @@ model User {
   autoApplyEnabled     Boolean       @default(false)
   autoApplyCategory    JobCategory?  // single category
   autoApplyKeywords    String[]      // user-selected tags
+  autoApplyRoles       String[]      @default([]) // user-selected roles per category
  
 
 
@@ -151,7 +152,7 @@ model Service {
   title             String
   description       String
   price             Int
-  priceType         PriceType?
+  // priceType removed
   city              String?
   stateAbbreviation String?
   address           String?
@@ -213,7 +214,7 @@ model Task {
   phoneNumber       String?
   email             String?
   budget            Int?
-  budgetType        BudgetType?
+  // budgetType removed
   city              String?
   stateAbbreviation String?
   address           String?
@@ -495,11 +496,6 @@ enum ServiceCategory {
   Cleaning
 }
 
-enum PriceType {
-  fixed
-  hourly
-  starting_from
-}
 
 enum ReservationStatus {
   Pending
@@ -520,10 +516,6 @@ enum TaskCategory {
   Education
 }
 
-enum BudgetType {
-  Fixed
-  Negotiable
-}
 
 enum TaskStatus {
   Active

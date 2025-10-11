@@ -1,0 +1,14 @@
+{
+  "Tech": ["frontend", "backend", "fullstack", "mobile", "ios", "android", "devops", "ml", "ai", "data engineer", "ui", "ux"],
+  "Finance": ["accountant", "auditor", "financial analyst", "controller"],
+  "Hospitality": ["barista", "chef", "waiter", "receptionist"],
+  "Construction": ["plumber", "electrician", "mason", "carpenter"],
+  "Education": ["teacher", "tutor", "instructor"],
+  "Legal": ["paralegal", "associate", "litigator"],
+  "Health": ["nurse", "physician", "clinician"],
+  "Cleaning": ["janitor", "housekeeper"],
+  "Auto": ["mechanic", "diagnostic technician"],
+  "Other": []
+}
+
+

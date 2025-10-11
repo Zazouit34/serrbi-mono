@@ -147,9 +147,7 @@ export default function Hero() {
           />
         </h1>
 
-        
-          <HeroSearchBar />
-
+        <HeroSearchBar />
 
         <p className="mt-0 mb-0 text-[16px] text-balance text-muted-foreground">
           Serrbi is a unified marketplace where you can find jobs, services, and

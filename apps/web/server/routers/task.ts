@@ -26,7 +26,7 @@ export const taskRouter = router({
             category: input.category,
             bgStyle: input.bgStyle || null,
             budget: input.budget || null,
-            budgetType: input.budgetType || null,
+            // budgetType removed
             stateAbbreviation: input.stateAbbreviation || null,
             city: input.city || null,
             address: input.address || null,

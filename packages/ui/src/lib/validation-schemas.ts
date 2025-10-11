@@ -5,8 +5,8 @@ import {
   experienceLevelValues,
   jobListingTypeValues
 } from "@workspace/ui/lib/job-enum"
-import { serviceCategoryValues, priceTypeValues, serviceStatusValues } from "@workspace/ui/lib/service-enum"
-import { taskCategoryValues, taskStatusValues, BudgetTypeValues } from "@workspace/ui/lib/task-enum"
+import { serviceCategoryValues, serviceStatusValues } from "@workspace/ui/lib/service-enum"
+import { taskCategoryValues, taskStatusValues } from "@workspace/ui/lib/task-enum"
 import { roleValues } from "@workspace/ui/lib/role-enum";
 import { isValidPhoneNumber } from "libphonenumber-js";
 
@@ -234,13 +234,23 @@ export const serviceListingFormSchema = z
     description: z.string().min(1, "Required").trim(),
     serviceCategory: z.enum(serviceCategoryValues, { required_error: "Required" }),
     type: z.string().min(1, "Required").trim(), // subtype like "Dentist", "Plumber"
-    price: z.number().int().positive().min(1, "Price must be at least 1"),
-    priceType: z.enum(priceTypeValues, { required_error: "Required" }),
+    // Accept number OR numeric string; allow ""/null -> error by schema
+    price: z.preprocess((val) => {
+      if (typeof val === "string") {
+        const trimmed = val.trim();
+        if (trimmed === "") return undefined;
+        const parsed = Number(trimmed);
+        return Number.isNaN(parsed) ? val : parsed;
+      }
+      return val;
+    }, z.number().int().positive().min(1, "Price must be at least 1")),
 
      // Display information
      displayName: z.union([z.string().min(1).trim(), emptyToUndefined]).optional(),
+     // Primary image optional
      displayImage: z.union([z.string().url("Invalid URL"), emptyToUndefined]).optional(),
-     images: z.array(z.string().url("Invalid URL")).default([]),
+     // Require at least one image; allow temporary placeholders pre-upload
+     images: z.array(z.string().min(1)).min(1, "At least one image is required"),
 
     
     // Location
@@ -275,7 +285,7 @@ export const serviceListQuerySchema = z.object({
   stateAbbreviation: z.string().optional(),
   priceMin: z.number().optional(),
   priceMax: z.number().optional(),
-  priceType: z.enum(priceTypeValues).optional(),
+  // priceType removed
 })
 export type ServiceListQueryValues = z.infer<typeof serviceListQuerySchema>
 
@@ -298,7 +308,6 @@ export const taskListingFormSchema = z
       if (typeof val === "string" && val.trim() !== "") return Number(val)
       return val
     }, z.number().int().positive().min(1).nullable().optional()),
-    budgetType: z.enum(BudgetTypeValues).nullable().optional(),
 
     // Location
     stateAbbreviation: z
@@ -433,7 +442,7 @@ export const serviceImportRowSchema = z.object({
     if (typeof val === "string" && val.trim() !== "") return Number(val)
     return val
   }, z.number().int().positive().min(1).nullable().optional()),
-  priceType: z.enum(priceTypeValues).optional(),
+  // priceType removed
   stateAbbreviation: z.string().length(3).optional().nullable(),
   city: z.string().optional().nullable(),
   address: z.string().optional().nullable(),
@@ -455,8 +464,7 @@ export const taskImportRowSchema = z.object({
     if (val === "" || val === null || val === undefined) return null
     if (typeof val === "string" && val.trim() !== "") return Number(val)
     return val
-  }, z.number().int().positive().min(1).nullable().optional()),
-  budgetType: z.enum(BudgetTypeValues).nullable().optional(),
+    }, z.number().int().positive().min(1).nullable().optional()),
   stateAbbreviation: z.string().length(3).optional().nullable(),
   city: z.string().optional().nullable(),
   address: z.string().optional().nullable(),
@@ -474,6 +482,7 @@ export const taskImportSchema = z.object({ rows: z.array(taskImportRowSchema).mi
 export const autoApplyPrefsSchema = z.object({
   enabled: z.boolean(),
   category: z.enum(jobCategoryValues).nullable(),
-  keywords: z.array(z.string()).max(100)
+  keywords: z.array(z.string()).max(100),
+  roles: z.array(z.string()).max(50).default([]),
 });
 export type AutoApplyPrefsValues = z.infer<typeof autoApplyPrefsSchema>;

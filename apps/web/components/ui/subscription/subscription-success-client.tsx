@@ -22,6 +22,7 @@ import { jobCategoryValues } from "@workspace/ui/lib/job-enum";
 import { formatJobCategory } from "@workspace/ui/lib/formatter";
 import { jobCategoryIcons } from "@/components/ui/config/job-filters-config";
 import keywordsByCategory from "@workspace/ui/data/auto-apply-keyword.json";
+import rolesByCategory from "@workspace/ui/data/auto-apply-roles.json";
 import {
   Dialog,
   DialogContent,
@@ -49,6 +50,7 @@ export default function SubscriptionSuccessPage() {
   const [enabled, setEnabled] = useState(false);
   const [category, setCategory] = useState<JobCategory | null>(null);
   const [keywords, setKeywords] = useState<string[]>([]);
+  const [roles, setRoles] = useState<string[]>([]);
   const [open, setOpen] = useState(true);
   const [step, setStep] = useState<1 | 2 | 3>(1);
 
@@ -80,11 +82,15 @@ export default function SubscriptionSuccessPage() {
       setEnabled(!!data.autoApplyEnabled);
       setCategory(data.autoApplyCategory ?? null);
       setKeywords(data.autoApplyKeywords ?? []);
+      setRoles((data as any).autoApplyRoles ?? []);
     }
   }, [data]);
 
   const suggestions = useMemo(() => {
     return category ? ((keywordsByCategory as any)[category] ?? []) : [];
+  }, [category]);
+  const roleSuggestions = useMemo(() => {
+    return category ? ((rolesByCategory as any)[category] ?? []) : [];
   }, [category]);
 
   const addKeyword = (k: string) => {
@@ -101,6 +107,7 @@ export default function SubscriptionSuccessPage() {
         enabled,
         category,
         keywords,
+        roles,
       });
       toast.success("Auto-apply preferences saved!");
       setStep(3);
@@ -237,6 +244,36 @@ export default function SubscriptionSuccessPage() {
                           + {s}
                         </Button>
                       ))}
+                  </div>
+                </div>
+              )}
+
+              {enabled && (
+                <div className="space-y-2">
+                  <Label className="text-sm">Roles</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {roleSuggestions.map((r: string) => {
+                      const selected = roles.includes(r);
+                      return (
+                        <button
+                          key={r}
+                          disabled={!enabled}
+                          onClick={() =>
+                            setRoles((prev) =>
+                              selected ? prev.filter((x) => x !== r) : [...prev, r]
+                            )
+                          }
+                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-sm transition ${
+                            selected
+                              ? "border-black bg-white/80 text-black shadow-sm"
+                              : "border-gray-200 text-gray-700 hover:bg-gray-50"
+                          } ${!enabled ? "opacity-50 cursor-not-allowed" : ""}`}
+                        >
+                          {selected && <Check className="w-3 h-3 text-black" />}
+                          {r}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               )}

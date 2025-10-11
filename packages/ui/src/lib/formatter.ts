@@ -5,10 +5,8 @@ import {
   JobCategory,
   JobListingStatus,
   ServiceCategory,
-  PriceType,
   TaskCategory,
   TaskStatus,
-  BudgetType,
 } from "../../../database/generated/prisma/client.js";
 import {
   Briefcase,
@@ -319,18 +317,7 @@ export function formatJobStatus(status: JobListingStatus) {
 }
 
 // Price Type
-export function formatPriceType(type: PriceType) {
-  switch (type) {
-    case "fixed":
-      return "Fixed";
-    case "hourly":
-      return "Hour";
-    case "starting_from":
-      return "Starting";
-    default:
-      throw new Error(`Unknown price type: ${type satisfies never}`);
-  }
-}
+// price type removed
 
 // Task Status
 export function formatTaskStatus(status: TaskStatus) {
@@ -366,13 +353,4 @@ export function getTaskStatusColor(status: TaskStatus) {
 }
 
 // Task Budget
-export function formatBudgetType(budget: BudgetType) {
-  switch (budget) {
-    case "Fixed":
-      return "Fixed";
-    case "Negotiable":
-      return "Negotiable";
-    default:
-      throw new Error(`Unknown task budget: ${budget satisfies never}`);
-  }
-}
+// budget type removed

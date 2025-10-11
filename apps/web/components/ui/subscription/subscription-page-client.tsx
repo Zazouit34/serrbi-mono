@@ -78,7 +78,7 @@ export default function SubscriptionPageClient() {
               toast.success("Subscription activated! Redirecting...");
               setTimeout(() => {
                 utils.subscription.getCurrentSubscription.invalidate();
-                window.location.reload();
+                window.location.href = "/subscription/success";
               }, 2000);
             }
             if (event.name === "checkout.closed") {
@@ -214,14 +214,14 @@ export default function SubscriptionPageClient() {
             : "bg-white hover:shadow-lg"
         }`}
       >
-        <div className="flex items-center justify-center gap-5">
+        <div className="flex gap-5 justify-center items-center">
           <div className="flex items-center justify-center h-16 w-16 rounded-2xl bg-white/80 backdrop-blur-sm shadow-[0_2px_8px_rgba(0,0,0,0.05)]">
             <img
               src={PLAN_ICONS[planKey]}
               alt={`${plan.displayName || plan.name} icon`}
               width={64}
               height={64}
-              className="h-14 w-14 object-contain"
+              className="object-contain w-14 h-14"
             />
           </div>
 
@@ -251,14 +251,14 @@ export default function SubscriptionPageClient() {
           <div className="mt-2 text-sm text-muted-foreground">{subtext}</div>
         </div>
 
-        <div className="mt-4 mb-2 h-px w-full bg-gray-200" />
+        <div className="mt-4 mb-2 w-full h-px bg-gray-200" />
 
         <div className="flex-1">
           <ul className="space-y-2">
             {features.map((feature, idx) => (
               <li
                 key={idx}
-                className="flex items-center gap-2 text-sm text-foreground/80"
+                className="flex gap-2 items-center text-sm text-foreground/80"
               >
                 <span className="inline-flex h-4 w-4 items-center justify-center rounded-[4px] bg-black">
                   <Check size={10} strokeWidth={3} className="text-white" />
@@ -299,7 +299,7 @@ export default function SubscriptionPageClient() {
   const SubscriptionSummary = () => {
     if (!subscription) {
       return (
-        <div className="text-center text-muted-foreground py-12">
+        <div className="py-12 text-center text-muted-foreground">
           You don’t have an active subscription yet.
         </div>
       );
@@ -314,9 +314,9 @@ export default function SubscriptionPageClient() {
     };
 
     return (
-      <div className="grid gap-6 md:grid-cols-2 mt-10">
+      <div className="grid gap-6 mt-10 md:grid-cols-2">
         {/* Current Subscription Card */}
-        <Card className="border border-gray-200 bg-white rounded-2xl shadow-sm">
+        <Card className="bg-white rounded-2xl border border-gray-200 shadow-sm">
           <CardHeader>
             <CardTitle className="text-lg font-semibold">
               Current Plan
@@ -332,7 +332,7 @@ export default function SubscriptionPageClient() {
                   {subscription.plan?.displayName || subscription.plan?.name}
                 </span>
               </p>
-              <p className="text-sm text-muted-foreground capitalize">
+              <p className="text-sm capitalize text-muted-foreground">
                 Status: {subscription.status.toLowerCase()}
               </p>
             </div>
@@ -350,7 +350,7 @@ export default function SubscriptionPageClient() {
           <CardFooter>
             <Button
               asChild
-              className="w-full bg-black text-white hover:bg-black/90 rounded-lg"
+              className="w-full text-white bg-black rounded-lg hover:bg-black/90"
             >
               <Link href="/account/billing">Manage Subscription</Link>
             </Button>
@@ -358,7 +358,7 @@ export default function SubscriptionPageClient() {
         </Card>
 
         {/* Usage Card */}
-        <Card className="border border-gray-200 bg-white rounded-2xl shadow-sm">
+        <Card className="bg-white rounded-2xl border border-gray-200 shadow-sm">
           <CardHeader>
             <CardTitle className="text-lg font-semibold">Usage</CardTitle>
             <CardDescription>Track your plan limits</CardDescription>
@@ -368,11 +368,11 @@ export default function SubscriptionPageClient() {
             {usage ? (
               <div className="space-y-5">
                 {/* Jobs */}
-                <div className="flex items-start gap-3">
+                <div className="flex gap-3 items-start">
                   <img
                     src={USAGE_ICONS.jobs}
                     alt="Jobs"
-                    className="w-8 h-8 object-contain opacity-90"
+                    className="object-contain w-8 h-8 opacity-90"
                   />
                   <div className="flex-1 space-y-1.5">
                     <p className="text-sm font-medium">
@@ -400,11 +400,11 @@ export default function SubscriptionPageClient() {
                 </div>
 
                 {/* Services */}
-                <div className="flex items-start gap-3">
+                <div className="flex gap-3 items-start">
                   <img
                     src={USAGE_ICONS.services}
                     alt="Services"
-                    className="w-8 h-8 object-contain opacity-90"
+                    className="object-contain w-8 h-8 opacity-90"
                   />
                   <div className="flex-1 space-y-1.5">
                     <p className="text-sm font-medium">
@@ -434,11 +434,11 @@ export default function SubscriptionPageClient() {
                 </div>
 
                 {/* Tasks */}
-                <div className="flex items-start gap-3">
+                <div className="flex gap-3 items-start">
                   <img
                     src={USAGE_ICONS.tasks}
                     alt="Tasks"
-                    className="w-8 h-8 object-contain opacity-90"
+                    className="object-contain w-8 h-8 opacity-90"
                   />
                   <div className="flex-1 space-y-1.5">
                     <p className="text-sm font-medium">

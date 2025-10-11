@@ -244,12 +244,13 @@ export const authRouter = router({
   //auto-apply
   getAutoApplyPrefs: protectedProcedure.query(async ({ ctx }) => {
     const db = ctx.prisma as PrismaClient;
-    const u = await db.user.findUnique({
+    const u = await (db.user.findUnique as any)({
       where: { id: (ctx as any).user.id },
       select: {
         autoApplyEnabled: true,
         autoApplyCategory: true,
         autoApplyKeywords: true,
+        autoApplyRoles: true,
       },
     });
     return (
@@ -257,7 +258,7 @@ export const authRouter = router({
         autoApplyEnabled: false,
         autoApplyCategory: null,
         autoApplyKeywords: [],
-        autoApplyMinMatches: 2,
+        autoApplyRoles: [],
       }
     );
   }),
@@ -266,12 +267,13 @@ export const authRouter = router({
     .input(autoApplyPrefsSchema)
     .mutation(async ({ ctx, input }) => {
       const db = ctx.prisma as PrismaClient;
-      await db.user.update({
+      await (db.user.update as any)({
         where: { id: (ctx as any).user.id },
         data: {
           autoApplyEnabled: input.enabled,
           autoApplyCategory: input.category,
           autoApplyKeywords: input.keywords,
+          autoApplyRoles: input.roles ?? [],
         },
       });
       return { success: true };

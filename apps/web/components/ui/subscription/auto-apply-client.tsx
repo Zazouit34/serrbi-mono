@@ -31,6 +31,7 @@ import {
 import { Progress } from "@workspace/ui/components/progress";
 
 import keywordsByCategory from "@workspace/ui/data/auto-apply-keyword.json";
+import rolesByCategory from "@workspace/ui/data/auto-apply-roles.json";
 
 type JobCategory = (typeof jobCategoryValues)[number];
 
@@ -56,6 +57,7 @@ export default function AutoApplySettingsPage() {
   const [category, setCategory] = useState<JobCategory | null>(null);
   const [keywords, setKeywords] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState("");
+  const [roles, setRoles] = useState<string[]>([]);
 
   // Tag handlers
   const addTag = (t: string) => {
@@ -70,6 +72,7 @@ export default function AutoApplySettingsPage() {
       setEnabled(!!data.autoApplyEnabled);
       setCategory(data.autoApplyCategory ?? null);
       setKeywords(data.autoApplyKeywords ?? []);
+      setRoles((data as any).autoApplyRoles ?? []);
     }
   }, [data]);
 
@@ -77,9 +80,13 @@ export default function AutoApplySettingsPage() {
     return category ? ((keywordsByCategory as any)[category] ?? []) : [];
   }, [category]);
 
+  const roleSuggestions = useMemo<string[]>(() => {
+    return category ? ((rolesByCategory as any)[category] ?? []) : [];
+  }, [category]);
+
   const save = async () => {
     try {
-      await mutation.mutateAsync({ enabled, category, keywords });
+      await mutation.mutateAsync({ enabled, category, keywords, roles });
       toast.success("Preferences saved");
       refetch();
       refetchStats();
@@ -145,6 +152,41 @@ export default function AutoApplySettingsPage() {
           checked={enabled}
           onCheckedChange={(v: boolean) => setEnabled(v)}
         />
+      </div>
+
+      <hr className="my-6 border-t border-gray-200" />
+
+      {/* 🧑‍💻 Roles */}
+      <div className="space-y-3">
+        <Label className="text-base font-medium text-black">Roles</Label>
+        {category ? (
+          <div className="flex flex-wrap gap-2">
+            {roleSuggestions.map((r) => {
+              const selected = roles.includes(r);
+              return (
+                <button
+                  key={r}
+                  disabled={!enabled}
+                  onClick={() =>
+                    setRoles((prev) =>
+                      selected ? prev.filter((x) => x !== r) : [...prev, r]
+                    )
+                  }
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-sm transition ${
+                    selected
+                      ? "border-black bg-white/80 text-black shadow-sm"
+                      : "border-gray-200 text-gray-700 hover:bg-gray-50"
+                  } ${!enabled ? "opacity-50 cursor-not-allowed" : ""}`}
+                >
+                  {selected && <Check className="w-3 h-3 text-black" />}
+                  {r}
+                </button>
+              );
+            })}
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">Select a job category to view roles.</p>
+        )}
       </div>
 
       <hr className="my-6 border-t border-gray-200" />

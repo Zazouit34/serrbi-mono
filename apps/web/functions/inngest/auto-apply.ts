@@ -4,7 +4,7 @@ import { PLANS } from "@/lib/plans"
 import { applyAndNotify } from "@/server/services/job-application";
 
 async function getCandidates(category: any) {
-  return prisma.user.findMany({
+  return (prisma.user.findMany as any)({
     where: {
       resumeUrl: { not: null },
       autoApplyEnabled: true,
@@ -21,6 +21,7 @@ async function getCandidates(category: any) {
     select: {
       id: true,
       autoApplyKeywords: true,
+      autoApplyRoles: true,
     },
   });
 }
@@ -55,16 +56,22 @@ export const autoApplyOnJobCreated = inngest.createFunction(
     const users = await getCandidates(job.category);
 
     // Build tokens from both tags and title+description
+    const titleTokens = tokenize(`${job.title ?? ""}`);
     const textTokens = tokenize(`${job.title ?? ""} ${job.description ?? ""}`);
     const tagTokens = new Set((job.tags ?? []).map((t) => t.toLowerCase()));
     const jobTokens = new Set<string>([...tagTokens, ...textTokens]);
 
     let applied = 0;
     for (const u of users) {
-      const matches = (u.autoApplyKeywords || []).reduce(
-        (acc, kw) => acc + (jobTokens.has(kw.toLowerCase()) ? 1 : 0),
+      const keywordMatches = (u.autoApplyKeywords || []).reduce(
+        (acc: number, kw: string) => acc + (jobTokens.has(kw.toLowerCase()) ? 1 : 0),
         0
       );
+      const roleMatches = (u.autoApplyRoles || []).reduce(
+        (acc: number, role: string) => acc + (titleTokens.has(role.toLowerCase()) ? 1 : 0),
+        0
+      );
+      const matches = keywordMatches + roleMatches;
       if (matches >= MIN_MATCHES) {
         await applyAndNotify({ db: prisma, jobId: job.id, userId: u.id });
         applied++;
@@ -95,18 +102,22 @@ export const autoApplyOnJobsImported = inngest.createFunction(
       const users = await getCandidates(job.category);
 
       // Build tokens from both tags and title+description
-      const textTokens = tokenize(
-        `${job.title ?? ""} ${job.description ?? ""}`
-      );
+      const titleTokens = tokenize(`${job.title ?? ""}`);
+      const textTokens = tokenize(`${job.title ?? ""} ${job.description ?? ""}`);
       const tagTokens = new Set((job.tags ?? []).map((t) => t.toLowerCase()));
       const jobTokens = new Set<string>([...tagTokens, ...textTokens]);
 
       let applied = 0;
       for (const u of users) {
-        const matches = (u.autoApplyKeywords || []).reduce(
-          (acc, kw) => acc + (jobTokens.has(kw.toLowerCase()) ? 1 : 0),
+        const keywordMatches = (u.autoApplyKeywords || []).reduce(
+          (acc: number, kw: string) => acc + (jobTokens.has(kw.toLowerCase()) ? 1 : 0),
           0
         );
+        const roleMatches = (u.autoApplyRoles || []).reduce(
+          (acc: number, role: string) => acc + (titleTokens.has(role.toLowerCase()) ? 1 : 0),
+          0
+        );
+        const matches = keywordMatches + roleMatches;
         if (matches >= MIN_MATCHES) {
           await applyAndNotify({ db: prisma, jobId: job.id, userId: u.id });
           applied++;
