@@ -156,7 +156,6 @@ CREATE TABLE "public"."Service" (
     "title" TEXT NOT NULL,
     "description" TEXT NOT NULL,
     "price" INTEGER NOT NULL,
-    "priceType" "public"."PriceType",
     "city" TEXT,
     "stateAbbreviation" TEXT,
     "address" TEXT,

@@ -20,9 +20,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@workspace/ui/components/av
 import { CategoryBadge } from "@/components/ui/category-badge";
 import { Card, CardContent } from "@workspace/ui/components/card";
 import { Button } from "@workspace/ui/components/button";
-import { 
-  formatPriceType 
-} from "@workspace/ui/lib/formatter";
+
 
 export default function ServiceDetailsPage() {
   const { serviceId } = useParams<{ serviceId: string }>();
@@ -233,7 +231,6 @@ export default function ServiceDetailsPage() {
                   <div className="text-3xl font-bold text-foreground">
                     {formatPrice(service.price)}
                   </div>
-                  <p className="text-sm text-muted-foreground">{formatPriceType(service.priceType)}</p>
                 </div>
 
                 {/* Contact Buttons */}

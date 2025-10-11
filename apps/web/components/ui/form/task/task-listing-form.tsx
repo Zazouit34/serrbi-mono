@@ -75,7 +75,6 @@ export function TaskListingForm() {
       description: "",
       category: undefined,
       budget: 0,
-      // budgetType removed
       stateAbbreviation: undefined,
       city: undefined,
       phoneNumber: undefined,

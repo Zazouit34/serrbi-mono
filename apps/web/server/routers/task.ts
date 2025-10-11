@@ -103,7 +103,7 @@ export const taskRouter = router({
           take: pageSize,
           select: {
             id: true, title: true, description: true, bgStyle: true, category: true, status: true,
-            budget: true, budgetType: true, stateAbbreviation: true, city: true,
+            budget: true, stateAbbreviation: true, city: true,
             address: true, latitude: true, longitude: true,
             phoneNumber: true, email: true, displayName: true, displayImage: true,
             user: { select: { name: true, image: true } },
@@ -188,7 +188,6 @@ export const taskRouter = router({
       category: r.category,
       bgStyle: r.bgStyle ?? null,
       budget: r.budget ?? null,
-      budgetType: r.budgetType ?? null,
       stateAbbreviation: r.stateAbbreviation ?? null,
       city: r.city ?? null,
       address: r.address ?? null,

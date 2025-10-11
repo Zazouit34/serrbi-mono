@@ -25,7 +25,6 @@ export default function ServicesCreation() {
         <ImporterField name="serviceCategory" label="Category" />
         <ImporterField name="type" label="Type" />
         <ImporterField name="price" label="Price" optional />
-        <ImporterField name="priceType" label="Price Type" optional />
         <ImporterField name="stateAbbreviation" label="State (e.g. USA)" optional />
         <ImporterField name="city" label="City" optional />
         <ImporterField name="address" label="Address" optional />

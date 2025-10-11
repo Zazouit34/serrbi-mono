@@ -21,7 +21,6 @@ type TaskCardProps = {
     category: string;
     bgStyle?: string | null;
     budget?: number | null;
-    budgetType?: string | null;
     city?: string | null;
     stateAbbreviation?: string | null;
     phoneNumber?: string | null;

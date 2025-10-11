@@ -152,7 +152,6 @@ model Service {
   title             String
   description       String
   price             Int
-  // priceType removed
   city              String?
   stateAbbreviation String?
   address           String?

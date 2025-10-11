@@ -60,16 +60,6 @@ export const serviceFiltersConfig: FilterConfig[] = [
     ],
   },
   {
-    key: "priceType",
-    label: "Price Type",
-    type: "select",
-    options: [
-      { value: "fixed", label: "Fixed Price" },
-      { value: "hourly", label: "Per Hour" },
-      { value: "starting_from", label: "Starting From" },
-    ],
-  },
-  {
     key: "city",
     label: "Location",
     type: "select",

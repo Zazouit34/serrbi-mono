@@ -24,7 +24,6 @@ export default function TasksImportPage() {
         <ImporterField name="description" label="Description" />
         <ImporterField name="category" label="Category" />
         <ImporterField name="budget" label="Budget" optional />
-        <ImporterField name="budgetType" label="Budget Type" optional />
         <ImporterField name="stateAbbreviation" label="State (e.g. USA)" optional />
         <ImporterField name="city" label="City" optional />
         <ImporterField name="address" label="Address" optional />

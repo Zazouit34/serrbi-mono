@@ -102,7 +102,6 @@ export function FavoriteListingGrid() {
                 category: favorite.task!.category,
                 bgStyle: null,
                 budget: favorite.task!.budget,
-                budgetType: favorite.task!.budgetType,
                 city: favorite.task!.city,
                 stateAbbreviation: favorite.task!.stateAbbreviation,
                 phoneNumber: favorite.task!.phoneNumber || null,
