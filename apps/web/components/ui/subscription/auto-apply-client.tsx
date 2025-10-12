@@ -156,6 +156,33 @@ export default function AutoApplySettingsPage() {
 
       <hr className="my-6 border-t border-gray-200" />
 
+      {/* 🧩 Job Categories */}
+      <div className="space-y-3">
+        <Label className="text-base font-medium text-black">Job Category</Label>
+        <div className="flex flex-wrap gap-2">
+          {jobCategoryValues.map((c) => {
+            const Icon = jobCategoryIcons[c as keyof typeof jobCategoryIcons];
+            const selected = category === c;
+            return (
+              <button
+                key={c}
+                disabled={!enabled}
+                onClick={() => setCategory(c)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-sm transition ${
+                  selected
+                    ? "border-black bg-white/80 text-black shadow-sm"
+                    : "border-gray-200 text-gray-700 hover:bg-gray-50"
+                } ${!enabled ? "opacity-50 cursor-not-allowed" : ""}`}
+              >
+                {Icon && <Icon className="w-3.5 h-3.5 text-black" />}
+                {formatJobCategory(c)}
+                {selected && <Check className="w-3 h-3 text-black" />}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+      <hr className="my-6 border-t border-gray-200" />
       {/* 🧑‍💻 Roles */}
       <div className="space-y-3">
         <Label className="text-base font-medium text-black">Roles</Label>
@@ -185,37 +212,10 @@ export default function AutoApplySettingsPage() {
             })}
           </div>
         ) : (
-          <p className="text-sm text-muted-foreground">Select a job category to view roles.</p>
+          <p className="text-sm text-muted-foreground">
+            Select a job category to view roles.
+          </p>
         )}
-      </div>
-
-      <hr className="my-6 border-t border-gray-200" />
-
-      {/* 🧩 Job Categories */}
-      <div className="space-y-3">
-        <Label className="text-base font-medium text-black">Job Category</Label>
-        <div className="flex flex-wrap gap-2">
-          {jobCategoryValues.map((c) => {
-            const Icon = jobCategoryIcons[c as keyof typeof jobCategoryIcons];
-            const selected = category === c;
-            return (
-              <button
-                key={c}
-                disabled={!enabled}
-                onClick={() => setCategory(c)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-sm transition ${
-                  selected
-                    ? "border-black bg-white/80 text-black shadow-sm"
-                    : "border-gray-200 text-gray-700 hover:bg-gray-50"
-                } ${!enabled ? "opacity-50 cursor-not-allowed" : ""}`}
-              >
-                {Icon && <Icon className="w-3.5 h-3.5 text-black" />}
-                {formatJobCategory(c)}
-                {selected && <Check className="w-3 h-3 text-black" />}
-              </button>
-            );
-          })}
-        </div>
       </div>
 
       <hr className="my-6 border-t border-gray-200" />

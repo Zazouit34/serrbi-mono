@@ -26,7 +26,8 @@ export function DualSearchBar({
   initialFilters = {},
   type,
 }: DualSearchBarProps) {
-  const [filters, setFilters] = useState<Record<string, string>>(initialFilters);
+  const [filters, setFilters] =
+    useState<Record<string, string>>(initialFilters);
   const [categoryPopoverOpen, setCategoryPopoverOpen] = useState(false);
   const [locationPopoverOpen, setLocationPopoverOpen] = useState(false);
 
@@ -61,8 +62,12 @@ export function DualSearchBar({
   // Get category options based on type
   const getCategoryOptions = (): CategoryOption[] => {
     if (type === "service") {
-      const { serviceCategoryValues } = require("@workspace/ui/lib/service-enum");
-      const { categoryIcons } = require("@/components/ui/config/service-filters-config");
+      const {
+        serviceCategoryValues,
+      } = require("@workspace/ui/lib/service-enum");
+      const {
+        categoryIcons,
+      } = require("@/components/ui/config/service-filters-config");
       return serviceCategoryValues.map((category: any) => ({
         label: category,
         value: category,
@@ -70,7 +75,9 @@ export function DualSearchBar({
       }));
     } else {
       const { taskCategoryValues } = require("@workspace/ui/lib/task-enum");
-      const { taskCategoryIcons } = require("@/components/ui/config/task-filter-config");
+      const {
+        taskCategoryIcons,
+      } = require("@/components/ui/config/task-filter-config");
       return taskCategoryValues.map((category: any) => ({
         label: category,
         value: category,
@@ -93,16 +100,19 @@ export function DualSearchBar({
 
   const categoryOptions = getCategoryOptions();
   const locationOptions = getLocationOptions();
-  
+
   const categoryKey = type === "service" ? "serviceCategory" : "category";
-  const categoryLabel = type === "service" ? "Service Category" : "Task Category";
+  const categoryLabel =
+    type === "service" ? "Service Category" : "Task Category";
 
   const getSelectedCategoryData = () => {
-    return categoryOptions.find(option => option.value === filters[categoryKey]);
+    return categoryOptions.find(
+      (option) => option.value === filters[categoryKey]
+    );
   };
 
   const getSelectedLocationData = () => {
-    return locationOptions.find(option => option.value === filters.city);
+    return locationOptions.find((option) => option.value === filters.city);
   };
 
   const selectedCategoryData = getSelectedCategoryData();
@@ -117,7 +127,10 @@ export function DualSearchBar({
           <div className="flex flex-1 gap-4 items-center">
             {/* What (Category) Popover */}
             <div className="flex-1">
-              <Popover open={categoryPopoverOpen} onOpenChange={setCategoryPopoverOpen}>
+              <Popover
+                open={categoryPopoverOpen}
+                onOpenChange={setCategoryPopoverOpen}
+              >
                 <PopoverTrigger asChild>
                   <Button
                     variant="ghost"
@@ -126,9 +139,9 @@ export function DualSearchBar({
                     {filters[categoryKey] ? (
                       <div className="flex gap-2 items-center">
                         {selectedCategoryData?.icon && (
-                          <selectedCategoryData.icon className="w-4 h-4 text-red-600" />
+                          <selectedCategoryData.icon className="w-4 h-4 text-black" />
                         )}
-                        <span className="font-medium text-red-700">
+                        <span className="font-medium text-black">
                           {selectedCategoryData?.label}
                         </span>
                       </div>
@@ -139,39 +152,46 @@ export function DualSearchBar({
                     )}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="p-4 w-80" align="start">
-                  <div className="space-y-3">
-                    <h4 className="text-sm font-medium text-gray-900">{categoryLabel}</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {categoryOptions.map((option) => {
-                        const IconComponent = option.icon;
-                        const isSelected = filters[categoryKey] === option.value;
-                        return (
-                          <Button
-                            key={option.value}
-                            variant="outline"
-                            size="sm"
-                            className={`inline-flex items-center gap-1.5 h-8 px-3 rounded-full text-xs font-medium transition-colors ${
-                              isSelected 
-                                ? 'bg-red-50 border-red-500 text-red-700' 
-                                : 'hover:bg-gray-50 border-gray-200 text-gray-700'
-                            }`}
-                            onClick={() => {
-                              handleFilterChange(categoryKey, option.value);
-                              setCategoryPopoverOpen(false);
-                            }}
-                          >
-                            {IconComponent && (
-                              <IconComponent className={`w-3 h-3 ${isSelected ? 'text-red-600' : 'text-gray-500'}`} />
-                            )}
-                            <span>{option.label}</span>
-                            {isSelected && (
-                              <Check className="w-3 h-3 text-red-500" />
-                            )}
-                          </Button>
-                        );
-                      })}
-                    </div>
+                <PopoverContent
+                  align="center"
+                  sideOffset={12}
+                  className="rounded-3xl p-8 w-[700px] max-w-[90vw] bg-white shadow-lg border border-gray-100"
+                >
+                  <div className="flex flex-wrap justify-center gap-4">
+                    {categoryOptions.map((option) => {
+                      const IconComponent = option.icon;
+                      const isSelected = filters[categoryKey] === option.value;
+                      return (
+                        <Button
+                          key={option.value}
+                          variant="outline"
+                          size="lg"
+                          className={`flex items-center gap-3 px-6 py-3 rounded-full text-base font-medium transition-colors
+            border
+            ${
+              isSelected
+                ? "border-gray-400 bg-gray-100 text-gray-900"
+                : "border-gray-200 text-gray-700 hover:bg-gray-50"
+            }`}
+                          onClick={() => {
+                            handleFilterChange(categoryKey, option.value);
+                            setCategoryPopoverOpen(false);
+                          }}
+                        >
+                          {IconComponent && (
+                            <IconComponent
+                              className={`w-5 h-5 ${
+                                isSelected ? "text-black" : "text-gray-500"
+                              }`}
+                            />
+                          )}
+                          {option.label}
+                          {isSelected && (
+                            <Check className="w-4 h-4 text-black" />
+                          )}
+                        </Button>
+                      );
+                    })}
                   </div>
                 </PopoverContent>
               </Popover>
@@ -182,14 +202,17 @@ export function DualSearchBar({
 
             {/* Where (Location) Popover */}
             <div className="flex-1">
-              <Popover open={locationPopoverOpen} onOpenChange={setLocationPopoverOpen}>
+              <Popover
+                open={locationPopoverOpen}
+                onOpenChange={setLocationPopoverOpen}
+              >
                 <PopoverTrigger asChild>
                   <Button
                     variant="ghost"
                     className="justify-start p-0 w-full h-full font-normal text-left border-none hover:bg-transparent"
                   >
                     {filters.city ? (
-                      <span className="font-medium text-red-700">
+                      <span className="font-medium text-black">
                         {selectedLocationData?.label}
                       </span>
                     ) : (
@@ -199,35 +222,38 @@ export function DualSearchBar({
                     )}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="p-4 w-80" align="end">
-                  <div className="space-y-3">
-                    <h4 className="text-sm font-medium text-gray-900">Location</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {locationOptions.map((option) => {
-                        const isSelected = filters.city === option.value;
-                        return (
-                          <Button
-                            key={option.value}
-                            variant="outline"
-                            size="sm"
-                            className={`inline-flex items-center gap-1.5 h-8 px-3 rounded-full text-xs font-medium transition-colors ${
-                              isSelected 
-                                ? 'bg-red-50 border-red-500 text-red-700' 
-                                : 'hover:bg-gray-50 border-gray-200 text-gray-700'
-                            }`}
-                            onClick={() => {
-                              handleFilterChange("city", option.value);
-                              setLocationPopoverOpen(false);
-                            }}
-                          >
-                            <span>{option.label}</span>
-                            {isSelected && (
-                              <Check className="w-3 h-3 text-red-500" />
-                            )}
-                          </Button>
-                        );
-                      })}
-                    </div>
+                <PopoverContent
+                  align="center"
+                  sideOffset={12}
+                  className="rounded-3xl p-8 w-[700px] max-w-[90vw] bg-white shadow-lg border border-gray-100"
+                >
+                  <div className="flex flex-wrap justify-center gap-4">
+                    {locationOptions.map((option) => {
+                      const isSelected = filters.city === option.value;
+                      return (
+                        <Button
+                          key={option.value}
+                          variant="outline"
+                          size="lg"
+                          className={`flex items-center gap-3 px-6 py-3 rounded-full text-base font-medium transition-colors
+            border
+            ${
+              isSelected
+                ? "border-gray-400 bg-gray-100 text-gray-900"
+                : "border-gray-200 text-gray-700 hover:bg-gray-50"
+            }`}
+                          onClick={() => {
+                            handleFilterChange("city", option.value);
+                            setLocationPopoverOpen(false);
+                          }}
+                        >
+                          {option.label}
+                          {isSelected && (
+                            <Check className="w-4 h-4 text-black" />
+                          )}
+                        </Button>
+                      );
+                    })}
                   </div>
                 </PopoverContent>
               </Popover>

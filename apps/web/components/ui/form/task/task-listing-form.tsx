@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { FormError } from "../form-error";
 import { FormSuccess } from "../form-success";
 import { LoadingSwap } from "../loading-swap";
+import { motion, AnimatePresence } from "framer-motion";
 
 import {
   Form,
@@ -19,26 +20,29 @@ import {
 } from "@workspace/ui/components/form";
 import { Button } from "@workspace/ui/components/button";
 import { Input } from "@workspace/ui/components/input";
-import { Textarea } from "@workspace/ui/components/textarea";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@workspace/ui/components/select";
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@workspace/ui/components/popover";
+import { Textarea } from "@workspace/ui/components/textarea";
 
 import { trpc } from "@/app/_trpc/client";
 
-import { StateSelectItems } from "../state-select";
+import states from "@workspace/ui/lib/states.json";
 import { PhoneInput } from "../phone-input";
 
 import {
   taskListingFormSchema,
   type TaskListingFormValues,
 } from "@workspace/ui/lib/validation-schemas";
-import { taskCategoryValues, taskStatusValues } from "@workspace/ui/lib/task-enum";
-import { formatTaskCategory, getTaskCategoryGradient } from "@workspace/ui/lib/formatter";
+import { taskCategoryValues } from "@workspace/ui/lib/task-enum";
+import {
+  formatTaskCategory,
+  getTaskCategoryGradient,
+} from "@workspace/ui/lib/formatter";
+import { taskCategoryIcons } from "@/components/ui/config/task-filter-config";
+import { Check } from "lucide-react";
 
 const steps = [
   {
@@ -69,12 +73,14 @@ export function TaskListingForm() {
   const [step, setStep] = useState(0);
   const router = useRouter();
 
+  const MAX_DESCRIPTION_LENGTH = 180;
+
   const form = useForm<TaskListingFormValues>({
     resolver: zodResolver(taskListingFormSchema) as any,
     defaultValues: {
       description: "",
       category: undefined,
-      budget: 0,
+      budget: undefined as unknown as number,
       stateAbbreviation: undefined,
       city: undefined,
       phoneNumber: undefined,
@@ -98,7 +104,7 @@ export function TaskListingForm() {
 
   // Watch the category field to update bgStyle automatically
   const selectedCategory = form.watch("category");
-  
+
   // Update bgStyle when category changes
   useEffect(() => {
     if (selectedCategory) {
@@ -137,41 +143,31 @@ export function TaskListingForm() {
     }
     setSuccess("");
     setError("");
-      try {
-        await createTask.mutateAsync(values);
-      } catch {
-        // Error handled by onError
-      }
+    try {
+      await createTask.mutateAsync(values);
+    } catch {
+      // Error handled by onError
+    }
   }
 
   // Get current gradient for the textarea
-  const currentGradient = selectedCategory ? getTaskCategoryGradient(selectedCategory) : undefined;
+  const currentGradient = selectedCategory
+    ? getTaskCategoryGradient(selectedCategory)
+    : undefined;
 
   return (
     <div className="flex justify-center items-center mt-5 w-full">
       <div className="w-full">
         <div className="mb-6 text-center">
-          <h1 className="text-2xl font-bold font-outfit">Create Task Listing</h1>
-          <p className="text-muted-foreground font-outfit">Fill out the form below to create a new task listing.</p>
+          <h1 className="text-2xl font-bold font-outfit">
+            Create Task Listing
+          </h1>
+          <p className="text-muted-foreground font-outfit">
+            Fill out the form below to create a new task listing.
+          </p>
         </div>
 
-        {/* progress bar */}
-        <div className="flex justify-between mb-8">
-          {steps.map((s, i) => (
-            <div key={i} className={`flex-1 h-2 mx-1 rounded-full transition-all ${i <= step ? "bg-black" : "bg-gray-300"}`} />
-          ))}
-        </div>
-
-        {/* step header */}
-        <div className="flex gap-3 justify-center items-center mb-6">
-          <div className="w-10 h-10">
-            <img src={steps[step]?.icon} alt={steps[step]?.title} className="object-contain w-full h-full" />
-          </div>
-          <div>
-            <h2 className="text-lg font-semibold">{steps[step]?.title}</h2>
-            <p className="text-sm text-gray-500">{steps[step]?.subtitle}</p>
-          </div>
-        </div>
+        {/* step UI removed */}
 
         <Form {...form}>
           <form
@@ -185,6 +181,15 @@ export function TaskListingForm() {
             }}
             className="space-y-6"
           >
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={step}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -12 }}
+                transition={{ duration: 0.28 }}
+                className="space-y-6"
+              >
             {/* STEP 1 */}
             {step === 0 && (
               <div className="grid grid-cols-1 gap-x-4 gap-y-6 items-start md:grid-cols-3">
@@ -213,26 +218,76 @@ export function TaskListingForm() {
                 <FormField
                   control={form.control as any}
                   name="category"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Task Category</FormLabel>
-                      <Select value={field.value} onValueChange={field.onChange}>
-                        <FormControl>
-                          <SelectTrigger disabled={createTask.isPending} className="w-full">
-                            <SelectValue placeholder="Select category" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {taskCategoryValues.map((category) => (
-                            <SelectItem key={category} value={category}>
-                              {formatTaskCategory(category)}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+                  render={({ field }) => {
+                    const [open, setOpen] = useState(false);
+                    const Icon = field.value
+                      ? (taskCategoryIcons as any)[field.value]
+                      : null;
+                    return (
+                      <FormItem>
+                        <FormLabel>Task Category</FormLabel>
+                        <Popover open={open} onOpenChange={setOpen}>
+                          <PopoverTrigger asChild>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              className="justify-between w-full h-11 rounded-full"
+                            >
+                              {field.value ? (
+                                <span className="flex gap-2 items-center">
+                                  {Icon && (
+                                    <Icon className="w-4 h-4 text-black" />
+                                  )}
+                                  {formatTaskCategory(field.value as any)}
+                                </span>
+                              ) : (
+                                <span className="text-gray-500">
+                                  Select category
+                                </span>
+                              )}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent
+                            align="center"
+                            sideOffset={12}
+                            className="rounded-3xl p-6 w-[700px] max-w-[90vw] bg-white shadow-lg border border-gray-100"
+                          >
+                            <div className="flex flex-wrap justify-center gap-3">
+                              {taskCategoryValues.map((category) => {
+                                const CatIcon = (taskCategoryIcons as any)[
+                                  category
+                                ];
+                                const isSelected = field.value === category;
+                                return (
+                                  <Button
+                                    key={category}
+                                    variant="outline"
+                                    size="lg"
+                                    className={`flex items-center gap-3 px-6 py-3 rounded-full text-base font-medium transition-colors border ${isSelected ? "border-gray-400 bg-gray-100 text-gray-900" : "border-gray-200 text-gray-700 hover:bg-gray-50"}`}
+                                    onClick={() => {
+                                      field.onChange(category);
+                                      setOpen(false);
+                                    }}
+                                  >
+                                    {CatIcon && (
+                                      <CatIcon
+                                        className={`w-5 h-5 ${isSelected ? "text-black" : "text-gray-500"}`}
+                                      />
+                                    )}
+                                    {formatTaskCategory(category)}
+                                    {isSelected && (
+                                      <Check className="w-4 h-4 text-black" />
+                                    )}
+                                  </Button>
+                                );
+                              })}
+                            </div>
+                          </PopoverContent>
+                        </Popover>
+                        <FormMessage />
+                      </FormItem>
+                    );
+                  }}
                 />
 
                 <FormField
@@ -244,10 +299,11 @@ export function TaskListingForm() {
                       <FormControl>
                         <Input
                           type="number"
-                          placeholder="500"
-                          disabled={createTask.isPending}
+                          inputMode="numeric"
+                          min={1}
+                          placeholder="100"
                           {...field}
-                          onChange={(e) => field.onChange(Number(e.target.value))}
+                          value={field.value ?? ""}
                         />
                       </FormControl>
                       <FormMessage />
@@ -255,133 +311,222 @@ export function TaskListingForm() {
                   )}
                 />
               </div>
-              )}
+            )}
 
             {/* STEP 2 */}
             {step === 1 && (
-            <div className="grid grid-cols-1 gap-x-4 gap-y-6 items-start md:grid-cols-3">
-              {/* City */}
-              <FormField
-                control={form.control as any}
-                name="city"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel htmlFor="city">City</FormLabel>
-                    <FormControl>
-                      <Input
-                        id="city"
-                        placeholder="Casablanca"
-                        disabled={createTask.isPending}
-                        value={field.value ?? ""}
-                        onChange={(e) =>
-                          field.onChange(e.target.value || undefined)
-                        }
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {/* State */}
-              <FormField
-                control={form.control as any}
-                name="stateAbbreviation"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>State</FormLabel>
-                    <Select
-                      value={field.value ?? ""}
-                      onValueChange={(val) => field.onChange(val || undefined)}
-                    >
+              <div className="grid grid-cols-1 gap-x-4 gap-y-6 items-start md:grid-cols-3">
+                {/* City */}
+                <FormField
+                  control={form.control as any}
+                  name="city"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel htmlFor="city">City</FormLabel>
                       <FormControl>
-                        <SelectTrigger disabled={createTask.isPending} className="w-full">
-                          <SelectValue placeholder="State" />
-                        </SelectTrigger>
+                        <Input
+                          id="city"
+                          placeholder="Casablanca"
+                          disabled={createTask.isPending}
+                          value={field.value ?? ""}
+                          onChange={(e) =>
+                            field.onChange(e.target.value || undefined)
+                          }
+                        />
                       </FormControl>
-                      <SelectContent>
-                        <StateSelectItems />
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              {/* Phone Number */}
-              <FormField
-                control={form.control as any}
-                name="phoneNumber"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel htmlFor="phoneNumber">Phone Number</FormLabel>
-                    <FormControl>
-                      <PhoneInput
-                        {...field}
-                        defaultCountry="MA"
-                        international
-                        disabled={createTask.isPending}
-                        placeholder="+212 6 12 34 56 78"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+                {/* State */}
+                <FormField
+                  control={form.control as any}
+                  name="stateAbbreviation"
+                  render={({ field }) => {
+                    const [open, setOpen] = useState(false);
+                    const stateName = field.value
+                      ? (states as any)[field.value]
+                      : undefined;
+                    return (
+                      <FormItem>
+                        <FormLabel>State</FormLabel>
+                        <Popover open={open} onOpenChange={setOpen}>
+                          <PopoverTrigger asChild>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              className="justify-between w-full h-11 rounded-full"
+                            >
+                              {stateName ? (
+                                <span className="font-medium text-black">
+                                  {stateName}
+                                </span>
+                              ) : (
+                                <span className="text-gray-500">State</span>
+                              )}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent
+                            align="center"
+                            sideOffset={12}
+                            className="rounded-3xl p-6 w-[700px] max-w-[90vw] bg-white shadow-lg border border-gray-100"
+                          >
+                            <div className="flex flex-wrap justify-center gap-3 max-h-[320px] overflow-auto">
+                              {Object.entries(
+                                states as Record<string, string>
+                              ).map(([abbr, name]) => {
+                                const isSelected = field.value === abbr;
+                                return (
+                                  <Button
+                                    key={abbr}
+                                    variant="outline"
+                                    size="lg"
+                                    className={`flex items-center gap-3 px-6 py-3 rounded-full text-base font-medium transition-colors border ${isSelected ? "border-gray-400 bg-gray-100 text-gray-900" : "border-gray-200 text-gray-700 hover:bg-gray-50"}`}
+                                    onClick={() => {
+                                      field.onChange(abbr);
+                                      setOpen(false);
+                                    }}
+                                  >
+                                    {name}
+                                    {isSelected && (
+                                      <Check className="w-4 h-4 text-black" />
+                                    )}
+                                  </Button>
+                                );
+                              })}
+                            </div>
+                          </PopoverContent>
+                        </Popover>
+                        <FormMessage />
+                      </FormItem>
+                    );
+                  }}
+                />
+
+                {/* Phone Number */}
+                <FormField
+                  control={form.control as any}
+                  name="phoneNumber"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel htmlFor="phoneNumber">Phone Number</FormLabel>
+                      <FormControl>
+                        <PhoneInput
+                          {...field}
+                          defaultCountry="MA"
+                          international
+                          disabled={createTask.isPending}
+                          placeholder="+212 6 12 34 56 78"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
             )}
 
             {/* STEP 3 */}
             {step === 2 && (
-            <FormField
-              control={form.control as any}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Task Description</FormLabel>
-                  <FormControl>
-                      <Textarea
-                        placeholder="Describe your task in detail..."
-                        value={field.value}
-                        onChange={field.onChange}
-                        disabled={createTask.isPending}
-                        className="min-h-[220px] resize-none text-white placeholder:text-white/80 !font-semibold !text-[1.05rem] md:!text-[1.05rem] leading-6"
-                        style={currentGradient ? { background: currentGradient } : undefined}
-                      />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+              <FormField
+                control={form.control as any}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Task Description</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <Textarea
+                          placeholder="Describe your quick gig..."
+                          value={field.value}
+                          onChange={(e) => {
+                            const text = e.target.value;
+                            if (text.length <= MAX_DESCRIPTION_LENGTH) {
+                              field.onChange(text);
+                            }
+                          }}
+                          disabled={createTask.isPending}
+                          className={`min-h-[220px] w-full resize-none text-center font-semibold leading-snug rounded-2xl px-6 py-8 transition-all duration-300 ${
+                            currentGradient
+                              ? "text-white placeholder:text-white/70"
+                              : "text-gray-800 placeholder:text-gray-400"
+                          }`}
+                          style={{
+                            background: currentGradient || undefined,
+                            fontSize:
+                              field.value.length < 40
+                                ? "1.75rem"
+                                : field.value.length < 90
+                                  ? "1.25rem"
+                                  : "1rem",
+                          }}
+                        />
+
+                        {/* character counter */}
+                        <div
+                          className={`absolute bottom-3 right-4 text-xs ${
+                            field.value.length >= MAX_DESCRIPTION_LENGTH * 0.9
+                              ? "text-red-300"
+                              : currentGradient
+                                ? "text-white/70"
+                                : "text-gray-400"
+                          }`}
+                        >
+                          {field.value.length}/{MAX_DESCRIPTION_LENGTH}
+                        </div>
+                      </div>
+                    </FormControl>
+
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             )}
 
             {/* STEP 4 */}
-            {step === 3 && (
+            {step === 3 &&
               (() => {
                 const v = form.getValues();
-                const gradient = v.category ? getTaskCategoryGradient(v.category as any) : undefined;
+                const gradient = v.category
+                  ? getTaskCategoryGradient(v.category as any)
+                  : undefined;
                 return (
                   <div className="rounded-md border bg-white/60">
                     <div className="p-3 border-b">
                       <h3 className="text-sm font-medium">Review</h3>
-                      <p className="mt-1 text-xs text-muted-foreground">Confirm details before creating your task.</p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Confirm details before creating your task.
+                      </p>
                     </div>
                     <div className="p-4 grid grid-cols-1 gap-3 md:grid-cols-2">
                       <div>
                         <p className="text-xs text-muted-foreground">Name</p>
-                        <p className="text-sm font-medium break-words">{v.displayName || "—"}</p>
+                        <p className="text-sm font-medium break-words">
+                          {v.displayName || "—"}
+                        </p>
                       </div>
                       <div>
-                        <p className="text-xs text-muted-foreground">Category</p>
-                        <p className="text-sm font-medium">{v.category ? formatTaskCategory(v.category as any) : "—"}</p>
+                        <p className="text-xs text-muted-foreground">
+                          Category
+                        </p>
+                        <p className="text-sm font-medium">
+                          {v.category
+                            ? formatTaskCategory(v.category as any)
+                            : "—"}
+                        </p>
                       </div>
                       <div>
                         <p className="text-xs text-muted-foreground">Budget</p>
-                        <p className="text-sm font-medium">{v.budget ? `${v.budget} MAD` : "—"}</p>
+                        <p className="text-sm font-medium">
+                          {v.budget ? `${v.budget} MAD` : "—"}
+                        </p>
                       </div>
                       <div>
                         <p className="text-xs text-muted-foreground">Phone</p>
-                        <p className="text-sm font-medium">{v.phoneNumber || "—"}</p>
+                        <p className="text-sm font-medium">
+                          {v.phoneNumber || "—"}
+                        </p>
                       </div>
                       <div>
                         <p className="text-xs text-muted-foreground">City</p>
@@ -389,13 +534,19 @@ export function TaskListingForm() {
                       </div>
                       <div>
                         <p className="text-xs text-muted-foreground">State</p>
-                        <p className="text-sm font-medium">{v.stateAbbreviation || "—"}</p>
+                        <p className="text-sm font-medium">
+                          {v.stateAbbreviation || "—"}
+                        </p>
                       </div>
                       <div className="md:col-span-2">
-                        <p className="text-xs text-muted-foreground">Description</p>
+                        <p className="text-xs text-muted-foreground">
+                          Description
+                        </p>
                         <div
                           className="rounded-md p-3 text-sm text-white min-h-[80px] whitespace-pre-wrap"
-                          style={gradient ? { background: gradient } : undefined}
+                          style={
+                            gradient ? { background: gradient } : undefined
+                          }
                         >
                           {v.description || "—"}
                         </div>
@@ -403,8 +554,10 @@ export function TaskListingForm() {
                     </div>
                   </div>
                 );
-              })()
-            )}
+              })()}
+
+              </motion.div>
+            </AnimatePresence>
 
             <FormError message={error} />
             <FormSuccess message={success} />
@@ -419,7 +572,11 @@ export function TaskListingForm() {
               )}
 
               {step < steps.length - 1 ? (
-                <Button type="button" onClick={nextStep} className="ml-auto bg-black text-white hover:bg-black/80">
+                <Button
+                  type="button"
+                  onClick={nextStep}
+                  className="ml-auto bg-black text-white hover:bg-black/80"
+                >
                   Next
                 </Button>
               ) : (
@@ -429,8 +586,10 @@ export function TaskListingForm() {
                   className="ml-auto bg-black text-white hover:bg-black/80"
                   disabled={createTask.isPending}
                 >
-                  <LoadingSwap isLoading={createTask.isPending}>Create Task Listing</LoadingSwap>
-            </Button>
+                  <LoadingSwap isLoading={createTask.isPending}>
+                    Create Task Listing
+                  </LoadingSwap>
+                </Button>
               )}
             </div>
           </form>

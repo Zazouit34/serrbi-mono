@@ -5,7 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { Loader2 } from "lucide-react";
+import { Loader2, Check } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 import {
@@ -18,17 +18,11 @@ import {
 } from "@workspace/ui/components/form";
 import { Button } from "@workspace/ui/components/button";
 import { Input } from "@workspace/ui/components/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@workspace/ui/components/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@workspace/ui/components/popover";
 
 import { trpc } from "@/app/_trpc/client";
 import { MarkdownEditor } from "@/components/ui/markdown/markdown-editor";
-import { StateSelectItems } from "../state-select";
+import states from "@workspace/ui/lib/states.json";
 import { PhoneInput } from "../phone-input";
 import { UppyMultiImageUploader, type MultiImageUploaderHandle } from "@/components/ui/uppy-multi-image-uploader";
 import { FormError } from "../form-error";
@@ -41,6 +35,7 @@ import {
 } from "@workspace/ui/lib/validation-schemas";
 import { serviceCategoryValues } from "@workspace/ui/lib/service-enum";
 import { formatServiceCategory } from "@workspace/ui/lib/formatter";
+import { categoryIcons } from "@/components/ui/config/service-filters-config";
 
 const steps = [
   {
@@ -81,7 +76,8 @@ export function ServiceListingForm() {
       description: "",
       serviceCategory: undefined,
       type: "",
-      price: 0,
+      // remove default 0 so the field shows only placeholder until user types
+      price: undefined as unknown as number,
       displayName: undefined,
       displayImage: undefined,
       images: [],
@@ -183,34 +179,7 @@ export function ServiceListingForm() {
           </p>
         </div>
 
-        {/* progress bar */}
-        <div className="flex justify-between mb-10">
-          {steps.map((s, i) => (
-            <div
-              key={i}
-              className={`flex-1 h-2 mx-1 rounded-full transition-all ${
-                i <= step ? "bg-black" : "bg-gray-300"
-              }`}
-            />
-          ))}
-        </div>
-
-        {/* step title */}
-        <div className="flex flex-col mb-6 space-y-4">
-          <div className="flex gap-3 justify-center items-center">
-            <div className="flex-shrink-0 w-12 h-12">
-              <img
-                src={steps[step]?.icon}
-                alt={steps[step]?.title}
-                className="object-contain w-full h-full"
-              />
-            </div>
-            <div>
-              <h2 className="text-lg font-semibold">{steps[step]?.title}</h2>
-              <p className="text-sm text-gray-500">{steps[step]?.subtitle}</p>
-            </div>
-          </div>
-        </div>
+        {/* step UI removed */}
 
         <Form {...form}>
           <form
@@ -259,29 +228,58 @@ export function ServiceListingForm() {
                       <FormField
                         control={form.control as any}
                         name="serviceCategory"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Service Category</FormLabel>
-                            <Select
-                              value={field.value}
-                              onValueChange={field.onChange}
-                            >
-                              <FormControl>
-                                <SelectTrigger className="w-full">
-                                  <SelectValue placeholder="Select category" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {serviceCategoryValues.map((category) => (
-                                  <SelectItem key={category} value={category}>
-                                    {formatServiceCategory(category)}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
+                        render={({ field }) => {
+                          const [open, setOpen] = useState(false);
+                          const Icon = field.value ? (categoryIcons as any)[field.value] : null;
+                          return (
+                            <FormItem>
+                              <FormLabel>Service Category</FormLabel>
+                              <Popover open={open} onOpenChange={setOpen}>
+                                <PopoverTrigger asChild>
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    className="justify-between w-full h-11 rounded-full"
+                                  >
+                                    {field.value ? (
+                                      <span className="flex gap-2 items-center">
+                                        {Icon && <Icon className="w-4 h-4 text-black" />}
+                                        {formatServiceCategory(field.value as any)}
+                                      </span>
+                                    ) : (
+                                      <span className="text-gray-500">Select category</span>
+                                    )}
+                                  </Button>
+                                </PopoverTrigger>
+                                <PopoverContent align="center" sideOffset={12} className="rounded-3xl p-6 w-[700px] max-w-[90vw] bg-white shadow-lg border border-gray-100">
+                                  <div className="flex flex-wrap justify-center gap-3">
+                                    {serviceCategoryValues.map((category) => {
+                                      const CatIcon = (categoryIcons as any)[category];
+                                      const isSelected = field.value === category;
+                                      return (
+                                        <Button
+                                          key={category}
+                                          variant="outline"
+                                          size="lg"
+                                          className={`flex items-center gap-3 px-6 py-3 rounded-full text-base font-medium transition-colors border ${isSelected ? "border-gray-400 bg-gray-100 text-gray-900" : "border-gray-200 text-gray-700 hover:bg-gray-50"}`}
+                                          onClick={() => {
+                                            field.onChange(category);
+                                            setOpen(false);
+                                          }}
+                                        >
+                                          {CatIcon && <CatIcon className={`w-5 h-5 ${isSelected ? "text-black" : "text-gray-500"}`} />}
+                                          {formatServiceCategory(category)}
+                                          {isSelected && <Check className="w-4 h-4 text-black" />}
+                                        </Button>
+                                      );
+                                    })}
+                                  </div>
+                                </PopoverContent>
+                              </Popover>
+                              <FormMessage />
+                            </FormItem>
+                          );
+                        }}
                       />
                     </div>
 
@@ -312,7 +310,14 @@ export function ServiceListingForm() {
                           <FormItem>
                             <FormLabel>Price (MAD)</FormLabel>
                             <FormControl>
-                              <Input type="number" placeholder="100" {...field} value={field.value ?? ""} />
+                              <Input
+                                type="number"
+                                inputMode="numeric"
+                                min={1}
+                                placeholder="100"
+                                {...field}
+                                value={field.value ?? ""}
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -344,25 +349,49 @@ export function ServiceListingForm() {
                       <FormField
                         control={form.control as any}
                         name="stateAbbreviation"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>State</FormLabel>
-                            <Select
-                              value={field.value ?? ""}
-                              onValueChange={(v) => field.onChange(v || undefined)}
-                            >
-                              <FormControl>
-                                <SelectTrigger className="w-full">
-                                  <SelectValue placeholder="State" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                <StateSelectItems />
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
+                        render={({ field }) => {
+                          const [open, setOpen] = useState(false);
+                          const stateName = field.value ? (states as any)[field.value] : undefined;
+                          return (
+                            <FormItem>
+                              <FormLabel>State</FormLabel>
+                              <Popover open={open} onOpenChange={setOpen}>
+                                <PopoverTrigger asChild>
+                                  <Button type="button" variant="outline" className="justify-between w-full h-11 rounded-full">
+                                    {stateName ? (
+                                      <span className="font-medium text-black">{stateName}</span>
+                                    ) : (
+                                      <span className="text-gray-500">State</span>
+                                    )}
+                                  </Button>
+                                </PopoverTrigger>
+                                <PopoverContent align="center" sideOffset={12} className="rounded-3xl p-6 w-[700px] max-w-[90vw] bg-white shadow-lg border border-gray-100">
+                                  <div className="flex flex-wrap justify-center gap-3 max-h-[320px] overflow-auto">
+                                    {Object.entries(states as Record<string, string>).map(([abbr, name]) => {
+                                      const isSelected = field.value === abbr;
+                                      return (
+                                        <Button
+                                          key={abbr}
+                                          variant="outline"
+                                          size="lg"
+                                          className={`flex items-center gap-3 px-6 py-3 rounded-full text-base font-medium transition-colors border ${isSelected ? "border-gray-400 bg-gray-100 text-gray-900" : "border-gray-200 text-gray-700 hover:bg-gray-50"}`}
+                                          onClick={() => {
+                                            field.onChange(abbr);
+                                            setOpen(false);
+                                          }}
+                                        >
+                                          {name}
+                                          {isSelected && <Check className="w-4 h-4 text-black" />}
+                                        </Button>
+                                      );
+                                    })}
+                                  </div>
+                                </PopoverContent>
+                              </Popover>
+                              <FormMessage />
+                            </FormItem>
+                          );
+                        }}
                       />
                     </div>
 
