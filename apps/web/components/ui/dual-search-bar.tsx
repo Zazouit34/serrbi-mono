@@ -155,9 +155,9 @@ export function DualSearchBar({
                 <PopoverContent
                   align="center"
                   sideOffset={12}
-                  className="rounded-3xl p-8 w-[700px] max-w-[90vw] bg-white shadow-lg border border-gray-100"
+                  className="rounded-3xl p-4 w-[350px] max-w-[90vw] bg-white shadow-lg border border-gray-100 sm:p-6 sm:w-[700px]"
                 >
-                  <div className="flex flex-wrap justify-center gap-4">
+                  <div className="flex flex-wrap justify-center gap-2 sm:gap-3">
                     {categoryOptions.map((option) => {
                       const IconComponent = option.icon;
                       const isSelected = filters[categoryKey] === option.value;
@@ -165,14 +165,12 @@ export function DualSearchBar({
                         <Button
                           key={option.value}
                           variant="outline"
-                          size="lg"
-                          className={`flex items-center gap-3 px-6 py-3 rounded-full text-base font-medium transition-colors
-            border
-            ${
-              isSelected
-                ? "border-gray-400 bg-gray-100 text-gray-900"
-                : "border-gray-200 text-gray-700 hover:bg-gray-50"
-            }`}
+                          size="sm"
+                          className={`flex items-center gap-2 px-3 py-2 rounded-full text-sm font-medium transition-colors border sm:gap-3 sm:px-6 sm:py-3 sm:text-base sm:size-lg ${
+                            isSelected
+                              ? "border-gray-400 bg-gray-100 text-gray-900"
+                              : "border-gray-200 text-gray-700 hover:bg-gray-50"
+                          }`}
                           onClick={() => {
                             handleFilterChange(categoryKey, option.value);
                             setCategoryPopoverOpen(false);
@@ -180,14 +178,14 @@ export function DualSearchBar({
                         >
                           {IconComponent && (
                             <IconComponent
-                              className={`w-5 h-5 ${
+                              className={`w-4 h-4 sm:w-5 sm:h-5 ${
                                 isSelected ? "text-black" : "text-gray-500"
                               }`}
                             />
                           )}
                           {option.label}
                           {isSelected && (
-                            <Check className="w-4 h-4 text-black" />
+                            <Check className="w-3 h-3 text-black sm:w-4 sm:h-4" />
                           )}
                         </Button>
                       );
@@ -225,9 +223,9 @@ export function DualSearchBar({
                 <PopoverContent
                   align="center"
                   sideOffset={12}
-                  className="rounded-3xl p-8 w-[700px] max-w-[90vw] bg-white shadow-lg border border-gray-100"
+                  className="rounded-3xl p-4 w-[350px] max-w-[90vw] bg-white shadow-lg border border-gray-100 sm:p-6 sm:w-[700px]"
                 >
-                  <div className="flex flex-wrap justify-center gap-4">
+                  <div className="flex flex-wrap justify-center gap-2 sm:gap-3">
                     {locationOptions.map((option) => {
                       const isSelected = filters.city === option.value;
                       return (
@@ -235,13 +233,11 @@ export function DualSearchBar({
                           key={option.value}
                           variant="outline"
                           size="lg"
-                          className={`flex items-center gap-3 px-6 py-3 rounded-full text-base font-medium transition-colors
-            border
-            ${
-              isSelected
-                ? "border-gray-400 bg-gray-100 text-gray-900"
-                : "border-gray-200 text-gray-700 hover:bg-gray-50"
-            }`}
+                          className={`flex items-center gap-2 px-3 py-2 rounded-full text-sm font-medium transition-colors border sm:gap-3 sm:px-6 sm:py-3 sm:text-base sm:size-lg ${
+                            isSelected
+                              ? "border-gray-400 bg-gray-100 text-gray-900"
+                              : "border-gray-200 text-gray-700 hover:bg-gray-50"
+                          }`}
                           onClick={() => {
                             handleFilterChange("city", option.value);
                             setLocationPopoverOpen(false);
@@ -249,7 +245,7 @@ export function DualSearchBar({
                         >
                           {option.label}
                           {isSelected && (
-                            <Check className="w-4 h-4 text-black" />
+                            <Check className="w-3 h-3 sm:w-4 sm:h-4 text-black" />
                           )}
                         </Button>
                       );
