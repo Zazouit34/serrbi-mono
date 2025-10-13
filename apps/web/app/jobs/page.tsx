@@ -1,19 +1,21 @@
 import Link from "next/link";
 import { JobListing } from "./job-listing/job-listing";
+import { useTranslations } from "next-intl";
 export const dynamic = "force-static";
 
 export default function JobsPage() {
+  const t = useTranslations("JobsPage");
   return (
     <div className="space-y-4 md:space-y-8">
       <div className="flex flex-col items-center py-0 space-y-4 md:py-16 md:space-y-10">
         <h1 className="pt-4 text-2xl md:text-5xl text-foreground font-outfit">
-          Open jobs
+          {t("title")}
         </h1>
         <p className="hidden text-xl text-gray-500 md:block font-outfit">
-          Land a job with leading national and international companies.
+          {t("subtitleLg")}
         </p>
         <p className="text-lg text-gray-500 md:hidden font-outfit">
-          Land a job with leading companies.
+          {t("subtitleSm")}
         </p>
         <div className="flex gap-3 justify-center md:gap-4">
           <Link
@@ -25,7 +27,7 @@ export default function JobsPage() {
               color: "rgb(80, 80, 80)",
             }}
           >
-            Post a Job
+            {t("postJob")}
           </Link>
 
           <Link
@@ -37,7 +39,7 @@ export default function JobsPage() {
               color: "rgb(80, 80, 80)",
             }}
           >
-            Post Resume
+            {t("postResume")}
           </Link>
         </div>
       </div>

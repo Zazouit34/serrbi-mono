@@ -137,6 +137,35 @@
     },
     "copyright": "All rights reserved."
   }
+  ,
+  "JobsPage": {
+    "title": "Open jobs",
+    "subtitleLg": "Land a job with leading national and international companies.",
+    "subtitleSm": "Land a job with leading companies.",
+    "postJob": "Post a Job",
+    "postResume": "Post Resume"
+  },
+  "ServicesPage": {
+    "title": "Available services",
+    "subtitle": "Find a service provider for your needs.",
+    "postService": "Post a service"
+  },
+  "TasksPage": {
+    "title": "Tasks to complete",
+    "subtitle": "Find a task to complete.",
+    "postTask": "Post a Task"
+  },
+  "FilterBar": {
+    "searchPlaceholder": "Search roles, skills...",
+    "filterOptions": "Filter Options",
+    "selectPrefix": "Select {label}",
+    "reset": "Reset Filters",
+    "apply": "Apply Filters"
+  },
+  "DualSearchBar": {
+    "what": "What",
+    "where": "Where"
+  }
 }
 
 

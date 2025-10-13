@@ -137,6 +137,35 @@
     },
     "copyright": "Tous droits réservés."
   }
+  ,
+  "JobsPage": {
+    "title": "Emplois ouverts",
+    "subtitleLg": "Trouvez un poste auprès d’entreprises nationales et internationales de premier plan.",
+    "subtitleSm": "Trouvez un poste auprès d’entreprises leaders.",
+    "postJob": "Publier une offre",
+    "postResume": "Publier un CV"
+  },
+  "ServicesPage": {
+    "title": "Services disponibles",
+    "subtitle": "Trouvez un prestataire pour vos besoins.",
+    "postService": "Publier un service"
+  },
+  "TasksPage": {
+    "title": "Tâches à réaliser",
+    "subtitle": "Trouvez une tâche à réaliser.",
+    "postTask": "Publier une tâche"
+  },
+  "FilterBar": {
+    "searchPlaceholder": "Rechercher des postes, compétences...",
+    "filterOptions": "Options de filtre",
+    "selectPrefix": "Sélectionner {label}",
+    "reset": "Réinitialiser",
+    "apply": "Appliquer"
+  },
+  "DualSearchBar": {
+    "what": "Quoi",
+    "where": "Où"
+  }
   }
 
 

@@ -24,6 +24,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@workspace/ui/components/popover";
+import { useTranslations } from "next-intl";
 
 export type FilterOption = {
   label: string;
@@ -62,6 +63,7 @@ export function FilterBar({
   onFilterChange,
   initialFilters = {},
 }: FilterBarProps) {
+  const t = useTranslations("FilterBar");
   const [filters, setFilters] = useState<Record<string, string>>(initialFilters);
   const [tempFilters, setTempFilters] = useState<Record<string, string>>(initialFilters);
   const [searchQuery, setSearchQuery] = useState(initialFilters.search || "");
@@ -115,7 +117,7 @@ export function FilterBar({
         {/* Search Input */}
         <div className="relative flex-1 max-w-2xl">
           <Input
-            placeholder="Search roles, skills..."
+            placeholder={t("searchPlaceholder")}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyPress={(e) => e.key === "Enter" && handleSearch()}
@@ -146,7 +148,7 @@ export function FilterBar({
           </DialogTrigger>
           <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Filter Options</DialogTitle>
+              <DialogTitle>{t("filterOptions")}</DialogTitle>
             </DialogHeader>
             
             {/* Filters Grid */}
@@ -164,7 +166,7 @@ export function FilterBar({
                         onValueChange={(val) => handleTempFilterChange(filter.key, val)}
                       >
                         <SelectTrigger className="w-full">
-                          <SelectValue placeholder={`Select ${filter.label}`} />
+                          <SelectValue placeholder={t("selectPrefix", { label: filter.label })} />
                         </SelectTrigger>
                         <SelectContent>
                           {filter.options?.map((option) => (
@@ -210,7 +212,7 @@ export function FilterBar({
                               );
                             })() : (
                               <span className="text-gray-500">
-                                Select {filter.label}
+                                {t("selectPrefix", { label: filter.label })}
                               </span>
                             )}
                           </Button>
@@ -257,12 +259,12 @@ export function FilterBar({
             <DialogFooter className="flex flex-row gap-2 justify-between">
               {/* Reset Filters button */}
               <Button variant="ghost" onClick={resetFilters} size="sm">
-                Reset Filters
+                {t("reset")}
               </Button>
               
               {/* Apply Filters button */}
               <Button onClick={applyFilters} className="bg-[#FF040E] hover:bg-[#FF040E]/80">
-                Apply Filters
+                {t("apply")}
               </Button>
             </DialogFooter>
           </DialogContent>

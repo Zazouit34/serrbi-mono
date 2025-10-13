@@ -1,16 +1,18 @@
 import { TaskListing } from "./task-listing/task-listing";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 export const dynamic = "force-static";
 
 export default function TasksPage() {
+  const t = useTranslations("TasksPage");
   return (
     <div className="space-y-4 md:space-y-8">
       <div className="flex flex-col items-center py-0 space-y-4 md:py-16 md:space-y-10">
         <h1 className="pt-4 text-2xl md:text-5xl text-foreground font-outfit">
-          Tasks to complete
+          {t("title")}
         </h1>
         <p className="text-lg text-gray-500 md:text-xl font-outfit">
-          Find a task to complete.
+          {t("subtitle")}
         </p>
         <div className="flex justify-center">
           <Link
@@ -22,7 +24,7 @@ export default function TasksPage() {
               color: "rgb(80, 80, 80)",
             }}
           >
-            Post a Task
+            {t("postTask")}
           </Link>
         </div>
       </div>

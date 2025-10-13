@@ -137,6 +137,35 @@
     },
     "copyright": "جميع الحقوق محفوظة."
   }
+  ,
+  "JobsPage": {
+    "title": "وظائف شاغرة",
+    "subtitleLg": "احصل على وظيفة لدى شركات وطنية ودولية رائدة.",
+    "subtitleSm": "احصل على وظيفة لدى شركات رائدة.",
+    "postJob": "انشر وظيفة",
+    "postResume": "انشر سيرة ذاتية"
+  },
+  "ServicesPage": {
+    "title": "خدمات متوفرة",
+    "subtitle": "اعثر على مقدم خدمة لاحتياجاتك.",
+    "postService": "انشر خدمة"
+  },
+  "TasksPage": {
+    "title": "مهام للإنجاز",
+    "subtitle": "اعثر على مهمة لإنجازها.",
+    "postTask": "انشر مهمة"
+  },
+  "FilterBar": {
+    "searchPlaceholder": "ابحث عن الأدوار والمهارات...",
+    "filterOptions": "خيارات التصفية",
+    "selectPrefix": "اختر {label}",
+    "reset": "إعادة تعيين",
+    "apply": "تطبيق"
+  },
+  "DualSearchBar": {
+    "what": "ماذا",
+    "where": "أين"
+  }
 }
 
 

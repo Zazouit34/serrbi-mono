@@ -8,6 +8,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@workspace/ui/components/popover";
+import { useTranslations } from "next-intl";
 
 type CategoryOption = {
   label: string;
@@ -26,6 +27,7 @@ export function DualSearchBar({
   initialFilters = {},
   type,
 }: DualSearchBarProps) {
+  const t = useTranslations("DualSearchBar");
   const [filters, setFilters] =
     useState<Record<string, string>>(initialFilters);
   const [categoryPopoverOpen, setCategoryPopoverOpen] = useState(false);
@@ -103,7 +105,7 @@ export function DualSearchBar({
 
   const categoryKey = type === "service" ? "serviceCategory" : "category";
   const categoryLabel =
-    type === "service" ? "Service Category" : "Task Category";
+    type === "service" ? t("what") : t("what");
 
   const getSelectedCategoryData = () => {
     return categoryOptions.find(
@@ -147,7 +149,7 @@ export function DualSearchBar({
                       </div>
                     ) : (
                       <span className="text-sm text-gray-500 sm:text-base">
-                        What
+                        {t("what")}
                       </span>
                     )}
                   </Button>
@@ -215,7 +217,7 @@ export function DualSearchBar({
                       </span>
                     ) : (
                       <span className="text-sm text-gray-500 sm:text-base">
-                        Where
+                        {t("where")}
                       </span>
                     )}
                   </Button>
