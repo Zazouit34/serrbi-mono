@@ -1,5 +1,6 @@
 "use client";
 import Image from "next/image";
+import { useLocale } from "next-intl";
 
 // Ultra high-quality 4K service-focused images with dark professional aesthetic
 const carouselImages = [
@@ -72,6 +73,8 @@ export const CarouselMain: React.FC<CarouselMainProps> = ({
   speed = 50,
   direction = "left",
 }) => {
+  const locale = useLocale();
+  const isRtl = locale === "ar";
   // Duplicate images for seamless loop
   const duplicatedImages = [...carouselImages, ...carouselImages];
 
@@ -105,6 +108,7 @@ export const CarouselMain: React.FC<CarouselMainProps> = ({
         <div 
           className="custom-marquee-content"
           style={{
+            animationName: isRtl ? "marquee-scroll-rtl" : undefined,
             animationDuration: `${100 - speed}s`, // Convert speed to duration
             animationDirection: direction === "right" ? "reverse" : "normal"
           }}

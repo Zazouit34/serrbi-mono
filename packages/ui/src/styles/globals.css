@@ -248,3 +248,13 @@
   }
 }
 
+/* RTL variant to ensure marquee moves in the opposite direction without reversing initial offset */
+@keyframes marquee-scroll-rtl {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(50%);
+  }
+}
+
