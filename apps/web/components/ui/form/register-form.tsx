@@ -24,9 +24,11 @@ import { trpc } from '@/app/_trpc/client'
 import { loginCredentials } from '@/lib/actions/auth'
 
 import { registerFormSchema, type RegisterFormValues } from '@workspace/ui/lib/validation-schemas'
+import { useTranslations } from 'next-intl'
 
 
 export default function RegisterForm() {
+  const t = useTranslations('Auth.Register')
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/";
   const [error, setError] = useState<string | undefined>("")
@@ -76,9 +78,9 @@ async function onSubmit(values: RegisterFormValues) {
       <div className="space-y-6 w-full max-w-md">
         {/* Header */}
         <div className='flex flex-col gap-4 justify-center items-center text-center'>
-          <h1 className="text-2xl font-bold">Register</h1>
+          <h1 className="text-2xl font-bold">{t('title')}</h1>
           <p className='text-sm text-center text-muted-foreground'>
-            Create a new account by filling out the form below.
+            {t('subtitle')}
           </p>
         </div>
 
@@ -92,7 +94,7 @@ async function onSubmit(values: RegisterFormValues) {
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel htmlFor="name">Name</FormLabel>
+                    <FormLabel htmlFor="name">{t('name')}</FormLabel>
                     <FormControl>
                       <Input id="name" placeholder="John Doe" {...field} disabled={isPending} />
                     </FormControl>
@@ -107,7 +109,7 @@ async function onSubmit(values: RegisterFormValues) {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel htmlFor="email">Email</FormLabel>
+                    <FormLabel htmlFor="email">{t('email')}</FormLabel>
                     <FormControl>
                       <Input
                         id="email"
@@ -129,7 +131,7 @@ async function onSubmit(values: RegisterFormValues) {
                 name="phone"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel htmlFor="phone">Phone Number</FormLabel>
+                    <FormLabel htmlFor="phone">{t('phone')}</FormLabel>
                     <FormControl>
                       <PhoneInput {...field} defaultCountry="MA" international disabled={isPending} />
                     </FormControl>
@@ -144,7 +146,7 @@ async function onSubmit(values: RegisterFormValues) {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel htmlFor="password">Password</FormLabel>
+                    <FormLabel htmlFor="password">{t('password')}</FormLabel>
                     <FormControl>
                       <PasswordInput
                         id="password"
@@ -165,7 +167,7 @@ async function onSubmit(values: RegisterFormValues) {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel htmlFor="confirmPassword">
-                      Confirm Password
+                      {t('confirmPassword')}
                     </FormLabel>
                     <FormControl>
                       <PasswordInput
@@ -184,7 +186,7 @@ async function onSubmit(values: RegisterFormValues) {
               <FormSuccess message={success} />
 
               <Button type="submit" className="w-full" disabled={isPending}>
-                Register
+                {t('submit')}
               </Button>
             </div>
           </form>
@@ -192,9 +194,9 @@ async function onSubmit(values: RegisterFormValues) {
         
         {/* Footer */}
         <div className="text-sm text-center text-muted-foreground">
-          Already have an account?{' '}
+          {t('loginCta')}{' '}
           <Link href={`/login?callbackUrl=${encodeURIComponent(callbackUrl)}`} className="underline hover:text-primary">
-            Login
+            {t('loginLink')}
           </Link>
         </div>
       </div>

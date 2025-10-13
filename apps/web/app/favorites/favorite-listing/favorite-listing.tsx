@@ -4,8 +4,10 @@ import { trpc } from "@/app/_trpc/client";
 import { JobCard } from "@/components/ui/form/job/job-card";
 import { ServiceCard } from "@/components/ui/form/service/service-card";
 import { TaskCard } from "@/components/ui/form/task/task-card";
+import { useTranslations } from "next-intl";
 
 export function FavoriteListing() {
+  const t = useTranslations("Favorites");
   const { data: jobFavorites, isLoading: jobsLoading } = trpc.favorite.getFavorites.useQuery({
     page: 1,
     pageSize: 20,
@@ -33,14 +35,14 @@ export function FavoriteListing() {
   );
 
   const EmptySection = ({ type }: { type: string }) => (
-    <p className="py-8 text-sm text-gray-400">No favorite {type} yet</p>
+    <p className="py-8 text-sm text-gray-400">{t("empty.item", { type })}</p>
   );
 
   return (
     <div className="space-y-12">
       {/* Jobs Section */}
       <div>
-        <h2 className="mb-6 text-2xl font-semibold text-gray-900">Jobs</h2>
+        <h2 className="mb-6 text-2xl font-semibold text-gray-900">{t("section.jobs")}</h2>
         {jobsLoading ? (
           <LoadingGrid />
         ) : jobFavorites?.items.length ? (
@@ -67,13 +69,13 @@ export function FavoriteListing() {
             ))}
           </div>
         ) : (
-          <EmptySection type="jobs" />
+          <EmptySection type={t("section.jobs")} />
         )}
       </div>
 
       {/* Services Section */}
       <div>
-        <h2 className="mb-6 text-2xl font-semibold text-gray-900">Services</h2>
+        <h2 className="mb-6 text-2xl font-semibold text-gray-900">{t("section.services")}</h2>
         {servicesLoading ? (
           <LoadingGrid />
         ) : serviceFavorites?.items.length ? (
@@ -99,13 +101,13 @@ export function FavoriteListing() {
             ))}
           </div>
         ) : (
-          <EmptySection type="services" />
+          <EmptySection type={t("section.services")} />
         )}
       </div>
 
       {/* Tasks Section */}
       <div>
-        <h2 className="mb-6 text-2xl font-semibold text-gray-900">Tasks</h2>
+        <h2 className="mb-6 text-2xl font-semibold text-gray-900">{t("section.tasks")}</h2>
         {tasksLoading ? (
           <LoadingGrid />
         ) : taskFavorites?.items.length ? (
@@ -128,7 +130,7 @@ export function FavoriteListing() {
             ))}
           </div>
         ) : (
-          <EmptySection type="tasks" />
+          <EmptySection type={t("section.tasks")} />
         )}
       </div>
     </div>

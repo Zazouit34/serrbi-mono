@@ -4,6 +4,7 @@ import Link from "next/link";
 import { User, LogOut, LogIn } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { Skeleton } from "@workspace/ui/components/skeleton";
+import { useTranslations } from "next-intl";
 
 import {
   DropdownMenu,
@@ -24,6 +25,7 @@ import { logout } from "@/lib/actions/auth";
  * - If logged in: renders Avatar as the trigger and mobile menu items
  */
 export function UserMenuMobile() {
+  const t = useTranslations("UserMenuMobile");
   const pathname = usePathname();
   const { user, status } = useCurrentUser();
 
@@ -39,7 +41,7 @@ export function UserMenuMobile() {
         className="flex flex-col gap-1 justify-center items-center text-gray-500 transition-colors hover:text-gray-900 focus:text-gray-900 dark:text-gray-400 dark:hover:text-gray-50 dark:focus:text-gray-50"
       >
         <LogIn className="w-6 h-6" />
-        <span className="text-xs">Log in</span>
+        <span className="text-xs">{t("login")}</span>
       </Link>
     );
   }
@@ -48,7 +50,7 @@ export function UserMenuMobile() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button
-          aria-label="Open user menu"
+          aria-label={t("openAria")}
           className="flex flex-col gap-1 justify-center items-center text-gray-500 transition-colors hover:text-gray-900 focus:text-gray-900 dark:text-gray-400 dark:hover:text-gray-50 dark:focus:text-gray-50"
         >
           <Avatar className="w-6 h-6">
@@ -57,24 +59,24 @@ export function UserMenuMobile() {
               <User className="text-white size-4" />
             </AvatarFallback>
           </Avatar>
-          <span className="text-xs">Profile</span>
+          <span className="text-xs">{t("profile")}</span>
         </button>
       </DropdownMenuTrigger>
 
       <DropdownMenuContent align="center" className="w-44">
         <DropdownMenuItem asChild>
-          <Link href="/account/auto-apply">Auto-apply</Link>
+          <Link href="/account/auto-apply">{t("autoApply")}</Link>
         </DropdownMenuItem>
 
         <DropdownMenuItem asChild>
-          <Link href="account/billing">Billing</Link>
+          <Link href="account/billing">{t("billing")}</Link>
         </DropdownMenuItem>
 
         <DropdownMenuSeparator />
 
         <DropdownMenuItem onClick={logout}>
           <LogOut className="mr-2 size-4" />
-          Log out
+          {t("logout")}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

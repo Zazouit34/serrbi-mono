@@ -11,7 +11,7 @@ import {
   CardDescription,
   CardFooter,
 } from "@workspace/ui/components/card";
-import { Check, Loader2, CheckCircle2 } from "lucide-react";
+import { Check, Loader2 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { toast } from "sonner";
 import { useState, useEffect } from "react";
@@ -23,8 +23,10 @@ import {
 import { Paddle } from "@paddle/paddle-js";
 import { Progress } from "@workspace/ui/components/progress";
 import { format } from "date-fns";
+import { useTranslations } from "next-intl";
 
 export default function SubscriptionPageClient() {
+  const t = useTranslations();
   const { data: session } = useSession();
   const {
     data: plans,
@@ -44,11 +46,11 @@ export default function SubscriptionPageClient() {
   const createSubscriptionMutation =
     trpc.subscription.createSubscription.useMutation({
       onSuccess: async () => {
-        toast.success("Subscribed to Free plan");
+        toast.success(t("Subscription.toasts.subscribedFree"));
         await utils.subscription.getCurrentSubscription.invalidate();
       },
       onError: (error: any) => {
-        toast.error(error.message || "Failed to subscribe");
+        toast.error(error.message || t("Subscription.toasts.checkoutFailed"));
       },
     });
 
@@ -90,7 +92,7 @@ export default function SubscriptionPageClient() {
         setPaddle(paddleInstance);
       } catch (error) {
         console.error("Failed to initialize Paddle:", error);
-        toast.error("Payment system unavailable");
+        toast.error(t("Subscription.toasts.paymentUnavailable"));
       }
     }
 
@@ -125,7 +127,7 @@ export default function SubscriptionPageClient() {
 
   const handleSubscribe = async (plan: any) => {
     if (!session?.user) {
-      toast.error("Please sign in to subscribe");
+      toast.error(t("Subscription.toasts.notSignedIn"));
       return;
     }
 
@@ -137,12 +139,12 @@ export default function SubscriptionPageClient() {
 
     // Paid plans
     if (!paddle) {
-      toast.error("Payment system not ready. Please try again.");
+      toast.error(t("Subscription.toasts.checkoutNotReady"));
       return;
     }
 
     if (!plan.paddlePriceId) {
-      toast.error("Plan not configured properly");
+      toast.error(t("Subscription.toasts.planMisconfigured"));
       return;
     }
 
@@ -161,7 +163,7 @@ export default function SubscriptionPageClient() {
         successUrl: `${window.location.origin}/account/auto-apply`,
       });
     } catch (error: any) {
-      toast.error(error.message || "Failed to start checkout");
+      toast.error(error.message || t("Subscription.toasts.checkoutFailed"));
       setLoadingCheckout(null);
     }
   };
@@ -235,19 +237,10 @@ export default function SubscriptionPageClient() {
             {displayPrice}
             {plan.price > 0 && (
               <span className="text-base font-normal text-muted-foreground">
-                /month
+                {t("Subscription.price.perMonth")}
               </span>
             )}
           </div>
-          {/* {paddlePrice && plan.price > 0 && (
-            <div className="mt-1 text-sm text-muted-foreground">
-              {
-                paddlePrice.data?.details?.lineItems?.[0]?.formattedTotals
-                  ?.subtotal
-              }{" "}
-              + tax
-            </div>
-          )}*/}
           <div className="mt-2 text-sm text-muted-foreground">{subtext}</div>
         </div>
 
@@ -281,14 +274,14 @@ export default function SubscriptionPageClient() {
           {isCheckingOut ? (
             <>
               <Loader2 className="mr-2 w-4 h-4 animate-spin" />
-              Opening checkout...
+              {t("Subscription.cta.openingCheckout")}
             </>
           ) : isCurrent ? (
-            "Current Plan"
+            t("Subscription.cta.currentPlan")
           ) : plan.price > 0 ? (
-            "Subscribe Now"
+            t("Subscription.cta.subscribeNow")
           ) : (
-            "Get Started Free"
+            t("Subscription.cta.getStartedFree")
           )}
         </Button>
       </div>
@@ -300,7 +293,7 @@ export default function SubscriptionPageClient() {
     if (!subscription) {
       return (
         <div className="py-12 text-center text-muted-foreground">
-          You don’t have an active subscription yet.
+          {t("Billing.noActive")}
         </div>
       );
     }
@@ -319,9 +312,9 @@ export default function SubscriptionPageClient() {
         <Card className="bg-white rounded-2xl border border-gray-200 shadow-sm">
           <CardHeader>
             <CardTitle className="text-lg font-semibold">
-              Current Plan
+              {t("Billing.currentPlan")}
             </CardTitle>
-            <CardDescription>Your active subscription details</CardDescription>
+            <CardDescription>{t("Billing.subtitle")}</CardDescription>
           </CardHeader>
 
           <CardContent className="space-y-6">
@@ -352,7 +345,7 @@ export default function SubscriptionPageClient() {
               asChild
               className="w-full text-white bg-black rounded-lg hover:bg-black/90"
             >
-              <Link href="/account/billing">Manage Subscription</Link>
+              <Link href="/account/billing">{t("SubscriptionSuccess.manageSubscription")}</Link>
             </Button>
           </CardFooter>
         </Card>
@@ -360,8 +353,8 @@ export default function SubscriptionPageClient() {
         {/* Usage Card */}
         <Card className="bg-white rounded-2xl border border-gray-200 shadow-sm">
           <CardHeader>
-            <CardTitle className="text-lg font-semibold">Usage</CardTitle>
-            <CardDescription>Track your plan limits</CardDescription>
+            <CardTitle className="text-lg font-semibold">{t("Billing.usage.title")}</CardTitle>
+            <CardDescription>{t("Billing.usage.subtitle")}</CardDescription>
           </CardHeader>
 
           <CardContent>
@@ -376,7 +369,7 @@ export default function SubscriptionPageClient() {
                   />
                   <div className="flex-1 space-y-1.5">
                     <p className="text-sm font-medium">
-                      Jobs: {usage.jobListingsUsed}/
+                      {t("Billing.usage.jobs")}: {usage.jobListingsUsed}/
                       {usage.jobListingsLimit || "∞"}
                     </p>
                     <Progress
@@ -393,8 +386,8 @@ export default function SubscriptionPageClient() {
                         ? `${Math.max(
                             usage.jobListingsLimit - usage.jobListingsUsed,
                             0
-                          )} remaining this month`
-                        : "Unlimited"}
+                          )} ${t("Billing.remaining")}`
+                        : t("Billing.unlimited")}
                     </p>
                   </div>
                 </div>
@@ -408,7 +401,7 @@ export default function SubscriptionPageClient() {
                   />
                   <div className="flex-1 space-y-1.5">
                     <p className="text-sm font-medium">
-                      Services: {usage.serviceListingsUsed}/
+                      {t("Billing.usage.services")}: {usage.serviceListingsUsed}/
                       {usage.serviceListingsLimit || "∞"}
                     </p>
                     <Progress
@@ -427,8 +420,8 @@ export default function SubscriptionPageClient() {
                             usage.serviceListingsLimit -
                               usage.serviceListingsUsed,
                             0
-                          )} remaining this month`
-                        : "Unlimited"}
+                          )} ${t("Billing.remaining")}`
+                        : t("Billing.unlimited")}
                     </p>
                   </div>
                 </div>
@@ -442,7 +435,7 @@ export default function SubscriptionPageClient() {
                   />
                   <div className="flex-1 space-y-1.5">
                     <p className="text-sm font-medium">
-                      Tasks: {usage.taskListingsUsed}/
+                      {t("Billing.usage.tasks")}: {usage.taskListingsUsed}/
                       {usage.taskListingsLimit || "∞"}
                     </p>
                     <Progress
@@ -459,16 +452,14 @@ export default function SubscriptionPageClient() {
                         ? `${Math.max(
                             usage.taskListingsLimit - usage.taskListingsUsed,
                             0
-                          )} remaining this month`
-                        : "Unlimited"}
+                          )} ${t("Billing.remaining")}`
+                        : t("Billing.unlimited")}
                     </p>
                   </div>
                 </div>
               </div>
             ) : (
-              <div className="text-sm text-muted-foreground">
-                No usage data available.
-              </div>
+              <div className="text-sm text-muted-foreground">{t("Billing.usage.noData")}</div>
             )}
           </CardContent>
         </Card>
@@ -479,15 +470,13 @@ export default function SubscriptionPageClient() {
   return (
     <div className="space-y-8">
       <div className="flex flex-col justify-center items-center">
-        <h1 className="text-3xl font-bold font-outfit">Choose your plan</h1>
-        <p className="text-muted-foreground font-outfit">
-          Upgrade to unlock more listings and features.
-        </p>
+        <h1 className="text-3xl font-bold font-outfit">{t("Subscription.title")}</h1>
+        <p className="text-muted-foreground font-outfit">{t("Subscription.subtitle")}</p>
       </div>
 
       {plansError && (
         <div className="text-sm text-red-500">
-          Failed to load plans. Please refresh.
+          {t("Subscription.errors.loadPlans")}
         </div>
       )}
 

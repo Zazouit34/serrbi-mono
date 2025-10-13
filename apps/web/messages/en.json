@@ -136,8 +136,7 @@
       "vsPerplexity": "vs Perplexity Email Assistant"
     },
     "copyright": "All rights reserved."
-  }
-  ,
+  },
   "JobsPage": {
     "title": "Open jobs",
     "subtitleLg": "Land a job with leading national and international companies.",
@@ -273,6 +272,223 @@
   "TaskForm": {
     "headingTitle": "Create Task Listing",
     "headingSubtitle": "Fill out the form below to create a new task listing."
+  },
+  "UserMenu": {
+    "myAccount": "My Account",
+    "favorites": "Favorites",
+    "plans": "Plans",
+    "autoApply": "Auto Apply",
+    "logout": "Log out",
+    "loginCta": "Log in / Sign up"
+  },
+  "UserMenuMobile": {
+    "login": "Log in",
+    "profile": "Profile",
+    "autoApply": "Auto-apply",
+    "billing": "Billing",
+    "logout": "Log out",
+    "openAria": "Open user menu"
+  },
+  "FavoritesPage": {
+    "title": "My Favorites",
+    "subtitle": "Your saved jobs, services, and tasks"
+  },
+  "Favorites": {
+    "section": {
+      "jobs": "Jobs",
+      "services": "Services",
+      "tasks": "Tasks"
+    },
+    "empty": {
+      "item": "No favorite {type} yet"
+    }
+  },
+  "FavoritesGrid": {
+    "empty": {
+      "title": "No favorites yet",
+      "subtitle": "Start adding items to your favorites to see them here"
+    },
+    "loading": { "skeletonAria": "Loading favorite items" }
+  },
+  "Auth": {
+    "Forgot": {
+      "title": "Forgot Password",
+      "subtitle": "Enter your email address to receive a password reset link.",
+      "email": "Email",
+      "submit": "Send Reset Link",
+      "success": "Reset link sent successfully.",
+      "error": "Failed to send reset link. Please try again."
+    },
+    "Login": {
+      "title": "Login",
+      "subtitle": "Don't have an account?",
+      "email": "Email",
+      "password": "Password",
+      "forgot": "Forgot your password?",
+      "submit": "Login",
+      "google": "Login with Google",
+      "signUpCta": "Sign up",
+      "terms": "By clicking continue, you agree to our",
+      "termsLink": "Terms of Service",
+      "and": "and",
+      "privacy": "Privacy Policy"
+    },
+    "Register": {
+      "title": "Register",
+      "subtitle": "Create a new account by filling out the form below.",
+      "name": "Name",
+      "email": "Email",
+      "phone": "Phone Number",
+      "password": "Password",
+      "confirmPassword": "Confirm Password",
+      "submit": "Register",
+      "loginCta": "Already have an account?",
+      "loginLink": "Login"
+    },
+    "Reset": {
+      "title": "Reset Password",
+      "subtitle": "Enter your new password to reset your password.",
+      "password": "New Password",
+      "confirmPassword": "Confirm Password",
+      "submit": "Reset Password"
+    }
+  },
+  "Subscription": {
+    "title": "Choose your plan",
+    "subtitle": "Upgrade to unlock more listings and features.",
+    "errors": { "loadPlans": "Failed to load plans. Please refresh." },
+    "cta": {
+      "openingCheckout": "Opening checkout...",
+      "currentPlan": "Current Plan",
+      "subscribeNow": "Subscribe Now",
+      "getStartedFree": "Get Started Free"
+    },
+    "price": { "perMonth": "/month" },
+    "features": {
+      "featuredListings": "Featured listings",
+      "prioritySupport": "Priority support",
+      "analyticsAccess": "Analytics access"
+    },
+    "toasts": {
+      "subscribedFree": "Subscribed to Free plan",
+      "paymentUnavailable": "Payment system unavailable",
+      "notSignedIn": "Please sign in to subscribe",
+      "checkoutNotReady": "Payment system not ready. Please try again.",
+      "planMisconfigured": "Plan not configured properly",
+      "checkoutFailed": "Failed to start checkout"
+    }
+  },
+  "Billing": {
+    "title": "Billing & Subscription",
+    "subtitle": "Manage your subscription and view payment history.",
+    "currentPlan": "Current Plan",
+    "details": { "period": "Billed", "subscriptionId": "Subscription ID" },
+    "endsOn": "Ends on",
+    "noActive": "No active subscription.",
+    "choosePlan": "Choose a plan",
+    "usage": {
+      "title": "Plan Features",
+      "subtitle": "Subscribe to a plan to see your features.",
+      "jobs": "Job Listings",
+      "services": "Service Listings",
+      "tasks": "Task Listings"
+    },
+    "remaining": "remaining",
+    "unlimited": "Unlimited",
+    "history": {
+      "title": "Payment History",
+      "loadMore": "Load More",
+      "empty": "No payment history yet."
+    },
+    "table": {
+      "date": "Date",
+      "description": "Description",
+      "amount": "Amount",
+      "status": "Status",
+      "method": "Method"
+    },
+    "statuses": {
+      "ACTIVE": "Active",
+      "CANCELED": "Canceled",
+      "PAUSED": "Paused",
+      "PAST_DUE": "Past Due",
+      "TRIALING": "Trial",
+      "PENDING": "Pending",
+      "SUCCEEDED": "Paid",
+      "FAILED": "Failed",
+      "REFUNDED": "Refunded"
+    },
+    "toasts": {
+      "pause": "Subscription will be paused at the end of the billing period",
+      "cancel": "Subscription will be canceled at the end of the billing period",
+      "resume": "Subscription resumed successfully"
+    },
+    "actions": {
+      "resume": "Resume",
+      "resuming": "Resuming...",
+      "pause": "Pause",
+      "pausing": "Pausing...",
+      "cancel": "Cancel",
+      "canceling": "Canceling..."
+    }
+  },
+  "SubscriptionSuccess": {
+    "paymentSuccessToast": "Payment successful! Your subscription is now active.",
+    "next": "Next",
+    "back": "Back",
+    "saveNext": "Save & Next",
+    "step1": {
+      "title": "Payment Successful!",
+      "descPrefix": "Thank you,",
+      "descSuffix": "plan is confirmed.",
+      "nextHint": "Press Next to set up your auto-apply preferences."
+    },
+    "step2": {
+      "title": "Auto-Apply Setup",
+      "desc": "Choose your job category and suggested tags. You can change these later from user-menu → auto-apply."
+    },
+    "enableAutoApply": "Enable Auto-apply",
+    "jobCategory": "Job Category",
+    "tags": "Tags (keywords)",
+    "roles": "Roles",
+    "step3": {
+      "title": "All set!",
+      "desc1": "Your auto-apply preferences are saved. You can change them anytime.",
+      "list": {
+        "userMenu": "Open the User menu (top-right).",
+        "autoApply": "Select Auto-apply to view or edit your preferences."
+      }
+    },
+    "manageSubscription": "Manage subscription",
+    "goDashboard": "Go to dashboard"
+  },
+  "ResumeForm": {
+    "headingTitle": "Upload Resume",
+    "headingSubtitle": "Upload your PDF resume to attach it to your profile and instantly analyze its quality score.",
+    "name": "Name",
+    "email": "Email",
+    "resumeLabel": "Resume (PDF)",
+    "note": "Upload your resume (PDF, max 2 MB)",
+    "analyzing": "Analyzing resume...",
+    "uploadToProfile": "Upload to Profile",
+    "uploadSuccess": "Resume uploaded successfully.",
+    "analysisFailed": "Failed to analyze resume. Please try again.",
+    "selectFileFirst": "Please select a PDF resume first.",
+    "saveFailed": "Failed to save resume"
+  },
+  "ResumeUploader": {
+    "dragDrop": "Drag & drop your PDF here, or",
+    "clickToBrowse": "click to browse",
+    "addedOn": "Added on {date}",
+    "uploadFailed": "Upload failed",
+    "invalidFile": "Invalid file"
+  },
+  "ResumeScore": {
+    "overallScore": "Overall Score",
+    "structure": "Resume Structure",
+    "measurable": "Measurable Results",
+    "keywords": "Keyword Usage",
+    "issuesCount": "{count} Issues"
   },
   "Cities": {
     "Casablanca": "Casablanca",

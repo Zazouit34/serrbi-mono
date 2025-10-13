@@ -158,7 +158,7 @@
   "FilterBar": {
     "searchPlaceholder": "Rechercher des postes, compétences...",
     "filterOptions": "Options de filtre",
-    "selectPrefix": "Sélectionner {label}",
+    "selectPrefix": "{label}",
     "reset": "Réinitialiser",
     "apply": "Appliquer"
   },
@@ -273,6 +273,223 @@
   "TaskForm": {
     "headingTitle": "Créer une annonce de tâche",
     "headingSubtitle": "Remplissez le formulaire pour créer une nouvelle tâche."
+  },
+  "UserMenu": {
+    "myAccount": "Mon compte",
+    "favorites": "Favoris",
+    "plans": "Forfaits",
+    "autoApply": "Auto‑candidature",
+    "logout": "Se déconnecter",
+    "loginCta": "Se connecter / S’inscrire"
+  },
+  "UserMenuMobile": {
+    "login": "Se connecter",
+    "profile": "Profil",
+    "autoApply": "Auto‑candidature",
+    "billing": "Facturation",
+    "logout": "Se déconnecter",
+    "openAria": "Ouvrir le menu utilisateur"
+  },
+  "FavoritesPage": {
+    "title": "Mes favoris",
+    "subtitle": "Vos emplois, services et tâches enregistrés"
+  },
+  "Favorites": {
+    "section": {
+      "jobs": "Emplois",
+      "services": "Services",
+      "tasks": "Tâches"
+    },
+    "empty": {
+      "item": "Aucun {type} favori pour le moment"
+    }
+  },
+  "FavoritesGrid": {
+    "empty": {
+      "title": "Aucun favori pour le moment",
+      "subtitle": "Ajoutez des éléments à vos favoris pour les voir ici"
+    },
+    "loading": { "skeletonAria": "Chargement des favoris" }
+  },
+  "Auth": {
+    "Forgot": {
+      "title": "Mot de passe oublié",
+      "subtitle": "Saisissez votre adresse e‑mail pour recevoir un lien de réinitialisation.",
+      "email": "Email",
+      "submit": "Envoyer le lien",
+      "success": "Lien de réinitialisation envoyé avec succès.",
+      "error": "Échec de l’envoi. Réessayez."
+    },
+    "Login": {
+      "title": "Connexion",
+      "subtitle": "Vous n’avez pas de compte ?",
+      "email": "Email",
+      "password": "Mot de passe",
+      "forgot": "Mot de passe oublié ?",
+      "submit": "Se connecter",
+      "google": "Se connecter avec Google",
+      "signUpCta": "S’inscrire",
+      "terms": "En continuant, vous acceptez nos",
+      "termsLink": "Conditions d’utilisation",
+      "and": "et",
+      "privacy": "Politique de confidentialité"
+    },
+    "Register": {
+      "title": "Inscription",
+      "subtitle": "Créez un nouveau compte en remplissant le formulaire ci‑dessous.",
+      "name": "Nom",
+      "email": "Email",
+      "phone": "Numéro de téléphone",
+      "password": "Mot de passe",
+      "confirmPassword": "Confirmer le mot de passe",
+      "submit": "S’inscrire",
+      "loginCta": "Vous avez déjà un compte ?",
+      "loginLink": "Se connecter"
+    },
+    "Reset": {
+      "title": "Réinitialiser le mot de passe",
+      "subtitle": "Entrez votre nouveau mot de passe pour le réinitialiser.",
+      "password": "Nouveau mot de passe",
+      "confirmPassword": "Confirmer le mot de passe",
+      "submit": "Réinitialiser"
+    }
+  },
+  "Subscription": {
+    "title": "Choisissez votre formule",
+    "subtitle": "Passez à une formule supérieure pour débloquer plus d’annonces et de fonctionnalités.",
+    "errors": { "loadPlans": "Échec du chargement des formules. Actualisez la page." },
+    "cta": {
+      "openingCheckout": "Ouverture du paiement...",
+      "currentPlan": "Formule actuelle",
+      "subscribeNow": "S’abonner",
+      "getStartedFree": "Commencer gratuitement"
+    },
+    "price": { "perMonth": "/mois" },
+    "features": {
+      "featuredListings": "Mises en avant",
+      "prioritySupport": "Support prioritaire",
+      "analyticsAccess": "Accès aux analyses"
+    },
+    "toasts": {
+      "subscribedFree": "Abonné à la formule Gratuite",
+      "paymentUnavailable": "Système de paiement indisponible",
+      "notSignedIn": "Veuillez vous connecter pour vous abonner",
+      "checkoutNotReady": "Paiement non prêt. Réessayez.",
+      "planMisconfigured": "Formule mal configurée",
+      "checkoutFailed": "Échec du démarrage du paiement"
+    }
+  },
+  "Billing": {
+    "title": "Facturation et abonnement",
+    "subtitle": "Gérez votre abonnement et consultez l’historique des paiements.",
+    "currentPlan": "Formule actuelle",
+    "details": { "period": "Facturation", "subscriptionId": "ID d’abonnement" },
+    "endsOn": "Se termine le",
+    "noActive": "Aucun abonnement actif.",
+    "choosePlan": "Choisir une formule",
+    "usage": {
+      "title": "Fonctionnalités de la formule",
+      "subtitle": "Abonnez‑vous pour voir vos fonctionnalités.",
+      "jobs": "Annonces d’emploi",
+      "services": "Annonces de service",
+      "tasks": "Annonces de tâche"
+    },
+    "remaining": "restants",
+    "unlimited": "Illimité",
+    "history": {
+      "title": "Historique des paiements",
+      "loadMore": "Charger plus",
+      "empty": "Aucun paiement pour le moment."
+    },
+    "table": {
+      "date": "Date",
+      "description": "Description",
+      "amount": "Montant",
+      "status": "Statut",
+      "method": "Méthode"
+    },
+    "statuses": {
+      "ACTIVE": "Actif",
+      "CANCELED": "Annulé",
+      "PAUSED": "En pause",
+      "PAST_DUE": "En retard",
+      "TRIALING": "Essai",
+      "PENDING": "En attente",
+      "SUCCEEDED": "Payé",
+      "FAILED": "Échoué",
+      "REFUNDED": "Remboursé"
+    },
+    "toasts": {
+      "pause": "L’abonnement sera mis en pause à la fin de la période de facturation",
+      "cancel": "L’abonnement sera annulé à la fin de la période de facturation",
+      "resume": "Abonnement repris avec succès"
+    },
+    "actions": {
+      "resume": "Reprendre",
+      "resuming": "Reprise...",
+      "pause": "Mettre en pause",
+      "pausing": "Mise en pause...",
+      "cancel": "Annuler",
+      "canceling": "Annulation..."
+    }
+  },
+  "SubscriptionSuccess": {
+    "paymentSuccessToast": "Paiement réussi ! Votre abonnement est actif.",
+    "next": "Suivant",
+    "back": "Retour",
+    "saveNext": "Enregistrer et suivant",
+    "step1": {
+      "title": "Paiement réussi !",
+      "descPrefix": "Merci,",
+      "descSuffix": "la formule est confirmée.",
+      "nextHint": "Appuyez sur Suivant pour configurer l’auto‑candidature."
+    },
+    "step2": {
+      "title": "Configuration Auto‑candidature",
+      "desc": "Choisissez votre catégorie et des mots‑clés. Vous pourrez les modifier plus tard depuis le menu utilisateur → auto‑candidature."
+    },
+    "enableAutoApply": "Activer l’auto‑candidature",
+    "jobCategory": "Catégorie d’emploi",
+    "tags": "Mots‑clés",
+    "roles": "Rôles",
+    "step3": {
+      "title": "C’est tout bon !",
+      "desc1": "Vos préférences d’auto‑candidature sont enregistrées. Vous pouvez les modifier à tout moment.",
+      "list": {
+        "userMenu": "Ouvrez le menu utilisateur (en haut à droite).",
+        "autoApply": "Sélectionnez Auto‑candidature pour voir ou modifier vos préférences."
+      }
+    },
+    "manageSubscription": "Gérer l’abonnement",
+    "goDashboard": "Aller au tableau de bord"
+  },
+  "ResumeForm": {
+    "headingTitle": "Importer un CV",
+    "headingSubtitle": "Importez votre CV au format PDF pour l’attacher à votre profil et analyser instantanément sa qualité.",
+    "name": "Nom",
+    "email": "Email",
+    "resumeLabel": "CV (PDF)",
+    "note": "Importez votre CV (PDF, 2 Mo max)",
+    "analyzing": "Analyse du CV...",
+    "uploadToProfile": "Importer dans le profil",
+    "uploadSuccess": "CV importé avec succès.",
+    "analysisFailed": "Échec de l’analyse du CV. Réessayez.",
+    "selectFileFirst": "Veuillez d’abord sélectionner un CV PDF.",
+    "saveFailed": "Échec de l’enregistrement du CV"
+  },
+  "ResumeUploader": {
+    "dragDrop": "Glissez-déposez votre PDF ici, ou",
+    "clickToBrowse": "cliquez pour parcourir",
+    "addedOn": "Ajouté le {date}",
+    "uploadFailed": "Échec du téléversement",
+    "invalidFile": "Fichier invalide"
+  },
+  "ResumeScore": {
+    "overallScore": "Score global",
+    "structure": "Structure du CV",
+    "measurable": "Résultats mesurables",
+    "keywords": "Utilisation des mots‑clés",
+    "issuesCount": "{count} problèmes"
   },
   "Cities": {
     "Casablanca": "Casablanca",

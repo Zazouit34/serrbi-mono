@@ -249,7 +249,7 @@ export function ServiceListingForm() {
                                     {field.value ? (
                                       <span className="flex gap-2 items-center">
                                         {Icon && <Icon className="w-4 h-4 text-black" />}
-                                        {formatServiceCategory(field.value as any)}
+                                        {tAll.has?.("Enums.ServiceCategory." + field.value) ? tAll("Enums.ServiceCategory." + field.value) : formatServiceCategory(field.value as any)}
                                       </span>
                                     ) : (
                                       <span className="text-gray-500">{tForm("selectCategory")}</span>
@@ -273,7 +273,7 @@ export function ServiceListingForm() {
                                           }}
                                         >
                                           {CatIcon && <CatIcon className={`w-5 h-5 ${isSelected ? "text-black" : "text-gray-500"}`} />}
-                                          {formatServiceCategory(category)}
+                                          {tAll.has?.("Enums.ServiceCategory." + category) ? tAll("Enums.ServiceCategory." + category) : formatServiceCategory(category as any)}
                                           {isSelected && <Check className="w-4 h-4 text-black" />}
                                         </Button>
                                       );
@@ -585,7 +585,7 @@ export function ServiceListingForm() {
             <div className="flex justify-between mt-8">
               {step > 0 ? (
                 <Button type="button" variant="outline" onClick={prevStep}>
-                  Back
+                  {tForm("back")}
                 </Button>
               ) : (
                 <div />
@@ -597,7 +597,7 @@ export function ServiceListingForm() {
                   onClick={nextStep}
                   className="ml-auto text-white bg-black hover:bg-gray-800"
                 >
-                  Next
+                  {tForm("next")}
                 </Button>
               ) : (
                 <Button
@@ -606,7 +606,7 @@ export function ServiceListingForm() {
                   className="ml-auto w-44 text-white bg-black hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <LoadingSwap isLoading={createService.isPending}>
-                    Create Service Listing
+                    {tForm("createService")}
                   </LoadingSwap>
                 </Button>
               )}

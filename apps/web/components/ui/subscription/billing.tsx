@@ -23,8 +23,10 @@ import { Progress } from "@workspace/ui/components/progress";
 import { useState } from "react";
 import { PaymentStatus } from "@workspace/db";
 import { Loader2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 export default function BillingPageClient() {
+  const t = useTranslations("Billing");
   const utils = trpc.useUtils();
   const { data: sub } = trpc.subscription.getCurrentSubscription.useQuery();
   const { data: usage } = trpc.subscription.getUsageStats.useQuery(undefined, {
@@ -40,9 +42,7 @@ export default function BillingPageClient() {
 
   const cancel = trpc.subscription.cancelSubscription.useMutation({
     onSuccess: async () => {
-      toast.success(
-        "Subscription will be canceled at the end of the billing period"
-      );
+      toast.success(t("toasts.cancel"));
       await utils.subscription.getCurrentSubscription.invalidate();
     },
     onError: (e) => toast.error(e.message),
@@ -50,9 +50,7 @@ export default function BillingPageClient() {
 
   const pause = trpc.subscription.pauseSubscription.useMutation({
     onSuccess: async () => {
-      toast.success(
-        "Subscription will be paused at the end of the billing period"
-      );
+      toast.success(t("toasts.pause"));
       await utils.subscription.getCurrentSubscription.invalidate();
     },
     onError: (e) => toast.error(e.message),
@@ -60,7 +58,7 @@ export default function BillingPageClient() {
 
   const resume = trpc.subscription.resumeSubscription.useMutation({
     onSuccess: async () => {
-      toast.success("Subscription resumed successfully");
+      toast.success(t("toasts.resume"));
       await utils.subscription.getCurrentSubscription.invalidate();
     },
     onError: (e) => toast.error(e.message),
@@ -111,19 +109,15 @@ export default function BillingPageClient() {
   return (
     <div className="mx-auto space-y-8">
       <div className="flex flex-col justify-center items-center">
-        <h1 className="text-3xl font-bold font-outfit">
-          Billing & Subscription
-        </h1>
-        <p className="text-muted-foreground font-outfit">
-          Manage your subscription and view payment history.
-        </p>
+        <h1 className="text-3xl font-bold font-outfit">{t("title")}</h1>
+        <p className="text-muted-foreground font-outfit">{t("subtitle")}</p>
       </div>
 
       <Card className="border border-gray-200/60 shadow-sm bg-gradient-to-br from-white to-gray-50 rounded-2xl">
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
             <CardTitle className="text-lg font-semibold text-gray-900">
-              Current Plan
+              {t("currentPlan")}
             </CardTitle>
             {getSubscriptionStatusBadge(sub?.status || "")}
           </div>
@@ -139,7 +133,7 @@ export default function BillingPageClient() {
                     {sub.plan.name}
                   </h3>
                   <p className="text-sm text-muted-foreground">
-                    Billed {sub.plan.interval || "monthly"}
+                    {t("details.period")} {sub.plan.interval || "monthly"}
                   </p>
                 </div>
 
@@ -152,10 +146,10 @@ export default function BillingPageClient() {
                       {resume.isPending ? (
                         <>
                           <Loader2 className="mr-2 w-4 h-4 animate-spin" />{" "}
-                          Resuming...
+                          {t("actions.resuming")}
                         </>
                       ) : (
-                        "Resume"
+                        t("actions.resume")
                       )}
                     </Button>
                   ) : sub.status === "ACTIVE" && sub.plan.price > 0 ? (
@@ -168,10 +162,10 @@ export default function BillingPageClient() {
                         {pause.isPending ? (
                           <>
                             <Loader2 className="mr-2 w-4 h-4 animate-spin" />{" "}
-                            Pausing...
+                            {t("actions.pausing")}
                           </>
                         ) : (
-                          "Pause"
+                          t("actions.pause")
                         )}
                       </Button>
                       <Button
@@ -182,10 +176,10 @@ export default function BillingPageClient() {
                         {cancel.isPending ? (
                           <>
                             <Loader2 className="mr-2 w-4 h-4 animate-spin" />{" "}
-                            Canceling...
+                            {t("actions.canceling")}
                           </>
                         ) : (
-                          "Cancel"
+                          t("actions.cancel")
                         )}
                       </Button>
                     </>
@@ -243,7 +237,7 @@ export default function BillingPageClient() {
       <Card className="border border-gray-200/60 shadow-sm bg-white/60 rounded-2xl">
         <CardHeader>
           <CardTitle className="text-lg font-semibold text-gray-900">
-            Payment History
+            {t("history.title")}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -257,11 +251,11 @@ export default function BillingPageClient() {
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-gray-50/50">
-                      <TableHead>Date</TableHead>
-                      <TableHead>Description</TableHead>
-                      <TableHead>Amount</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Method</TableHead>
+                      <TableHead>{t("table.date")}</TableHead>
+                      <TableHead>{t("table.description")}</TableHead>
+                      <TableHead>{t("table.amount")}</TableHead>
+                      <TableHead>{t("table.status")}</TableHead>
+                      <TableHead>{t("table.method")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -297,14 +291,14 @@ export default function BillingPageClient() {
                     variant="outline"
                     onClick={() => setPaymentHistoryPage((p) => p + 1)}
                   >
-                    Load More
+                    {t("history.loadMore")}
                   </Button>
                 </div>
               )}
             </>
           ) : (
             <div className="py-8 text-center text-sm text-muted-foreground">
-              No payment history yet.
+              {t("history.empty")}
             </div>
           )}
         </CardContent>

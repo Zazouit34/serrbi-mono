@@ -4,8 +4,10 @@ import { trpc } from "@/app/_trpc/client";
 import { JobCard } from "@/components/ui/form/job/job-card";
 import { ServiceCard } from "@/components/ui/form/service/service-card";
 import { TaskCard } from "@/components/ui/form/task/task-card";
+import { useTranslations } from "next-intl";
 
 export function FavoriteListingGrid() {
+  const t = useTranslations("FavoritesGrid");
   const { data: favorites, isLoading } = trpc.favorite.getFavorites.useQuery({
     page: 1,
     pageSize: 50,
@@ -15,7 +17,7 @@ export function FavoriteListingGrid() {
     return (
       <div className="grid grid-cols-1 gap-6 md:grid-cols-4">
         {Array.from({ length: 8 }).map((_, i) => (
-          <div key={i} className="h-64 bg-gray-200 rounded-3xl animate-pulse" />
+          <div key={i} className="h-64 bg-gray-200 rounded-3xl animate-pulse" aria-label={t("loading.skeletonAria")} />
         ))}
       </div>
     );
@@ -24,10 +26,8 @@ export function FavoriteListingGrid() {
   if (!favorites?.items.length) {
     return (
       <div className="py-12 text-center">
-        <p className="text-lg text-gray-500">No favorites yet</p>
-        <p className="mt-2 text-sm text-gray-400">
-          Start adding items to your favorites to see them here
-        </p>
+        <p className="text-lg text-gray-500">{t("empty.title")}</p>
+        <p className="mt-2 text-sm text-gray-400">{t("empty.subtitle")}</p>
       </div>
     );
   }

@@ -5,6 +5,7 @@ import { buttonVariants } from "@workspace/ui/components/button";
 import { cn } from "@workspace/ui/lib/utils";
 import Link from "next/link";
 import { signOut, useSession } from "next-auth/react";
+import { useTranslations } from "next-intl";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,6 +23,7 @@ import {
 } from "@workspace/ui/components/avatar";
 
 export function UserMenu() {
+  const t = useTranslations("UserMenu");
   const pathname = usePathname();
   const { data: session, status } = useSession();
   const user = session?.user;
@@ -44,7 +46,7 @@ export function UserMenu() {
         </Avatar>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56" align="center">
-        <DropdownMenuLabel>My Account</DropdownMenuLabel>
+        <DropdownMenuLabel>{t("myAccount")}</DropdownMenuLabel>
         <DropdownMenuGroup>
           <DropdownMenuItem asChild>
             <Link
@@ -52,7 +54,7 @@ export function UserMenu() {
               className="flex items-center w-full cursor-pointer"
             >
               <Heart className="mr-2 size-4" />
-              Favorites
+              {t("favorites")}
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
@@ -61,7 +63,7 @@ export function UserMenu() {
               className="flex items-center w-full cursor-pointer"
             >
               <Wallet className="mr-2 size-4" />
-              Plans
+              {t("plans")}
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
@@ -70,7 +72,7 @@ export function UserMenu() {
               className="flex items-center w-full cursor-pointer"
             >
               <Zap className="mr-2 size-4" />
-              Auto Apply
+              {t("autoApply")}
             </Link>
           </DropdownMenuItem>
         
@@ -78,7 +80,7 @@ export function UserMenu() {
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleLogout}>
           <LogOut className="mr-2 size-4" />
-          Log out
+          {t("logout")}
           <DropdownMenuShortcut>⇧⌘Q</DropdownMenuShortcut>
         </DropdownMenuItem>
       </DropdownMenuContent>
@@ -92,7 +94,7 @@ export function UserMenu() {
       )}
     >
       <LogIn className="mr-2 size-4" />
-      Log in / Sign up
+      {t("loginCta")}
     </Link>
   );
 }

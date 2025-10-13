@@ -16,6 +16,7 @@ import {
 } from "@workspace/ui/components/popover";
 import { Check, User, Zap } from "lucide-react";
 import { useSession } from "next-auth/react";
+import { useTranslations } from "next-intl";
 
 import { jobCategoryValues } from "@workspace/ui/lib/job-enum";
 
@@ -36,6 +37,7 @@ type JobCategory = (typeof jobCategoryValues)[number];
 
 // 🔥 Clean, clear 2-step success page
 export default function SubscriptionSuccessPage() {
+  const t = useTranslations("SubscriptionSuccess");
   const searchParams = useSearchParams();
   const router = useRouter();
   const { data: session } = useSession();
@@ -73,7 +75,7 @@ export default function SubscriptionSuccessPage() {
 
     if (txn || sub) {
       refetchSubscription();
-      toast.success("Payment successful! Your subscription is now active.");
+      toast.success(t("paymentSuccessToast"));
     }
   }, [searchParams, refetchSubscription]);
 
@@ -136,29 +138,29 @@ export default function SubscriptionSuccessPage() {
                 />
               </div>
               <DialogTitle className="text-center">
-                Payment Successful!
+                {t("step1.title")}
               </DialogTitle>
               <DialogDescription className="text-center">
-                Thank you,{" "}
+                {t("step1.descPrefix")} {" "}
                 <span className="font-medium text-foreground">
                   {currentUser?.name}
                 </span>
-                . Your payment for the{" "}
+                {" "}
                 <span className="font-semibold text-foreground">
                   {sub?.plan.name}
                 </span>{" "}
-                plan is confirmed.
+                {t("step1.descSuffix")}
               </DialogDescription>
             </DialogHeader>
             <div className="text-center text-sm text-muted-foreground">
-              Press Next to set up your auto-apply preferences.
+              {t("step1.nextHint")}
             </div>
             <DialogFooter>
               <Button
                 className="bg-black text-white hover:bg-black/90"
                 onClick={() => setStep(2)}
               >
-                Next
+                {t("next")}
               </Button>
             </DialogFooter>
           </>
@@ -167,16 +169,15 @@ export default function SubscriptionSuccessPage() {
         {step === 2 && (
           <>
             <DialogHeader>
-              <DialogTitle>Auto-Apply Setup</DialogTitle>
+              <DialogTitle>{t("step2.title")}</DialogTitle>
               <DialogDescription>
-                Choose your job category and suggested tags. You can change
-                these later from user-menu → auto-apply.
+                {t("step2.desc")}
               </DialogDescription>
             </DialogHeader>
 
             <div className="space-y-4">
               <div className="flex items-center justify-between p-3 border rounded-xl bg-white/70">
-                <Label htmlFor="auto-apply">Enable Auto-apply</Label>
+                <Label htmlFor="auto-apply">{t("enableAutoApply")}</Label>
                 <Switch
                   id="auto-apply"
                   checked={enabled}
@@ -185,7 +186,7 @@ export default function SubscriptionSuccessPage() {
               </div>
 
               <div className="space-y-2">
-                <Label className="text-sm">Job Category</Label>
+                <Label className="text-sm">{t("jobCategory")}</Label>
                 <div className="flex flex-wrap gap-2">
                   {jobCategoryValues.map((c) => {
                     const Icon =
@@ -213,7 +214,7 @@ export default function SubscriptionSuccessPage() {
 
               {enabled && (
                 <div className="space-y-2">
-                  <Label className="text-sm">Tags (keywords)</Label>
+                  <Label className="text-sm">{t("tags")}</Label>
                   <div className="flex flex-wrap gap-2">
                     {keywords.map((k) => (
                       <span
@@ -250,7 +251,7 @@ export default function SubscriptionSuccessPage() {
 
               {enabled && (
                 <div className="space-y-2">
-                  <Label className="text-sm">Roles</Label>
+                  <Label className="text-sm">{t("roles")}</Label>
                   <div className="flex flex-wrap gap-2">
                     {roleSuggestions.map((r: string) => {
                       const selected = roles.includes(r);
@@ -281,14 +282,14 @@ export default function SubscriptionSuccessPage() {
 
             <DialogFooter>
               <Button variant="outline" onClick={() => setStep(1)}>
-                Back
+                {t("back")}
               </Button>
               <Button
                 className="bg-black text-white hover:bg-black/90"
                 onClick={savePrefs}
                 disabled={mutation.isPending}
               >
-                Save & Next
+                {t("saveNext")}
               </Button>
             </DialogFooter>
           </>
@@ -297,20 +298,15 @@ export default function SubscriptionSuccessPage() {
         {step === 3 && (
           <>
             <DialogHeader>
-              <DialogTitle>All set!</DialogTitle>
+              <DialogTitle>{t("step3.title")}</DialogTitle>
               <DialogDescription className="text-sm text-muted-foreground space-y-3">
-                Your auto-apply preferences are saved. You can change them
-                anytime.
+                {t("step3.desc1")}
               </DialogDescription>
               <DialogDescription className="text-sm text-muted-foreground space-y-3">
                 <ol className="list-decimal list-inside space-y-2">
                   <li className="flex items-start gap-3">
                     <User className="w-4 h-4 text-black flex-none mt-0.5" />
-                    Open the{" "}
-                    <span className="font-semibold text-black">
-                      User menu
-                    </span>{" "}
-                    (top-right).
+                    {t("step3.list.userMenu")}
                   </li>
 
                   <li className="flex items-start gap-3">
@@ -318,13 +314,7 @@ export default function SubscriptionSuccessPage() {
                       className="w-4 h-4 text-yellow-600 flex-none mt-0.5"
                       aria-hidden="true"
                     />
-                    <div>
-                      Select{" "}
-                      <span className="font-semibold text-black">
-                        Auto-apply
-                      </span>{" "}
-                      to view or edit your preferences.
-                    </div>
+                    <div>{t("step3.list.autoApply")}</div>
                   </li>
                 </ol>
               </DialogDescription>
@@ -334,13 +324,13 @@ export default function SubscriptionSuccessPage() {
                 href="/account/billing"
                 className="inline-flex items-center px-4 py-2 rounded-md bg-black text-white hover:bg-black/90"
               >
-                Manage subscription
+                {t("manageSubscription")}
               </Link>
               <Link
                 href="/"
                 className="inline-flex items-center px-4 py-2 rounded-md border border-input bg-background hover:bg-accent"
               >
-                Go to dashboard
+                {t("goDashboard")}
               </Link>
             </div>
           </>

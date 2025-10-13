@@ -25,6 +25,7 @@ import {
 import { Input } from '@workspace/ui/components/input'
 import { FormError } from './form-error'
 import { FormSuccess } from './form-success'
+import { useTranslations } from 'next-intl'
 
 import {  emailFormSchema, type emailFormValues } from '@workspace/ui/lib/validation-schemas'
 
@@ -32,6 +33,7 @@ import {  emailFormSchema, type emailFormValues } from '@workspace/ui/lib/valida
 const formSchema = emailFormSchema
 
 export default function ForgetPasswordPreview() {
+  const t = useTranslations('Auth')
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | undefined>("")
   const [success, setSuccess] = useState<string | undefined>("")
@@ -71,9 +73,9 @@ export default function ForgetPasswordPreview() {
     <div className="flex min-h-[60vh] h-full w-full items-center justify-center px-4">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle className="text-2xl">Forgot Password</CardTitle>
+          <CardTitle className="text-2xl">{t('Forgot.title')}</CardTitle>
           <CardDescription>
-            Enter your email address to receive a password reset link.
+            {t('Forgot.subtitle')}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -86,7 +88,7 @@ export default function ForgetPasswordPreview() {
                   name="email"
                   render={({ field }) => (
                     <FormItem className="grid gap-2">
-                      <FormLabel htmlFor="email">Email</FormLabel>
+                      <FormLabel htmlFor="email">{t('Forgot.email')}</FormLabel>
                       <FormControl>
                         <Input
                           id="email"
@@ -105,7 +107,7 @@ export default function ForgetPasswordPreview() {
                 <FormError message={error} />
                 <FormSuccess message={success} />
                 <Button type="submit" className="w-full" disabled={isPending}>
-                  Send Reset Link
+                  {t('Forgot.submit')}
                 </Button>
               </div>
             </form>

@@ -27,6 +27,7 @@ import {
   UppyPDFUploader,
   type UppyPDFUploaderHandle,
 } from "@/components/ui/uppy-pdf-uploader";
+import { useTranslations } from "next-intl";
 
 const resumeSchema = z.object({
   resumeUrl: z.string().url("Invalid URL").optional(),
@@ -35,6 +36,7 @@ const resumeSchema = z.object({
 type FormValues = z.infer<typeof resumeSchema>;
 
 export default function ResumeListingForm() {
+  const tResume = useTranslations("ResumeForm");
   const { data: session } = useSession();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | undefined>();
@@ -49,8 +51,8 @@ export default function ResumeListingForm() {
   });
 
   const setResumeUrl = trpc.auth.updateResume.useMutation({
-    onSuccess: () => setSuccess("Resume uploaded successfully."),
-    onError: (e) => setError(e.message),
+    onSuccess: () => setSuccess(tResume("uploadSuccess")),
+    onError: (e) => setError(e.message || tResume("saveFailed")),
   });
 
   const analyzeFile = async (file: File) => {
@@ -61,7 +63,7 @@ export default function ResumeListingForm() {
       setResumeScore(score);
     } catch (err) {
       console.error("Resume analysis failed:", err);
-      setError("Failed to analyze resume. Please try again.");
+      setError(tResume("analysisFailed"));
     } finally {
       setAnalyzing(false);
     }
@@ -75,7 +77,7 @@ export default function ResumeListingForm() {
 
     const file = uploader.getFile();
     if (!file) {
-      setError("Please select a PDF resume first.");
+      setError(tResume("selectFileFirst"));
       return;
     }
 
@@ -87,7 +89,7 @@ export default function ResumeListingForm() {
         await setResumeUrl.mutateAsync({ resumeUrl: url });
         router.push("/jobs");
       } catch (e: any) {
-        setError(e?.message || "Failed to save resume");
+        setError(e?.message || tResume("saveFailed"));
       }
     });
   };
@@ -95,26 +97,22 @@ export default function ResumeListingForm() {
   return (
     <div className="space-y-6 w-full max-w-2xl md:space-y-8">
       <div className="flex flex-col items-center text-center">
-        <h1 className="text-2xl font-bold font-outfit">Upload Resume</h1>
-        <p className="text-muted-foreground font-outfit">
-          Upload your PDF resume to attach it to your profile
-          <br />
-          and instantly analyze its quality score.
-        </p>
+        <h1 className="text-2xl font-bold font-outfit">{tResume("headingTitle")}</h1>
+        <p className="text-muted-foreground font-outfit">{tResume("headingSubtitle")}</p>
       </div>
 
       <Form {...form}>
         <div className="space-y-6">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <FormItem>
-              <FormLabel>Name</FormLabel>
+              <FormLabel>{tResume("name")}</FormLabel>
               <FormControl>
                 <Input value={session?.user?.name || ""} disabled readOnly />
               </FormControl>
             </FormItem>
 
             <FormItem>
-              <FormLabel>Email</FormLabel>
+              <FormLabel>{tResume("email")}</FormLabel>
               <FormControl>
                 <Input value={session?.user?.email || ""} disabled readOnly />
               </FormControl>
@@ -126,11 +124,11 @@ export default function ResumeListingForm() {
             name="resumeUrl"
             render={() => (
               <FormItem>
-                <FormLabel>Resume (PDF)</FormLabel>
+                <FormLabel>{tResume("resumeLabel")}</FormLabel>
                 <FormControl>
                   <UppyPDFUploader
                     ref={uploaderRef}
-                    note="Upload your resume (PDF, max 2 MB)"
+                    note={tResume("note")}
                     onFileSelect={analyzeFile}
                     onUploadError={(err) => setError(err)}
                     onUploadSuccess={(url) => form.setValue("resumeUrl", url)}
@@ -142,9 +140,7 @@ export default function ResumeListingForm() {
           />
 
           {analyzing && (
-            <p className="text-sm text-gray-500 animate-pulse">
-              Analyzing resume...
-            </p>
+            <p className="text-sm text-gray-500 animate-pulse">{tResume("analyzing")}</p>
           )}
           {resumeScore && !analyzing && (
             <div className="mt-4">
@@ -163,7 +159,7 @@ export default function ResumeListingForm() {
             disabled={isPending || analyzing || !resumeScore}
             className="w-full bg-black text-white hover:bg-black/90"
           >
-            Upload to Profile
+            {tResume("uploadToProfile")}
           </Button>
         </div>
       </Form>

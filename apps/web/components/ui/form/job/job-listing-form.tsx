@@ -247,7 +247,7 @@ export function JobListingForm() {
                                     {field.value ? (
                                       <span className="flex gap-2 items-center">
                                         {Icon && <Icon className="w-4 h-4 text-black" />}
-                                        {formatJobCategory(field.value as any)}
+                                        {tAll.has?.("Enums.JobCategory." + field.value) ? tAll("Enums.JobCategory." + field.value) : formatJobCategory(field.value as any)}
                                       </span>
                                     ) : (
                                       <span className="text-gray-500">{tForm("selectCategory")}</span>
@@ -271,7 +271,7 @@ export function JobListingForm() {
                                           }}
                                         >
                                           {CatIcon && <CatIcon className={`w-5 h-5 ${isSelected ? "text-black" : "text-gray-500"}`} />}
-                                          {formatJobCategory(c)}
+                                          {tAll.has?.("Enums.JobCategory." + c) ? tAll("Enums.JobCategory." + c) : formatJobCategory(c as any)}
                                           {isSelected && <Check className="w-4 h-4 text-black" />}
                                         </Button>
                                       );
@@ -296,7 +296,7 @@ export function JobListingForm() {
                                 <PopoverTrigger asChild>
                                   <Button type="button" variant="outline" className="justify-between w-full h-11 rounded-full">
                                     {field.value ? (
-                                      <span className="font-medium text-black">{formatJobType(field.value as any)}</span>
+                                      <span className="font-medium text-black">{tAll.has?.("Enums.JobType." + field.value) ? tAll("Enums.JobType." + field.value) : formatJobType(field.value as any)}</span>
                                     ) : (
                                       <span className="text-gray-500">{tForm("selectType")}</span>
                                     )}
@@ -317,7 +317,7 @@ export function JobListingForm() {
                                             setOpen(false);
                                           }}
                                         >
-                                          {formatJobType(t)}
+                                          {tAll.has?.("Enums.JobType." + t) ? tAll("Enums.JobType." + t) : formatJobType(t as any)}
                                           {isSelected && <Check className="w-4 h-4 text-black" />}
                                         </Button>
                                       );
@@ -388,7 +388,7 @@ export function JobListingForm() {
                                 <PopoverTrigger asChild>
                                   <Button type="button" variant="outline" className="justify-between w-full h-11 rounded-full">
                                     {field.value ? (
-                                      <span className="font-medium text-black">{formatExperienceLevel(field.value as any)}</span>
+                                      <span className="font-medium text-black">{tAll.has?.("Enums.ExperienceLevel." + field.value) ? tAll("Enums.ExperienceLevel." + field.value) : formatExperienceLevel(field.value as any)}</span>
                                     ) : (
                                       <span className="text-gray-500">{tForm("selectLevel")}</span>
                                     )}
@@ -409,7 +409,7 @@ export function JobListingForm() {
                                             setOpen(false);
                                           }}
                                         >
-                                          {formatExperienceLevel(lvl)}
+                                          {tAll.has?.("Enums.ExperienceLevel." + lvl) ? tAll("Enums.ExperienceLevel." + lvl) : formatExperienceLevel(lvl as any)}
                                           {isSelected && <Check className="w-4 h-4 text-black" />}
                                         </Button>
                                       );
@@ -438,7 +438,7 @@ export function JobListingForm() {
                                 <PopoverTrigger asChild>
                                   <Button type="button" variant="outline" className="justify-between w-full h-11 rounded-full">
                                     {field.value ? (
-                                      <span className="font-medium text-black">{formatLocationRequirement(field.value as any)}</span>
+                                      <span className="font-medium text-black">{tAll.has?.("Enums.LocationRequirement." + field.value) ? tAll("Enums.LocationRequirement." + field.value) : formatLocationRequirement(field.value as any)}</span>
                                     ) : (
                                       <span className="text-gray-500">{tForm("selectLocation")}</span>
                                     )}
@@ -459,7 +459,7 @@ export function JobListingForm() {
                                             setOpen(false);
                                           }}
                                         >
-                                          {formatLocationRequirement(loc)}
+                                          {tAll.has?.("Enums.LocationRequirement." + loc) ? tAll("Enums.LocationRequirement." + loc) : formatLocationRequirement(loc as any)}
                                           {isSelected && <Check className="w-4 h-4 text-black" />}
                                         </Button>
                                       );
@@ -700,7 +700,7 @@ export function JobListingForm() {
             <div className="flex justify-between mt-10">
               {step > 0 && (
                 <Button type="button" variant="outline" onClick={prevStep}>
-                  Back
+                  {tForm("back")}
                 </Button>
               )}
               {step < steps.length - 1 ? (
@@ -709,14 +709,14 @@ export function JobListingForm() {
                   className="ml-auto text-white bg-black hover:bg-gray-800"
                   onClick={nextStep}
                 >
-                  Next
+                  {tForm("next")}
                 </Button>
               ) : (
                 <Button
                   type="submit"
                   className="ml-auto w-40 text-white bg-black hover:bg-gray-800"
                 >
-                  <LoadingSwap isLoading={isPending}>Submit</LoadingSwap>
+                  <LoadingSwap isLoading={isPending}>{tForm("submit")}</LoadingSwap>
                 </Button>
               )}
             </div>

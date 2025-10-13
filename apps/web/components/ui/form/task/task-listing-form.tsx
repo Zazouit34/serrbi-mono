@@ -243,7 +243,7 @@ export function TaskListingForm() {
                                   {Icon && (
                                     <Icon className="w-4 h-4 text-black" />
                                   )}
-                                  {formatTaskCategory(field.value as any)}
+                                  {tAll.has?.("Enums.TaskCategory." + field.value) ? tAll("Enums.TaskCategory." + field.value) : formatTaskCategory(field.value as any)}
                                 </span>
                               ) : (
                                 <span className="text-gray-500">
@@ -279,7 +279,7 @@ export function TaskListingForm() {
                                         className={`w-5 h-5 ${isSelected ? "text-black" : "text-gray-500"}`}
                                       />
                                     )}
-                                    {formatTaskCategory(category)}
+                                    {tAll.has?.("Enums.TaskCategory." + category) ? tAll("Enums.TaskCategory." + category) : formatTaskCategory(category as any)}
                                     {isSelected && (
                                       <Check className="w-4 h-4 text-black" />
                                     )}
@@ -599,7 +599,7 @@ export function TaskListingForm() {
             <div className="flex justify-between">
               {step > 0 ? (
                 <Button type="button" variant="outline" onClick={prevStep}>
-                  Back
+                  {tForm("back")}
                 </Button>
               ) : (
                 <div />
@@ -611,7 +611,7 @@ export function TaskListingForm() {
                   onClick={nextStep}
                   className="ml-auto bg-black text-white hover:bg-black/80"
                 >
-                  Next
+                  {tForm("next")}
                 </Button>
               ) : (
                 <Button
@@ -621,7 +621,7 @@ export function TaskListingForm() {
                   disabled={createTask.isPending}
                 >
                   <LoadingSwap isLoading={createTask.isPending}>
-                    Create Task Listing
+                    {tForm("createTask")}
                   </LoadingSwap>
                 </Button>
               )}

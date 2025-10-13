@@ -9,6 +9,7 @@ import {
   Label,
 } from "recharts";
 import { cn } from "@workspace/ui/lib/utils"; 
+import { useTranslations } from "next-intl";
 
 type BreakdownItem = {
   category: string;
@@ -24,6 +25,7 @@ type Props = {
 };
 
 export function ResumeScoreCard({ score, breakdown, loading }: Props) {
+  const t = useTranslations("ResumeScore");
   const [displayValue, setDisplayValue] = useState(0);
   const target = Math.max(0, Math.min(100, Math.round(score || 0)));
   const animRef = useRef<number | null>(null);
@@ -92,9 +94,9 @@ export function ResumeScoreCard({ score, breakdown, loading }: Props) {
         : 0;
 
     return [
-      { name: "Resume Structure", value: avg(structure), color: "#991b1b" },
-      { name: "Measurable Results", value: avg(measurable), color: "#4f46e5" },
-      { name: "Keyword Usage", value: avg(keywords), color: "#ca8a04" },
+      { name: t("structure"), value: avg(structure), color: "#991b1b" },
+      { name: t("measurable"), value: avg(measurable), color: "#4f46e5" },
+      { name: t("keywords"), value: avg(keywords), color: "#ca8a04" },
     ];
   }, [breakdown]);
 
@@ -136,7 +138,7 @@ export function ResumeScoreCard({ score, breakdown, loading }: Props) {
                         y={v.cy + 22}
                         className="fill-gray-500 text-sm font-medium"
                       >
-                        Overall Score
+                        {t("overallScore")}
                       </tspan>
                     </text>
                   </g>
@@ -153,7 +155,7 @@ export function ResumeScoreCard({ score, breakdown, loading }: Props) {
           <div key={idx} className="w-full">
             <div className="flex justify-between text-sm mb-1">
               <span className="font-medium text-gray-700">{item.name}</span>
-              <span className="text-gray-500">{100 - item.value} Issues</span>
+              <span className="text-gray-500">{t("issuesCount", { count: 100 - item.value })}</span>
             </div>
             <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
               <div

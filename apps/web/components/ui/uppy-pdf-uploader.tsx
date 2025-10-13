@@ -12,6 +12,7 @@ import AwsS3 from "@uppy/aws-s3";
 import { Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@workspace/ui/lib/utils";
+import { useTranslations } from "next-intl";
 
 export interface UppyPDFUploaderHandle {
   startUpload: () => Promise<string | null>; // returns public URL after upload
@@ -41,6 +42,7 @@ export const UppyPDFUploader = forwardRef<
   UppyPDFUploaderHandle,
   UppyPDFUploaderProps
 >(({ onFileSelect, onUploadSuccess, onUploadError, note }, ref) => {
+  const t = useTranslations("ResumeUploader");
   const [uppy] = useState(() => createUppyInstance());
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [progress, setProgress] = useState(0);
@@ -92,7 +94,7 @@ export const UppyPDFUploader = forwardRef<
         onUploadSuccess?.(publicUrl, selectedFile);
         return publicUrl;
       } catch (err: any) {
-        onUploadError?.(err.message || "Upload failed");
+        onUploadError?.(err.message || t("uploadFailed"));
         return null;
       }
     },
@@ -110,7 +112,7 @@ export const UppyPDFUploader = forwardRef<
       setSelectedFile(file);
       onFileSelect?.(file); // trigger local scoring
     } catch {
-      onUploadError?.("Invalid file");
+      onUploadError?.(t("invalidFile"));
     }
   };
 
@@ -141,8 +143,8 @@ export const UppyPDFUploader = forwardRef<
             onChange={handleChange}
           />
           <p className="text-sm text-muted-foreground">
-            Drag & drop your PDF here, or{" "}
-            <span className="text-black font-medium">click to browse</span>
+            {t("dragDrop")} {" "}
+            <span className="text-black font-medium">{t("clickToBrowse")}</span>
           </p>
         </div>
       ) : (
@@ -153,7 +155,7 @@ export const UppyPDFUploader = forwardRef<
           <div className="flex-1 min-w-0">
             <p className="truncate font-medium text-sm">{selectedFile.name}</p>
             <p className="text-xs text-muted-foreground">
-              Added on {format(new Date(), "PP")}
+              {t("addedOn", { date: format(new Date(), "PP") })}
             </p>
             <div className="relative mt-2 h-2 bg-gray-200 rounded-full overflow-hidden">
               <div

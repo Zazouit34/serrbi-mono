@@ -28,11 +28,13 @@ import { trpc } from '@/app/_trpc/client'
 
 import { resetPasswordFormSchema , type ressetPasswordFormValues} from '@workspace/ui/lib/validation-schemas'
 import { useSearchParams } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 
 
 const formSchema = resetPasswordFormSchema
 
 export default function ResetPasswordPreview() {
+  const t = useTranslations('Auth.Reset')
   const [isPending, startTransition] = useTransition()
   const [success, setSuccess] = useState('')
   const [error, setError] = useState('')
@@ -88,9 +90,9 @@ export default function ResetPasswordPreview() {
     <div className="flex min-h-[80vh] h-full w-full items-center justify-center px-4">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle className="text-2xl">Reset Password</CardTitle>
+          <CardTitle className="text-2xl">{t('title')}</CardTitle>
           <CardDescription>
-            Enter your new password to reset your password.
+            {t('subtitle')}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -105,7 +107,7 @@ export default function ResetPasswordPreview() {
                   name="password"
                   render={({ field }) => (
                     <FormItem className="grid gap-2">
-                      <FormLabel htmlFor="password">New Password</FormLabel>
+                      <FormLabel htmlFor="password">{t('password')}</FormLabel>
                       <FormControl>
                         <PasswordInput
                           id="password"
@@ -127,7 +129,7 @@ export default function ResetPasswordPreview() {
                   render={({ field }) => (
                     <FormItem className="grid gap-2">
                       <FormLabel htmlFor="confirmPassword">
-                        Confirm Password
+                        {t('confirmPassword')}
                       </FormLabel>
                       <FormControl>
                         <PasswordInput
@@ -146,7 +148,7 @@ export default function ResetPasswordPreview() {
                 <FormSuccess message={success} />
 
                 <Button type="submit" className="w-full" disabled={isPending}>
-                  Reset Password
+                  {t('submit')}
                 </Button>
               </div>
             </form>

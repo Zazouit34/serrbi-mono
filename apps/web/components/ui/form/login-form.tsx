@@ -25,6 +25,7 @@ import { Input } from "@workspace/ui/components/input";
 import { PasswordInput } from "./password-input";
 import { FormError } from "./form-error";
 import { FormSuccess } from "./form-success";
+import { useTranslations } from "next-intl";
 
 import {
   loginFormSchema,
@@ -33,6 +34,7 @@ import {
 import { loginCredentials, loginGoogle } from "@/lib/actions/auth";
 
 export default function LoginForm() {
+  const t = useTranslations("Auth.Login");
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/";
   const [error, setError] = useState<string | undefined>("");
@@ -94,15 +96,15 @@ export default function LoginForm() {
         <div className="flex flex-col gap-4 justify-center items-center text-center">
           <div className="flex flex-col gap-2 items-center">
             <SerrbiMark className="w-10 h-10" />
-            <h1 className="text-2xl font-bold">Login</h1>
+            <h1 className="text-2xl font-bold">{t("title")}</h1>
           </div>
           <p className="text-sm text-center text-muted-foreground">
-            Don&apos;t have an account?{" "}
+            {t("subtitle")} {" "}
             <Link
               href={`/register?callbackUrl=${encodeURIComponent(callbackUrl)}`}
               className="underline hover:text-primary"
             >
-              Sign up
+              {t("signUpCta")}
             </Link>
           </p>
         </div>
@@ -116,7 +118,7 @@ export default function LoginForm() {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel htmlFor="email">Email</FormLabel>
+                    <FormLabel htmlFor="email">{t("email")}</FormLabel>
                     <FormControl>
                       <Input
                         id="email"
@@ -136,7 +138,7 @@ export default function LoginForm() {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                      <FormLabel htmlFor="password">Password</FormLabel>
+                      <FormLabel htmlFor="password">{t("password")}</FormLabel>
                     <FormControl>
                       <PasswordInput
                         id="password"
@@ -152,7 +154,7 @@ export default function LoginForm() {
                       href="/forgot"
                       className="text-sm underline hover:text-primary"
                     >
-                      Forgot your password?
+                      {t("forgot")}
                     </Link>
                   </FormItem>
                 )}
@@ -163,7 +165,7 @@ export default function LoginForm() {
 
               <div className="space-y-3">
                 <Button type="submit" className="w-full" disabled={isPending}>
-                  Login
+                  {t("submit")}
                 </Button>
                 <Button
                   variant="outline"
@@ -172,7 +174,7 @@ export default function LoginForm() {
                   type="button"
                 >
                   <FcGoogle className="mr-2 size-4" />
-                  Login with Google
+                  {t("google")}
                 </Button>
               </div>
             </div>
@@ -181,19 +183,19 @@ export default function LoginForm() {
 
         {/* Footer */}
         <div className="text-xs text-center text-muted-foreground text-balance">
-          By clicking continue, you agree to our{" "}
+          {t("terms")} {" "}
           <Link
             href="#"
             className="underline underline-offset-4 hover:text-primary"
           >
-            Terms of Service
+            {t("termsLink")}
           </Link>{" "}
-          and{" "}
+          {t("and")} {" "}
           <Link
             href="#"
             className="underline underline-offset-4 hover:text-primary"
           >
-            Privacy Policy
+            {t("privacy")}
           </Link>
           .
         </div>
