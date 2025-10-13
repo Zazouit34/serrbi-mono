@@ -2,9 +2,10 @@
 
 import { useRouter } from "next/navigation";
 import { trpc } from "@/app/_trpc/client";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@workspace/ui/components/card";
+import { Card } from "@workspace/ui/components/card";
 import { Button } from "@workspace/ui/components/button";
-import { Loader2, Check } from "lucide-react";
+import { Check } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 type PlanKey = "free" | "basic" | "premium";
 
@@ -15,27 +16,28 @@ const PLAN_ICONS: Record<PlanKey, string> = {
 };
 
 const PLAN_SUBTEXT: Record<PlanKey, string> = {
-  free: "Best for individuals getting started.",
-  basic: "Best for small teams and growing use.",
-  premium: "Best for businesses that need more power.",
+  free: "planSubtext.free",
+  basic: "planSubtext.basic",
+  premium: "planSubtext.premium",
 };
 
 export function PricingShowcase() {
   const router = useRouter();
   const { data: plans, isLoading, error } = trpc.subscription.getPlans.useQuery();
+  const t = useTranslations("Pricing");
 
   return (
     <section className="mx-auto my-18 w-full">
       <div className="mb-6 flex items-end justify-between">
         <div>
-          <h2 className="text-2xl font-semibold md:text-3xl">Flexible plans</h2>
-          <p className="mt-1 max-w-xl text-sm text-muted-foreground">Choose a plan that fits your needs. Upgrade anytime.</p>
+          <h2 className="text-2xl font-semibold md:text-3xl">{t("title")}</h2>
+          <p className="mt-1 max-w-xl text-sm text-muted-foreground">{t("subtitle")}</p>
         </div>
-        <Button variant="outline" onClick={() => router.push("/subscription")}>View all</Button>
+        <Button variant="outline" onClick={() => router.push("/subscription")}>{t("viewAll")}</Button>
       </div>
 
       {error && (
-        <div className="text-sm text-red-500">Failed to load plans. Please try again.</div>
+        <div className="text-sm text-red-500">{t("errors.loadPlansFailed")}</div>
       )}
 
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -59,18 +61,19 @@ export function PricingShowcase() {
 }
 
 function PlanPreview({ plan, onClick }: { plan: any; onClick: () => void }) {
+  const t = useTranslations("Pricing");
   const planKey = (plan.displayName || plan.name || "basic").toLowerCase() as PlanKey;
-  const subtext = PLAN_SUBTEXT[planKey];
-  const badgeLabel = planKey === "premium" ? "Best plan" : planKey === "basic" ? "Most value" : "Get started";
+  const subtext = t(PLAN_SUBTEXT[planKey]);
+  const badgeLabel = planKey === "premium" ? t("badges.bestPlan") : planKey === "basic" ? t("badges.mostValue") : t("badges.getStarted");
 
   const features: string[] = [
-    `${plan.maxJobListings} job listings`,
-    `${plan.maxServiceListings} service listings`,
-    `${plan.maxTaskListings} task listings`,
+    `${plan.maxJobListings} ${t("features.jobListings")}`,
+    `${plan.maxServiceListings} ${t("features.serviceListings")}`,
+    `${plan.maxTaskListings} ${t("features.taskListings")}`,
   ];
-  if (plan.featuredListings) features.push("Featured listings");
-  if (plan.prioritySupport) features.push("Priority support");
-  if (plan.analyticsAccess) features.push("Analytics access");
+  if (plan.featuredListings) features.push(t("features.featuredListings"));
+  if (plan.prioritySupport) features.push(t("features.prioritySupport"));
+  if (plan.analyticsAccess) features.push(t("features.analyticsAccess"));
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLDivElement>) {
     if (e.key === "Enter" || e.key === " ") {
@@ -114,7 +117,7 @@ function PlanPreview({ plan, onClick }: { plan: any; onClick: () => void }) {
         </ul>
 
         <div className="mt-auto pt-2">
-          <Button className="w-full rounded-lg bg-black text-white hover:bg-black/90">Choose plan</Button>
+          <Button className="w-full rounded-lg bg-black text-white hover:bg-black/90">{t("choosePlan")}</Button>
         </div>
       </Card>
     </div>

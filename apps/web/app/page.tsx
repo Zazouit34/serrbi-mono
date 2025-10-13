@@ -6,7 +6,7 @@ import { FAQ } from "@/components/ui/faq";
 import { SiteFooter } from "@/components/ui/site-footer";
 
 
-export default function Page() {
+export default async function Page() {
   return (
     <main className="flex relative flex-col mx-auto">
       <Hero />

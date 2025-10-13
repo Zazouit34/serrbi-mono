@@ -1,0 +1,142 @@
+{
+  "HomePage": {
+    "title": "Hello world!",
+    "hero": "Find the best talents, jobs, services and tasks",
+    "cta": "Get started"
+  },
+  "Navbar": {
+    "jobs": "Jobs",
+    "services": "Services",
+    "tasks": "Tasks",
+    "plans": "Plans",
+    "autoApply": "Auto-apply"
+  },
+  "Hero": {
+    "announcementNew": "New",
+    "announcementTitle": "Feature Release coming soon",
+    "headingLine1": "AI that Connects to",
+    "headingHighlight": "Opportunities",
+    "description": "Serrbi is a unified marketplace where you can find jobs, services, and gigs for freelancers. Connect with opportunities across all industries and skill levels."
+  },
+  "HowItWorks": {
+    "title": "How It Works",
+    "subtitle": "Let AI handle the hard work — from analyzing your resume to applying for jobs that fit your goals.",
+    "steps": {
+      "1": {
+        "title": "Upload Your Resume",
+        "description": "Get instant feedback and an AI-powered score to see how strong your CV is before applying.",
+        "action": "Upload Resume"
+      },
+      "2": {
+        "title": "Set Your Preferences",
+        "description": "Select roles, categories, and keywords you’re interested in. Serrbi will tailor your job discovery experience.",
+        "action": "Discover Jobs"
+      },
+      "3": {
+        "title": "Enable Auto-Apply",
+        "description": "Sit back while Serrbi automatically sends personalized applications every month with your attached resume.",
+        "action": "Auto-Apply"
+      }
+    }
+  },
+  "Showcase": {
+    "servicesTitle": "Popular Services",
+    "servicesSubtitle": "Check out our top-notch services designed to help you highlight your talents",
+    "jobsTitle": "New Jobs",
+    "jobsSubtitle": "Find your next role across multiple industries and skill levels",
+    "tasksTitle": "Available Tasks",
+    "tasksSubtitle": "Pick up quick gigs and short engagements near you",
+    "prev": "Previous",
+    "next": "Next"
+  },
+  "Pricing": {
+    "title": "Flexible plans",
+    "subtitle": "Choose a plan that fits your needs. Upgrade anytime.",
+    "viewAll": "View all",
+    "planSubtext": {
+      "free": "Best for individuals getting started.",
+      "basic": "Best for small teams and growing use.",
+      "premium": "Best for businesses that need more power."
+    },
+    "badges": {
+      "bestPlan": "Best plan",
+      "mostValue": "Most value",
+      "getStarted": "Get started"
+    },
+    "features": {
+      "jobListings": "job listings",
+      "serviceListings": "service listings",
+      "taskListings": "task listings",
+      "featuredListings": "Featured listings",
+      "prioritySupport": "Priority support",
+      "analyticsAccess": "Analytics access"
+    },
+    "choosePlan": "Choose plan",
+    "errors": { "loadPlansFailed": "Failed to load plans. Please try again." }
+  },
+  "HeroSearchBar": {
+    "tabs": {
+      "jobs": "Browse jobs",
+      "services": "Find services",
+      "tasks": "Complete tasks"
+    },
+    "placeholder": "Search by role, skills...",
+    "search": "Search"
+  },
+  "FAQ": {
+    "title": "Frequently asked questions",
+    "subtitle": "Answers to common questions about using Serrbi to post, discover, and manage work.",
+    "items": [
+      {
+        "q": "What is Serrbi?",
+        "a": "Serrbi is a marketplace for jobs, services, and tasks. Discover work, hire talent, and complete tasks in one place."
+      },
+      {
+        "q": "How do filters work on listing pages?",
+        "a": "We apply your search term from links and cards as a query parameter (e.g. ?search=Dentist) so results are prefiltered when you arrive."
+      },
+      {
+        "q": "Can I post a job/service/task for free?",
+        "a": "Yes. You can start on the Free plan which includes a limited number of listings. Upgrade anytime for higher limits and extra features."
+      },
+      {
+        "q": "How does Auto‑Apply work?",
+        "a": "Enable Auto‑Apply from your account and we’ll submit tailored applications each cycle using your preferences and uploaded resume."
+      }
+    ]
+  },
+  "Footer": {
+    "headings": {
+      "product": "Product",
+      "useCases": "Use Cases",
+      "compare": "Compare",
+      "support": "Support",
+      "company": "Company",
+      "legal": "Legal"
+    },
+    "links": {
+      "jobs": "Jobs",
+      "services": "Services",
+      "tasks": "Tasks",
+      "pricing": "Pricing",
+      "findWork": "Find work",
+      "hireTalent": "Hire talent",
+      "getTasksDone": "Get tasks done",
+      "contact": "Contact",
+      "helpCenter": "Help Center",
+      "plans": "Plans",
+      "about": "About",
+      "blog": "Blog",
+      "careers": "Careers",
+      "terms": "Terms",
+      "privacy": "Privacy",
+      "soc2": "SOC2 Compliant",
+      "sitemap": "Sitemap",
+      "vsFyxer": "vs Fyxer.ai",
+      "vsPerplexity": "vs Perplexity Email Assistant"
+    },
+    "copyright": "All rights reserved."
+  }
+}
+
+

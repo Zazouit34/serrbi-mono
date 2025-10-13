@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useState, useEffect } from "react";
 
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { cn } from "@workspace/ui/lib/utils";
 import { Globe2, CircleCheckIcon, CircleIcon, Wallet, Zap, Menu } from "lucide-react";
@@ -16,6 +16,7 @@ import {
   NavigationMenuTrigger,
 } from "@workspace/ui/components/navigation-menu";
 import { Container } from "@workspace/ui/components/container";
+import { useTranslations } from "next-intl";
 import { SerrbiLogo } from "./SerrbiLogo";
 import { UserMenu } from "./user-menu"; // 👈 your existing user menu component
 import {
@@ -26,19 +27,14 @@ import {
 } from "@workspace/ui/components/dropdown-menu";
 
 const DEFAULT_LINKS = [
-  { href: "/jobs", label: "Jobs", image: "/images/jobs.png" },
-  {
-    href: "/services",
-    label: "Services",
-    image: "/images/services.png",
-  },
-  { href: "/tasks", label: "Tasks", image: "/images/tasks.png" },
+  { href: "/jobs", key: "jobs", image: "/images/jobs.png" },
+  { href: "/services", key: "services", image: "/images/services.png" },
+  { href: "/tasks", key: "tasks", image: "/images/tasks.png" },
 ];
 
 const LINKS = [
-  { href:"/subscription", label: "Plans", icon: Wallet },
-  { href:"/account/auto-apply", label: "Auto-apply", icon: Zap },
-  
+  { href:"/subscription", key: "plans", icon: Wallet },
+  { href:"/account/auto-apply", key: "autoApply", icon: Zap },
 ]
 
 const DEFAULT_LANGUAGES: Array<{ code: string; label: string }> = [
@@ -48,12 +44,25 @@ const DEFAULT_LANGUAGES: Array<{ code: string; label: string }> = [
 ];
 
 export function Navbar() {
+  const t = useTranslations("Navbar");
   const [selectedLang, setSelectedLang] = React.useState("en");
   const pathname = usePathname();
+  const router = useRouter();
 
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
+    // Initialize selected language from cookie
+    try {
+      const cookieValue = document.cookie
+        .split("; ")
+        .find((row) => row.startsWith("locale="))
+        ?.split("=")[1];
+      if (cookieValue === "fr" || cookieValue === "ar" || cookieValue === "en") {
+        setSelectedLang(cookieValue);
+      }
+    } catch {}
+
     const handleScroll = () => {
       setScrolled(window.scrollY > 10); // trigger after small scroll
     };
@@ -63,6 +72,10 @@ export function Navbar() {
 
   const handleLanguageSelect = (code: string) => {
     setSelectedLang(code);
+    // Persist locale in cookie and refresh to re-render Server Components with new messages
+    const oneYear = 60 * 60 * 24 * 365;
+    document.cookie = `locale=${code}; path=/; max-age=${oneYear}; samesite=lax`;
+    router.refresh();
   };
 
   return (
@@ -86,6 +99,7 @@ export function Navbar() {
               <NavigationMenuList>
                 {DEFAULT_LINKS.map((link) => {
                   const isActive = pathname === link.href;
+                  const visibleLabel = t(link.key as any);
 
                   return (
                     <NavigationMenuItem key={link.href}>
@@ -101,10 +115,10 @@ export function Navbar() {
                         >
                           <img
                             src={link.image}
-                            alt={link.label}
+                            alt={visibleLabel}
                             className="size-10"
                           />
-                          <span className="relative">{link.label}</span>
+                          <span className="relative">{visibleLabel}</span>
 
                           {/* underline */}
                           <div
@@ -183,7 +197,7 @@ export function Navbar() {
                 <DropdownMenuItem key={link.href} className="p-0">
                   <Link href={link.href} className="flex items-center gap-2 w-full px-2 py-1.5">
                     {link.icon && <link.icon className="size-4" />}
-                    {link.label}
+                    {t(link.key as any)}
                   </Link>
                 </DropdownMenuItem>
               ))}
@@ -233,7 +247,7 @@ export function Navbar() {
               >
                 <img
                   src={link.image}
-                  alt={link.label}
+                  alt={t(link.key as any)}
                   className={cn(
                     "mb-1 transition-all duration-300 ease-in-out size-10",
                     scrolled
@@ -241,7 +255,7 @@ export function Navbar() {
                       : "h-10 opacity-100 scale-100"
                   )}
                 />
-                {link.label}
+                {t(link.key as any)}
                 <div
                   className="absolute bottom-0 left-1/4 w-1/2 h-0.5 bg-black transform scale-x-0 
             transition-transform duration-300 ease-in-out 

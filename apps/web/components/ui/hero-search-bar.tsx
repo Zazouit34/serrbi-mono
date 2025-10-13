@@ -5,11 +5,13 @@ import { Tabs, TabsList, TabsTrigger } from "@workspace/ui/components/tabs";
 import { Input } from "@workspace/ui/components/input";
 import { Button } from "@workspace/ui/components/button";
 import { Search } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { FaGoogle, FaAws, FaMicrosoft, FaLinkedin } from "react-icons/fa";
 
 type TabType = "jobs" | "services" | "tasks";
 
 export function HeroSearchBar() {
+  const t = useTranslations("HeroSearchBar");
   const [activeTab, setActiveTab] = useState<TabType>("jobs");
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -28,10 +30,10 @@ export function HeroSearchBar() {
   };
 
   const tabLabels = {
-    jobs: "Browse jobs",
-    services: "Find services",
-    tasks: "Complete tasks",
-  };
+    jobs: t("tabs.jobs"),
+    services: t("tabs.services"),
+    tasks: t("tabs.tasks"),
+  } as const;
 
   const companyIcons = [
     { icon: FaGoogle, name: "Google" },
@@ -76,7 +78,7 @@ export function HeroSearchBar() {
             {/* Search Input */}
             <div className="relative flex-1">
               <Input
-                placeholder="Search by role, skills..."
+                placeholder={t("placeholder")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyPress={(e) => e.key === "Enter" && handleSearch()}
@@ -90,7 +92,7 @@ export function HeroSearchBar() {
               className="absolute right-1 top-1/2 px-2 h-8 text-sm font-medium text-white bg-black rounded-full transform -translate-y-1/2 w-fit hover:bg-gray-800 focus:ring-black md:px-4 md:h-10"
             >
               <Search className="size-4" />
-              <span className="hidden md:inline md:ml-1 md:pr-2">Search</span>
+              <span className="hidden md:inline md:ml-1 md:pr-2">{t("search")}</span>
             </Button>
           </div>
         </div>

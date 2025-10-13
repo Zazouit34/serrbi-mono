@@ -2,70 +2,72 @@
 
 import Link from "next/link";
 import { FaTwitter, FaGithub, FaDiscord } from "react-icons/fa";
+import { useTranslations } from "next-intl";
 
 const navigation = {
   main: [
-    { name: "Jobs", href: "/jobs" },
-    { name: "Services", href: "/services" },
-    { name: "Tasks", href: "/tasks" },
-    { name: "Pricing", href: "/subscription" },
+    { key: "jobs", href: "/jobs" },
+    { key: "services", href: "/services" },
+    { key: "tasks", href: "/tasks" },
+    { key: "pricing", href: "/subscription" },
   ],
   useCases: [
-    { name: "Find work", href: "/jobs" },
-    { name: "Hire talent", href: "/services" },
-    { name: "Get tasks done", href: "/tasks" },
+    { key: "findWork", href: "/jobs" },
+    { key: "hireTalent", href: "/services" },
+    { key: "getTasksDone", href: "/tasks" },
   ],
   compare: [
-    { name: "vs Fyxer.ai", href: "/best-fyxer-alternative" },
+    { key: "vsFyxer", href: "/best-fyxer-alternative" },
     {
-      name: "vs Perplexity Email Assistant",
+      key: "vsPerplexity",
       href: "/best-perplexity-email-assistant-alternative",
     },
   ],
   support: [
-    { name: "Contact", href: "/contact" },
-    { name: "Help Center", href: "/docs" },
-    {name : "Plans", href: "/subscription"}
+    { key: "contact", href: "/contact" },
+    { key: "helpCenter", href: "/docs" },
+    { key: "plans", href: "/subscription" },
   ],
   company: [
-    { name: "About", href: "/about" },
-    { name: "Blog", href: "/blog" },
-    { name: "Careers", href: "/careers" },
+    { key: "about", href: "/about" },
+    { key: "blog", href: "/blog" },
+    { key: "careers", href: "/careers" },
   ],
   legal: [
-    { name: "Terms", href: "/terms" },
-    { name: "Privacy", href: "/privacy" },
+    { key: "terms", href: "/terms" },
+    { key: "privacy", href: "/privacy" },
     {
-      name: "SOC2 Compliant",
+      key: "soc2",
       href: "https://security.getinboxzero.com",
       target: "_blank",
     },
-    { name: "Sitemap", href: "/sitemap.xml" },
+    { key: "sitemap", href: "/sitemap.xml" },
   ],
 };
 
 export function SiteFooter() {
+  const t = useTranslations("Footer");
   return (
     <footer className="relative">
       <div className="mx-auto w-full overflow-hidden rounded-2xl bg-[#0b0b0f] px-6 py-20 text-gray-300 sm:px-8 sm:py-24">
         <div className="grid grid-cols-2 gap-8 lg:grid-cols-5 xl:col-span-2 xl:mt-0">
           <div>
-            <FooterList title="Product" items={navigation.main} />
+            <FooterList title={t("headings.product")} items={navigation.main.map((i) => ({ name: t(`links.${i.key}`), href: i.href, target: (i as any).target }))} />
           </div>
           <div>
-            <FooterList title="Use Cases" items={navigation.useCases} />
+            <FooterList title={t("headings.useCases")} items={navigation.useCases.map((i) => ({ name: t(`links.${i.key}`), href: i.href, target: (i as any).target }))} />
             <div className="mt-6">
-              <FooterList title="Compare" items={navigation.compare} />
+              <FooterList title={t("headings.compare")} items={navigation.compare.map((i) => ({ name: t(`links.${i.key}`), href: i.href, target: (i as any).target }))} />
             </div>
           </div>
           <div>
-            <FooterList title="Support" items={navigation.support} />
+            <FooterList title={t("headings.support")} items={navigation.support.map((i) => ({ name: t(`links.${i.key}`), href: i.href, target: (i as any).target }))} />
           </div>
           <div>
-            <FooterList title="Company" items={navigation.company} />
+            <FooterList title={t("headings.company")} items={navigation.company.map((i) => ({ name: t(`links.${i.key}`), href: i.href, target: (i as any).target }))} />
           </div>
           <div>
-            <FooterList title="Legal" items={navigation.legal} />
+            <FooterList title={t("headings.legal")} items={navigation.legal.map((i) => ({ name: t(`links.${i.key}`), href: i.href, target: (i as any).target }))} />
           </div>
         </div>
 
@@ -81,7 +83,7 @@ export function SiteFooter() {
           </Link>
         </div>
         <p className="mt-10 text-center text-xs leading-5 text-gray-500">
-          &copy; {new Date().getFullYear()} Serrbi Inc. All rights reserved.
+          &copy; {new Date().getFullYear()} Serrbi Inc. {t("copyright")}
         </p>
       </div>
     </footer>

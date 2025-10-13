@@ -8,40 +8,18 @@ import {
 } from "@workspace/ui/components/collapsible";
 import { AnimatePresence, motion } from "framer-motion";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 
 type QA = { question: string; answer: string };
 
-const faqs: QA[] = [
-  {
-    question: "What is Serrbi?",
-    answer:
-      "Serrbi is a marketplace for jobs, services, and tasks. Discover work, hire talent, and complete tasks in one place.",
-  },
-  {
-    question: "How do filters work on listing pages?",
-    answer:
-      "We apply your search term from links and cards as a query parameter (e.g. ?search=Dentist) so results are prefiltered when you arrive.",
-  },
-  {
-    question: "Can I post a job/service/task for free?",
-    answer:
-      "Yes. You can start on the Free plan which includes a limited number of listings. Upgrade anytime for higher limits and extra features.",
-  },
-  {
-    question: "How does Auto‑Apply work?",
-    answer:
-      "Enable Auto‑Apply from your account and we’ll submit tailored applications each cycle using your preferences and uploaded resume.",
-  },
-];
-
 export function FAQ() {
+  const t = useTranslations("FAQ");
+  const faqs: QA[] = (t.raw("items") as { q: string; a: string }[]).map((it) => ({ question: it.q, answer: it.a }));
   return (
     <section className="mx-auto my-18 w-full">
       <div className="mb-8 flex flex-col items-center gap-3 text-center">
-        <h2 className="text-2xl font-semibold md:text-3xl">Frequently asked questions</h2>
-        <p className="max-w-2xl text-sm text-muted-foreground">
-          Answers to common questions about using Serrbi to post, discover, and manage work.
-        </p>
+        <h2 className="text-2xl font-semibold md:text-3xl">{t("title")}</h2>
+        <p className="max-w-2xl text-sm text-muted-foreground">{t("subtitle")}</p>
       </div>
 
       <div className="mx-auto grid max-w-3xl gap-3">

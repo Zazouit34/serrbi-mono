@@ -1,0 +1,143 @@
+{
+  "HomePage": {
+    "title": "Bonjour le monde !",
+    "hero": "Trouvez les meilleurs talents, emplois, services et tâches",
+    "cta": "Commencer"
+  },
+  "Navbar": {
+    "jobs": "Emplois",
+    "services": "Services",
+    "tasks": "Tâches",
+    "plans": "Forfaits",
+    "autoApply": "Candidature auto"
+  },
+  "Hero": {
+    "announcementNew": "Nouveau",
+    "announcementTitle": "Lancement de fonctionnalités bientôt",
+    "headingLine1": "IA qui connecte aux",
+    "headingHighlight": "Opportunités",
+    "description": "Serrbi est une place de marché unifiée où vous pouvez trouver des emplois, des services et des missions pour les freelances. Connectez‑vous aux opportunités dans tous les secteurs et niveaux d’expérience."
+  },
+  "HowItWorks": {
+    "title": "Comment ça marche",
+    "subtitle": "Laissez l’IA faire le travail difficile — de l’analyse de votre CV aux candidatures adaptées à vos objectifs.",
+    "steps": {
+      "1": {
+        "title": "Importez votre CV",
+        "description": "Obtenez un retour instantané et une note assistée par IA pour évaluer la solidité de votre CV avant de postuler.",
+        "action": "Importer le CV"
+      },
+      "2": {
+        "title": "Définissez vos préférences",
+        "description": "Choisissez les postes, catégories et mots‑clés qui vous intéressent. Serrbi adaptera votre découverte d’emplois.",
+        "action": "Découvrir des emplois"
+      },
+      "3": {
+        "title": "Activez l’Auto‑candidature",
+        "description": "Laissez Serrbi envoyer automatiquement des candidatures personnalisées chaque mois avec votre CV joint.",
+        "action": "Auto‑candidature"
+      }
+    }
+  },
+  "Showcase": {
+    "servicesTitle": "Services populaires",
+    "servicesSubtitle": "Découvrez nos meilleurs services conçus pour mettre en valeur vos talents",
+    "jobsTitle": "Nouveaux emplois",
+    "jobsSubtitle": "Trouvez votre prochain poste dans divers secteurs et niveaux d’expérience",
+    "tasksTitle": "Tâches disponibles",
+    "tasksSubtitle": "Acceptez des missions rapides près de chez vous",
+    "prev": "Précédent",
+    "next": "Suivant"
+  },
+  "Pricing": {
+    "title": "Formules flexibles",
+    "subtitle": "Choisissez une formule adaptée à vos besoins. Changez quand vous voulez.",
+    "viewAll": "Tout voir",
+    "planSubtext": {
+      "free": "Idéal pour bien démarrer individuellement.",
+      "basic": "Idéal pour les petites équipes en croissance.",
+      "premium": "Idéal pour les entreprises qui ont besoin de plus de puissance."
+    },
+    "badges": {
+      "bestPlan": "Meilleure offre",
+      "mostValue": "Meilleur rapport qualité/prix",
+      "getStarted": "Commencer"
+    },
+    "features": {
+      "jobListings": "annonces d’emploi",
+      "serviceListings": "annonces de service",
+      "taskListings": "annonces de tâche",
+      "featuredListings": "Mises en avant",
+      "prioritySupport": "Support prioritaire",
+      "analyticsAccess": "Accès aux analyses"
+    },
+    "choosePlan": "Choisir la formule",
+    "errors": { "loadPlansFailed": "Échec du chargement des formules. Réessayez." }
+  },
+  "HeroSearchBar": {
+    "tabs": {
+      "jobs": "Parcourir les emplois",
+      "services": "Trouver des services",
+      "tasks": "Réaliser des tâches"
+    },
+    "placeholder": "Rechercher par poste, compétences...",
+    "search": "Rechercher"
+  },
+  "FAQ": {
+    "title": "Questions fréquentes",
+    "subtitle": "Réponses aux questions courantes sur l’utilisation de Serrbi pour publier, découvrir et gérer du travail.",
+    "items": [
+      {
+        "q": "Qu’est‑ce que Serrbi ?",
+        "a": "Serrbi est une place de marché pour les emplois, services et tâches. Trouvez du travail, recrutez des talents et réalisez des missions au même endroit."
+      },
+      {
+        "q": "Comment fonctionnent les filtres sur les pages de liste ?",
+        "a": "Nous appliquons votre terme de recherche depuis les liens et cartes comme paramètre d’URL (ex. ?search=Dentiste) afin de préfiltrer les résultats."
+      },
+      {
+        "q": "Puis‑je publier gratuitement un emploi/service/tâche ?",
+        "a": "Oui. Commencez avec la formule Gratuite qui inclut un nombre limité d’annonces. Passez à tout moment à une formule supérieure."
+      },
+      {
+        "q": "Comment fonctionne l’Auto‑candidature ?",
+        "a": "Activez l’Auto‑candidature depuis votre compte et nous soumettrons des candidatures adaptées à chaque cycle selon vos préférences et votre CV."
+      }
+    ]
+  },
+  "Footer": {
+    "headings": {
+      "product": "Produit",
+      "useCases": "Cas d’usage",
+      "compare": "Comparer",
+      "support": "Support",
+      "company": "Entreprise",
+      "legal": "Légal"
+    },
+    "links": {
+      "jobs": "Emplois",
+      "services": "Services",
+      "tasks": "Tâches",
+      "pricing": "Tarifs",
+      "findWork": "Trouver du travail",
+      "hireTalent": "Recruter des talents",
+      "getTasksDone": "Faire réaliser des tâches",
+      "contact": "Contact",
+      "helpCenter": "Centre d’aide",
+      "plans": "Forfaits",
+      "about": "À propos",
+      "blog": "Blog",
+      "careers": "Carrières",
+      "terms": "Conditions",
+      "privacy": "Confidentialité",
+      "soc2": "Conforme SOC2",
+      "sitemap": "Plan du site",
+      "vsFyxer": "vs Fyxer.ai",
+      "vsPerplexity": "vs Assistant e‑mail Perplexity"
+    },
+    "copyright": "Tous droits réservés."
+  }
+  }
+
+
+

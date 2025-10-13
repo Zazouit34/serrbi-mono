@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowLeft, ArrowRight, Star } from "lucide-react";
+import { useTranslations } from "next-intl";
+import { useLocale } from "next-intl";
 
 type Tab = "services" | "jobs" | "tasks";
 
@@ -194,8 +196,26 @@ export function ShowcaseSwitcher() {
   const router = useRouter();
   const [tab, setTab] = useState<Tab>("services");
   const [dir, setDir] = useState<1 | -1>(1);
+  const t = useTranslations("Showcase");
+  const locale = useLocale();
+  const isRtl = locale === "ar";
 
-  const meta = tabMeta[tab];
+  const meta = {
+    title:
+      tab === "services"
+        ? t("servicesTitle")
+        : tab === "jobs"
+        ? t("jobsTitle")
+        : t("tasksTitle"),
+    subtitle:
+      tab === "services"
+        ? t("servicesSubtitle")
+        : tab === "jobs"
+        ? t("jobsSubtitle")
+        : t("tasksSubtitle"),
+    items: tabMeta[tab].items,
+    path: tabMeta[tab].path,
+  };
 
   const handlePrev = () => {
     setDir(-1);
@@ -239,11 +259,11 @@ export function ShowcaseSwitcher() {
           </AnimatePresence>
         </div>
         <div className="flex items-center gap-2">
-          <button aria-label="Previous" onClick={handlePrev} className="h-9 w-9 rounded-full border bg-white shadow-sm hover:bg-gray-50">
-            <ArrowLeft className="mx-auto h-4 w-4" />
+          <button aria-label={t("prev")} onClick={handlePrev} className="h-9 w-9 rounded-full border bg-white shadow-sm hover:bg-gray-50">
+            {isRtl ? <ArrowRight className="mx-auto h-4 w-4" /> : <ArrowLeft className="mx-auto h-4 w-4" />}
           </button>
-          <button aria-label="Next" onClick={handleNext} className="h-9 w-9 rounded-full border bg-white shadow-sm hover:bg-gray-50">
-            <ArrowRight className="mx-auto h-4 w-4" />
+          <button aria-label={t("next")} onClick={handleNext} className="h-9 w-9 rounded-full border bg-white shadow-sm hover:bg-gray-50">
+            {isRtl ? <ArrowLeft className="mx-auto h-4 w-4" /> : <ArrowRight className="mx-auto h-4 w-4" />}
           </button>
         </div>
       </div>

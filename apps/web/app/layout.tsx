@@ -1,4 +1,6 @@
 import { Inter } from "next/font/google";
+import { NextIntlClientProvider } from "next-intl";
+import { getLocale, getMessages } from "next-intl/server";
 
 import "@workspace/ui/globals.css";
 import "@mdxeditor/editor/style.css";
@@ -18,21 +20,27 @@ import { Container } from "@workspace/ui/components/container";
 const fontSans = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const locale = await getLocale();
+  const messages = await getMessages();
+  const dir = locale === "ar" ? "rtl" : "ltr";
+
   return (
     <SessionProvider>
-      <html lang="en" suppressHydrationWarning>
+      <html lang={locale} dir={dir} suppressHydrationWarning>
         <body className={`${fontSans.variable} font-sans antialiased overflow-x-hidden`}>
-          <Provider>
-            <Providers>
-              <Navbar  />
-              <MobileNavbar />
-              <main className="pt-4 pb-20 mb-4 md:pt-10 md:pb-4">
-                <Container>{children}</Container>
-              </main>
-              <Toaster />
-            </Providers>
-          </Provider>
+          <NextIntlClientProvider messages={messages} locale={locale} timeZone={Intl.DateTimeFormat().resolvedOptions().timeZone}>
+            <Provider>
+              <Providers>
+                <Navbar />
+                <MobileNavbar />
+                <main className="pt-4 pb-20 mb-4 md:pt-10 md:pb-4">
+                  <Container>{children}</Container>
+                </main>
+                <Toaster />
+              </Providers>
+            </Provider>
+          </NextIntlClientProvider>
         </body>
       </html>
     </SessionProvider>

@@ -17,8 +17,6 @@ import {
   AnnouncementEnd,
 } from "@workspace/ui/components/ui/shadcn-io/announcement";
 
-import { Button } from "@workspace/ui/components/button";
-import Link from "next/link";
 import {
   ArrowUpRight,
   Briefcase,
@@ -26,6 +24,7 @@ import {
   Stethoscope,
   Palette,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 // Floating decorative icon component with size variants
 const FloatingIcon = ({
@@ -55,6 +54,7 @@ const FloatingIcon = ({
 };
 
 export default function Hero() {
+  const t = useTranslations("Hero");
   const AVATARS = [
     {
       src: "https://pbs.twimg.com/profile_images/1909615404789506048/MTqvRsjo_400x400.jpg",
@@ -120,11 +120,11 @@ export default function Hero() {
       <div className="flex relative z-10 flex-col gap-8 justify-center items-center">
         <Announcement className="text-[14px]">
           <AnnouncementTag className="ml-1 font-semibold text-white bg-gradient-to-r from-red-500 via-pink-500 to-rose-500">
-            New
+            {t("announcementNew")}
           </AnnouncementTag>
           <AnnouncementTitle>
             <span className="font-semibold text-foreground/70">
-              Feature Release coming soon
+              {t("announcementTitle")}
             </span>
             <ArrowUpRight className="size-4 text-[#ff040e]" />
           </AnnouncementTitle>
@@ -140,19 +140,17 @@ export default function Hero() {
           </AnnouncementEnd>
         </Announcement>
         <h1 className="mb-0 text-balance font-medium text-4xl md:text-[80px] xl:text-[80px] leading-tight">
-          AI qui Connecte aux <br />
+        {t("headingLine1")} <br />
           <GradientText
             className="font-playfair text-5xl md:text-[80px] xl:text-[80px] font-semibold"
-            text="Opportunités"
+            text={t("headingHighlight")}
           />
         </h1>
 
         <HeroSearchBar />
 
         <p className="mt-0 mb-0 text-[16px] text-balance text-muted-foreground">
-          Serrbi is a unified marketplace where you can find jobs, services, and
-          gigs for freelancers. Connect with opportunities across all industries
-          and skill levels.
+          {t("description")}
         </p>
 
         <CarouselMain />
