@@ -23,6 +23,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@workspace/ui/component
 import { trpc } from "@/app/_trpc/client";
 import { MarkdownEditor } from "@/components/ui/markdown/markdown-editor";
 import states from "@workspace/ui/lib/states.json";
+import cities from "@workspace/ui/lib/cities.json" assert { type: "json" };
+import { useTranslations } from "next-intl";
 import { UppyImageUploader } from "@/components/ui/uppy-image-uploader";
 import { FormError } from "../form-error";
 import { FormSuccess } from "../form-success";
@@ -74,6 +76,9 @@ const steps = [
 ];
 
 export function JobListingForm() {
+  const tAll = useTranslations();
+  const tJob = useTranslations("JobForm");
+  const tForm = useTranslations("Form");
   const { data: session, status } = useSession();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | undefined>("");
@@ -173,9 +178,9 @@ export function JobListingForm() {
       <div className="w-full max-w-3xl">
         {/* === HEADER === */}
         <div className="flex flex-col justify-center items-center mb-8 text-center">
-          <h1 className="text-2xl font-bold font-outfit">Create Job Listing</h1>
+          <h1 className="text-2xl font-bold font-outfit">{tJob("headingTitle")}</h1>
           <p className="text-muted-foreground font-outfit">
-            Fill out the form below to create a new job listing.
+            {tJob("headingSubtitle")}
           </p>
         </div>
 
@@ -202,9 +207,9 @@ export function JobListingForm() {
                         name="title"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Job Title</FormLabel>
+                            <FormLabel>{tForm("title")}</FormLabel>
                             <FormControl>
-                              <Input placeholder="Software Engineer" {...field} />
+                              <Input placeholder={tForm("placeholders.jobTitle")} {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -215,9 +220,9 @@ export function JobListingForm() {
                         name="companyName"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Company Name</FormLabel>
+                            <FormLabel>{tForm("companyName")}</FormLabel>
                             <FormControl>
-                              <Input placeholder="Company Name" {...field} />
+                              <Input placeholder={tForm("placeholders.companyName")} {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -235,7 +240,7 @@ export function JobListingForm() {
                           const Icon = field.value ? (jobCategoryIcons as any)[field.value] : null;
                           return (
                             <FormItem>
-                              <FormLabel>Job Category</FormLabel>
+                              <FormLabel>{tForm("category")}</FormLabel>
                               <Popover open={open} onOpenChange={setOpen}>
                                 <PopoverTrigger asChild>
                                   <Button type="button" variant="outline" className="justify-between w-full h-11 rounded-full">
@@ -245,7 +250,7 @@ export function JobListingForm() {
                                         {formatJobCategory(field.value as any)}
                                       </span>
                                     ) : (
-                                      <span className="text-gray-500">Select category</span>
+                                      <span className="text-gray-500">{tForm("selectCategory")}</span>
                                     )}
                                   </Button>
                                 </PopoverTrigger>
@@ -286,14 +291,14 @@ export function JobListingForm() {
                           const [open, setOpen] = useState(false);
                           return (
                             <FormItem>
-                              <FormLabel>Job Type</FormLabel>
+                              <FormLabel>{tForm("jobType")}</FormLabel>
                               <Popover open={open} onOpenChange={setOpen}>
                                 <PopoverTrigger asChild>
                                   <Button type="button" variant="outline" className="justify-between w-full h-11 rounded-full">
                                     {field.value ? (
                                       <span className="font-medium text-black">{formatJobType(field.value as any)}</span>
                                     ) : (
-                                      <span className="text-gray-500">Select type</span>
+                                      <span className="text-gray-500">{tForm("selectType")}</span>
                                     )}
                                   </Button>
                                 </PopoverTrigger>
@@ -378,14 +383,14 @@ export function JobListingForm() {
                           const [open, setOpen] = useState(false);
                           return (
                             <FormItem>
-                              <FormLabel>Experience Level</FormLabel>
+                              <FormLabel>{tForm("experienceLevel")}</FormLabel>
                               <Popover open={open} onOpenChange={setOpen}>
                                 <PopoverTrigger asChild>
                                   <Button type="button" variant="outline" className="justify-between w-full h-11 rounded-full">
                                     {field.value ? (
                                       <span className="font-medium text-black">{formatExperienceLevel(field.value as any)}</span>
                                     ) : (
-                                      <span className="text-gray-500">Select level</span>
+                                      <span className="text-gray-500">{tForm("selectLevel")}</span>
                                     )}
                                   </Button>
                                 </PopoverTrigger>
@@ -428,14 +433,14 @@ export function JobListingForm() {
                           const [open, setOpen] = useState(false);
                           return (
                             <FormItem>
-                              <FormLabel>Location Requirement</FormLabel>
+                              <FormLabel>{tForm("locationRequirement")}</FormLabel>
                               <Popover open={open} onOpenChange={setOpen}>
                                 <PopoverTrigger asChild>
                                   <Button type="button" variant="outline" className="justify-between w-full h-11 rounded-full">
                                     {field.value ? (
                                       <span className="font-medium text-black">{formatLocationRequirement(field.value as any)}</span>
                                     ) : (
-                                      <span className="text-gray-500">Select location</span>
+                                      <span className="text-gray-500">{tForm("selectLocation")}</span>
                                     )}
                                   </Button>
                                 </PopoverTrigger>
@@ -470,15 +475,50 @@ export function JobListingForm() {
                       <FormField
                         control={form.control}
                         name="city"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>City</FormLabel>
-                            <FormControl>
-                              <Input placeholder="New York" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
+                        render={({ field }) => {
+                          const [open, setOpen] = useState(false);
+                          const displayCity = field.value ? (tAll.has?.("Cities." + field.value) ? tAll("Cities." + field.value) : field.value) : undefined;
+                          return (
+                            <FormItem>
+                              <FormLabel>{tForm("city")}</FormLabel>
+                              <Popover open={open} onOpenChange={setOpen}>
+                                <PopoverTrigger asChild>
+                                  <Button type="button" variant="outline" className="justify-between w-full h-11 rounded-full">
+                                    {displayCity ? (
+                                      <span className="font-medium text-black">{displayCity}</span>
+                                    ) : (
+                                      <span className="text-gray-500">{tForm("selectCity")}</span>
+                                    )}
+                                  </Button>
+                                </PopoverTrigger>
+                                <PopoverContent align="center" sideOffset={12} className="rounded-3xl p-6 w-[700px] max-w-[90vw] bg-white shadow-lg border border-gray-100">
+                                  <div className="flex flex-wrap justify-center gap-3 max-h-[320px] overflow-auto">
+                                    {(cities as string[]).map((name) => {
+                                      const isSelected = field.value === name;
+                                      const label = tAll.has?.("Cities." + name) ? tAll("Cities." + name) : name;
+                                      return (
+                                        <Button
+                                          key={name}
+                                          variant="outline"
+                                          size="lg"
+                                          className={`flex items-center gap-3 px-6 py-3 rounded-full text-base font-medium transition-colors border ${isSelected ? "border-gray-400 bg-gray-100 text-gray-900" : "border-gray-200 text-gray-700 hover:bg-gray-50"}`}
+                                          onClick={() => {
+                                            field.onChange(name);
+                                            setOpen(false);
+                                          }}
+                                        >
+                                          {label}
+                                          {isSelected && <Check className="w-4 h-4 text-black" />}
+                                        </Button>
+                                      );
+                                    })}
+                                  </div>
+                                </PopoverContent>
+                              </Popover>
+                              <FormMessage />
+                            </FormItem>
+                          );
+                        }}
                       />
                       <FormField
                         control={form.control}
@@ -488,14 +528,14 @@ export function JobListingForm() {
                           const stateName = field.value ? (states as any)[field.value] : undefined;
                           return (
                             <FormItem>
-                              <FormLabel>State</FormLabel>
+                              <FormLabel>{tForm("state")}</FormLabel>
                               <Popover open={open} onOpenChange={setOpen}>
                                 <PopoverTrigger asChild>
                                   <Button type="button" variant="outline" className="justify-between w-full h-11 rounded-full">
                                     {stateName ? (
                                       <span className="font-medium text-black">{stateName}</span>
                                     ) : (
-                                      <span className="text-gray-500">Select state</span>
+                                      <span className="text-gray-500">{tForm("selectState")}</span>
                                     )}
                                   </Button>
                                 </PopoverTrigger>

@@ -31,9 +31,11 @@ export const taskFiltersConfig: FilterConfig[] = [
   {
     key: "category",
     label: "Task Category",
+    labelKey: "TasksFilters.taskCategory",
     type: "select",
     options: taskCategoryValues.map((category: any) => ({
       label: category,
+      labelKey: `Enums.TaskCategory.${category}`,
       value: category,
       icon: taskCategoryIcons[category as keyof typeof taskCategoryIcons],
     })),
@@ -41,15 +43,18 @@ export const taskFiltersConfig: FilterConfig[] = [
   {
     key: "status",
     label: "Task Status",
+    labelKey: "TasksFilters.taskStatus",
     type: "select",
     options: taskStatusValues.map((status: any) => ({
       label: status,
+      labelKey: `Enums.TaskStatus.${status}`,
       value: status,
     })),
   },
   {
     key: "city",
     label: "Location",
+    labelKey: "TasksFilters.location",
     type: "select",
     options: [
       { value: "Casablanca", label: "Casablanca" },

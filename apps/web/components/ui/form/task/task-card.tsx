@@ -7,6 +7,7 @@ import { faWhatsapp } from "@fortawesome/free-brands-svg-icons";
 import { cn } from "@workspace/ui/lib/utils";
 import { Button } from "@workspace/ui/components/button";
 import { FavoriteButton } from "@/components/ui/favorite-button";
+import { useTranslations } from "next-intl";
 
 import {
   Popover,
@@ -30,18 +31,18 @@ type TaskCardProps = {
   className?: string;
 };
 
-const formatLocation = (city?: string | null, stateAbbreviation?: string | null) => {
-  if (city && stateAbbreviation) return `${city}, ${stateAbbreviation}`;
-  if (city) return city;
-  if (stateAbbreviation) return stateAbbreviation;
-  return "";
+const formatLocation = (t: ReturnType<typeof useTranslations>, city?: string | null) => {
+  const tCity = city ? (t.has?.("Cities." + city) ? t("Cities." + city) : city) : undefined;
+  return tCity || "";
 };
 
-const formatBudget = (budget?: number | null) => { 
-  return `${budget} MAD`;
+const formatBudget = (budget?: number | null, t?: ReturnType<typeof useTranslations>) => { 
+  if (!t) return `${budget} MAD`;
+  return `${budget ?? ""} ${t("Currency.MAD")}`;
 };
 
 export function TaskCard({ task, className }: TaskCardProps) {
+  const t = useTranslations();
   return (
     <div className={cn("w-full cursor-pointer", className)}>
       {/* Description Section (replacing image carousel) */}
@@ -74,7 +75,7 @@ export function TaskCard({ task, className }: TaskCardProps) {
                 </h3>
               </Link>
               <p className="text-xs font-semibold text-gray-200">
-                {formatLocation(task.city, task.stateAbbreviation)}
+                {formatLocation(t, task.city)}
               </p>
             </div>
 
@@ -95,7 +96,7 @@ export function TaskCard({ task, className }: TaskCardProps) {
           <Popover>
             <PopoverTrigger asChild>
               <Button variant="outline" size="sm">
-                Contact
+                {t("Common.contact")}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="flex flex-col gap-2 w-40">
@@ -106,7 +107,7 @@ export function TaskCard({ task, className }: TaskCardProps) {
                 className="flex items-center gap-2 text-sm text-white bg-[#25D366] px-2 py-1 rounded-md hover:bg-[#1ebe5d] transition"
               >
                 <FontAwesomeIcon icon={faWhatsapp} className="size-4" />
-                WhatsApp
+                {t("Common.whatsapp")}
               </button>
               <button
                 onClick={() =>
@@ -115,7 +116,7 @@ export function TaskCard({ task, className }: TaskCardProps) {
                 className="flex gap-2 items-center px-2 py-1 text-sm rounded-md border transition hover:bg-gray-100"
               >
                 <Phone className="size-4" />
-                Call
+                {t("Common.call")}
               </button>
             </PopoverContent>
           </Popover>
@@ -123,7 +124,7 @@ export function TaskCard({ task, className }: TaskCardProps) {
 
         {/* Budget/Price */}
         <span className="text-base font-semibold text-gray-900">
-          {formatBudget(task.budget)}
+          {formatBudget(task.budget, t)}
         </span>
       </div>
     </div>

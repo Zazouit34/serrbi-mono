@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, forwardRef, useImperativeHandle } from "react";
+import { useTranslations } from "next-intl";
 import Uppy from "@uppy/core";
 import AwsS3, { type AwsS3UploadParameters } from "@uppy/aws-s3";
 import { Trash2 } from "lucide-react";
@@ -31,6 +32,7 @@ export const UppyMultiImageUploader = forwardRef<
     ref
   ) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const tForm = useTranslations("Form");
     const [files, setFiles] = useState<File[]>([]);
     const [previews, setPreviews] = useState<string[]>([]);
     const [uploading, setUploading] = useState(false);
@@ -187,9 +189,10 @@ export const UppyMultiImageUploader = forwardRef<
             onChange={onInputChange}
           />
           <p className="text-sm text-muted-foreground">
-            Drag & drop images here, or <span className="font-medium text-black">click to browse</span>
+            {tForm.has?.("dragDropImage") ? tForm("dragDropImage") : "Drag & drop images here, or "}
+            <span className="font-medium text-black">{tForm.has?.("clickToBrowse") ? tForm("clickToBrowse") : "click to browse"}</span>
           </p>
-          <p className="mt-1 text-xs text-muted-foreground">Up to {maxFiles} images • JPG, PNG, WEBP • 5MB each</p>
+          <p className="mt-1 text-xs text-muted-foreground">{tForm.has?.("uploadImagesNote") ? tForm("uploadImagesNote") : `Up to ${maxFiles} images • JPG, PNG, WEBP • 5MB each`}</p>
         </div>
 
         {previews.length > 0 && (

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { trpc } from "@/app/_trpc/client"
 import { JobCard } from "@/components/ui/form/job/job-card"
+import { useTranslations } from "next-intl"
 import { Skeleton } from "@workspace/ui/components/skeleton"
 
 type JobListingGridProps = {
@@ -10,6 +11,7 @@ type JobListingGridProps = {
 }
 
 export function JobListingGrid({ filters }: JobListingGridProps) {
+  const t = useTranslations("JobGrid")
   const [page, setPage] = useState(1)
   const [items, setItems] = useState<any[]>([])
   const [total, setTotal] = useState(0)
@@ -64,7 +66,7 @@ export function JobListingGrid({ filters }: JobListingGridProps) {
     <div className="space-y-6">
       <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
         {items.length === 0 ? (
-          <p>No jobs found</p>
+          <p>{t("noJobs")}</p>
         ) : (
           items.map((j) => <JobCard key={j.id} job={j as any} />)
         )}
@@ -77,7 +79,7 @@ export function JobListingGrid({ filters }: JobListingGridProps) {
             onClick={() => setPage((p) => p + 1)}
             disabled={loadingMore}
           >
-            {loadingMore ? "Loading..." : "Load more"}
+            {loadingMore ? t("loading") : t("loadMore")}
           </button>
         </div>
       )}

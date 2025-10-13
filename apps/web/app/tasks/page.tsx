@@ -1,10 +1,10 @@
 import { TaskListing } from "./task-listing/task-listing";
 import Link from "next/link";
-import { useTranslations } from "next-intl";
-export const dynamic = "force-static";
+import { getTranslations } from "next-intl/server";
+export const dynamic = "force-dynamic";
 
-export default function TasksPage() {
-  const t = useTranslations("TasksPage");
+export default async function TasksPage() {
+  const t = await getTranslations("TasksPage");
   return (
     <div className="space-y-4 md:space-y-8">
       <div className="flex flex-col items-center py-0 space-y-4 md:py-16 md:space-y-10">

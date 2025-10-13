@@ -23,6 +23,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@workspace/ui/component
 import { trpc } from "@/app/_trpc/client";
 import { MarkdownEditor } from "@/components/ui/markdown/markdown-editor";
 import states from "@workspace/ui/lib/states.json";
+import cities from "@workspace/ui/lib/cities.json" assert { type: "json" };
+import { useTranslations } from "next-intl";
 import { PhoneInput } from "../phone-input";
 import { UppyMultiImageUploader, type MultiImageUploaderHandle } from "@/components/ui/uppy-multi-image-uploader";
 import { FormError } from "../form-error";
@@ -61,6 +63,9 @@ const steps = [
 ];
 
 export function ServiceListingForm() {
+  const tAll = useTranslations();
+  const tService = useTranslations("ServiceForm");
+  const tForm = useTranslations("Form");
   const { data: session, status } = useSession();
   const [error, setError] = useState<string | undefined>("");
   const [success, setSuccess] = useState<string | undefined>("");
@@ -173,9 +178,9 @@ export function ServiceListingForm() {
       <div className="w-full max-w-3xl">
         {/* header */}
         <div className="flex flex-col justify-center items-center mb-8 text-center">
-          <h1 className="text-2xl font-bold font-outfit">Create Service Listing</h1>
+          <h1 className="text-2xl font-bold font-outfit">{tService("headingTitle")}</h1>
           <p className="text-muted-foreground font-outfit">
-            Fill out the form below to create a new service listing.
+            {tService("headingSubtitle")}
           </p>
         </div>
 
@@ -212,10 +217,10 @@ export function ServiceListingForm() {
                         name="title"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Service Title</FormLabel>
+                            <FormLabel>{tForm("title")}</FormLabel>
                             <FormControl>
                               <Input
-                                placeholder="Professional Plumbing Service"
+                                placeholder={tForm("placeholders.jobTitle")}
                                 {...field}
                                 value={field.value ?? ""}
                               />
@@ -233,7 +238,7 @@ export function ServiceListingForm() {
                           const Icon = field.value ? (categoryIcons as any)[field.value] : null;
                           return (
                             <FormItem>
-                              <FormLabel>Service Category</FormLabel>
+                              <FormLabel>{tForm("serviceCategory")}</FormLabel>
                               <Popover open={open} onOpenChange={setOpen}>
                                 <PopoverTrigger asChild>
                                   <Button
@@ -247,7 +252,7 @@ export function ServiceListingForm() {
                                         {formatServiceCategory(field.value as any)}
                                       </span>
                                     ) : (
-                                      <span className="text-gray-500">Select category</span>
+                                      <span className="text-gray-500">{tForm("selectCategory")}</span>
                                     )}
                                   </Button>
                                 </PopoverTrigger>
@@ -290,7 +295,7 @@ export function ServiceListingForm() {
                         name="type"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Service Type</FormLabel>
+                            <FormLabel>{tForm("serviceType")}</FormLabel>
                             <FormControl>
                               <Input
                                 placeholder="Plumber, Electrician, Designer..."
@@ -308,13 +313,13 @@ export function ServiceListingForm() {
                         name="price"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Price (MAD)</FormLabel>
+                            <FormLabel>{tForm("price")}</FormLabel>
                             <FormControl>
                               <Input
                                 type="number"
                                 inputMode="numeric"
                                 min={1}
-                                placeholder="100"
+                                placeholder={tForm("placeholders.price")}
                                 {...field}
                                 value={field.value ?? ""}
                               />
@@ -335,15 +340,50 @@ export function ServiceListingForm() {
                       <FormField
                         control={form.control as any}
                         name="city"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>City</FormLabel>
-                            <FormControl>
-                            <Input placeholder="Casablanca" {...field} value={field.value ?? ""} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
+                        render={({ field }) => {
+                          const [open, setOpen] = useState(false);
+                          const displayCity = field.value ? (tAll.has?.("Cities." + field.value) ? tAll("Cities." + field.value) : field.value) : undefined;
+                          return (
+                            <FormItem>
+                              <FormLabel>{tForm("city")}</FormLabel>
+                              <Popover open={open} onOpenChange={setOpen}>
+                                <PopoverTrigger asChild>
+                                  <Button type="button" variant="outline" className="justify-between w-full h-11 rounded-full">
+                                    {displayCity ? (
+                                      <span className="font-medium text-black">{displayCity}</span>
+                                    ) : (
+                                      <span className="text-gray-500">{tForm("selectCity")}</span>
+                                    )}
+                                  </Button>
+                                </PopoverTrigger>
+                                <PopoverContent align="center" sideOffset={12} className="rounded-3xl p-6 w-[700px] max-w-[90vw] bg-white shadow-lg border border-gray-100">
+                                  <div className="flex flex-wrap justify-center gap-3 max-h-[320px] overflow-auto">
+                                    {(cities as string[]).map((name) => {
+                                      const isSelected = field.value === name;
+                                      const label = tAll.has?.("Cities." + name) ? tAll("Cities." + name) : name;
+                                      return (
+                                        <Button
+                                          key={name}
+                                          variant="outline"
+                                          size="lg"
+                                          className={`flex items-center gap-3 px-6 py-3 rounded-full text-base font-medium transition-colors border ${isSelected ? "border-gray-400 bg-gray-100 text-gray-900" : "border-gray-200 text-gray-700 hover:bg-gray-50"}`}
+                                          onClick={() => {
+                                            field.onChange(name);
+                                            setOpen(false);
+                                          }}
+                                        >
+                                          {label}
+                                          {isSelected && <Check className="w-4 h-4 text-black" />}
+                                        </Button>
+                                      );
+                                    })}
+                                  </div>
+                                </PopoverContent>
+                              </Popover>
+                              <FormMessage />
+                            </FormItem>
+                          );
+                        }}
                       />
 
                       <FormField

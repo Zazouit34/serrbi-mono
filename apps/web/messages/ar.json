@@ -165,6 +165,188 @@
   "DualSearchBar": {
     "what": "ماذا",
     "where": "أين"
+  },
+  "JobsFilters": {
+    "category": "الفئة",
+    "location": "الموقع",
+    "experienceLevel": "مستوى الخبرة",
+    "jobType": "نوع الوظيفة"
+  },
+  "ServicesFilters": {
+    "serviceCategory": "فئة الخدمة",
+    "serviceType": "نوع الخدمة",
+    "location": "الموقع"
+  },
+  "TasksFilters": {
+    "taskCategory": "فئة المهمة",
+    "taskStatus": "حالة المهمة",
+    "location": "الموقع"
+  },
+  "JobGrid": {
+    "noJobs": "لا توجد وظائف",
+    "loadMore": "تحميل المزيد",
+    "loading": "جارٍ التحميل..."
+  },
+  "JobCard": {
+    "unknownCompany": "شركة غير معروفة",
+    "today": "اليوم",
+    "daysAgo_one": "قبل {count} يوم",
+    "daysAgo_other": "قبل {count} أيام",
+    "perMonth": "/شهريًا",
+    "apply": "قدّم"
+  },
+  "Currency": {
+    "MAD": "د.م."
+  },
+  "Common": {
+    "from": "ابتداءً من",
+    "contact": "تواصل",
+    "whatsapp": "واتساب",
+    "call": "اتصال"
+  },
+  "Form": {
+    "back": "رجوع",
+    "next": "التالي",
+    "submit": "إرسال",
+    "createJob": "إنشاء إعلان وظيفة",
+    "createService": "إنشاء إعلان خدمة",
+    "createTask": "إنشاء إعلان مهمة",
+    "selectCategory": "اختر الفئة",
+    "selectType": "اختر النوع",
+    "selectLevel": "اختر المستوى",
+    "selectLocation": "اختر نمط العمل",
+    "selectCity": "اختر المدينة",
+    "selectState": "اختر الجهة",
+    "title": "العنوان",
+    "companyName": "اسم الشركة",
+    "description": "الوصف",
+    "price": "السعر (د.م.)",
+    "budget": "الميزانية (د.م.)",
+    "phone": "رقم الهاتف",
+    "email": "البريد الإلكتروني",
+    "website": "الموقع الإلكتروني",
+    "address": "العنوان",
+    "tags": "وسوم",
+    "name": "الاسم",
+    "city": "المدينة",
+    "state": "الجهة",
+    "uploadLogoNote": "حمّل شعارًا حتى 5 ميغابايت",
+    "uploadImagesNote": "أضف صورة واحدة على الأقل • يتم الرفع عند الإنشاء",
+    "dragDropImage": "اسحب وأفلت صورتك هنا، أو ",
+    "clickToBrowse": "انقر للاستعراض",
+    "tagsPlaceholder": "أضف وسومًا...",
+    "tagsEmpty": "لا توجد وسوم.",
+    "tagsSuggestions": "اقتراحات",
+    "review": {
+      "title": "مراجعة",
+      "subtitle": "تأكد من صحة جميع التفاصيل."
+    },
+    "category": "الفئة",
+    "jobType": "نوع الوظيفة",
+    "experienceLevel": "مستوى الخبرة",
+    "locationRequirement": "نمط العمل",
+    "serviceCategory": "فئة الخدمة",
+    "serviceType": "نوع الخدمة",
+    "taskCategory": "فئة المهمة",
+    "placeholders": {
+      "jobTitle": "مهندس برمجيات",
+      "companyName": "اسم الشركة",
+      "email": "jobs@company.com",
+      "url": "https://company.com/apply",
+      "price": "100",
+      "budget": "100",
+      "phoneMA": "+212 6 12 34 56 78",
+      "tags": "أضف وسومًا...",
+      "address": "123 الشارع الرئيسي",
+      "website": "https://service.com",
+      "taskDescription": "صف مهمتك السريعة..."
+    }
+  },
+  "JobForm": {
+    "headingTitle": "إنشاء إعلان وظيفة",
+    "headingSubtitle": "املأ النموذج أدناه لإنشاء إعلان وظيفة جديدة."
+  },
+  "ServiceForm": {
+    "headingTitle": "إنشاء إعلان خدمة",
+    "headingSubtitle": "املأ النموذج أدناه لإنشاء إعلان خدمة جديدة."
+  },
+  "TaskForm": {
+    "headingTitle": "إنشاء إعلان مهمة",
+    "headingSubtitle": "املأ النموذج أدناه لإنشاء إعلان مهمة جديدة."
+  },
+  "Cities": {
+    "Casablanca": "الدار البيضاء",
+    "Rabat": "الرباط",
+    "Marrakech": "مراكش",
+    "Fez": "فاس",
+    "Tangier": "طنجة",
+    "Agadir": "أكادير"
+  },
+  "States": {},
+  "Enums": {
+    "JobCategory": {
+      "Tech": "تقنية",
+      "Finance": "مالية",
+      "Hospitality": "ضيافة",
+      "Health": "صحة",
+      "Legal": "قانون",
+      "Construction": "إنشاءات",
+      "Education": "تعليم",
+      "CallCenter": "مركز اتصال",
+      "Auto": "سيارات",
+      "Cleaning": "تنظيف",
+      "Other": "أخرى"
+    },
+    "LocationRequirement": {
+      "in_office": "من المكتب",
+      "hybrid": "هجين",
+      "remote": "عن بُعد"
+    },
+    "ExperienceLevel": {
+      "junior": "مبتدئ",
+      "mid_level": "متوسط",
+      "senior": "خبير"
+    },
+    "JobType": {
+      "internship": "تدريب",
+      "part_time": "دوام جزئي",
+      "full_time": "دوام كامل"
+    },
+    "ServiceCategory": {
+      "Lawyer": "محامٍ",
+      "Doctor": "طبيب",
+      "Education": "تعليم",
+      "Architect": "مهندس معماري",
+      "Plumber": "سبّاك",
+      "Electrician": "كهربائي",
+      "Mason": "بنّاء",
+      "Mechanic": "ميكانيكي",
+      "Accountant": "محاسب",
+      "Esthetician": "خبير تجميل",
+      "Cleaning": "منظّف",
+      "Teacher": "معلّم",
+      "Dentist": "طبيب أسنان"
+    },
+    "TaskCategory": {
+      "MultiSector": "متعدّد القطاعات",
+      "Health": "صحة",
+      "Cleaning": "تنظيف",
+      "Construction": "إنشاءات",
+      "Auto": "سيارات",
+      "Tech": "تقنية",
+      "Finance": "مالية",
+      "Hospitality": "ضيافة",
+      "Legal": "قانون",
+      "Education": "تعليم"
+    },
+    "TaskStatus": {
+      "Active": "نشط",
+      "Pending": "قيد الانتظار",
+      "Rejected": "مرفوض",
+      "Published": "منشور",
+      "Done": "منجز",
+      "Cancelled": "ملغى"
+    }
   }
 }
 

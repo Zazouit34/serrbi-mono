@@ -165,6 +165,188 @@
   "DualSearchBar": {
     "what": "What",
     "where": "Where"
+  },
+  "JobsFilters": {
+    "category": "Category",
+    "location": "Location",
+    "experienceLevel": "Experience Level",
+    "jobType": "Job Type"
+  },
+  "ServicesFilters": {
+    "serviceCategory": "Service Category",
+    "serviceType": "Service Type",
+    "location": "Location"
+  },
+  "TasksFilters": {
+    "taskCategory": "Task Category",
+    "taskStatus": "Task Status",
+    "location": "Location"
+  },
+  "JobGrid": {
+    "noJobs": "No jobs found",
+    "loadMore": "Load more",
+    "loading": "Loading..."
+  },
+  "JobCard": {
+    "unknownCompany": "Unknown Company",
+    "today": "Today",
+    "daysAgo_one": "{count} day ago",
+    "daysAgo_other": "{count} days ago",
+    "perMonth": "/month",
+    "apply": "Apply"
+  },
+  "Currency": {
+    "MAD": "MAD"
+  },
+  "Common": {
+    "from": "From",
+    "contact": "Contact",
+    "whatsapp": "WhatsApp",
+    "call": "Call"
+  },
+  "Form": {
+    "back": "Back",
+    "next": "Next",
+    "submit": "Submit",
+    "createJob": "Create Job Listing",
+    "createService": "Create Service Listing",
+    "createTask": "Create Task Listing",
+    "selectCategory": "Select category",
+    "selectType": "Select type",
+    "selectLevel": "Select level",
+    "selectLocation": "Select location",
+    "selectCity": "Select city",
+    "selectState": "Select state",
+    "title": "Title",
+    "companyName": "Company Name",
+    "description": "Description",
+    "price": "Price (MAD)",
+    "budget": "Budget (MAD)",
+    "phone": "Phone Number",
+    "email": "Email",
+    "website": "Website",
+    "address": "Address",
+    "tags": "Tags",
+    "name": "Name",
+    "city": "City",
+    "state": "State",
+    "uploadLogoNote": "Upload a logo up to 5 MB",
+    "uploadImagesNote": "Add at least one image • Upload happens on Create",
+    "dragDropImage": "Drag & drop your image here, or ",
+    "clickToBrowse": "click to browse",
+    "tagsPlaceholder": "Add tags...",
+    "tagsEmpty": "No tags found.",
+    "tagsSuggestions": "Suggestions",
+    "review": {
+      "title": "Review",
+      "subtitle": "Make sure everything looks correct."
+    },
+    "category": "Category",
+    "jobType": "Job Type",
+    "experienceLevel": "Experience Level",
+    "locationRequirement": "Location Requirement",
+    "serviceCategory": "Service Category",
+    "serviceType": "Service Type",
+    "taskCategory": "Task Category",
+    "placeholders": {
+      "jobTitle": "Software Engineer",
+      "companyName": "Company Name",
+      "email": "jobs@company.com",
+      "url": "https://company.com/apply",
+      "price": "100",
+      "budget": "100",
+      "phoneMA": "+212 6 12 34 56 78",
+      "tags": "Add tags...",
+      "address": "123 Main Street",
+      "website": "https://service.com",
+      "taskDescription": "Describe your quick gig..."
+    }
+  },
+  "JobForm": {
+    "headingTitle": "Create Job Listing",
+    "headingSubtitle": "Fill out the form below to create a new job listing."
+  },
+  "ServiceForm": {
+    "headingTitle": "Create Service Listing",
+    "headingSubtitle": "Fill out the form below to create a new service listing."
+  },
+  "TaskForm": {
+    "headingTitle": "Create Task Listing",
+    "headingSubtitle": "Fill out the form below to create a new task listing."
+  },
+  "Cities": {
+    "Casablanca": "Casablanca",
+    "Rabat": "Rabat",
+    "Marrakech": "Marrakech",
+    "Fez": "Fez",
+    "Tangier": "Tangier",
+    "Agadir": "Agadir"
+  },
+  "States": {},
+  "Enums": {
+    "JobCategory": {
+      "Tech": "Tech",
+      "Finance": "Finance",
+      "Hospitality": "Hospitality",
+      "Health": "Health",
+      "Legal": "Legal",
+      "Construction": "Construction",
+      "Education": "Education",
+      "CallCenter": "Call Center",
+      "Auto": "Auto",
+      "Cleaning": "Cleaning",
+      "Other": "Other"
+    },
+    "LocationRequirement": {
+      "in_office": "In Office",
+      "hybrid": "Hybrid",
+      "remote": "Remote"
+    },
+    "ExperienceLevel": {
+      "junior": "Junior",
+      "mid_level": "Mid Level",
+      "senior": "Senior"
+    },
+    "JobType": {
+      "internship": "Internship",
+      "part_time": "Part Time",
+      "full_time": "Full Time"
+    },
+    "ServiceCategory": {
+      "Lawyer": "Lawyer",
+      "Doctor": "Doctor",
+      "Education": "Education",
+      "Architect": "Architect",
+      "Plumber": "Plumber",
+      "Electrician": "Electrician",
+      "Mason": "Mason",
+      "Mechanic": "Mechanic",
+      "Accountant": "Accountant",
+      "Esthetician": "Esthetician",
+      "Cleaning": "Cleaner",
+      "Teacher": "Teacher",
+      "Dentist": "Dentist"
+    },
+    "TaskCategory": {
+      "MultiSector": "Multi Sector",
+      "Health": "Health",
+      "Cleaning": "Cleaning",
+      "Construction": "Construction",
+      "Auto": "Auto",
+      "Tech": "Tech",
+      "Finance": "Finance",
+      "Hospitality": "Hospitality",
+      "Legal": "Legal",
+      "Education": "Education"
+    },
+    "TaskStatus": {
+      "Active": "Active",
+      "Pending": "Pending",
+      "Rejected": "Rejected",
+      "Published": "Published",
+      "Done": "Done",
+      "Cancelled": "Cancelled"
+    }
   }
 }
 

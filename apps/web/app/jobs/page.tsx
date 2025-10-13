@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { JobListing } from "./job-listing/job-listing";
-import { useTranslations } from "next-intl";
-export const dynamic = "force-static";
+import { getTranslations } from "next-intl/server";
+export const dynamic = "force-dynamic";
 
-export default function JobsPage() {
-  const t = useTranslations("JobsPage");
+export default async function JobsPage() {
+  const t = await getTranslations("JobsPage");
   return (
     <div className="space-y-4 md:space-y-8">
       <div className="flex flex-col items-center py-0 space-y-4 md:py-16 md:space-y-10">

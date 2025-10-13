@@ -165,6 +165,188 @@
   "DualSearchBar": {
     "what": "Quoi",
     "where": "Où"
+  },
+  "JobsFilters": {
+    "category": "Catégorie",
+    "location": "Localisation",
+    "experienceLevel": "Niveau d’expérience",
+    "jobType": "Type d’emploi"
+  },
+  "ServicesFilters": {
+    "serviceCategory": "Catégorie de service",
+    "serviceType": "Type de service",
+    "location": "Localisation"
+  },
+  "TasksFilters": {
+    "taskCategory": "Catégorie de tâche",
+    "taskStatus": "Statut de la tâche",
+    "location": "Localisation"
+  },
+  "JobGrid": {
+    "noJobs": "Aucune offre trouvée",
+    "loadMore": "Charger plus",
+    "loading": "Chargement..."
+  },
+  "JobCard": {
+    "unknownCompany": "Entreprise inconnue",
+    "today": "Aujourd’hui",
+    "daysAgo_one": "il y a {count} jour",
+    "daysAgo_other": "il y a {count} jours",
+    "perMonth": "/mois",
+    "apply": "Postuler"
+  },
+  "Currency": {
+    "MAD": "DH"
+  },
+  "Common": {
+    "from": "À partir de",
+    "contact": "Contact",
+    "whatsapp": "WhatsApp",
+    "call": "Appeler"
+  },
+  "Form": {
+    "back": "Retour",
+    "next": "Suivant",
+    "submit": "Envoyer",
+    "createJob": "Créer une offre d’emploi",
+    "createService": "Créer une annonce de service",
+    "createTask": "Créer une annonce de tâche",
+    "selectCategory": "Sélectionner une catégorie",
+    "selectType": "Sélectionner le type",
+    "selectLevel": "Sélectionner le niveau",
+    "selectLocation": "Sélectionner le mode de travail",
+    "selectCity": "Sélectionner la ville",
+    "selectState": "Sélectionner la région",
+    "title": "Titre",
+    "companyName": "Nom de l’entreprise",
+    "description": "Description",
+    "price": "Prix (DH)",
+    "budget": "Budget (DH)",
+    "phone": "Numéro de téléphone",
+    "email": "Email",
+    "website": "Site web",
+    "address": "Adresse",
+    "tags": "Mots-clés",
+    "name": "Nom",
+    "city": "Ville",
+    "state": "Région",
+    "uploadLogoNote": "Téléversez un logo jusqu’à 5 Mo",
+    "uploadImagesNote": "Ajoutez au moins une image • Le téléversement se fait à la création",
+    "dragDropImage": "Glissez-déposez votre image ici, ou ",
+    "clickToBrowse": "cliquez pour parcourir",
+    "tagsPlaceholder": "Ajouter des mots-clés...",
+    "tagsEmpty": "Aucun mot-clé.",
+    "tagsSuggestions": "Suggestions",
+    "review": {
+      "title": "Revue",
+      "subtitle": "Vérifiez que tout est correct."
+    },
+    "category": "Catégorie",
+    "jobType": "Type d’emploi",
+    "experienceLevel": "Niveau d’expérience",
+    "locationRequirement": "Mode de travail",
+    "serviceCategory": "Catégorie de service",
+    "serviceType": "Type de service",
+    "taskCategory": "Catégorie de tâche",
+    "placeholders": {
+      "jobTitle": "Ingénieur logiciel",
+      "companyName": "Nom de l’entreprise",
+      "email": "jobs@entreprise.com",
+      "url": "https://entreprise.com/postuler",
+      "price": "100",
+      "budget": "100",
+      "phoneMA": "+212 6 12 34 56 78",
+      "tags": "Ajouter des mots-clés...",
+      "address": "123 rue Principale",
+      "website": "https://service.com",
+      "taskDescription": "Décrivez votre mission rapide..."
+    }
+  },
+  "JobForm": {
+    "headingTitle": "Créer une offre d’emploi",
+    "headingSubtitle": "Remplissez le formulaire pour créer une nouvelle offre."
+  },
+  "ServiceForm": {
+    "headingTitle": "Créer une annonce de service",
+    "headingSubtitle": "Remplissez le formulaire pour créer un nouveau service."
+  },
+  "TaskForm": {
+    "headingTitle": "Créer une annonce de tâche",
+    "headingSubtitle": "Remplissez le formulaire pour créer une nouvelle tâche."
+  },
+  "Cities": {
+    "Casablanca": "Casablanca",
+    "Rabat": "Rabat",
+    "Marrakech": "Marrakech",
+    "Fez": "Fès",
+    "Tangier": "Tanger",
+    "Agadir": "Agadir"
+  },
+  "States": {},
+  "Enums": {
+    "JobCategory": {
+      "Tech": "Tech",
+      "Finance": "Finance",
+      "Hospitality": "Hôtellerie",
+      "Health": "Santé",
+      "Legal": "Juridique",
+      "Construction": "Construction",
+      "Education": "Éducation",
+      "CallCenter": "Centre d’appels",
+      "Auto": "Auto",
+      "Cleaning": "Nettoyage",
+      "Other": "Autre"
+    },
+    "LocationRequirement": {
+      "in_office": "Présentiel",
+      "hybrid": "Hybride",
+      "remote": "À distance"
+    },
+    "ExperienceLevel": {
+      "junior": "Junior",
+      "mid_level": "Intermédiaire",
+      "senior": "Senior"
+    },
+    "JobType": {
+      "internship": "Stage",
+      "part_time": "Temps partiel",
+      "full_time": "Temps plein"
+    },
+    "ServiceCategory": {
+      "Lawyer": "Avocat",
+      "Doctor": "Médecin",
+      "Education": "Éducation",
+      "Architect": "Architecte",
+      "Plumber": "Plombier",
+      "Electrician": "Électricien",
+      "Mason": "Maçon",
+      "Mechanic": "Mécanicien",
+      "Accountant": "Comptable",
+      "Esthetician": "Esthéticien(ne)",
+      "Cleaning": "Agent d’entretien",
+      "Teacher": "Enseignant(e)",
+      "Dentist": "Dentiste"
+    },
+    "TaskCategory": {
+      "MultiSector": "Multi-secteur",
+      "Health": "Santé",
+      "Cleaning": "Nettoyage",
+      "Construction": "Construction",
+      "Auto": "Auto",
+      "Tech": "Tech",
+      "Finance": "Finance",
+      "Hospitality": "Hôtellerie",
+      "Legal": "Juridique",
+      "Education": "Éducation"
+    },
+    "TaskStatus": {
+      "Active": "Actif",
+      "Pending": "En attente",
+      "Rejected": "Rejeté",
+      "Published": "Publié",
+      "Done": "Terminé",
+      "Cancelled": "Annulé"
+    }
   }
   }
 

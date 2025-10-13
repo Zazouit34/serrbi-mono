@@ -1,12 +1,12 @@
 import { ServiceListing } from "./service-listing/service-listing";
 import Link from "next/link";
-import { useTranslations } from "next-intl";
+import { getTranslations } from "next-intl/server";
 
 
-export const dynamic = "force-static";
+export const dynamic = "force-dynamic";
 
-export default function ServicesPage() {
-  const t = useTranslations("ServicesPage");
+export default async function ServicesPage() {
+  const t = await getTranslations("ServicesPage");
   return (
     <div className="space-y-4 md:space-y-8">
       <div className="flex flex-col items-center py-0 space-y-4 md:py-16 md:space-y-10">

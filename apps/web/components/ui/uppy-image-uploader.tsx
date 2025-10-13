@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import { useTranslations } from "next-intl";
 import Uppy from "@uppy/core";
 import AwsS3, { type AwsS3UploadParameters } from "@uppy/aws-s3";
 
@@ -102,6 +103,7 @@ export function UppyImageUploader({
   allowedFileTypes = [".jpg", ".jpeg", ".png", ".webp"],
   note,
 }: UppyImageUploaderProps) {
+  const tForm = useTranslations("Form");
   const [uppy] = useState(() =>
     createUppyImageUploader(category, maxFiles, allowedFileTypes, onUploadSuccess, onUploadError)
   );
@@ -186,8 +188,8 @@ export function UppyImageUploader({
           className="hidden"
         />
         <p className="text-sm text-muted-foreground">
-          Drag & drop your image here, or{" "}
-          <span className="text-black font-medium">click to browse</span>
+          {tForm.has?.("dragDropImage") ? tForm("dragDropImage") : "Drag & drop your image here, or "}
+          <span className="text-black font-medium">{tForm.has?.("clickToBrowse") ? tForm("clickToBrowse") : "click to browse"}</span>
         </p>
         {selectedFile && (
           <p className="mt-2 text-xs text-green-600">

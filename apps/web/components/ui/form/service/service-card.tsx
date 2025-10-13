@@ -16,6 +16,7 @@ import {
   PopoverContent,
 } from "@workspace/ui/components/popover";
 import { FavoriteButton } from "@/components/ui/favorite-button";
+import { useTranslations } from "next-intl";
 
 export function ServiceCard({
   service,
@@ -37,20 +38,20 @@ export function ServiceCard({
   };
   className?: string;
 }) {
+  const t = useTranslations();
   const [currentIndex, setCurrentIndex] = useState(0);
 
   const formatPrice = (price: number) => {
-    return `From ${price} ${service.currency || "MAD"}`;
+    const currencyLabel = !service.currency || service.currency === "MAD" ? t("Currency.MAD") : service.currency;
+    return `${t("Common.from")} ${price} ${currencyLabel}`;
   };
 
   const formatLocation = (
     city: string | null,
     stateAbbreviation: string | null
   ) => {
-    if (city && stateAbbreviation) return `${city}, ${stateAbbreviation}`;
-    if (city) return city;
-    if (stateAbbreviation) return stateAbbreviation;
-    return "";
+    const tCity = city ? (t.has?.("Cities." + city) ? t("Cities." + city) : city) : undefined;
+    return tCity || "";
   };
 
   const fallbackImages = [
@@ -175,7 +176,7 @@ export function ServiceCard({
           <Popover>
             <PopoverTrigger asChild>
               <Button variant="outline" size="sm">
-                Contact
+                {t("Common.contact")}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="flex flex-col gap-2 w-40">
@@ -186,14 +187,14 @@ export function ServiceCard({
                 className="flex items-center gap-2 text-sm text-white bg-[#25D366] px-2 py-1 rounded-md hover:bg-[#1ebe5d] transition"
               >
                 <FontAwesomeIcon icon={faWhatsapp} className="size-4" />
-                WhatsApp
+                {t("Common.whatsapp")}
               </button>
               <button
                 onClick={() => (window.location.href = `tel:${service.phoneNumber}`)}
                 className="flex gap-2 items-center px-2 py-1 text-sm rounded-md border transition hover:bg-gray-100"
               >
                 <Phone className="size-4" />
-                Call
+                {t("Common.call")}
               </button>
             </PopoverContent>
           </Popover>

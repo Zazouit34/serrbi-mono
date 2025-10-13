@@ -14,6 +14,7 @@ type CategoryOption = {
   label: string;
   value: string;
   icon?: React.ComponentType<any>;
+  labelKey?: string;
 };
 
 type DualSearchBarProps = {
@@ -28,6 +29,7 @@ export function DualSearchBar({
   type,
 }: DualSearchBarProps) {
   const t = useTranslations("DualSearchBar");
+  const tAll = useTranslations();
   const [filters, setFilters] =
     useState<Record<string, string>>(initialFilters);
   const [categoryPopoverOpen, setCategoryPopoverOpen] = useState(false);
@@ -72,6 +74,7 @@ export function DualSearchBar({
       } = require("@/components/ui/config/service-filters-config");
       return serviceCategoryValues.map((category: any) => ({
         label: category,
+        labelKey: `Enums.ServiceCategory.${category}`,
         value: category,
         icon: categoryIcons[category as keyof typeof categoryIcons],
       }));
@@ -82,6 +85,7 @@ export function DualSearchBar({
       } = require("@/components/ui/config/task-filter-config");
       return taskCategoryValues.map((category: any) => ({
         label: category,
+        labelKey: `Enums.TaskCategory.${category}`,
         value: category,
         icon: taskCategoryIcons[category as keyof typeof taskCategoryIcons],
       }));
@@ -91,12 +95,12 @@ export function DualSearchBar({
   // Get location options (same for both)
   const getLocationOptions = () => {
     return [
-      { value: "Casablanca", label: "Casablanca" },
-      { value: "Rabat", label: "Rabat" },
-      { value: "Marrakech", label: "Marrakech" },
-      { value: "Fez", label: "Fez" },
-      { value: "Tangier", label: "Tangier" },
-      { value: "Agadir", label: "Agadir" },
+      { value: "Casablanca", label: "Casablanca", labelKey: "Cities.Casablanca" },
+      { value: "Rabat", label: "Rabat", labelKey: "Cities.Rabat" },
+      { value: "Marrakech", label: "Marrakech", labelKey: "Cities.Marrakech" },
+      { value: "Fez", label: "Fez", labelKey: "Cities.Fez" },
+      { value: "Tangier", label: "Tangier", labelKey: "Cities.Tangier" },
+      { value: "Agadir", label: "Agadir", labelKey: "Cities.Agadir" },
     ];
   };
 
@@ -144,7 +148,7 @@ export function DualSearchBar({
                           <selectedCategoryData.icon className="w-4 h-4 text-black" />
                         )}
                         <span className="font-medium text-black">
-                          {selectedCategoryData?.label}
+                          {selectedCategoryData?.labelKey ? tAll(selectedCategoryData.labelKey as any) : selectedCategoryData?.label}
                         </span>
                       </div>
                     ) : (
@@ -185,7 +189,7 @@ export function DualSearchBar({
                               }`}
                             />
                           )}
-                          {option.label}
+                          {option.labelKey ? tAll(option.labelKey as any) : option.label}
                           {isSelected && (
                             <Check className="w-3 h-3 text-black sm:w-4 sm:h-4" />
                           )}
@@ -213,7 +217,7 @@ export function DualSearchBar({
                   >
                     {filters.city ? (
                       <span className="font-medium text-black">
-                        {selectedLocationData?.label}
+                        {selectedLocationData?.labelKey ? tAll(selectedLocationData.labelKey as any) : selectedLocationData?.label}
                       </span>
                     ) : (
                       <span className="text-sm text-gray-500 sm:text-base">
@@ -245,7 +249,7 @@ export function DualSearchBar({
                             setLocationPopoverOpen(false);
                           }}
                         >
-                          {option.label}
+                          {option.labelKey ? tAll(option.labelKey as any) : option.label}
                           {isSelected && (
                             <Check className="w-3 h-3 sm:w-4 sm:h-4 text-black" />
                           )}

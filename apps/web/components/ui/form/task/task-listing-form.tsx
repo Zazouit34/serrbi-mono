@@ -30,6 +30,8 @@ import { Textarea } from "@workspace/ui/components/textarea";
 import { trpc } from "@/app/_trpc/client";
 
 import states from "@workspace/ui/lib/states.json";
+import cities from "@workspace/ui/lib/cities.json" assert { type: "json" };
+import { useTranslations } from "next-intl";
 import { PhoneInput } from "../phone-input";
 
 import {
@@ -68,6 +70,9 @@ const steps = [
 ];
 
 export function TaskListingForm() {
+  const tAll = useTranslations();
+  const tTask = useTranslations("TaskForm");
+  const tForm = useTranslations("Form");
   const [error, setError] = useState<string | undefined>("");
   const [success, setSuccess] = useState<string | undefined>("");
   const [step, setStep] = useState(0);
@@ -160,10 +165,10 @@ export function TaskListingForm() {
       <div className="w-full">
         <div className="mb-6 text-center">
           <h1 className="text-2xl font-bold font-outfit">
-            Create Task Listing
+            {tTask("headingTitle")}
           </h1>
           <p className="text-muted-foreground font-outfit">
-            Fill out the form below to create a new task listing.
+            {tTask("headingSubtitle")}
           </p>
         </div>
 
@@ -198,7 +203,7 @@ export function TaskListingForm() {
                   name="displayName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel htmlFor="displayName">Name</FormLabel>
+                      <FormLabel htmlFor="displayName">{tForm("name")}</FormLabel>
                       <FormControl>
                         <Input
                           id="displayName"
@@ -224,8 +229,8 @@ export function TaskListingForm() {
                       ? (taskCategoryIcons as any)[field.value]
                       : null;
                     return (
-                      <FormItem>
-                        <FormLabel>Task Category</FormLabel>
+                    <FormItem>
+                      <FormLabel>{tForm("taskCategory")}</FormLabel>
                         <Popover open={open} onOpenChange={setOpen}>
                           <PopoverTrigger asChild>
                             <Button
@@ -242,7 +247,7 @@ export function TaskListingForm() {
                                 </span>
                               ) : (
                                 <span className="text-gray-500">
-                                  Select category
+                                  {tForm("selectCategory")}
                                 </span>
                               )}
                             </Button>
@@ -295,13 +300,13 @@ export function TaskListingForm() {
                   name="budget"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Budget (MAD)</FormLabel>
+                      <FormLabel>{tForm("budget")}</FormLabel>
                       <FormControl>
                         <Input
                           type="number"
                           inputMode="numeric"
                           min={1}
-                          placeholder="100"
+                          placeholder={tForm("placeholders.budget")}
                           {...field}
                           value={field.value ?? ""}
                         />
@@ -320,23 +325,52 @@ export function TaskListingForm() {
                 <FormField
                   control={form.control as any}
                   name="city"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel htmlFor="city">City</FormLabel>
-                      <FormControl>
-                        <Input
-                          id="city"
-                          placeholder="Casablanca"
-                          disabled={createTask.isPending}
-                          value={field.value ?? ""}
-                          onChange={(e) =>
-                            field.onChange(e.target.value || undefined)
-                          }
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+                  render={({ field }) => {
+                    const [open, setOpen] = useState(false);
+                    const displayCity = field.value ? (tAll.has?.("Cities." + field.value) ? tAll("Cities." + field.value) : field.value) : undefined;
+                    return (
+                      <FormItem>
+                        <FormLabel htmlFor="city">{tForm("city")}</FormLabel>
+                        <Popover open={open} onOpenChange={setOpen}>
+                          <PopoverTrigger asChild>
+                            <Button type="button" variant="outline" className="justify-between w-full h-11 rounded-full">
+                              {displayCity ? (
+                                <span className="font-medium text-black">{displayCity}</span>
+                              ) : (
+                                <span className="text-gray-500">{tForm("selectCity")}</span>
+                              )}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent align="center" sideOffset={12} className="rounded-3xl p-6 w-[700px] max-w-[90vw] bg-white shadow-lg border border-gray-100">
+                            <div className="flex flex-wrap justify-center gap-3 max-h-[320px] overflow-auto">
+                              {(cities as string[]).map((name) => {
+                                const isSelected = field.value === name;
+                                const label = tAll.has?.("Cities." + name) ? tAll("Cities." + name) : name;
+                                return (
+                                  <Button
+                                    key={name}
+                                    variant="outline"
+                                    size="lg"
+                                    className={`flex items-center gap-3 px-6 py-3 rounded-full text-base font-medium transition-colors border ${isSelected ? "border-gray-400 bg-gray-100 text-gray-900" : "border-gray-200 text-gray-700 hover:bg-gray-50"}`}
+                                    onClick={() => {
+                                      field.onChange(name);
+                                      setOpen(false);
+                                    }}
+                                  >
+                                    {label}
+                                    {isSelected && (
+                                      <Check className="w-4 h-4 text-black" />
+                                    )}
+                                  </Button>
+                                );
+                              })}
+                            </div>
+                          </PopoverContent>
+                        </Popover>
+                        <FormMessage />
+                      </FormItem>
+                    );
+                  }}
                 />
 
                 {/* State */}

@@ -1,6 +1,6 @@
 "use client"
 import { cn } from "@workspace/ui/lib/utils"
-import { formatExperienceLevel } from "@workspace/ui/lib/formatter"
+import { useTranslations } from "next-intl"
 import { GraduationCapIcon, MapPinIcon } from "lucide-react"
 import React from "react"
 
@@ -15,7 +15,10 @@ export function JobListingInfo({
   experienceLevel?: string | undefined
   className?: string
 }) {
-  const locationLabel = [city, stateAbbreviation].filter(Boolean).join(", ")
+  const t = useTranslations()
+  const tAll = useTranslations()
+  const translatedCity = city ? (tAll.has?.("Cities." + city) ? tAll("Cities." + city) : city) : undefined
+  const locationLabel = translatedCity || ""
 
   return (
     <div className={cn("flex items-center gap-6 text-sm", className)}>
@@ -36,7 +39,7 @@ export function JobListingInfo({
             <GraduationCapIcon className="size-4 text-indigo-600" />
           </div>
           <span className="font-medium text-foreground/80">
-            {formatExperienceLevel(experienceLevel as any)}
+            {t(`Enums.ExperienceLevel.${experienceLevel}`)}
           </span>
         </div>
       )}

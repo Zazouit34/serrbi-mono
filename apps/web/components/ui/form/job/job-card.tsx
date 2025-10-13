@@ -8,7 +8,7 @@ import { cn } from "@workspace/ui/lib/utils";
 import { JobListingInfo } from "./job-listing-info";
 import { Button } from "@workspace/ui/components/button";
 import { CategoryBadge } from "@/components/ui/category-badge";
-import { formatLocationRequirement } from "@workspace/ui/lib/formatter";
+import { useTranslations } from "next-intl";
 import { FavoriteButton } from "@/components/ui/favorite-button";
 import {
   Avatar,
@@ -41,6 +41,8 @@ export function JobCard({
   featured?: boolean;
   className?: string;
 }) {
+  const t = useTranslations("JobCard");
+  const tAll = useTranslations();
   const daysAgo = job.createdAt
     ? Math.max(
         0,
@@ -78,7 +80,7 @@ export function JobCard({
                 <CategoryBadge category={job.category} type="job" />
               )}
               <span className="px-2 py-0.5 rounded-md border text-foreground/70 text-xs md:text-sm">
-                {formatLocationRequirement(job.locationRequirement)}
+                {tAll(`Enums.LocationRequirement.${job.locationRequirement}`)}
               </span>
             </div>
           </div>
@@ -87,14 +89,14 @@ export function JobCard({
           <div className="flex justify-between items-center">
             <div className="flex gap-2 items-center">
               <span className="text-sm font-semibold text-gray-800 md:text-lg">
-                {job.companyName ?? "Unknown Company"}
+                {job.companyName ?? t("unknownCompany")}
               </span>
               <span className="flex gap-1 items-center text-xs text-gray-400 md:text-sm">
                 <ClockIcon className="size-3" />
                 {daysAgo !== null
                   ? daysAgo === 0
-                    ? "Today"
-                    : `${daysAgo} day${daysAgo === 1 ? "" : "s"} ago`
+                    ? t("today")
+                    : t(daysAgo === 1 ? "daysAgo_one" : "daysAgo_other", { count: daysAgo })
                   : ""}
               </span>
             </div>
@@ -118,15 +120,15 @@ export function JobCard({
             {job.wage != null && (
               <div className="flex gap-1 items-baseline md:gap-2">
                 <span className="text-sm font-semibold md:text-base text-foreground">
-                  {job.wage.toLocaleString()} MAD
+                  {job.wage.toLocaleString()} {tAll("Currency.MAD")}
                 </span>
-                <span className="text-xs text-foreground/50">/month</span>
+                <span className="text-xs text-foreground/50">{t("perMonth")}</span>
               </div>
             )}
 
             <Link href={`/jobs/apply/${slugify(job.title)}/${job.id}`}>
               <Button variant="outline" size="sm">
-                Apply
+                {t("apply")}
                 <ArrowRight className="ml-1 md:ml-2 size-3 md:size-4" />
               </Button>
             </Link>

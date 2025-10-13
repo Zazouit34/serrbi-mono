@@ -30,24 +30,29 @@ export type FilterOption = {
   label: string;
   value: string;
   icon?: React.ComponentType<any>;
+  labelKey?: string;
 };
 
 export type FilterConfig =
   | {
       key: string;
       label: string;
+      labelKey?: string;
       type: "select";
       options: FilterOption[];
     }
   | {
       key: string;
       label: string;
+      labelKey?: string;
       type: "input";
       placeholder?: string;
+      placeholderKey?: string;
     }
   | {
       key: string;
       label: string;
+      labelKey?: string;
       type: "popover";
       options: FilterOption[];
     };
@@ -63,12 +68,16 @@ export function FilterBar({
   onFilterChange,
   initialFilters = {},
 }: FilterBarProps) {
-  const t = useTranslations("FilterBar");
-  const [filters, setFilters] = useState<Record<string, string>>(initialFilters);
-  const [tempFilters, setTempFilters] = useState<Record<string, string>>(initialFilters);
+  const t = useTranslations();
+  const [filters, setFilters] =
+    useState<Record<string, string>>(initialFilters);
+  const [tempFilters, setTempFilters] =
+    useState<Record<string, string>>(initialFilters);
   const [searchQuery, setSearchQuery] = useState(initialFilters.search || "");
   const [showFiltersDialog, setShowFiltersDialog] = useState(false);
-  const [dialogPopoverStates, setDialogPopoverStates] = useState<Record<string, boolean>>({});
+  const [dialogPopoverStates, setDialogPopoverStates] = useState<
+    Record<string, boolean>
+  >({});
 
   // Update internal filters when initialFilters change
   useEffect(() => {
@@ -84,12 +93,12 @@ export function FilterBar({
   };
 
   const handleTempFilterChange = (key: string, value: string) => {
-    setTempFilters(prev => ({ ...prev, [key]: value }));
+    setTempFilters((prev) => ({ ...prev, [key]: value }));
   };
 
   const handleDialogPopoverFilterChange = (key: string, value: string) => {
-    setTempFilters(prev => ({ ...prev, [key]: value }));
-    setDialogPopoverStates(prev => ({ ...prev, [key]: false }));
+    setTempFilters((prev) => ({ ...prev, [key]: value }));
+    setDialogPopoverStates((prev) => ({ ...prev, [key]: false }));
   };
 
   const applyFilters = () => {
@@ -108,16 +117,21 @@ export function FilterBar({
     setShowFiltersDialog(false);
   };
 
-  const hasActiveFilters = Object.keys(filters).some(key => key !== 'search' && filters[key]);
+  const hasActiveFilters = Object.keys(filters).some(
+    (key) => key !== "search" && filters[key]
+  );
 
   return (
     <div className="space-y-4">
       {/* Top search + controls - Centered on large screens */}
-      <div className="flex gap-2 items-center w-full sm:flex-row sm:justify-center sm:gap-4">
+      <div
+        className="flex gap-2 items-center w-full sm:flex-row sm:justify-center sm:gap-4"
+        dir="ltr"
+      >
         {/* Search Input */}
         <div className="relative flex-1 max-w-2xl">
           <Input
-            placeholder={t("searchPlaceholder")}
+            placeholder={t("FilterBar.searchPlaceholder")}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyPress={(e) => e.key === "Enter" && handleSearch()}
@@ -138,9 +152,9 @@ export function FilterBar({
           <DialogTrigger asChild>
             <Button
               className={`p-2 size-10 rounded-full flex items-center justify-center flex-shrink-0 sm:w-14 sm:h-14 sm:p-4 ${
-                hasActiveFilters 
-                  ? 'bg-[#FF040E] hover:bg-[#FF040E]/80' 
-                  : 'bg-[#FF040E] hover:bg-[#FF040E]/80'
+                hasActiveFilters
+                  ? "bg-[#FF040E] hover:bg-[#FF040E]/80"
+                  : "bg-[#FF040E] hover:bg-[#FF040E]/80"
               }`}
             >
               <Filter className="w-3 h-3 sm:w-5 sm:h-5" />
@@ -148,100 +162,146 @@ export function FilterBar({
           </DialogTrigger>
           <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>{t("filterOptions")}</DialogTitle>
+              <DialogTitle>{t("FilterBar.filterOptions")}</DialogTitle>
             </DialogHeader>
-            
+
             {/* Filters Grid */}
             <div className="py-4">
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {filtersConfig.map((filter) => (
                   <div key={filter.key} className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700">
-                      {filter.label}
-                    </label>
-                    
+                    {(() => {
+                      const displayLabel = filter.labelKey
+                        ? t(filter.labelKey)
+                        : filter.label;
+                      return (
+                        <label className="text-sm font-medium text-gray-700">
+                          {displayLabel}
+                        </label>
+                      );
+                    })()}
+
                     {filter.type === "select" && (
                       <Select
                         value={tempFilters[filter.key] || ""}
-                        onValueChange={(val) => handleTempFilterChange(filter.key, val)}
+                        onValueChange={(val) =>
+                          handleTempFilterChange(filter.key, val)
+                        }
                       >
                         <SelectTrigger className="w-full">
-                          <SelectValue placeholder={t("selectPrefix", { label: filter.label })} />
+                          <SelectValue
+                            placeholder={t("FilterBar.selectPrefix", {
+                              label: filter.labelKey
+                                ? t(filter.labelKey)
+                                : filter.label,
+                            })}
+                          />
                         </SelectTrigger>
                         <SelectContent>
                           {filter.options?.map((option) => (
                             <SelectItem key={option.value} value={option.value}>
-                              {option.label}
+                              {option.labelKey ? t(option.labelKey) : option.label}
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
                     )}
-                    
+
                     {filter.type === "input" && (
                       <Input
-                        placeholder={filter.placeholder || filter.label}
+                        placeholder={
+                          filter.placeholderKey
+                            ? t(filter.placeholderKey)
+                            : filter.placeholder || filter.label
+                        }
                         value={tempFilters[filter.key] || ""}
-                        onChange={(e) => handleTempFilterChange(filter.key, e.target.value)}
+                        onChange={(e) =>
+                          handleTempFilterChange(filter.key, e.target.value)
+                        }
                         className="w-full"
                       />
                     )}
-                    
+
                     {filter.type === "popover" && (
-                      <Popover 
-                        open={dialogPopoverStates[filter.key] || false} 
-                        onOpenChange={(open) => setDialogPopoverStates(prev => ({ ...prev, [filter.key]: open }))}
+                      <Popover
+                        open={dialogPopoverStates[filter.key] || false}
+                        onOpenChange={(open) =>
+                          setDialogPopoverStates((prev) => ({
+                            ...prev,
+                            [filter.key]: open,
+                          }))
+                        }
                       >
                         <PopoverTrigger asChild>
                           <Button
                             variant="outline"
                             className="w-full justify-start"
                           >
-                            {tempFilters[filter.key] ? (() => {
-                              const selectedOption = filter.options.find(opt => opt.value === tempFilters[filter.key]);
-                              const IconComponent = selectedOption?.icon;
-                              return (
-                                <div className="flex gap-2 items-center">
-                                  {IconComponent && (
-                                    <IconComponent className="w-4 h-4 text-red-600" />
-                                  )}
-                                  <span className="font-medium text-red-700">
-                                    {selectedOption?.label}
-                                  </span>
-                                </div>
-                              );
-                            })() : (
+                            {tempFilters[filter.key] ? (
+                              (() => {
+                                const selectedOption = filter.options.find(
+                                  (opt) => opt.value === tempFilters[filter.key]
+                                );
+                                const IconComponent = selectedOption?.icon;
+                                return (
+                                  <div className="flex gap-2 items-center">
+                                    {IconComponent && (
+                                      <IconComponent className="w-4 h-4 text-red-600" />
+                                    )}
+                                    <span className="font-medium text-red-700">
+                                      {selectedOption?.label}
+                                    </span>
+                                  </div>
+                                );
+                              })()
+                            ) : (
                               <span className="text-gray-500">
-                                {t("selectPrefix", { label: filter.label })}
+                                {t("FilterBar.selectPrefix", {
+                                  label: filter.labelKey
+                                    ? t(filter.labelKey)
+                                    : filter.label,
+                                })}
                               </span>
                             )}
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent className="p-4 w-80" align="start">
                           <div className="space-y-3">
-                            <h4 className="text-sm font-medium text-gray-900">{filter.label}</h4>
+                            <h4 className="text-sm font-medium text-gray-900">
+                              {filter.labelKey
+                                ? t(filter.labelKey)
+                                : filter.label}
+                            </h4>
                             <div className="flex flex-wrap gap-2">
                               {filter.options.map((option) => {
                                 const IconComponent = option.icon;
-                                const isSelected = tempFilters[filter.key] === option.value;
+                                const isSelected =
+                                  tempFilters[filter.key] === option.value;
                                 return (
                                   <Button
                                     key={option.value}
                                     variant="outline"
                                     size="sm"
                                     className={`inline-flex items-center gap-1.5 h-8 px-3 rounded-full text-xs font-medium transition-colors ${
-                                      isSelected 
-                                        ? 'bg-red-50 border-red-500 text-red-700' 
-                                        : 'hover:bg-gray-50 border-gray-200 text-gray-700'
+                                      isSelected
+                                        ? "border-gray-400 bg-gray-100 text-gray-900"
+                                        : "border-gray-200 text-gray-700 hover:bg-gray-50"
                                     }`}
-                                    onClick={() => handleDialogPopoverFilterChange(filter.key, option.value)}
+                                    onClick={() =>
+                                      handleDialogPopoverFilterChange(
+                                        filter.key,
+                                        option.value
+                                      )
+                                    }
                                   >
                                     {IconComponent && (
-                                      <IconComponent className={`w-3 h-3 ${isSelected ? 'text-red-600' : 'text-gray-500'}`} />
+                                      <IconComponent
+                                        className={`w-3 h-3 ${isSelected ? "text-red-600" : "text-gray-500"}`}
+                                      />
                                     )}
-                                    <span>{option.label}</span>
+                                    <span>{option.labelKey ? t(option.labelKey) : option.label}</span>
                                     {isSelected && (
-                                      <Check className="w-3 h-3 text-red-500" />
+                                      <Check className="w-3 h-3 text-black" />
                                     )}
                                   </Button>
                                 );
@@ -259,12 +319,15 @@ export function FilterBar({
             <DialogFooter className="flex flex-row gap-2 justify-between">
               {/* Reset Filters button */}
               <Button variant="ghost" onClick={resetFilters} size="sm">
-                {t("reset")}
+                {t("FilterBar.reset")}
               </Button>
-              
+
               {/* Apply Filters button */}
-              <Button onClick={applyFilters} className="bg-[#FF040E] hover:bg-[#FF040E]/80">
-                {t("apply")}
+              <Button
+                onClick={applyFilters}
+                className="bg-[#FF040E] hover:bg-[#FF040E]/80"
+              >
+                {t("FilterBar.apply")}
               </Button>
             </DialogFooter>
           </DialogContent>
