@@ -100,7 +100,7 @@ export default function ResumeListingForm() {
 
       try {
         await setResumeUrl.mutateAsync({ resumeUrl: url });
-        router.push("/jobs");
+        router.push("/jobs/resume-listing/new");
       } catch (e: any) {
         setError(e?.message || tResume("saveFailed"));
       }
