@@ -161,7 +161,7 @@ export default function SubscriptionPageClient() {
         customer: {
           email: session.user.email || undefined,
         },
-        successUrl: `${window.location.origin}/account/auto-apply`,
+        successUrl: `${window.location.origin}/subscription/success`,
       });
     } catch (error: any) {
       toast.error(error.message || t("Subscription.toasts.checkoutFailed"));
