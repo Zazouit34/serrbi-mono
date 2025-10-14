@@ -499,14 +499,7 @@
     "category": {
       "title": "Job Category"
     },
-    "roles": {
-      "title": "Roles",
-      "emptyHint": "Select a job category to view roles."
-    },
-    "keywords": {
-      "title": "Tags (keywords)",
-      "emptyHint": "Select a job category to view relevant tags."
-    },
+    
     "stats": {
       "title": "Auto-apply activity (this month)",
       "autoApplied": "Auto-applied jobs",
