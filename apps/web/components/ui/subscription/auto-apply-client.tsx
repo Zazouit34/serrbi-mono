@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations, useMessages } from "next-intl";
 import { trpc } from "@/app/_trpc/client";
 import { Switch } from "@workspace/ui/components/switch";
 import { Label } from "@workspace/ui/components/label";
@@ -37,6 +38,9 @@ type JobCategory = (typeof jobCategoryValues)[number];
 
 export default function AutoApplySettingsPage() {
   const router = useRouter();
+  const tA = useTranslations("AutoApply");
+  const tAll = useTranslations();
+  const messages = useMessages() as any;
 
   // ✅ Always call hooks — no conditions here
   const { data: subscription, isLoading: subLoading } =
@@ -87,11 +91,11 @@ export default function AutoApplySettingsPage() {
   const save = async () => {
     try {
       await mutation.mutateAsync({ enabled, category, keywords, roles });
-      toast.success("Preferences saved");
+      toast.success(tA("toasts.saved"));
       refetch();
       refetchStats();
     } catch (e: any) {
-      toast.error(e?.message || "Failed to save");
+      toast.error(e?.message || tA("toasts.saveFailed"));
     }
   };
 
@@ -113,19 +117,13 @@ export default function AutoApplySettingsPage() {
   if (!subscription?.eligible) {
     return (
       <div className="flex flex-col items-center justify-center h-[70vh] text-center space-y-4">
-        <h2 className="text-2xl font-semibold text-black">
-          Auto-Apply is for paid members only
-        </h2>
-        <p className="text-muted-foreground max-w-md">
-          Upgrade to a <span className="font-medium text-black">Basic</span> or{" "}
-          <span className="font-medium text-black">Premium</span> plan to unlock
-          automatic job applications and save time.
-        </p>
+        <h2 className="text-2xl font-semibold text-black">{tA("locked.title")}</h2>
+        <p className="max-w-md text-muted-foreground">{tA("locked.subtitle")}</p>
         <Button
           onClick={() => router.push("/subscription")}
-          className="bg-black text-white hover:bg-black/80 transition"
+          className="text-white bg-black transition hover:bg-black/80"
         >
-          View Plans
+          {tA("locked.viewPlans")}
         </Button>
       </div>
     );
@@ -135,17 +133,15 @@ export default function AutoApplySettingsPage() {
   return (
     <div className="space-y-6 max-w-2xl">
       {/* 🔘 Auto-apply toggle */}
-      <div className="flex items-center justify-between p-4 border rounded-xl bg-white/70 backdrop-blur-sm shadow-sm">
+      <div className="flex justify-between items-center p-4 rounded-xl border shadow-sm backdrop-blur-sm bg-white/70">
         <div>
           <Label
             htmlFor="auto-apply"
             className="text-base font-medium text-black"
           >
-            Auto-apply
+            {tA("toggle.title")}
           </Label>
-          <p className="text-sm text-muted-foreground">
-            Automatically apply to matching jobs in your category
-          </p>
+          <p className="text-sm text-muted-foreground">{tA("toggle.subtitle")}</p>
         </div>
         <Switch
           id="auto-apply"
@@ -158,7 +154,7 @@ export default function AutoApplySettingsPage() {
 
       {/* 🧩 Job Categories */}
       <div className="space-y-3">
-        <Label className="text-base font-medium text-black">Job Category</Label>
+        <Label className="text-base font-medium text-black">{tA("category.title")}</Label>
         <div className="flex flex-wrap gap-2">
           {jobCategoryValues.map((c) => {
             const Icon = jobCategoryIcons[c as keyof typeof jobCategoryIcons];
@@ -175,7 +171,7 @@ export default function AutoApplySettingsPage() {
                 } ${!enabled ? "opacity-50 cursor-not-allowed" : ""}`}
               >
                 {Icon && <Icon className="w-3.5 h-3.5 text-black" />}
-                {formatJobCategory(c)}
+                {tAll(`Enums.JobCategory.${c}`)}
                 {selected && <Check className="w-3 h-3 text-black" />}
               </button>
             );
@@ -185,11 +181,15 @@ export default function AutoApplySettingsPage() {
       <hr className="my-6 border-t border-gray-200" />
       {/* 🧑‍💻 Roles */}
       <div className="space-y-3">
-        <Label className="text-base font-medium text-black">Roles</Label>
+        <Label className="text-base font-medium text-black">{tA("roles.title")}</Label>
         {category ? (
           <div className="flex flex-wrap gap-2">
             {roleSuggestions.map((r) => {
               const selected = roles.includes(r);
+              const slug = r
+                .toLowerCase()
+                .replace(/[^a-z0-9]+/g, "-")
+                .replace(/(^-|-$)/g, "");
               return (
                 <button
                   key={r}
@@ -206,15 +206,16 @@ export default function AutoApplySettingsPage() {
                   } ${!enabled ? "opacity-50 cursor-not-allowed" : ""}`}
                 >
                   {selected && <Check className="w-3 h-3 text-black" />}
-                  {r}
+                  {(() => {
+                    const has = messages?.AutoApply?.roles && slug in messages.AutoApply.roles;
+                    return has ? tA(`roles.${slug}`) : r;
+                  })()}
                 </button>
               );
             })}
           </div>
         ) : (
-          <p className="text-sm text-muted-foreground">
-            Select a job category to view roles.
-          </p>
+          <p className="text-sm text-muted-foreground">{tA("roles.emptyHint")}</p>
         )}
       </div>
 
@@ -222,13 +223,15 @@ export default function AutoApplySettingsPage() {
 
       {/* 🏷️ Tags (keywords) */}
       <div className="space-y-3">
-        <Label className="text-base font-medium text-black">
-          Tags (keywords)
-        </Label>
+        <Label className="text-base font-medium text-black">{tA("keywords.title")}</Label>
         {category ? (
           <div className="flex flex-wrap gap-2">
             {suggestions.map((tag) => {
               const selected = keywords.includes(tag);
+              const slug = tag
+                .toLowerCase()
+                .replace(/[^a-z0-9]+/g, "-")
+                .replace(/(^-|-$)/g, "");
               return (
                 <button
                   key={tag}
@@ -245,15 +248,16 @@ export default function AutoApplySettingsPage() {
                   } ${!enabled ? "opacity-50 cursor-not-allowed" : ""}`}
                 >
                   {selected && <Check className="w-3 h-3 text-black" />}
-                  {tag}
+                  {(() => {
+                    const has = messages?.AutoApply?.keywords && slug in messages.AutoApply.keywords;
+                    return has ? tA(`keywords.${slug}`) : tag;
+                  })()}
                 </button>
               );
             })}
           </div>
         ) : (
-          <p className="text-sm text-muted-foreground">
-            Select a job category to view relevant tags.
-          </p>
+          <p className="text-sm text-muted-foreground">{tA("keywords.emptyHint")}</p>
         )}
       </div>
 
@@ -261,25 +265,21 @@ export default function AutoApplySettingsPage() {
 
       {/* 📊 Auto-apply stats */}
       <div className="space-y-3">
-        <Label className="text-base font-medium text-black">
-          Auto-apply activity (this month)
-        </Label>
+        <Label className="text-base font-medium text-black">{tA("stats.title")}</Label>
 
-        <div className="p-4 rounded-xl border bg-white/70 backdrop-blur-sm shadow-sm space-y-4">
+        <div className="p-4 space-y-4 rounded-xl border shadow-sm backdrop-blur-sm bg-white/70">
           {/* Top summary row */}
-          <div className="flex items-center justify-between">
+          <div className="flex justify-between items-center">
             <div>
-              <div className="text-sm text-muted-foreground">
-                Auto-applied jobs
-              </div>
+              <div className="text-sm text-muted-foreground">{tA("stats.autoApplied")}</div>
               <div className="text-2xl font-semibold text-black">
                 {appliedCount}
               </div>
             </div>
             <div className="flex flex-col items-end">
-              <Progress value={pct} className="h-2 w-40" />
-              <span className="text-xs text-muted-foreground mt-1">
-                {appliedCount} of {displayCap} jobs this month
+              <Progress value={pct} className="w-40 h-2" />
+              <span className="mt-1 text-xs text-muted-foreground">
+                {tA("stats.progress", { used: appliedCount, cap: displayCap })}
               </span>
             </div>
           </div>
@@ -289,18 +289,16 @@ export default function AutoApplySettingsPage() {
             <>
               <hr className="border-t border-gray-200" />
               <div className="space-y-2">
-                <div className="text-sm font-medium text-muted-foreground">
-                  Recent auto-applies
-                </div>
+                <div className="text-sm font-medium text-muted-foreground">{tA("stats.recent")}</div>
                 <ul className="space-y-2">
                   {stats.recent.slice(0, 5).map((app) => (
                     <li
                       key={app.id}
-                      className="flex justify-between items-center rounded-lg border p-2 hover:bg-gray-50 transition-colors"
+                      className="flex justify-between items-center p-2 rounded-lg border transition-colors hover:bg-gray-50"
                     >
                       <div className="text-sm">
                         <span className="font-medium text-black">
-                          {app.job?.title || "Unknown Job"}
+                          {app.job?.title || tA("stats.unknownJob")}
                         </span>
                         {app.job?.companyName && (
                           <span className="text-muted-foreground">
@@ -309,12 +307,12 @@ export default function AutoApplySettingsPage() {
                           </span>
                         )}
                       </div>
-                      <div className="text-xs text-muted-foreground">
-                        {new Date(app.createdAt).toLocaleDateString(undefined, {
-                          month: "short",
-                          day: "numeric",
-                        })}
-                      </div>
+                        <div className="text-xs text-muted-foreground">
+                          {new Date(app.createdAt).toLocaleDateString(undefined, {
+                            month: "short", 
+                            day: "numeric",
+                          })}
+                        </div>
                     </li>
                   ))}
                 </ul>
@@ -330,7 +328,7 @@ export default function AutoApplySettingsPage() {
         disabled={mutation.isPending}
         className="bg-black hover:bg-black/80"
       >
-        Save preferences
+        {tA("save")}
       </Button>
     </div>
   );

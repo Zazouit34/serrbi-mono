@@ -23,10 +23,12 @@ import { Progress } from "@workspace/ui/components/progress";
 import { useState } from "react";
 import { PaymentStatus } from "@workspace/db";
 import { Loader2 } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
+import { format as formatDate } from "date-fns";
 
 export default function BillingPageClient() {
   const t = useTranslations("Billing");
+  const locale = useLocale();
   const utils = trpc.useUtils();
   const { data: sub } = trpc.subscription.getCurrentSubscription.useQuery();
   const { data: usage } = trpc.subscription.getUsageStats.useQuery(undefined, {
@@ -69,41 +71,47 @@ export default function BillingPageClient() {
       case PaymentStatus.SUCCEEDED:
         return (
           <Badge variant="default" className="bg-green-500">
-            Paid
+            {t("statuses.SUCCEEDED")}
           </Badge>
         );
       case PaymentStatus.FAILED:
-        return <Badge variant="destructive">Failed</Badge>;
+        return <Badge variant="destructive">{t("statuses.FAILED")}</Badge>;
       case PaymentStatus.REFUNDED:
-        return <Badge variant="secondary">Refunded</Badge>;
+        return <Badge variant="secondary">{t("statuses.REFUNDED")}</Badge>;
       case PaymentStatus.PENDING:
-        return <Badge variant="outline">Pending</Badge>;
+        return <Badge variant="outline">{t("statuses.PENDING")}</Badge>;
       default:
-        return <Badge variant="outline">{status}</Badge>;
+        return <Badge variant="outline">{t(`statuses.${status}`)}</Badge>;
     }
   };
 
   const formatAmount = (amount: number, currency: string) => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
-      currency: currency,
+      currency,
+      currencyDisplay: "narrowSymbol",
     }).format(amount / 100);
   };
 
-  const getSubscriptionStatusBadge = (status: string) => {
-    const statusMap: Record<string, { variant: any; label: string }> = {
-      ACTIVE: { variant: "default", label: "Active" },
-      CANCELED: { variant: "destructive", label: "Canceled" },
-      PAUSED: { variant: "secondary", label: "Paused" },
-      PAST_DUE: { variant: "destructive", label: "Past Due" },
-      TRIALING: { variant: "outline", label: "Trial" },
-    };
+  const formatDateDDMMYYYY = (dateValue?: string | number | Date) => {
+    if (!dateValue) return "";
+    return formatDate(new Date(dateValue), "dd/MM/yyyy");
+  };
 
-    const statusInfo = statusMap[status] || {
-      variant: "outline",
-      label: status,
+  const getSubscriptionStatusBadge = (status: string) => {
+    const variantMap: Record<string, any> = {
+      ACTIVE: "default",
+      CANCELED: "destructive",
+      PAUSED: "secondary",
+      PAST_DUE: "destructive",
+      TRIALING: "outline",
+      PENDING: "outline",
+      FAILED: "destructive",
+      SUCCEEDED: "default",
+      REFUNDED: "secondary",
     };
-    return <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>;
+    const variant = variantMap[status] ?? "outline";
+    return <Badge variant={variant}>{t(`statuses.${status}`)}</Badge>;
   };
 
   return (
@@ -113,9 +121,9 @@ export default function BillingPageClient() {
         <p className="text-muted-foreground font-outfit">{t("subtitle")}</p>
       </div>
 
-      <Card className="border border-gray-200/60 shadow-sm bg-gradient-to-br from-white to-gray-50 rounded-2xl">
+      <Card className="bg-gradient-to-br from-white to-gray-50 rounded-2xl border shadow-sm border-gray-200/60">
         <CardHeader className="pb-2">
-          <div className="flex items-center justify-between">
+          <div className="flex justify-between items-center">
             <CardTitle className="text-lg font-semibold text-gray-900">
               {t("currentPlan")}
             </CardTitle>
@@ -127,13 +135,28 @@ export default function BillingPageClient() {
           {sub ? (
             <>
               {/* Plan name + period */}
-              <div className="flex items-center justify-between">
+              <div className="flex justify-between items-center">
                 <div>
                   <h3 className="text-2xl font-bold text-gray-900">
                     {sub.plan.name}
                   </h3>
                   <p className="text-sm text-muted-foreground">
-                    {t("details.period")} {sub.plan.interval || "monthly"}
+                    {t("details.period")} {
+                      (() => {
+                        const raw = (sub.plan.interval as string) || "monthly";
+                        const map: Record<string, string> = {
+                          month: "monthly",
+                          months: "monthly",
+                          monthly: "monthly",
+                          year: "yearly",
+                          yearly: "yearly",
+                          quarter: "quarterly",
+                          quarterly: "quarterly",
+                        };
+                        const key = map[raw] || "monthly";
+                        return t(`intervals.${key}`);
+                      })()
+                    }
                   </p>
                 </div>
 
@@ -191,20 +214,16 @@ export default function BillingPageClient() {
               <Separator className="my-4" />
 
               {/* Billing details */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
+              <div className="grid grid-cols-1 gap-6 text-sm md:grid-cols-2">
                 <div>
-                  <p className="text-muted-foreground">Billing Period</p>
+                  <p className="text-muted-foreground">{t("details.billingPeriod")}</p>
                   <p className="font-medium text-gray-900">
-                    {new Date(
-                      sub.currentPeriodStart || ""
-                    ).toLocaleDateString()}{" "}
-                    →{" "}
-                    {new Date(sub.currentPeriodEnd || "").toLocaleDateString()}
+                    {formatDateDDMMYYYY(sub.currentPeriodStart || "")} {locale === "ar" ? "←" : "→"} {formatDateDDMMYYYY(sub.currentPeriodEnd || "")}
                   </p>
                 </div>
                 {sub.paddleSubscriptionId && (
                   <div>
-                    <p className="text-muted-foreground">Subscription ID</p>
+                    <p className="text-muted-foreground">{t("details.subscriptionId")}</p>
                     <p className="font-mono text-xs text-gray-700">
                       {sub.paddleSubscriptionId}
                     </p>
@@ -215,26 +234,23 @@ export default function BillingPageClient() {
               {sub.canceledAt && (
                 <div className="p-3 bg-yellow-50 rounded-lg border border-yellow-200">
                   <p className="text-sm text-yellow-800">
-                    Ends on{" "}
-                    {new Date(sub.currentPeriodEnd || "").toLocaleDateString()}.
-                    You’ll retain access until then.
+                    {t("endsOn")} {formatDateDDMMYYYY(sub.currentPeriodEnd || "")}.
                   </p>
                 </div>
               )}
             </>
           ) : (
             <p className="text-muted-foreground">
-              No active subscription.{" "}
+              {t("noActive")} {" "}
               <a href="/subscription" className="text-primary hover:underline">
-                Choose a plan
-              </a>{" "}
-              to get started.
+                {t("choosePlan")}
+              </a>
             </p>
           )}
         </CardContent>
       </Card>
 
-      <Card className="border border-gray-200/60 shadow-sm bg-white/60 rounded-2xl">
+      <Card className="rounded-2xl border shadow-sm border-gray-200/60 bg-white/60">
         <CardHeader>
           <CardTitle className="text-lg font-semibold text-gray-900">
             {t("history.title")}
@@ -243,7 +259,7 @@ export default function BillingPageClient() {
         <CardContent>
           {loadingPayments ? (
             <div className="flex justify-center py-10">
-              <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+              <Loader2 className="w-6 h-6 text-gray-400 animate-spin" />
             </div>
           ) : paymentHistory?.payments?.length ? (
             <>
@@ -262,12 +278,10 @@ export default function BillingPageClient() {
                     {paymentHistory.payments.map((p) => (
                       <TableRow
                         key={p.id}
-                        className="hover:bg-gray-50 transition-colors"
+                        className="transition-colors hover:bg-gray-50"
                       >
                         <TableCell>
-                          {new Date(
-                            p.paidAt || p.createdAt
-                          ).toLocaleDateString()}
+                          {formatDateDDMMYYYY(p.paidAt || p.createdAt)}
                         </TableCell>
                         <TableCell>
                           {p.description || p.subscription?.plan?.displayName}
@@ -276,8 +290,8 @@ export default function BillingPageClient() {
                           {formatAmount(p.amount, p.currency)}
                         </TableCell>
                         <TableCell>{getStatusBadge(p.status)}</TableCell>
-                        <TableCell className="text-muted-foreground capitalize">
-                          {p.paymentMethod?.replace("_", " ") || "-"}
+                        <TableCell className="capitalize text-muted-foreground">
+                          {p.paymentMethod ? t(`methods.${p.paymentMethod}`) : "-"}
                         </TableCell>
                       </TableRow>
                     ))}
@@ -297,35 +311,35 @@ export default function BillingPageClient() {
               )}
             </>
           ) : (
-            <div className="py-8 text-center text-sm text-muted-foreground">
+            <div className="py-8 text-sm text-center text-muted-foreground">
               {t("history.empty")}
             </div>
           )}
         </CardContent>
       </Card>
 
-      <Card className="border border-gray-200/60 shadow-sm bg-white/60 rounded-2xl">
+      <Card className="rounded-2xl border shadow-sm border-gray-200/60 bg-white/60">
         <CardHeader>
           <CardTitle className="text-lg font-semibold text-gray-900">
-            Plan Features
+            {t("usage.title")}
           </CardTitle>
         </CardHeader>
         <CardContent>
           {sub?.plan && usage ? (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
               {[
                 {
-                  label: "Job Listings",
+                  label: t("usage.jobs"),
                   used: usage.jobListingsUsed,
                   limit: usage.jobListingsLimit,
                 },
                 {
-                  label: "Service Listings",
+                  label: t("usage.services"),
                   used: usage.serviceListingsUsed,
                   limit: usage.serviceListingsLimit,
                 },
                 {
-                  label: "Task Listings",
+                  label: t("usage.tasks"),
                   used: usage.taskListingsUsed,
                   limit: usage.taskListingsLimit,
                 },
@@ -334,7 +348,7 @@ export default function BillingPageClient() {
                 return (
                   <div
                     key={item.label}
-                    className="rounded-xl border border-gray-100 bg-gradient-to-br from-gray-50 to-white p-4 shadow-sm hover:shadow transition"
+                    className="p-4 bg-gradient-to-br from-gray-50 to-white rounded-xl border border-gray-100 shadow-sm transition hover:shadow"
                   >
                     <div className="text-sm font-medium text-muted-foreground">
                       {item.label}
@@ -342,11 +356,11 @@ export default function BillingPageClient() {
                     <div className="text-xl font-semibold text-gray-900">
                       {item.used}/{item.limit || "∞"}
                     </div>
-                    <Progress value={pct} className="h-2 mt-2 bg-gray-200" />
-                    <p className="text-xs text-muted-foreground mt-1">
+                    <Progress value={pct} className="mt-2 h-2 bg-gray-200" />
+                    <p className="mt-1 text-xs text-muted-foreground">
                       {item.limit
-                        ? `${Math.max(item.limit - item.used, 0)} remaining`
-                        : "Unlimited"}
+                        ? `${Math.max(item.limit - item.used, 0)} ${t("remaining")}`
+                        : t("unlimited")}
                     </p>
                   </div>
                 );
@@ -354,7 +368,7 @@ export default function BillingPageClient() {
             </div>
           ) : (
             <p className="text-sm text-muted-foreground">
-              Subscribe to a plan to see your features.
+              {t("usage.subtitle")}
             </p>
           )}
         </CardContent>

@@ -382,7 +382,12 @@
     "title": "Billing & Subscription",
     "subtitle": "Manage your subscription and view payment history.",
     "currentPlan": "Current Plan",
-    "details": { "period": "Billed", "subscriptionId": "Subscription ID" },
+    "details": { "period": "Billed", "subscriptionId": "Subscription ID", "billingPeriod": "Billing Period" },
+    "labels": {
+      "plan": "Plan",
+      "status": "Status",
+      "nextBillingDate": "Next billing date"
+    },
     "endsOn": "Ends on",
     "noActive": "No active subscription.",
     "choosePlan": "Choose a plan",
@@ -399,6 +404,11 @@
       "title": "Payment History",
       "loadMore": "Load More",
       "empty": "No payment history yet."
+    },
+    "intervals": {
+      "monthly": "monthly",
+      "yearly": "yearly",
+      "quarterly": "quarterly"
     },
     "table": {
       "date": "Date",
@@ -430,6 +440,12 @@
       "pausing": "Pausing...",
       "cancel": "Cancel",
       "canceling": "Canceling..."
+    },
+    "methods": {
+      "card": "Card",
+      "credit_card": "Credit card",
+      "bank_transfer": "Bank transfer",
+      "paypal": "PayPal"
     }
   },
   "SubscriptionSuccess": {
@@ -439,7 +455,7 @@
     "saveNext": "Save & Next",
     "step1": {
       "title": "Payment Successful!",
-      "descPrefix": "Thank you,",
+      "descPrefix": "Thank you",
       "descSuffix": "plan is confirmed.",
       "nextHint": "Press Next to set up your auto-apply preferences."
     },
@@ -461,6 +477,139 @@
     },
     "manageSubscription": "Manage subscription",
     "goDashboard": "Go to dashboard"
+  },
+  "AutoApply": {
+    "page": {
+      "title": "Automated Job Application",
+      "subtitle": "Set up your auto-apply preferences to let us automatically apply to jobs for you."
+    },
+    "toasts": {
+      "saved": "Preferences saved",
+      "saveFailed": "Failed to save"
+    },
+    "locked": {
+      "title": "Auto-Apply is for paid members only",
+      "subtitle": "Upgrade to a Basic or Premium plan to unlock automatic job applications and save time.",
+      "viewPlans": "View Plans"
+    },
+    "toggle": {
+      "title": "Auto-apply",
+      "subtitle": "Automatically apply to matching jobs in your category"
+    },
+    "category": {
+      "title": "Job Category"
+    },
+    "roles": {
+      "title": "Roles",
+      "emptyHint": "Select a job category to view roles."
+    },
+    "keywords": {
+      "title": "Tags (keywords)",
+      "emptyHint": "Select a job category to view relevant tags."
+    },
+    "stats": {
+      "title": "Auto-apply activity (this month)",
+      "autoApplied": "Auto-applied jobs",
+      "progress": "{used} of {cap} jobs this month",
+      "recent": "Recent auto-applies",
+      "unknownJob": "Unknown Job"
+    },
+    "save": "Save preferences",
+    "roles": {
+      "title": "Roles",
+      "emptyHint": "Select a job category to view roles.",
+      "accountant": "Accountant",
+      "auditor": "Auditor",
+      "financial-analyst": "Financial Analyst",
+      "controller": "Controller",
+      "barista": "Barista",
+      "chef": "Chef",
+      "waiter": "Waiter",
+      "receptionist": "Receptionist",
+      "plumber": "Plumber",
+      "electrician": "Electrician",
+      "mason": "Mason",
+      "carpenter": "Carpenter",
+      "teacher": "Teacher",
+      "tutor": "Tutor",
+      "instructor": "Instructor",
+      "paralegal": "Paralegal",
+      "associate": "Associate",
+      "litigator": "Litigator",
+      "nurse": "Nurse",
+      "physician": "Physician",
+      "clinician": "Clinician",
+      "janitor": "Janitor",
+      "housekeeper": "Housekeeper",
+      "mechanic": "Mechanic",
+      "diagnostic-technician": "Diagnostic Technician"
+    },
+    "keywords": {
+      "title": "Tags (keywords)",
+      "emptyHint": "Select a job category to view relevant tags.",
+      "react": "React",
+      "nextjs": "Next.js",
+      "typescript": "TypeScript",
+      "javascript": "JavaScript",
+      "node": "Node.js",
+      "express": "Express",
+      "python": "Python",
+      "django": "Django",
+      "java": "Java",
+      "spring": "Spring",
+      "aws": "AWS",
+      "docker": "Docker",
+      "kubernetes": "Kubernetes",
+      "graphql": "GraphQL",
+      "postgres": "Postgres",
+      "mongodb": "MongoDB",
+      "ml": "ML",
+      "ai": "AI",
+      "pytorch": "PyTorch",
+      "tensorflow": "TensorFlow",
+      "devops": "DevOps",
+      "ci": "CI",
+      "cd": "CD",
+      "tailwind": "Tailwind CSS",
+      "vite": "Vite",
+      "accounting": "Accounting",
+      "audit": "Audit",
+      "excel": "Excel",
+      "fp-a": "FP&A",
+      "budgeting": "Budgeting",
+      "tax": "Tax",
+      "reconciliation": "Reconciliation",
+      "front-desk": "Front desk",
+      "customer-service": "Customer service",
+      "housekeeping": "Housekeeping",
+      "diagnostics": "Diagnostics",
+      "oil-change": "Oil change",
+      "brakes": "Brakes",
+      "carpentry": "Carpentry",
+      "plumbing": "Plumbing",
+      "masonry": "Masonry",
+      "electrical": "Electrical",
+      "hvac": "HVAC",
+      "blueprints": "Blueprints",
+      "teaching": "Teaching",
+      "curriculum": "Curriculum",
+      "lesson-plan": "Lesson plan",
+      "assessment": "Assessment",
+      "tutoring": "Tutoring",
+      "contract": "Contract",
+      "litigation": "Litigation",
+      "compliance": "Compliance",
+      "due-diligence": "Due diligence",
+      "patient-care": "Patient care",
+      "nursing": "Nursing",
+      "clinic": "Clinic",
+      "medical-records": "Medical records",
+      "deep-clean": "Deep clean",
+      "janitorial": "Janitorial",
+      "sanitation": "Sanitation",
+      "disinfection": "Disinfection",
+      "mechanic": "Mechanic"
+    }
   },
   "ResumeForm": {
     "headingTitle": "Upload Resume",

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 
 import Link from "next/link";
@@ -16,7 +16,7 @@ import {
 } from "@workspace/ui/components/popover";
 import { Check, User, Zap } from "lucide-react";
 import { useSession } from "next-auth/react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useMessages } from "next-intl";
 
 import { jobCategoryValues } from "@workspace/ui/lib/job-enum";
 
@@ -32,12 +32,16 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@workspace/ui/components/dialog";
+import { UppyPDFUploader, type UppyPDFUploaderHandle } from "@/components/ui/uppy-pdf-uploader";
 
 type JobCategory = (typeof jobCategoryValues)[number];
 
 // 🔥 Clean, clear 2-step success page
 export default function SubscriptionSuccessPage() {
   const t = useTranslations("SubscriptionSuccess");
+  const tAll = useTranslations();
+  const tA = useTranslations("AutoApply");
+  const messages = useMessages() as any;
   const searchParams = useSearchParams();
   const router = useRouter();
   const { data: session } = useSession();
@@ -53,12 +57,14 @@ export default function SubscriptionSuccessPage() {
   const [category, setCategory] = useState<JobCategory | null>(null);
   const [keywords, setKeywords] = useState<string[]>([]);
   const [roles, setRoles] = useState<string[]>([]);
-  const [open, setOpen] = useState(true);
-  const [step, setStep] = useState<1 | 2 | 3>(1);
+const [open, setOpen] = useState(true);
+const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
+const uploaderRef = useRef<UppyPDFUploaderHandle | null>(null);
+const setResumeUrl = trpc.auth.updateResume.useMutation();
 
   const handleOpenChange = (nextOpen: boolean) => {
     // Prevent closing the dialog until the final step
-    if (step === 3) {
+  if (step === 4) {
       setOpen(nextOpen);
     } else {
       setOpen(true);
@@ -143,7 +149,7 @@ export default function SubscriptionSuccessPage() {
               <DialogDescription className="text-center">
                 {t("step1.descPrefix")} {" "}
                 <span className="font-medium text-foreground">
-                  {currentUser?.name}
+                  {currentUser?.name},
                 </span>
                 {" "}
                 <span className="font-semibold text-foreground">
@@ -152,12 +158,12 @@ export default function SubscriptionSuccessPage() {
                 {t("step1.descSuffix")}
               </DialogDescription>
             </DialogHeader>
-            <div className="text-center text-sm text-muted-foreground">
+            <div className="text-sm text-center text-muted-foreground">
               {t("step1.nextHint")}
             </div>
             <DialogFooter>
               <Button
-                className="bg-black text-white hover:bg-black/90"
+                className="text-white bg-black hover:bg-black/90"
                 onClick={() => setStep(2)}
               >
                 {t("next")}
@@ -169,6 +175,58 @@ export default function SubscriptionSuccessPage() {
         {step === 2 && (
           <>
             <DialogHeader>
+              <DialogTitle>{tAll("ResumeForm.headingTitle")}</DialogTitle>
+              <DialogDescription>
+                {tAll("ResumeForm.headingSubtitle")}
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4">
+              <UppyPDFUploader
+                ref={uploaderRef}
+                note={tAll("ResumeForm.note")}
+                onUploadError={(err) => toast.error(err)}
+                onUploadSuccess={async (url) => {
+                  try {
+                    await setResumeUrl.mutateAsync({ resumeUrl: url });
+                    toast.success(t("paymentSuccessToast"));
+                  } catch (e: any) {
+                    toast.error(e?.message || t("paymentSuccessToast"));
+                  }
+                }}
+              />
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setStep(1)}>
+                {t("back")}
+              </Button>
+              <Button
+                className="text-white bg-black hover:bg-black/90"
+                onClick={async () => {
+                  if (!uploaderRef.current) return;
+                  const file = uploaderRef.current.getFile();
+                  if (!file) return;
+                  const url = await uploaderRef.current.startUpload();
+                  if (url) {
+                    try {
+                      await setResumeUrl.mutateAsync({ resumeUrl: url });
+                      setStep(3);
+                    } catch (e: any) {
+                      toast.error(e?.message || t("paymentSuccessToast"));
+                    }
+                  }
+                }}
+              >
+                {t("saveNext")}
+              </Button>
+            </DialogFooter>
+          </>
+        )}
+
+        {step === 3 && (
+          <>
+            <DialogHeader>
               <DialogTitle>{t("step2.title")}</DialogTitle>
               <DialogDescription>
                 {t("step2.desc")}
@@ -176,7 +234,7 @@ export default function SubscriptionSuccessPage() {
             </DialogHeader>
 
             <div className="space-y-4">
-              <div className="flex items-center justify-between p-3 border rounded-xl bg-white/70">
+              <div className="flex justify-between items-center p-3 rounded-xl border bg-white/70">
                 <Label htmlFor="auto-apply">{t("enableAutoApply")}</Label>
                 <Switch
                   id="auto-apply"
@@ -204,7 +262,7 @@ export default function SubscriptionSuccessPage() {
                         } ${!enabled ? "opacity-50 cursor-not-allowed" : ""}`}
                       >
                         {Icon && <Icon className="w-3.5 h-3.5 text-black" />}
-                        {formatJobCategory(c)}
+                        {tAll(`Enums.JobCategory.${c}`)}
                         {selected && <Check className="w-3 h-3 text-black" />}
                       </button>
                     );
@@ -216,35 +274,51 @@ export default function SubscriptionSuccessPage() {
                 <div className="space-y-2">
                   <Label className="text-sm">{t("tags")}</Label>
                   <div className="flex flex-wrap gap-2">
-                    {keywords.map((k) => (
-                      <span
-                        key={k}
-                        className="px-3 py-1 bg-gray-100 rounded-full text-sm flex items-center gap-2"
-                      >
-                        {k}
-                        <button
-                          className="text-gray-400 hover:text-gray-600"
-                          onClick={() => removeKeyword(k)}
+                    {keywords.map((k) => {
+                      const slug = k
+                        .toLowerCase()
+                        .replace(/[^a-z0-9]+/g, "-")
+                        .replace(/(^-|-$)/g, "");
+                      const has = messages?.AutoApply?.keywords && slug in messages.AutoApply.keywords;
+                      const label = has ? tA(`keywords.${slug}`) : k;
+                      return (
+                        <span
+                          key={k}
+                          className="flex gap-2 items-center px-3 py-1 text-sm bg-gray-100 rounded-full"
                         >
-                          ×
-                        </button>
-                      </span>
-                    ))}
+                          {label}
+                          <button
+                            className="text-gray-400 hover:text-gray-600"
+                            onClick={() => removeKeyword(k)}
+                          >
+                            ×
+                          </button>
+                        </span>
+                      );
+                    })}
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {suggestions
                       .filter((s: string) => !keywords.includes(s))
                       .slice(0, 12)
-                      .map((s: string) => (
-                        <Button
-                          key={s}
-                          variant="outline"
-                          size="sm"
-                          onClick={() => addKeyword(s)}
-                        >
-                          + {s}
-                        </Button>
-                      ))}
+                      .map((s: string) => {
+                        const slug = s
+                          .toLowerCase()
+                          .replace(/[^a-z0-9]+/g, "-")
+                          .replace(/(^-|-$)/g, "");
+                        const has = messages?.AutoApply?.keywords && slug in messages.AutoApply.keywords;
+                        const label = has ? tA(`keywords.${slug}`) : s;
+                        return (
+                          <Button
+                            key={s}
+                            variant="outline"
+                            size="sm"
+                            onClick={() => addKeyword(s)}
+                          >
+                            + {label}
+                          </Button>
+                        );
+                      })}
                   </div>
                 </div>
               )}
@@ -255,6 +329,12 @@ export default function SubscriptionSuccessPage() {
                   <div className="flex flex-wrap gap-2">
                     {roleSuggestions.map((r: string) => {
                       const selected = roles.includes(r);
+                      const slug = r
+                        .toLowerCase()
+                        .replace(/[^a-z0-9]+/g, "-")
+                        .replace(/(^-|-$)/g, "");
+                      const has = messages?.AutoApply?.roles && slug in messages.AutoApply.roles;
+                      const label = has ? tA(`roles.${slug}`) : r;
                       return (
                         <button
                           key={r}
@@ -271,7 +351,7 @@ export default function SubscriptionSuccessPage() {
                           } ${!enabled ? "opacity-50 cursor-not-allowed" : ""}`}
                         >
                           {selected && <Check className="w-3 h-3 text-black" />}
-                          {r}
+                          {label}
                         </button>
                       );
                     })}
@@ -281,11 +361,11 @@ export default function SubscriptionSuccessPage() {
             </div>
 
             <DialogFooter>
-              <Button variant="outline" onClick={() => setStep(1)}>
+              <Button variant="outline" onClick={() => setStep(2)}>
                 {t("back")}
               </Button>
               <Button
-                className="bg-black text-white hover:bg-black/90"
+                className="text-white bg-black hover:bg-black/90"
                 onClick={savePrefs}
                 disabled={mutation.isPending}
               >
@@ -295,21 +375,21 @@ export default function SubscriptionSuccessPage() {
           </>
         )}
 
-        {step === 3 && (
+        {step === 4 && (
           <>
             <DialogHeader>
               <DialogTitle>{t("step3.title")}</DialogTitle>
-              <DialogDescription className="text-sm text-muted-foreground space-y-3">
+              <DialogDescription className="space-y-3 text-sm text-muted-foreground">
                 {t("step3.desc1")}
               </DialogDescription>
-              <DialogDescription className="text-sm text-muted-foreground space-y-3">
-                <ol className="list-decimal list-inside space-y-2">
-                  <li className="flex items-start gap-3">
+              <div className="space-y-3 text-sm text-muted-foreground">
+                <ol className="space-y-2 list-decimal list-inside">
+                  <li className="flex gap-3 items-start">
                     <User className="w-4 h-4 text-black flex-none mt-0.5" />
                     {t("step3.list.userMenu")}
                   </li>
 
-                  <li className="flex items-start gap-3">
+                  <li className="flex gap-3 items-start">
                     <Zap
                       className="w-4 h-4 text-yellow-600 flex-none mt-0.5"
                       aria-hidden="true"
@@ -317,12 +397,12 @@ export default function SubscriptionSuccessPage() {
                     <div>{t("step3.list.autoApply")}</div>
                   </li>
                 </ol>
-              </DialogDescription>
+              </div>
             </DialogHeader>
             <div className="flex gap-3 justify-end">
               <Link
                 href="/account/billing"
-                className="inline-flex items-center px-4 py-2 rounded-md bg-black text-white hover:bg-black/90"
+                className="inline-flex items-center px-4 py-2 text-white bg-black rounded-md hover:bg-black/90"
               >
                 {t("manageSubscription")}
               </Link>

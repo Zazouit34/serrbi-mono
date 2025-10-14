@@ -27,6 +27,7 @@ import { useTranslations } from "next-intl";
 
 export default function SubscriptionPageClient() {
   const t = useTranslations();
+  const tPricing = useTranslations("Pricing");
   const { data: session } = useSession();
   const {
     data: plans,
@@ -177,21 +178,21 @@ export default function SubscriptionPageClient() {
   };
 
   const PLAN_SUBTEXT: Record<PlanKey, string> = {
-    free: "Best for individuals getting started.",
-    basic: "Best for small teams and growing use.",
-    premium: "Best for businesses that need more power.",
+    free: "planSubtext.free",
+    basic: "planSubtext.basic",
+    premium: "planSubtext.premium",
   };
 
   const PlanCard = ({ plan }: { plan: any }) => {
     const features: string[] = [
-      `${plan.maxJobListings} job listings`,
-      `${plan.maxServiceListings} service listings`,
-      `${plan.maxTaskListings} task listings`,
+      `${plan.maxJobListings} ${tPricing("features.jobListings")}`,
+      `${plan.maxServiceListings} ${tPricing("features.serviceListings")}`,
+      `${plan.maxTaskListings} ${tPricing("features.taskListings")}`,
     ];
 
-    if (plan.featuredListings) features.push("Featured listings");
-    if (plan.prioritySupport) features.push("Priority support");
-    if (plan.analyticsAccess) features.push("Analytics access");
+    if (plan.featuredListings) features.push(tPricing("features.featuredListings"));
+    if (plan.prioritySupport) features.push(tPricing("features.prioritySupport"));
+    if (plan.analyticsAccess) features.push(tPricing("features.analyticsAccess"));
 
     const isCurrent = subscription?.planId === plan.id;
     const isCheckingOut = loadingCheckout === plan.id;
@@ -206,7 +207,7 @@ export default function SubscriptionPageClient() {
       plan.name ||
       "basic"
     ).toLowerCase() as PlanKey;
-    const subtext = PLAN_SUBTEXT[planKey];
+    const subtext = tPricing(PLAN_SUBTEXT[planKey]);
 
     return (
       <div
@@ -320,19 +321,19 @@ export default function SubscriptionPageClient() {
           <CardContent className="space-y-6">
             <div className="space-y-2">
               <p className="text-base font-medium">
-                Plan:{" "}
+                {t("Billing.labels.plan")}:{" "}
                 <span className="font-semibold text-foreground">
                   {subscription.plan?.displayName || subscription.plan?.name}
                 </span>
               </p>
-              <p className="text-sm capitalize text-muted-foreground">
-                Status: {subscription.status.toLowerCase()}
+              <p className="text-sm text-muted-foreground">
+                {t("Billing.labels.status")}: {t(`Billing.statuses.${subscription.status}`)}
               </p>
             </div>
 
             {subscription.currentPeriodEnd && (
               <p className="text-sm text-muted-foreground">
-                Next billing date:{" "}
+                {t("Billing.labels.nextBillingDate")}:{" "}
                 <span className="font-medium text-foreground">
                   {format(new Date(subscription.currentPeriodEnd), "PPP")}
                 </span>

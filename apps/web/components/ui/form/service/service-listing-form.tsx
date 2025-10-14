@@ -344,7 +344,7 @@ export function ServiceListingForm() {
                           const [open, setOpen] = useState(false);
                           const displayCity = field.value ? (tAll.has?.("Cities." + field.value) ? tAll("Cities." + field.value) : field.value) : undefined;
                           return (
-                            <FormItem>
+                          <FormItem>
                               <FormLabel>{tForm("city")}</FormLabel>
                               <Popover open={open} onOpenChange={setOpen}>
                                 <PopoverTrigger asChild>
@@ -380,8 +380,8 @@ export function ServiceListingForm() {
                                   </div>
                                 </PopoverContent>
                               </Popover>
-                              <FormMessage />
-                            </FormItem>
+                            <FormMessage />
+                          </FormItem>
                           );
                         }}
                       />

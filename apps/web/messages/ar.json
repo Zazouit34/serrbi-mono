@@ -8,7 +8,7 @@
     "jobs": "الوظائف",
     "services": "الخدمات",
     "tasks": "المهام",
-    "plans": "الخطط",
+    "plans": "الباقات",
     "autoApply": "تقديم تلقائي"
   },
   "Hero": {
@@ -383,7 +383,12 @@
     "title": "الفوترة والاشتراك",
     "subtitle": "أدار اشتراكك واعرض سجل المدفوعات.",
     "currentPlan": "الخطة الحالية",
-    "details": { "period": "الدفع", "subscriptionId": "معرّف الاشتراك" },
+    "details": { "period": "الدفع", "subscriptionId": "معرّف الاشتراك", "billingPeriod": "فترة الفوترة" },
+    "labels": {
+      "plan": "الخطة",
+      "status": "الحالة",
+      "nextBillingDate": "تاريخ الفوترة القادم"
+    },
     "endsOn": "ينتهي في",
     "noActive": "لا يوجد اشتراك نشط.",
     "choosePlan": "اختر خطة",
@@ -400,6 +405,11 @@
       "title": "سجل المدفوعات",
       "loadMore": "تحميل المزيد",
       "empty": "لا يوجد سجل مدفوعات بعد."
+    },
+    "intervals": {
+      "monthly": "شهري",
+      "yearly": "سنوي",
+      "quarterly": "ربع سنوي"
     },
     "table": {
       "date": "التاريخ",
@@ -431,6 +441,12 @@
       "pausing": "جارٍ الإيقاف...",
       "cancel": "إلغاء",
       "canceling": "جارٍ الإلغاء..."
+    },
+    "methods": {
+      "card": "بطاقة",
+      "credit_card": "بطاقة ائتمان",
+      "bank_transfer": "تحويل بنكي",
+      "paypal": "باي بال"
     }
   },
   "SubscriptionSuccess": {
@@ -440,7 +456,7 @@
     "saveNext": "حفظ ومتابعة",
     "step1": {
       "title": "تم الدفع بنجاح!",
-      "descPrefix": "شكراً لك،",
+      "descPrefix": "شكراً لك",
       "descSuffix": "تم تأكيد الخطة.",
       "nextHint": "اضغط التالي لإعداد تفضيلات التقديم التلقائي."
     },
@@ -462,6 +478,139 @@
     },
     "manageSubscription": "إدارة الاشتراك",
     "goDashboard": "الانتقال إلى لوحة التحكم"
+  },
+  "AutoApply": {
+    "page": {
+      "title": "التقديم الآلي للوظائف",
+      "subtitle": "اضبط تفضيلاتك ليقوم النظام بالتقديم تلقائياً على الوظائف نيابةً عنك."
+    },
+    "toasts": {
+      "saved": "تم حفظ التفضيلات",
+      "saveFailed": "فشل الحفظ"
+    },
+    "locked": {
+      "title": "الميزة متاحة للأعضاء المدفوعين فقط",
+      "subtitle": "رَقِّ إلى خطة Basic أو Premium لتفعيل التقديم التلقائي وتوفير الوقت.",
+      "viewPlans": "عرض الخطط"
+    },
+    "toggle": {
+      "title": "التقديم التلقائي",
+      "subtitle": "قدّم تلقائياً على الوظائف المطابقة لفئتك"
+    },
+    "category": {
+      "title": "فئة الوظيفة"
+    },
+    "roles": {
+      "title": "الأدوار",
+      "emptyHint": "اختر فئة وظيفة لعرض الأدوار."
+    },
+    "keywords": {
+      "title": "الوسوم (الكلمات المفتاحية)",
+      "emptyHint": "اختر فئة وظيفة لعرض الوسوم ذات الصلة."
+    },
+    "stats": {
+      "title": "نشاط التقديم التلقائي (هذا الشهر)",
+      "autoApplied": "وظائف تم التقديم عليها تلقائياً",
+      "progress": "{used} من {cap} وظيفة هذا الشهر",
+      "recent": "طلبات تلقائية حديثة",
+      "unknownJob": "وظيفة غير معروفة"
+    },
+    "save": "حفظ التفضيلات",
+    "roles": {
+      "title": "الأدوار",
+      "emptyHint": "اختر فئة وظيفة لعرض الأدوار.",
+      "accountant": "محاسب",
+      "auditor": "مدقق",
+      "financial-analyst": "محلل مالي",
+      "controller": "مراقب مالي",
+      "barista": "باريستا",
+      "chef": "طاهٍ",
+      "waiter": "نادل",
+      "receptionist": "موظف استقبال",
+      "plumber": "سبّاك",
+      "electrician": "كهربائي",
+      "mason": "بنّاء",
+      "carpenter": "نجّار",
+      "teacher": "معلّم",
+      "tutor": "مدرّس خاص",
+      "instructor": "مدرّب",
+      "paralegal": "مساعد قانوني",
+      "associate": "منتسب",
+      "litigator": "محامٍ مرافع",
+      "nurse": "ممرّض",
+      "physician": "طبيب",
+      "clinician": "أخصائي سريري",
+      "janitor": "عامل نظافة",
+      "housekeeper": "منظّف غرف",
+      "mechanic": "ميكانيكي",
+      "diagnostic-technician": "فني تشخيص"
+    },
+    "keywords": {
+      "title": "الوسوم (الكلمات المفتاحية)",
+      "emptyHint": "اختر فئة وظيفة لعرض الوسوم ذات الصلة.",
+      "react": "React",
+      "nextjs": "Next.js",
+      "typescript": "TypeScript",
+      "javascript": "JavaScript",
+      "node": "Node.js",
+      "express": "Express",
+      "python": "Python",
+      "django": "Django",
+      "java": "Java",
+      "spring": "Spring",
+      "aws": "AWS",
+      "docker": "Docker",
+      "kubernetes": "Kubernetes",
+      "graphql": "GraphQL",
+      "postgres": "Postgres",
+      "mongodb": "MongoDB",
+      "ml": "تعلم آلي",
+      "ai": "ذكاء اصطناعي",
+      "pytorch": "PyTorch",
+      "tensorflow": "TensorFlow",
+      "devops": "DevOps",
+      "ci": "تكامل مستمر",
+      "cd": "نشر مستمر",
+      "tailwind": "Tailwind CSS",
+      "vite": "Vite",
+      "accounting": "محاسبة",
+      "audit": "تدقيق",
+      "excel": "Excel",
+      "fp-a": "FP&A",
+      "budgeting": "إعداد الميزانية",
+      "tax": "ضرائب",
+      "reconciliation": "مطابقة",
+      "front-desk": "استقبال",
+      "customer-service": "خدمة العملاء",
+      "housekeeping": "تنظيف الغرف",
+      "diagnostics": "تشخيص",
+      "oil-change": "تغيير الزيت",
+      "brakes": "فرامل",
+      "carpentry": "نجارة",
+      "plumbing": "سباكة",
+      "masonry": "بناء",
+      "electrical": "كهرباء",
+      "hvac": "تكييف وتدفئة",
+      "blueprints": "مخططات",
+      "teaching": "تدريس",
+      "curriculum": "منهج",
+      "lesson-plan": "خطة درس",
+      "assessment": "تقييم",
+      "tutoring": "دروس خصوصية",
+      "contract": "عقد",
+      "litigation": "تقاضٍ",
+      "compliance": "امتثال",
+      "due-diligence": "العناية الواجبة",
+      "patient-care": "رعاية المرضى",
+      "nursing": "تمريض",
+      "clinic": "عيادة",
+      "medical-records": "سجلات طبية",
+      "deep-clean": "تنظيف عميق",
+      "janitorial": "نظافة",
+      "sanitation": "تعقيم",
+      "disinfection": "تطهير",
+      "mechanic": "ميكانيك"
+    }
   },
   "ResumeForm": {
     "headingTitle": "رفع السيرة الذاتية",

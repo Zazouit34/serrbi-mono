@@ -27,8 +27,8 @@ export function PricingShowcase() {
   const t = useTranslations("Pricing");
 
   return (
-    <section className="mx-auto my-18 w-full">
-      <div className="mb-6 flex items-end justify-between">
+    <section className="mx-auto w-full my-18">
+      <div className="flex justify-between items-end mb-6">
         <div>
           <h2 className="text-2xl font-semibold md:text-3xl">{t("title")}</h2>
           <p className="mt-1 max-w-xl text-sm text-muted-foreground">{t("subtitle")}</p>
@@ -43,13 +43,13 @@ export function PricingShowcase() {
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {isLoading &&
           Array.from({ length: 3 }).map((_, i) => (
-            <Card key={i} className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-              <div className="h-6 w-1/3 animate-pulse rounded bg-gray-200" />
-              <div className="mt-4 h-10 w-24 animate-pulse rounded bg-gray-200" />
+            <Card key={i} className="p-6 bg-white rounded-2xl border border-gray-200 shadow-sm">
+              <div className="w-1/3 h-6 bg-gray-200 rounded animate-pulse" />
+              <div className="mt-4 w-24 h-10 bg-gray-200 rounded animate-pulse" />
               <div className="mt-6 space-y-2">
-                <div className="h-4 w-3/4 animate-pulse rounded bg-gray-200" />
-                <div className="h-4 w-2/3 animate-pulse rounded bg-gray-200" />
-                <div className="h-4 w-1/2 animate-pulse rounded bg-gray-200" />
+                <div className="w-3/4 h-4 bg-gray-200 rounded animate-pulse" />
+                <div className="w-2/3 h-4 bg-gray-200 rounded animate-pulse" />
+                <div className="w-1/2 h-4 bg-gray-200 rounded animate-pulse" />
               </div>
             </Card>
           ))}
@@ -90,16 +90,16 @@ function PlanPreview({ plan, onClick }: { plan: any; onClick: () => void }) {
       onKeyDown={handleKeyDown}
       className="text-left cursor-pointer"
     >
-      <Card className="relative flex h-full flex-col gap-6 overflow-hidden rounded-2xl border border-gray-200 bg-white p-6 shadow transition-all duration-300 hover:shadow-lg">
-        <div className="flex items-center justify-center gap-4">
+      <Card className="flex overflow-hidden relative flex-col gap-6 p-6 h-full bg-white rounded-2xl border border-gray-200 shadow transition-all duration-300 hover:shadow-lg">
+        <div className="flex gap-4 justify-center items-center">
           <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/80 shadow-[0_2px_8px_rgba(0,0,0,0.05)]">
-            <img src={PLAN_ICONS[planKey]} alt={`${plan.displayName || plan.name} icon`} width={64} height={64} className="h-14 w-14 object-contain" />
+            <img src={PLAN_ICONS[planKey]} alt={`${plan.displayName || plan.name} icon`} width={64} height={64} className="object-contain w-14 h-14" />
           </div>
           <h3 className="text-2xl font-semibold">{plan.displayName || plan.name}</h3>
         </div>
 
         <div>
-          <span className="inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium text-foreground/90">
+          <span className="inline-flex items-center px-3 py-1 text-xs font-medium rounded-full border text-foreground/90">
             {badgeLabel}
           </span>
           <div className="mt-2 text-sm text-muted-foreground">{subtext}</div>
@@ -109,15 +109,15 @@ function PlanPreview({ plan, onClick }: { plan: any; onClick: () => void }) {
 
         <ul className="space-y-2">
           {features.slice(0, 4).map((feature: string, idx: number) => (
-            <li key={idx} className="flex items-center gap-2 text-sm text-foreground/80">
+            <li key={idx} className="flex gap-2 items-center text-sm text-foreground/80">
               <span className="inline-flex h-4 w-4 items-center justify-center rounded-[4px] bg-black"><Check size={10} strokeWidth={3} className="text-white" /></span>
               {feature}
             </li>
           ))}
         </ul>
 
-        <div className="mt-auto pt-2">
-          <Button className="w-full rounded-lg bg-black text-white hover:bg-black/90">{t("choosePlan")}</Button>
+        <div className="pt-2 mt-auto">
+          <Button className="w-full text-white bg-black rounded-lg hover:bg-black/90">{t("choosePlan")}</Button>
         </div>
       </Card>
     </div>

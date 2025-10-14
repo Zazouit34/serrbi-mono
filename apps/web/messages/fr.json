@@ -8,7 +8,7 @@
     "jobs": "Emplois",
     "services": "Services",
     "tasks": "Tâches",
-    "plans": "Forfaits",
+    "plans": "Tarifs",
     "autoApply": "Candidature auto"
   },
   "Hero": {
@@ -383,7 +383,12 @@
     "title": "Facturation et abonnement",
     "subtitle": "Gérez votre abonnement et consultez l’historique des paiements.",
     "currentPlan": "Formule actuelle",
-    "details": { "period": "Facturation", "subscriptionId": "ID d’abonnement" },
+    "details": { "period": "Facturation", "subscriptionId": "ID d’abonnement", "billingPeriod": "Période de facturation" },
+    "labels": {
+      "plan": "Formule",
+      "status": "Statut",
+      "nextBillingDate": "Prochaine date de facturation"
+    },
     "endsOn": "Se termine le",
     "noActive": "Aucun abonnement actif.",
     "choosePlan": "Choisir une formule",
@@ -400,6 +405,11 @@
       "title": "Historique des paiements",
       "loadMore": "Charger plus",
       "empty": "Aucun paiement pour le moment."
+    },
+    "intervals": {
+      "monthly": "mensuelle",
+      "yearly": "annuelle",
+      "quarterly": "trimestrielle"
     },
     "table": {
       "date": "Date",
@@ -431,6 +441,12 @@
       "pausing": "Mise en pause...",
       "cancel": "Annuler",
       "canceling": "Annulation..."
+    },
+    "methods": {
+      "card": "Carte",
+      "credit_card": "Carte bancaire",
+      "bank_transfer": "Virement bancaire",
+      "paypal": "PayPal"
     }
   },
   "SubscriptionSuccess": {
@@ -440,7 +456,7 @@
     "saveNext": "Enregistrer et suivant",
     "step1": {
       "title": "Paiement réussi !",
-      "descPrefix": "Merci,",
+      "descPrefix": "Merci",
       "descSuffix": "la formule est confirmée.",
       "nextHint": "Appuyez sur Suivant pour configurer l’auto‑candidature."
     },
@@ -462,6 +478,132 @@
     },
     "manageSubscription": "Gérer l’abonnement",
     "goDashboard": "Aller au tableau de bord"
+  },
+  "AutoApply": {
+    "page": {
+      "title": "Candidature automatique",
+      "subtitle": "Configurez vos préférences pour que nous postulions automatiquement à votre place."
+    },
+    "toasts": {
+      "saved": "Préférences enregistrées",
+      "saveFailed": "Échec de l’enregistrement"
+    },
+    "locked": {
+      "title": "L’Auto‑candidature est réservée aux membres payants",
+      "subtitle": "Passez à une formule Basic ou Premium pour activer les candidatures automatiques et gagner du temps.",
+      "viewPlans": "Voir les formules"
+    },
+    "toggle": {
+      "title": "Auto‑candidature",
+      "subtitle": "Candidature automatique aux emplois correspondant à votre catégorie"
+    },
+    "category": {
+      "title": "Catégorie d’emploi"
+    },
+    
+    "stats": {
+      "title": "Activité d’auto‑candidature (ce mois-ci)",
+      "autoApplied": "Emplois auto‑candidatés",
+      "progress": "{used} sur {cap} emplois ce mois‑ci",
+      "recent": "Auto‑candidatures récentes",
+      "unknownJob": "Emploi inconnu"
+    },
+    "save": "Enregistrer les préférences",
+    "roles": {
+      "title": "Rôles",
+      "emptyHint": "Sélectionnez une catégorie pour voir les rôles.",
+      "accountant": "Comptable",
+      "auditor": "Auditeur",
+      "financial-analyst": "Analyste financier",
+      "controller": "Contrôleur de gestion",
+      "barista": "Barista",
+      "chef": "Chef",
+      "waiter": "Serveur",
+      "receptionist": "Réceptionniste",
+      "plumber": "Plombier",
+      "electrician": "Électricien",
+      "mason": "Maçon",
+      "carpenter": "Charpentier",
+      "teacher": "Enseignant",
+      "tutor": "Tuteur",
+      "instructor": "Instructeur",
+      "paralegal": "Assistant juridique",
+      "associate": "Associé",
+      "litigator": "Avocat plaidant",
+      "nurse": "Infirmier",
+      "physician": "Médecin",
+      "clinician": "Clinicien",
+      "janitor": "Agent d’entretien",
+      "housekeeper": "Femme/valet de chambre",
+      "mechanic": "Mécanicien",
+      "diagnostic-technician": "Technicien diagnostic"
+    },
+    "keywords": {
+      "title": "Mots‑clés",
+      "emptyHint": "Sélectionnez une catégorie pour voir les mots‑clés pertinents.",
+      "react": "React",
+      "nextjs": "Next.js",
+      "typescript": "TypeScript",
+      "javascript": "JavaScript",
+      "node": "Node.js",
+      "express": "Express",
+      "python": "Python",
+      "django": "Django",
+      "java": "Java",
+      "spring": "Spring",
+      "aws": "AWS",
+      "docker": "Docker",
+      "kubernetes": "Kubernetes",
+      "graphql": "GraphQL",
+      "postgres": "Postgres",
+      "mongodb": "MongoDB",
+      "ml": "ML",
+      "ai": "IA",
+      "pytorch": "PyTorch",
+      "tensorflow": "TensorFlow",
+      "devops": "DevOps",
+      "ci": "CI",
+      "cd": "CD",
+      "tailwind": "Tailwind CSS",
+      "vite": "Vite",
+      "accounting": "Comptabilité",
+      "audit": "Audit",
+      "excel": "Excel",
+      "fp-a": "FP&A",
+      "budgeting": "Budgétisation",
+      "tax": "Fiscalité",
+      "reconciliation": "Rapprochement",
+      "front-desk": "Accueil",
+      "customer-service": "Service client",
+      "housekeeping": "Housekeeping",
+      "diagnostics": "Diagnostics",
+      "oil-change": "Vidange",
+      "brakes": "Freins",
+      "carpentry": "Menuiserie",
+      "plumbing": "Plomberie",
+      "masonry": "Maçonnerie",
+      "electrical": "Électricité",
+      "hvac": "CVC",
+      "blueprints": "Plans",
+      "teaching": "Enseignement",
+      "curriculum": "Programme",
+      "lesson-plan": "Plan de leçon",
+      "assessment": "Évaluation",
+      "tutoring": "Tutorat",
+      "contract": "Contrat",
+      "litigation": "Contentieux",
+      "compliance": "Conformité",
+      "due-diligence": "Diligence raisonnable",
+      "patient-care": "Soins aux patients",
+      "nursing": "Soins infirmiers",
+      "clinic": "Clinique",
+      "medical-records": "Dossiers médicaux",
+      "deep-clean": "Nettoyage en profondeur",
+      "janitorial": "Entretien",
+      "sanitation": "Assainissement",
+      "disinfection": "Désinfection",
+      "mechanic": "Mécanique"
+    }
   },
   "ResumeForm": {
     "headingTitle": "Importer un CV",
