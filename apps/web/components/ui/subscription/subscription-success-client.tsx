@@ -117,10 +117,10 @@ const setResumeUrl = trpc.auth.updateResume.useMutation();
         keywords,
         roles,
       });
-      toast.success("Auto-apply preferences saved!");
-      setStep(3);
+      toast.success(tA("toasts.saved"));
+      setStep(4);
     } catch (e: any) {
-      toast.error(e?.message || "Failed to save preferences");
+      toast.error(e?.message || tA("toasts.saveFailed"));
     }
   };
 
@@ -189,9 +189,9 @@ const setResumeUrl = trpc.auth.updateResume.useMutation();
                 onUploadSuccess={async (url) => {
                   try {
                     await setResumeUrl.mutateAsync({ resumeUrl: url });
-                    toast.success(t("paymentSuccessToast"));
+                    toast.success(tAll("ResumeForm.uploadSuccess"));
                   } catch (e: any) {
-                    toast.error(e?.message || t("paymentSuccessToast"));
+                    toast.error(e?.message || tAll("ResumeForm.saveFailed"));
                   }
                 }}
               />
@@ -211,9 +211,10 @@ const setResumeUrl = trpc.auth.updateResume.useMutation();
                   if (url) {
                     try {
                       await setResumeUrl.mutateAsync({ resumeUrl: url });
+                      toast.success(tAll("ResumeForm.uploadSuccess"));
                       setStep(3);
                     } catch (e: any) {
-                      toast.error(e?.message || t("paymentSuccessToast"));
+                      toast.error(e?.message || tAll("ResumeForm.saveFailed"));
                     }
                   }
                 }}
