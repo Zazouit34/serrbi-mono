@@ -146,7 +146,7 @@ export default function ResumeListingForm() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium truncate">
-                          {String(userData.user.resumeUrl).split("/").pop() || "resume.pdf"}
+                          {userData?.user?.name ? `${userData.user.name}.pdf` : "resume.pdf"}
                         </p>
                       </div>
                       <button
