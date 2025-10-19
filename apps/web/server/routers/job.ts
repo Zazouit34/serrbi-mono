@@ -59,11 +59,15 @@ export const jobRouter = router({
             createdAt: true,
           },
         });
-        // Emit background event for auto-apply
-        await inngest.send({
-          name: "job/created",
-          data: { jobId: job.id },
-        });
+        // Emit background event for auto-apply (non-blocking)
+        try {
+          await inngest.send({
+            name: "job/created",
+            data: { jobId: job.id },
+          });
+        } catch (err) {
+          console.error("Failed to send job/created event", err);
+        }
 
         return {
           success: true,
@@ -222,10 +226,15 @@ bulkCreate: adminProcedure
   }));
 
   await db.job.createMany({ data });
-  await inngest.send({
-    name: "jobs/imported",
-    data: { importedAt: new Date().toISOString() },
-  });
+  // Background event for import (non-blocking)
+  try {
+    await inngest.send({
+      name: "jobs/imported",
+      data: { importedAt: new Date().toISOString() },
+    });
+  } catch (err) {
+    console.error("Failed to send jobs/imported event", err);
+  }
   return { success: true, count: data.length };
 }),
 });
