@@ -424,8 +424,8 @@ export const jobImportRowSchema = z.object({
   }, z.number().int().positive().min(1).nullable().optional()),
   stateAbbreviation: z.string().length(3).optional().nullable(),
   city: z.string().optional().nullable(),
-  applicationEmail: z.string().email().optional().nullable(),
-  applicationUrl: z.string().url().optional().nullable(),
+  applicationEmail: z.union([z.string().email(), emptyToUndefined]).optional().nullable(),
+  applicationUrl: z.union([z.string().url(), emptyToUndefined]).optional().nullable(),
 });
 
 export const jobImportSchema = z.object({
