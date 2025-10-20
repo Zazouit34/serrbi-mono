@@ -422,7 +422,7 @@ export const jobImportRowSchema = z.object({
     if (typeof val === "string" && val.trim() !== "") return Number(val)
     return val
   }, z.number().int().positive().min(1).nullable().optional()),
-  stateAbbreviation: z.string().length(2).optional().nullable(),
+  stateAbbreviation: z.string().length(3).optional().nullable(),
   city: z.string().optional().nullable(),
   applicationEmail: z.string().email().optional().nullable(),
   applicationUrl: z.string().url().optional().nullable(),
