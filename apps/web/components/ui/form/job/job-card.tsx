@@ -104,9 +104,11 @@ export function JobCard({
           </div>
 
           {/* Job Title */}
-          <h2 className="text-base font-bold leading-tight text-gray-900 md:text-2xl line-clamp-2">
-            {job.title}
-          </h2>
+          <div className="min-h-[2.5rem] md:min-h-[3.75rem]">
+            <h2 className="text-base font-bold leading-tight text-gray-900 md:text-2xl line-clamp-2">
+              {job.title}
+            </h2>
+          </div>
 
           {/* Location + Experience */}
           <JobListingInfo
