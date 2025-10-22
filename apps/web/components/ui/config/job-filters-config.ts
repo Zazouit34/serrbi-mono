@@ -70,7 +70,7 @@ export const jobFiltersConfig: FilterConfig[] = [
   {
     key: "city",
     label: "City",
-    labelKey: "JobsFilters.city",
+    labelKey: "Form.city",
     type: "popover",
     options: (cities as string[]).map((c) => ({
       label: c,
