@@ -23,8 +23,10 @@ import {
   Phone, 
   Car, 
   Sparkles, 
-  MoreHorizontal 
+  MoreHorizontal, 
+  MapPin
 } from "lucide-react";
+import cities from "@workspace/ui/lib/cities.json" assert { type: "json" };
 
 // Job category icons mapping
 export const jobCategoryIcons = {
@@ -63,6 +65,18 @@ export const jobFiltersConfig: FilterConfig[] = [
       label: formatLocationRequirement(l),
       labelKey: `Enums.LocationRequirement.${l}`,
       value: l,
+    })),
+  },
+  {
+    key: "city",
+    label: "City",
+    labelKey: "JobsFilters.city",
+    type: "popover",
+    options: (cities as string[]).map((c) => ({
+      label: c,
+      labelKey: `Cities.${c}`,
+      value: c,
+      icon: MapPin,
     })),
   },
   {
