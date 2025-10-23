@@ -217,12 +217,13 @@ bulkCreate: adminProcedure
     locationRequirement: r.locationRequirement,
     experienceLevel: r.experienceLevel,
     type: r.type,
+    tags: [],
     wage: r.wage ?? null,
     stateAbbreviation: r.stateAbbreviation ?? null,
     city: r.city ?? null,
     applicationEmail: r.applicationEmail ?? "",
     applicationUrl: r.applicationUrl ?? null,
-    
+    status: "draft",
   }));
 
   await db.job.createMany({ data });
