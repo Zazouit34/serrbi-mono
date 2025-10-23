@@ -91,7 +91,7 @@ export default function ApplyJobPage() {
 
       <div className="space-y-4">
         {/* Title + location/type */}
-        <div className="flex justify-between items-start">
+        <div className="flex flex-col gap-3 md:flex-row md:justify-between md:items-start">
           <div className="flex items-center gap-3">
             <Avatar className="bg-gray-100 rounded-2xl shadow-sm size-16">
               <AvatarImage
@@ -104,7 +104,7 @@ export default function ApplyJobPage() {
             </Avatar>
             <h1 className="text-2xl font-bold">{job.title}</h1>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2 md:justify-end">
             <span className="inline-flex items-center gap-1.5 rounded-full border px-3 py-0.5 text-xs text-foreground/80">
               {formatLocationRequirement(job.locationRequirement as any)}
             </span>
