@@ -443,7 +443,10 @@ export const serviceImportRowSchema = z.object({
     return val
   }, z.number().int().positive().min(1).nullable().optional()),
   // priceType removed
-  stateAbbreviation: z.string().length(3).optional().nullable(),
+  stateAbbreviation: z.preprocess((val) => {
+    if (typeof val === "string") return val.trim().toUpperCase();
+    return val;
+  }, z.union([z.string().length(2), z.string().length(3)]).optional().nullable()),
   city: z.string().optional().nullable(),
   address: z.string().optional().nullable(),
   phoneNumber: z.string().optional().nullable(),
@@ -451,7 +454,41 @@ export const serviceImportRowSchema = z.object({
   website: z.string().url().optional().nullable(),
   displayName: z.string().optional().nullable(),
   displayImage: z.string().url().optional().nullable(),
-  images: z.array(z.string().url()).optional().nullable(),
+  images: z.preprocess((val) => {
+    if (val === undefined || val === null) return [];
+    if (Array.isArray(val)) return val;
+    if (typeof val === "string") {
+      const trimmed = val.trim();
+      if (trimmed === "") return [];
+      // Case 1: Bracketed list → try JSON (supports single-quoted by replacement)
+      if ((trimmed.startsWith("[") && trimmed.endsWith("]"))) {
+        try {
+          const parsed = JSON.parse(trimmed);
+          if (Array.isArray(parsed)) return parsed;
+        } catch {}
+        try {
+          const parsedSingleQuoted = JSON.parse(trimmed.replace(/'/g, '"'));
+          if (Array.isArray(parsedSingleQuoted)) return parsedSingleQuoted;
+        } catch {}
+        // Fallback: manual split removing quotes
+        const inner = trimmed.slice(1, -1);
+        return inner
+          .split(",")
+          .map((s) => s.trim().replace(/^['"]|['"]$/g, ""))
+          .filter(Boolean);
+      }
+      // Case 2: CSV string → split and strip quotes
+      if (trimmed.includes(",")) {
+        return trimmed
+          .split(",")
+          .map((s) => s.trim().replace(/^['"]|['"]$/g, ""))
+          .filter(Boolean);
+      }
+      // Case 3: Single URL string → strip surrounding quotes if any
+      return [trimmed.replace(/^['"]|['"]$/g, "")];
+    }
+    return [];
+  }, z.array(z.string().url())).optional().nullable(),
   status: z.enum(serviceStatusValues).optional().nullable(),
 });
 export const serviceImportSchema = z.object({ rows: z.array(serviceImportRowSchema).min(1) });
