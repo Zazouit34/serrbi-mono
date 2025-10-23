@@ -23,6 +23,8 @@ export default function ServicesImportPage() {
         <ImporterField name="title" label="Title" />
         <ImporterField name="description" label="Description" />
         <ImporterField name="serviceCategory" label="Category" />
+        <ImporterField name="averageRating" label="Average Rating" optional />
+        <ImporterField name="numberOfReviews" label="Number of Reviews" optional />
         <ImporterField name="type" label="Type" />
         <ImporterField name="price" label="Price" optional />
         <ImporterField name="stateAbbreviation" label="State (e.g. USA)" optional />
