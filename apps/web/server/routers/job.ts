@@ -223,7 +223,7 @@ bulkCreate: adminProcedure
     city: r.city ?? null,
     applicationEmail: r.applicationEmail ?? "",
     applicationUrl: r.applicationUrl ?? null,
-    status: "draft",
+    status: "draft" as const,
   }));
 
   await db.job.createMany({ data });
