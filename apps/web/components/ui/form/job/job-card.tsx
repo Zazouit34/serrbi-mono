@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { slugify } from "@/lib/slugify";
 import { ArrowRight, ClockIcon } from "lucide-react";
 import { Card, CardContent } from "@workspace/ui/components/card";
@@ -43,6 +43,7 @@ export function JobCard({
 }) {
   const t = useTranslations("JobCard");
   const tAll = useTranslations();
+  const router = useRouter();
   const daysAgo = job.createdAt
     ? Math.max(
         0,
@@ -53,14 +54,27 @@ export function JobCard({
       )
     : null;
 
+  const href = `/jobs/apply/${slugify(job.title)}/${job.id}`;
+  const wageMin = typeof job.wage === "number" ? job.wage : null;
+  const wageMax = wageMin != null ? wageMin + 200 : null;
+
   return (
     <div className="flex justify-center sm:block">
       <Card
         className={cn(
-          "overflow-hidden w-full sm:max-w-none rounded-3xl shadow-md hover:shadow-lg transition-all !py-0",
+          "overflow-hidden w-full sm:max-w-none rounded-3xl shadow-md hover:shadow-lg transition-all !py-0 cursor-pointer",
           featured && "border-primary/50 bg-primary/5",
           className
         )}
+        role="link"
+        tabIndex={0}
+        onClick={() => router.push(href)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            router.push(href);
+          }
+        }}
       >
         <CardContent className="p-4 space-y-6 md:p-6">
           {/* Top Row: Avatar + Category + Type */}
@@ -100,7 +114,9 @@ export function JobCard({
                   : ""}
               </span>
             </div>
-            <FavoriteButton jobId={job.id} color={[239, 68, 68]} />
+            <div onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
+              <FavoriteButton jobId={job.id} color={[239, 68, 68]} />
+            </div>
           </div>
 
           {/* Job Title */}
@@ -119,21 +135,25 @@ export function JobCard({
 
           {/* Wage + Apply button */}
           <div className="flex justify-between items-center pt-3 border-t">
-            {job.wage != null && (
+            {wageMin != null && wageMax != null && (
               <div className="flex gap-1 items-baseline md:gap-2">
-                <span className="text-sm font-semibold md:text-base text-foreground">
-                  {job.wage.toLocaleString()} {tAll("Currency.MAD")}
+                <span className="text-sm font-semibold md:text-base text-emerald-600">
+                  {wageMin.toLocaleString()} - {wageMax.toLocaleString()} {tAll("Currency.MAD")}
                 </span>
-                <span className="text-xs text-foreground/50">{t("perMonth")}</span>
               </div>
             )}
 
-            <Link href={`/jobs/apply/${slugify(job.title)}/${job.id}`}>
-              <Button variant="outline" size="sm">
-                {t("apply")}
-                <ArrowRight className="ml-1 md:ml-2 size-3 md:size-4" />
-              </Button>
-            </Link>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                router.push(href);
+              }}
+            >
+              {t("apply")}
+              <ArrowRight className="ml-1 md:ml-2 size-3 md:size-4" />
+            </Button>
           </div>
         </CardContent>
       </Card>
