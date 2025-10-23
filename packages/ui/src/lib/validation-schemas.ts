@@ -444,11 +444,7 @@ export const serviceImportRowSchema = z.object({
   }, z.number().int().positive().min(1).nullable().optional()),
   // priceType removed
   stateAbbreviation: z.preprocess((val) => {
-    if (typeof val === "string") {
-      const trimmed = val.trim().toUpperCase();
-      if (trimmed === "") return undefined; // allow empty cell
-      return trimmed;
-    }
+    if (typeof val === "string") return val.trim().toUpperCase();
     return val;
   }, z.union([z.string().length(2), z.string().length(3)]).optional().nullable()),
   city: z.string().optional().nullable(),
