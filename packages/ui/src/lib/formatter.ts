@@ -210,7 +210,7 @@ export const serviceCategoryStyles: Record<
   },
   Architect: {
     label: "Architect",
-    color: "bg-green-100 text-green-700 border-green-300",
+    color: "bg-indigo-100 text-indigo-700 border-indigo-300",
     icon: Ruler,
   },
   Plumber: {
@@ -235,7 +235,7 @@ export const serviceCategoryStyles: Record<
   },
   Accountant: {
     label: "Accountant",
-    color: "bg-emerald-100 text-emerald-700 border-emerald-300",
+    color: "bg-amber-100 text-amber-700 border-amber-300",
     icon: Calculator,
   },
   Esthetician: {
@@ -245,7 +245,7 @@ export const serviceCategoryStyles: Record<
   },
   Cleaning: {
     label: "Cleaning",
-    color: "bg-teal-100 text-teal-700 border-teal-300",
+    color: "bg-teal-50 text-teal-800 border-teal-200",
     icon: WashingMachine,
   },
 };

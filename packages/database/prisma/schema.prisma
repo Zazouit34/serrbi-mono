@@ -161,7 +161,7 @@ model Service {
   email             String?
   website           String?
   openingHours      String?
-  averageRating     Float?             @default(0)
+  averageRating     Float?             
   numberOfReviews   Int                @default(0)
   status            ServiceStatus      @default(pending)
   rejectionReason   String?

@@ -173,8 +173,8 @@ export function ServiceCard({
             <div className="flex gap-1 items-center text-sm font-medium text-white">
               <Star className="w-3.5 h-3.5 text-gray-200 fill-gray-200" />
               {service.averageRating
-                ? `${service.averageRating.toFixed(1)} (${service.numberOfReviews})`
-                : "4.8 (12)"}
+                ? `${service.averageRating.toFixed(1)}`
+                : "4.8"}
             </div>
           </div>
         </div>
