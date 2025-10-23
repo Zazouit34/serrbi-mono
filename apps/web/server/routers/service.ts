@@ -267,25 +267,6 @@ export const serviceRouter = router({
       }
     }
 
-    // Debug preview: validate/coerce some fields before write
-    try {
-      const preview = input.rows.slice(0, 3).map((r, idx) => ({
-        idx,
-        title: r.title,
-        serviceCategory: r.serviceCategory,
-        type: r.type,
-        price: r.price,
-        stateAbbreviation: r.stateAbbreviation,
-        city: r.city,
-        imagesType: Array.isArray(r.images) ? "array" : typeof r.images,
-        imagesLen: Array.isArray(r.images) ? r.images.length : undefined,
-        firstImage: Array.isArray(r.images) ? r.images[0] : undefined,
-      }));
-      console.log("service.bulkCreate preview", preview);
-    } catch (e) {
-      console.warn("service.bulkCreate preview failed", e);
-    }
-
     const data = input.rows.map((r) => ({
       userId: ownerId!,
       title: r.title as any,
