@@ -71,6 +71,16 @@ export function ServiceCard({
     return fallbackImages;
   })();
 
+  const isS3OrExternal = (() => {
+    const src = imagesToShow[currentIndex] || "";
+    try {
+      const u = new URL(src);
+      return u.hostname.includes("amazonaws.com") || u.hostname.includes("s3.");
+    } catch {
+      return false;
+    }
+  })();
+
   const nextImage = () => {
     setCurrentIndex((prev) => (prev + 1) % imagesToShow.length);
   };
@@ -90,6 +100,7 @@ export function ServiceCard({
           alt={service.title}
           fill
           className="object-cover"
+          unoptimized={isS3OrExternal}
         />
 
         {/* Category badge - top left */}
