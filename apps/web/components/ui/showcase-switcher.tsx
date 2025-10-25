@@ -28,12 +28,12 @@ const servicesItems: ShowcaseItem[] = [
     meta: "294 skills",
   },
   {
-    title: "Video Editor",
-    category: "Tech",
+    title: "Architect",
+    category: "Architect",
     image:
-      "https://images.unsplash.com/photo-1607112812619-182cb1c7bb61?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8dmlkZW8lMjBlZGl0b3J8ZW58MHx8MHx8fDI%3D?q=80&w=1200&auto=format&fit=crop",
-    tags: ["SaaS", "Game Design", "Artist"],
-    meta: "354 skills",
+      "https://images.unsplash.com/photo-1496302662116-85c1ae003d8a?q=80&w=1200&auto=format&fit=crop",
+    tags: ["Design", "Planning", "Blueprints"],
+    meta: "210 skills",
   },
   {
     title: "Avocat",
@@ -228,6 +228,40 @@ export function ShowcaseSwitcher() {
 
   const gridItems = useMemo(() => meta.items.slice(0, 4), [meta.items]);
 
+  // Map showcase titles to enum categories for routing
+  const mapServiceTitleToCategory = (title: string): string | undefined => {
+    const t = title.toLowerCase();
+    if (t.includes("avocat") || t.includes("lawyer")) return "Lawyer";
+    if (t.includes("dentist") || t.includes("doctor")) return "Doctor";
+    if (t.includes("esthetic")) return "Esthetician";
+    if (t.includes("mechanic")) return "Mechanic";
+    if (t.includes("architect")) return "Architect";
+    if (t.includes("construction")) return "Mason"; // representative of construction
+    return undefined;
+  };
+
+  const mapJobTitleToCategory = (title: string): string | undefined => {
+    const t = title.toLowerCase();
+    if (t.includes("software") || t.includes("engineer") || t.includes("developer")) return "Tech";
+    if (t.includes("financial") || t.includes("analyst")) return "Finance";
+    if (t.includes("restaurant") || t.includes("manager")) return "Hospitality";
+    if (t.includes("nurse") || t.includes("clinic")) return "Health";
+    if (t.includes("paralegal") || t.includes("legal")) return "Legal";
+    if (t.includes("site engineer") || t.includes("construction")) return "Construction";
+    return undefined;
+  };
+
+  const mapTaskTitleToCategory = (title: string): string | undefined => {
+    const t = title.toLowerCase();
+    if (t.includes("clean")) return "Cleaning";
+    if (t.includes("leak") || t.includes("fix") || t.includes("bathroom")) return "Construction";
+    if (t.includes("car") || t.includes("diagnostic")) return "Auto";
+    if (t.includes("landing page") || t.includes("copy")) return "Tech";
+    if (t.includes("tutor") || t.includes("algebra") || t.includes("teacher")) return "Education";
+    if (t.includes("food") || t.includes("delivery")) return "Hospitality";
+    return undefined;
+  };
+
   return (
     <section className="mx-auto my-18 w-full">
       {/* Header */}
@@ -289,14 +323,16 @@ export function ShowcaseSwitcher() {
                 index={idx}
                 total={gridItems.length}
                 onClick={() => {
-                  // Use category-based filtering
                   const params = new URLSearchParams();
                   if (meta.path === "/services") {
-                    params.set("serviceCategory", item.category);
+                    const mapped = mapServiceTitleToCategory(item.title) || item.category;
+                    params.set("serviceCategory", mapped);
                   } else if (meta.path === "/jobs") {
-                    params.set("category", item.category);
+                    const mapped = mapJobTitleToCategory(item.title) || item.category;
+                    params.set("category", mapped);
                   } else if (meta.path === "/tasks") {
-                    params.set("category", item.category);
+                    const mapped = mapTaskTitleToCategory(item.title) || item.category;
+                    params.set("category", mapped);
                   }
                   router.push(`${meta.path}?${params.toString()}`);
                 }}
@@ -341,7 +377,7 @@ function ShowcaseTile({ item, inverted, index, total, onClick }: { item: Showcas
       className={`group grid h-40 w-full grid-cols-2 overflow-hidden bg-white text-left transition-colors hover:bg-gray-50 md:h-52 ${borders} ${rounded}`}
     >
       {/* Text content */}
-      <div className={`flex flex-col justify-between p-3 md:p-5 ${mobileImageFirst ? "order-2" : "order-1"} md:${inverted ? "order-2" : "order-1"}`}>
+      <div className={`flex flex-col justify-between p-3 md:p-5 ${mobileImageFirst ? "order-2" : "order-1"} ${inverted ? "md:order-2" : "md:order-1"}`}>
         <div>
           <h3 className="text-base font-semibold md:text-lg">{item.title}</h3>
           <div className="mt-2 flex flex-wrap gap-1.5">
@@ -359,7 +395,7 @@ function ShowcaseTile({ item, inverted, index, total, onClick }: { item: Showcas
       </div>
 
       {/* Image */}
-      <div className={`relative ${mobileImageFirst ? "order-1" : "order-2"} md:${inverted ? "order-1" : "order-2"} md:rounded-none`}>
+      <div className={`relative ${mobileImageFirst ? "order-1" : "order-2"} ${inverted ? "md:order-1" : "md:order-2"} md:rounded-none`}>
         <Image
           src={item.image}
           alt={item.title}

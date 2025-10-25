@@ -22,7 +22,8 @@ export function MobileNavbar() {
       const y = window.scrollY;
       const delta = y - lastYRef.current;
       if (Math.abs(delta) > 4) {
-        setVisible(delta < 0 ? true : y < 32 ? true : false);
+        // Show when scrolling down, hide when scrolling up; always show near top
+        setVisible(y < 32 ? true : delta > 0);
         lastYRef.current = y;
       }
     };
