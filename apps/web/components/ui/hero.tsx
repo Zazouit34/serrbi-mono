@@ -2,19 +2,12 @@
 
 import { CarouselMain } from "@/components/ui/carousel-main";
 import { HeroSearchBar } from "@/components/ui/hero-search-bar";
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@workspace/ui/components/avatar";
-import { AvatarGroup } from "@workspace/ui/components/ui/shadcn-io/avatar-group";
 import { GradientText } from "@workspace/ui/components/ui/shadcn-io/gradient-text";
 
 import {
   Announcement,
   AnnouncementTag,
   AnnouncementTitle,
-  AnnouncementEnd,
 } from "@workspace/ui/components/ui/shadcn-io/announcement";
 
 import {
@@ -55,33 +48,7 @@ const FloatingIcon = ({
 
 export default function Hero() {
   const t = useTranslations("Hero");
-  const AVATARS = [
-    {
-      src: "https://pbs.twimg.com/profile_images/1909615404789506048/MTqvRsjo_400x400.jpg",
-      fallback: "SK",
-      tooltip: "Skyleen",
-    },
-    {
-      src: "https://pbs.twimg.com/profile_images/1593304942210478080/TUYae5z7_400x400.jpg",
-      fallback: "CN",
-      tooltip: "Shadcn",
-    },
-    {
-      src: "https://pbs.twimg.com/profile_images/1677042510839857154/Kq4tpySA_400x400.jpg",
-      fallback: "AW",
-      tooltip: "Adam Wathan",
-    },
-    {
-      src: "https://pbs.twimg.com/profile_images/1783856060249595904/8TfcCN0r_400x400.jpg",
-      fallback: "GR",
-      tooltip: "Guillermo Rauch",
-    },
-    {
-      src: "https://pbs.twimg.com/profile_images/1534700564810018816/anAuSfkp_400x400.jpg",
-      fallback: "JH",
-      tooltip: "Jhey",
-    },
-  ];
+  // avatars removed on mobile for better fit
 
   return (
     <div className="flex overflow-hidden relative flex-col gap-16 px-8 text-center">
@@ -117,39 +84,29 @@ export default function Hero() {
         size="large"
       />
 
-      <div className="flex relative z-10 flex-col gap-8 justify-center items-center">
-        <Announcement className="text-[14px]">
+      <div className="flex relative z-10 flex-col gap-6 justify-center items-center">
+        <Announcement className="px-3 py-2 text-[12px] md:text-[14px] w-full max-w-2xl rounded-full">
           <AnnouncementTag className="ml-1 font-semibold text-white bg-gradient-to-r from-red-500 via-pink-500 to-rose-500">
             {t("announcementNew")}
           </AnnouncementTag>
-          <AnnouncementTitle>
-            <span className="font-semibold text-foreground/70">
+          <AnnouncementTitle className="truncate">
+            <span className="font-semibold text-foreground/70 truncate">
               {t("announcementTitle")}
             </span>
             <ArrowUpRight className="size-4 text-[#ff040e]" />
           </AnnouncementTitle>
-          <AnnouncementEnd>
-            <AvatarGroup variant="css">
-              {AVATARS.map((avatar, index) => (
-                <Avatar key={index}>
-                  <AvatarImage src={avatar.src} />
-                  <AvatarFallback>{avatar.fallback}</AvatarFallback>
-                </Avatar>
-              ))}
-            </AvatarGroup>
-          </AnnouncementEnd>
         </Announcement>
-        <h1 className="mb-0 text-balance font-medium text-4xl md:text-[80px] xl:text-[80px] leading-tight">
+        <h1 className="mb-0 text-balance font-medium text-3xl md:text-[80px] xl:text-[80px] leading-tight">
         {t("headingLine1")} <br />
           <GradientText
-            className="font-playfair text-5xl md:text-[80px] xl:text-[80px] font-semibold"
+            className="font-playfair text-4xl md:text-[80px] xl:text-[80px] font-semibold"
             text={t("headingHighlight")}
           />
         </h1>
 
         <HeroSearchBar />
 
-        <p className="mt-0 mb-0 text-[16px] text-balance text-muted-foreground">
+        <p className="mt-0 mb-0 max-w-2xl text-[14px] md:text-[16px] text-balance text-muted-foreground">
           {t("description")}
         </p>
 

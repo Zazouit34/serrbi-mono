@@ -288,7 +288,18 @@ export function ShowcaseSwitcher() {
                 inverted={idx >= 2}
                 index={idx}
                 total={gridItems.length}
-                onClick={() => router.push(`${meta.path}?search=${encodeURIComponent(item.title)}`)}
+                onClick={() => {
+                  // Use category-based filtering
+                  const params = new URLSearchParams();
+                  if (meta.path === "/services") {
+                    params.set("serviceCategory", item.category);
+                  } else if (meta.path === "/jobs") {
+                    params.set("category", item.category);
+                  } else if (meta.path === "/tasks") {
+                    params.set("category", item.category);
+                  }
+                  router.push(`${meta.path}?${params.toString()}`);
+                }}
               />
             ))}
           </motion.div>
@@ -321,13 +332,16 @@ function ShowcaseTile({ item, inverted, index, total, onClick }: { item: Showcas
     isBottomRow && isLeftCol ? "md:rounded-bl-2xl" : "",
     isBottomRow && !isLeftCol ? "md:rounded-br-2xl" : "",
   ].join(" ");
+  // Alternate sides on mobile: even index → image right, odd index → image left
+  const mobileImageFirst = index % 2 === 1;
+
   return (
     <button
       onClick={onClick}
       className={`group grid h-40 w-full grid-cols-2 overflow-hidden bg-white text-left transition-colors hover:bg-gray-50 md:h-52 ${borders} ${rounded}`}
     >
       {/* Text content */}
-      <div className={`flex flex-col justify-between p-3 md:p-5 ${inverted ? "order-2" : "order-1"}`}>
+      <div className={`flex flex-col justify-between p-3 md:p-5 ${mobileImageFirst ? "order-2" : "order-1"} md:${inverted ? "order-2" : "order-1"}`}>
         <div>
           <h3 className="text-base font-semibold md:text-lg">{item.title}</h3>
           <div className="mt-2 flex flex-wrap gap-1.5">
@@ -345,7 +359,7 @@ function ShowcaseTile({ item, inverted, index, total, onClick }: { item: Showcas
       </div>
 
       {/* Image */}
-      <div className={`relative ${inverted ? "order-1" : "order-2"} md:rounded-none`}>
+      <div className={`relative ${mobileImageFirst ? "order-1" : "order-2"} md:${inverted ? "order-1" : "order-2"} md:rounded-none`}>
         <Image
           src={item.image}
           alt={item.title}

@@ -17,6 +17,10 @@ export function TaskListing() {
     const search = searchParams.get("search");
     if (search) urlFilters.search = search;
 
+    // Prefilter by task category if provided
+    const category = searchParams.get("category");
+    if (category) urlFilters.category = category;
+
     setFilters(urlFilters);
   }, [searchParams]);
 

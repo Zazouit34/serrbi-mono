@@ -16,6 +16,9 @@ export function ServiceListing() {
     // Primary: Get search parameter for service titles
     const search = searchParams.get('search')
     if (search) urlFilters.search = search
+    // Prefilter by service category if provided
+    const serviceCategory = searchParams.get('serviceCategory')
+    if (serviceCategory) urlFilters.serviceCategory = serviceCategory
     
     setFilters(urlFilters)
   }, [searchParams])

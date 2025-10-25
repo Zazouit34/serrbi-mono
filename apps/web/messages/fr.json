@@ -437,7 +437,7 @@
     "actions": {
       "resume": "Reprendre",
       "resuming": "Reprise...",
-      "pause": "Mettre en pause",
+      "pause": "Pause",
       "pausing": "Mise en pause...",
       "cancel": "Annuler",
       "canceling": "Annulation..."
