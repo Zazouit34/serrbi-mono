@@ -31,7 +31,7 @@ const servicesItems: ShowcaseItem[] = [
     title: "Architect",
     category: "Architect",
     image:
-      "https://images.unsplash.com/photo-1496302662116-85c1ae003d8a?q=80&w=1200&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1487958449943-2429e8be8625?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D?q=80&w=1200&auto=format&fit=crop",
     tags: ["Design", "Planning", "Blueprints"],
     meta: "210 skills",
   },
@@ -236,7 +236,7 @@ export function ShowcaseSwitcher() {
     if (t.includes("esthetic")) return "Esthetician";
     if (t.includes("mechanic")) return "Mechanic";
     if (t.includes("architect")) return "Architect";
-    if (t.includes("construction")) return "Mason"; // representative of construction
+    if (t.includes("construction")) return "Plumber"; // representative of construction
     return undefined;
   };
 
