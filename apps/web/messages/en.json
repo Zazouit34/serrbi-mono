@@ -19,6 +19,12 @@
     "headingHighlight": "Opportunities",
     "description": "Serrbi is a unified marketplace where you can find jobs, services, and gigs for freelancers. Connect with opportunities across all industries and skill levels."
   },
+  "ResumeInsight": {
+    "title": "Get your resume checked by AI in seconds",
+    "subtitle": "Drop a single PDF below. We’ll score it instantly on the right — fully client-side, no upload.",
+    "dropHint": "Drag & drop your PDF here, or click to browse",
+    "dropNote": "PDF only • Max 10MB"
+  },
   "HowItWorks": {
     "title": "How It Works",
     "subtitle": "Let AI handle the hard work — from analyzing your resume to applying for jobs that fit your goals.",

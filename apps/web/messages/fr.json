@@ -19,6 +19,12 @@
     "headingHighlight": "Opportunités",
     "description": "Serrbi est une place de marché unifiée où vous pouvez trouver des emplois, des services et des missions pour les freelances. Connectez‑vous aux opportunités dans tous les secteurs et niveaux d’expérience."
   },
+  "ResumeInsight": {
+    "title": "Analysez votre CV par l’IA en quelques secondes",
+    "subtitle": "Déposez un PDF ci‑dessous. Nous l’évaluerons instantanément à droite — 100 % côté client, sans envoi.",
+    "dropHint": "Glissez‑déposez votre PDF ici, ou cliquez pour parcourir",
+    "dropNote": "PDF uniquement • 10 Mo max"
+  },
   "HowItWorks": {
     "title": "Comment ça marche",
     "subtitle": "Laissez l’IA faire le travail difficile — de l’analyse de votre CV aux candidatures adaptées à vos objectifs.",

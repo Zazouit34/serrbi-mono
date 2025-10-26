@@ -24,7 +24,8 @@ type Props = {
   loading?: boolean;
 };
 
-export function ResumeScoreCard({ score, breakdown, loading }: Props) {
+type PropsWithTheme = Props & { darkMode?: boolean };
+export function ResumeScoreCard({ score, breakdown, loading, darkMode }: PropsWithTheme) {
   const t = useTranslations("ResumeScore");
   const [displayValue, setDisplayValue] = useState(0);
   const target = Math.max(0, Math.min(100, Math.round(score || 0)));
@@ -101,7 +102,7 @@ export function ResumeScoreCard({ score, breakdown, loading }: Props) {
   }, [breakdown]);
 
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-center bg-white rounded-2xl shadow-sm p-6 w-full max-w-2xl mx-auto">
+    <div className={"flex flex-col sm:flex-row items-center justify-center rounded-2xl p-6 w-full max-w-2xl mx-auto " + (darkMode ? "bg-transparent shadow-none" : "bg-white shadow-sm") }>
       {/* Left radial score */}
       <div className="w-[220px] h-[220px] flex-shrink-0">
         <RadialBarChart
@@ -118,7 +119,7 @@ export function ResumeScoreCard({ score, breakdown, loading }: Props) {
             angleAxisId={0}
             dataKey="value"
             cornerRadius={8}
-            fill="#10b981"
+            fill={darkMode ? "#a3e635" : "#10b981"}
             isAnimationActive={false}
           />
           <PolarRadiusAxis tick={false} axisLine={false}>
@@ -128,16 +129,12 @@ export function ResumeScoreCard({ score, breakdown, loading }: Props) {
                 if (!v || !("cx" in v)) return null;
                 return (
                   <g>
-                    <circle cx={v.cx} cy={v.cy} r={60} fill="white" />
+                    {!darkMode && <circle cx={v.cx} cy={v.cy} r={60} fill="white" />}
                     <text x={v.cx} y={v.cy} textAnchor="middle" dominantBaseline="middle">
-                      <tspan x={v.cx} y={v.cy} className="text-3xl font-bold fill-emerald-600">
+                      <tspan x={v.cx} y={v.cy} className={darkMode ? "text-3xl font-bold fill-lime-300" : "text-3xl font-bold fill-emerald-600"}>
                         {displayValue}%
                       </tspan>
-                      <tspan
-                        x={v.cx}
-                        y={v.cy + 22}
-                        className="fill-gray-500 text-sm font-medium"
-                      >
+                      <tspan x={v.cx} y={v.cy + 22} className={darkMode ? "fill-white/70 text-sm font-medium" : "fill-gray-500 text-sm font-medium"}>
                         {t("overallScore")}
                       </tspan>
                     </text>
@@ -154,10 +151,10 @@ export function ResumeScoreCard({ score, breakdown, loading }: Props) {
         {grouped.map((item, idx) => (
           <div key={idx} className="w-full">
             <div className="flex justify-between text-sm mb-1">
-              <span className="font-medium text-gray-700">{item.name}</span>
-              <span className="text-gray-500">{t("issuesCount", { count: 100 - item.value })}</span>
+              <span className={darkMode ? "font-medium text-white" : "font-medium text-gray-700"}>{item.name}</span>
+              <span className={darkMode ? "text-white/60" : "text-gray-500"}>{t("issuesCount", { count: 100 - item.value })}</span>
             </div>
-            <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+            <div className={"h-2 rounded-full overflow-hidden " + (darkMode ? "bg-white/10" : "bg-gray-200") }>
               <div
                 className={cn("h-2 rounded-full transition-all duration-700")}
                 style={{

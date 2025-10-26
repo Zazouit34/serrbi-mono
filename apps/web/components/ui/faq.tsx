@@ -7,6 +7,7 @@ import {
   CollapsibleTrigger,
 } from "@workspace/ui/components/collapsible";
 import { AnimatePresence, motion } from "framer-motion";
+import { WarpBackground } from "@workspace/ui/components/ui/shadcn-io/warp-background";
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 
@@ -14,19 +15,31 @@ type QA = { question: string; answer: string };
 
 export function FAQ() {
   const t = useTranslations("FAQ");
-  const faqs: QA[] = (t.raw("items") as { q: string; a: string }[]).map((it) => ({ question: it.q, answer: it.a }));
+  const faqs: QA[] = (t.raw("items") as { q: string; a: string }[]).map(
+    (it) => ({ question: it.q, answer: it.a })
+  );
   return (
     <section className="mx-auto my-18 w-full">
-      <div className="mb-8 flex flex-col items-center gap-3 text-center">
-        <h2 className="text-2xl font-semibold md:text-3xl">{t("title")}</h2>
-        <p className="max-w-2xl text-sm text-muted-foreground">{t("subtitle")}</p>
-      </div>
+      <WarpBackground
+        perspective={100}
+        beamsPerSide={4}
+        beamSize={3}
+        beamDuration={4}
+        className="w-full mx-auto"
+      >
+        <div className="mb-8 flex flex-col items-center gap-3 text-center">
+          <h2 className="text-2xl font-semibold md:text-3xl">{t("title")}</h2>
+          <p className="max-w-2xl text-sm text-muted-foreground">
+            {t("subtitle")}
+          </p>
+        </div>
 
-      <div className="mx-auto grid max-w-3xl gap-3">
-        {faqs.map((qa, index) => (
-          <FAQItem key={index} qa={qa} index={index} />)
-        )}
-      </div>
+        <div className="mx-auto grid max-w-3xl gap-3">
+          {faqs.map((qa, index) => (
+            <FAQItem key={index} qa={qa} index={index} />
+          ))}
+        </div>
+      </WarpBackground>
     </section>
   );
 }
@@ -41,7 +54,11 @@ function FAQItem({ qa, index }: { qa: QA; index: number }) {
       viewport={{ once: true, amount: 0.4 }}
       transition={{ duration: 0.35, delay: index * 0.05 }}
     >
-      <Collapsible open={open} onOpenChange={setOpen} className="rounded-xl border bg-white p-4">
+      <Collapsible
+        open={open}
+        onOpenChange={setOpen}
+        className="rounded-xl border bg-white p-4"
+      >
         <CollapsibleTrigger className="flex w-full items-center justify-between gap-4 text-left">
           <span className="text-base font-medium">{qa.question}</span>
           <motion.span
@@ -63,7 +80,9 @@ function FAQItem({ qa, index }: { qa: QA; index: number }) {
                 transition={{ duration: 0.25, ease: "easeInOut" }}
                 className="overflow-hidden"
               >
-                <div className="pt-3 text-sm text-muted-foreground">{qa.answer}</div>
+                <div className="pt-3 text-sm text-muted-foreground">
+                  {qa.answer}
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
@@ -74,5 +93,3 @@ function FAQItem({ qa, index }: { qa: QA; index: number }) {
 }
 
 export default FAQ;
-
-
