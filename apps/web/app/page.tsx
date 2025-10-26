@@ -11,8 +11,8 @@ export default async function Page() {
   return (
     <main className="flex relative flex-col mx-auto">
       <Hero />
-      <ResumeInsight />
       <HowItWorks />
+      <ResumeInsight />
       <ShowcaseSwitcher />
       <PricingShowcase />
       <FAQ />
