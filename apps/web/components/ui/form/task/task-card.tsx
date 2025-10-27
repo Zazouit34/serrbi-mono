@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Phone } from "lucide-react";
+import { Phone, MessageCircleMore } from "lucide-react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faWhatsapp } from "@fortawesome/free-brands-svg-icons";
 import { cn } from "@workspace/ui/lib/utils";
@@ -95,8 +95,9 @@ export function TaskCard({ task, className }: TaskCardProps) {
         {task.phoneNumber && (
           <Popover>
             <PopoverTrigger asChild>
-              <Button variant="outline" size="sm">
-                {t("Common.contact")}
+              <Button className="text-white bg-[#25D366] hover:bg-[#1ebe5d] transition" size="sm">
+                <MessageCircleMore className="size-4" />         
+                  {t("Common.contact")}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="flex flex-col gap-2 w-40">
