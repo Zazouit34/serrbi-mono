@@ -53,7 +53,7 @@ export function TaskCard({ task, className }: TaskCardProps) {
             background: task.bgStyle || "linear-gradient(to right, #ddd, #ccc)",
           }}
         >
-          <span className="px-4 text-sm font-bold text-white md:text-base line-clamp-4">
+          <span className="px-4 text-xl font-bold text-white line-clamp-4">
             {task.description}
           </span>
         </div>
