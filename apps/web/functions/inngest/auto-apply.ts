@@ -20,8 +20,20 @@ async function getCandidates(category: any) {
     },
     select: {
       id: true,
+      email: true,
       autoApplyKeywords: true,
       autoApplyRoles: true,
+      subscription: {
+        select: {
+          plan: {
+            select: {
+              monthlyApplyLimit: true,
+              autoApplyMonthlyLimit: true,
+              autoApplyAccess: true,
+            },
+          },
+        },
+      },
     },
   });
 }
@@ -36,6 +48,24 @@ function tokenize(text: string) {
 }
 
 const MIN_MATCHES = 2;
+
+async function canAutoApplyForUser(user: any): Promise<boolean> {
+  const startOfMonth = new Date();
+  startOfMonth.setDate(1);
+  startOfMonth.setHours(0, 0, 0, 0);
+  const email = user.email;
+  const plan = user.subscription?.plan;
+  if (!plan?.autoApplyAccess) return false;
+  const appsUsed = await prisma.jobApplication.count({
+    where: { email, createdAt: { gte: startOfMonth } },
+  });
+  const autoUsed = await prisma.jobApplication.count({
+    where: { email, createdAt: { gte: startOfMonth }, OR: [{ source: "auto" as any }] },
+  } as any);
+  if (plan.monthlyApplyLimit && appsUsed >= plan.monthlyApplyLimit) return false;
+  if (plan.autoApplyMonthlyLimit && autoUsed >= plan.autoApplyMonthlyLimit) return false;
+  return true;
+}
 
 export const autoApplyOnJobCreated = inngest.createFunction(
   { id: "auto-apply-on-job-created" },
@@ -72,8 +102,8 @@ export const autoApplyOnJobCreated = inngest.createFunction(
         0
       );
       const matches = keywordMatches + roleMatches;
-      if (matches >= MIN_MATCHES) {
-        await applyAndNotify({ db: prisma, jobId: job.id, userId: u.id });
+      if (matches >= MIN_MATCHES && (await canAutoApplyForUser(u))) {
+        await applyAndNotify({ db: prisma, jobId: job.id, userId: u.id, source: "auto" });
         applied++;
       }
     }
@@ -118,8 +148,8 @@ export const autoApplyOnJobsImported = inngest.createFunction(
           0
         );
         const matches = keywordMatches + roleMatches;
-        if (matches >= MIN_MATCHES) {
-          await applyAndNotify({ db: prisma, jobId: job.id, userId: u.id });
+        if (matches >= MIN_MATCHES && (await canAutoApplyForUser(u))) {
+          await applyAndNotify({ db: prisma, jobId: job.id, userId: u.id, source: "auto" });
           applied++;
         }
       }

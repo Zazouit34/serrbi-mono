@@ -138,7 +138,7 @@ export function ResumeInsight() {
               <p className="mt-3 text-sm sm:text-base text-white/70">
                 {tr(
                   "ResumeInsight.subtitle",
-                  "Drop a single PDF below. We’ll score it instantly on the right — fully client-side, no upload."
+                  "Drop a single PDF below. We’ll score it instantly on the right."
                 )}
               </p>
             </div>
@@ -146,8 +146,17 @@ export function ResumeInsight() {
             <div className="mt-6">
               <div
                 ref={dropRef}
-                className="relative flex flex-col items-center justify-center gap-3 rounded-xl bg-white/5 p-6 border border-white/10 transition"
+                className="relative flex flex-col items-center justify-center gap-3 rounded-xl bg-white/5 p-6 border border-dashed border-white/10 transition cursor-pointer hover:bg-white/10 hover:border-white/20 focus:outline-none focus:ring-2 focus:ring-white/30"
                 onClick={() => inputRef.current?.click()}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    inputRef.current?.click();
+                  }
+                }}
+                role="button"
+                tabIndex={0}
+                aria-label={tr("ResumeInsight.dropHint", "Drag & drop your PDF here, or click to browse")}
               >
                 <input
                   ref={inputRef}

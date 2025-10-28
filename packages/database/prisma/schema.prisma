@@ -137,6 +137,7 @@ model JobApplication {
   name      String
   email     String
   cv        Boolean  @default(false)
+  source    String   @default("manual")
   createdAt DateTime @default(now())
   job       Job      @relation(fields: [jobId], references: [id])
 
@@ -328,6 +329,13 @@ model SubscriptionPlanConfig {
   featuredListings   Boolean          @default(false)
   prioritySupport    Boolean          @default(false)
   analyticsAccess    Boolean          @default(false)
+  // New application-based fields
+  monthlyApplyLimit      Int?
+  autoApplyMonthlyLimit  Int?
+  jobBoardAccess         Boolean          @default(true)
+  smartMatchAccess       Boolean          @default(false)
+  resumeAtsScoreAccess   Boolean          @default(true)
+  autoApplyAccess        Boolean          @default(false)
   paddlePriceId      String?
   paddleProductId    String?
   isActive           Boolean          @default(true)

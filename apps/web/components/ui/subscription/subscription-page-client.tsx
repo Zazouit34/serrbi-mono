@@ -107,17 +107,16 @@ export default function SubscriptionPageClient() {
 
       for (const plan of plans) {
         if (plan.paddlePriceId && plan.price > 0) {
-          try {
-            const preview = await getPricePreview(paddle, {
-              items: [{ priceId: plan.paddlePriceId, quantity: 1 }],
-            });
-
+          const preview = await getPricePreview(paddle, {
+            items: [{ priceId: plan.paddlePriceId, quantity: 1 }],
+          });
+          if (preview) {
             setPriceData((prev) => ({
               ...prev,
               [plan.id]: preview,
             }));
-          } catch (error) {
-            console.error(`Failed to fetch price for ${plan.name}:`, error);
+          } else {
+            console.warn(`Price preview unavailable for ${plan.name}`);
           }
         }
       }
@@ -184,15 +183,26 @@ export default function SubscriptionPageClient() {
   };
 
   const PlanCard = ({ plan }: { plan: any }) => {
-    const features: string[] = [
-      `${plan.maxJobListings} ${tPricing("features.jobListings")}`,
-      `${plan.maxServiceListings} ${tPricing("features.serviceListings")}`,
-      `${plan.maxTaskListings} ${tPricing("features.taskListings")}`,
-    ];
-
-    if (plan.featuredListings) features.push(tPricing("features.featuredListings"));
-    if (plan.prioritySupport) features.push(tPricing("features.prioritySupport"));
-    if (plan.analyticsAccess) features.push(tPricing("features.analyticsAccess"));
+    const features: string[] = [];
+    // Applications per month
+    if (plan.monthlyApplyLimit) {
+      features.push(
+        `${plan.monthlyApplyLimit} ${tPricing("features.applicationsPerMonth")}`
+      );
+    }
+    // Job board access
+    if (plan.jobBoardAccess) features.push(tPricing("features.jobBoardAccess"));
+    // Resume ATS score
+    if (plan.resumeAtsScoreAccess)
+      features.push(tPricing("features.resumeAtsScore"));
+    // Smart Match AI
+    if (plan.smartMatchAccess) features.push(tPricing("features.smartMatch"));
+    // Auto-apply
+    if (plan.autoApplyAccess && plan.autoApplyMonthlyLimit) {
+      features.push(
+        `${plan.autoApplyMonthlyLimit} ${tPricing("features.autoApplyPerMonth")}`
+      );
+    }
 
     const isCurrent = subscription?.planId === plan.id;
     const isCheckingOut = loadingCheckout === plan.id;
@@ -302,9 +312,8 @@ export default function SubscriptionPageClient() {
     const isActive = subscription.status === "ACTIVE";
 
     const USAGE_ICONS = {
-      jobs: "/images/jobs.png",
-      services: "/images/services.png",
-      tasks: "/images/tasks.png",
+      apps: "/images/jobs.png",
+      auto: "/images/services.png",
     };
 
     return (
@@ -361,31 +370,27 @@ export default function SubscriptionPageClient() {
           <CardContent>
             {usage ? (
               <div className="space-y-5">
-                {/* Jobs */}
+                {/* Applications */}
                 <div className="flex gap-3 items-start">
-                  <img
-                    src={USAGE_ICONS.jobs}
-                    alt="Jobs"
-                    className="object-contain w-8 h-8 opacity-90"
-                  />
+                  <img src={USAGE_ICONS.apps} alt="Applications" className="object-contain w-8 h-8 opacity-90" />
                   <div className="flex-1 space-y-1.5">
                     <p className="text-sm font-medium">
-                      {t("Billing.usage.jobs")}: {usage.jobListingsUsed}/
-                      {usage.jobListingsLimit || "∞"}
+                      {t("Billing.usage.applications")}: {usage.applicationsUsed}/
+                      {usage.applicationsLimit || "∞"}
                     </p>
                     <Progress
                       value={
-                        usage?.jobListingsLimit
-                          ? (usage.jobListingsUsed / usage.jobListingsLimit) *
+                        usage?.applicationsLimit
+                          ? (usage.applicationsUsed / usage.applicationsLimit) *
                             100
                           : 0
                       }
                       className="h-2 bg-gray-200"
                     />
                     <p className="text-xs text-muted-foreground">
-                      {usage?.jobListingsLimit != null
+                      {usage?.applicationsLimit != null
                         ? `${Math.max(
-                            usage.jobListingsLimit - usage.jobListingsUsed,
+                            usage.applicationsLimit - usage.applicationsUsed,
                             0
                           )} ${t("Billing.remaining")}`
                         : t("Billing.unlimited")}
@@ -393,65 +398,29 @@ export default function SubscriptionPageClient() {
                   </div>
                 </div>
 
-                {/* Services */}
+                {/* Auto-apply */}
                 <div className="flex gap-3 items-start">
-                  <img
-                    src={USAGE_ICONS.services}
-                    alt="Services"
-                    className="object-contain w-8 h-8 opacity-90"
-                  />
+                  <img src={USAGE_ICONS.auto} alt="Auto-apply" className="object-contain w-8 h-8 opacity-90" />
                   <div className="flex-1 space-y-1.5">
                     <p className="text-sm font-medium">
-                      {t("Billing.usage.services")}: {usage.serviceListingsUsed}/
-                      {usage.serviceListingsLimit || "∞"}
+                      {t("Billing.usage.autoApply")}: {usage.autoAppliedUsed}/
+                      {usage.autoApplyLimit || "∞"}
                     </p>
                     <Progress
                       value={
-                        usage?.serviceListingsLimit
-                          ? (usage.serviceListingsUsed /
-                              usage.serviceListingsLimit) *
+                        usage?.autoApplyLimit
+                          ? (usage.autoAppliedUsed /
+                              usage.autoApplyLimit) *
                             100
                           : 0
                       }
                       className="h-2 bg-gray-200"
                     />
                     <p className="text-xs text-muted-foreground">
-                      {usage?.serviceListingsLimit != null
+                      {usage?.autoApplyLimit != null
                         ? `${Math.max(
-                            usage.serviceListingsLimit -
-                              usage.serviceListingsUsed,
-                            0
-                          )} ${t("Billing.remaining")}`
-                        : t("Billing.unlimited")}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Tasks */}
-                <div className="flex gap-3 items-start">
-                  <img
-                    src={USAGE_ICONS.tasks}
-                    alt="Tasks"
-                    className="object-contain w-8 h-8 opacity-90"
-                  />
-                  <div className="flex-1 space-y-1.5">
-                    <p className="text-sm font-medium">
-                      {t("Billing.usage.tasks")}: {usage.taskListingsUsed}/
-                      {usage.taskListingsLimit || "∞"}
-                    </p>
-                    <Progress
-                      value={
-                        usage?.taskListingsLimit
-                          ? (usage.taskListingsUsed / usage.taskListingsLimit) *
-                            100
-                          : 0
-                      }
-                      className="h-2 bg-gray-200"
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      {usage?.taskListingsLimit != null
-                        ? `${Math.max(
-                            usage.taskListingsLimit - usage.taskListingsUsed,
+                            usage.autoApplyLimit -
+                              usage.autoAppliedUsed,
                             0
                           )} ${t("Billing.remaining")}`
                         : t("Billing.unlimited")}

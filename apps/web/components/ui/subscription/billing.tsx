@@ -329,19 +329,19 @@ export default function BillingPageClient() {
             <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
               {[
                 {
-                  label: t("usage.jobs"),
-                  used: usage.jobListingsUsed,
-                  limit: usage.jobListingsLimit,
+                  label: t("usage.applications"),
+                  used: usage.applicationsUsed,
+                  limit: usage.applicationsLimit,
                 },
                 {
-                  label: t("usage.services"),
-                  used: usage.serviceListingsUsed,
-                  limit: usage.serviceListingsLimit,
+                  label: t("usage.autoApply"),
+                  used: usage.autoAppliedUsed,
+                  limit: usage.autoApplyLimit,
                 },
                 {
-                  label: t("usage.tasks"),
-                  used: usage.taskListingsUsed,
-                  limit: usage.taskListingsLimit,
+                  label: t("usage.smartMatch"),
+                  used: usage.smartMatchAccess ? 1 : 0,
+                  limit: usage.smartMatchAccess ? 1 : 0,
                 },
               ].map((item) => {
                 const pct = item.limit ? (item.used / item.limit) * 100 : 0;

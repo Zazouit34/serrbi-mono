@@ -21,7 +21,7 @@
   },
   "ResumeInsight": {
     "title": "Analysez votre CV par l’IA en quelques secondes",
-    "subtitle": "Déposez un PDF ci‑dessous. Nous l’évaluerons instantanément à droite — 100 % côté client, sans envoi.",
+    "subtitle": "Déposez un PDF ci‑dessous. Nous l’évaluerons instantanément à droite.",
     "dropHint": "Glissez‑déposez votre PDF ici, ou cliquez pour parcourir",
     "dropNote": "PDF uniquement • 10 Mo max"
   },
@@ -61,9 +61,9 @@
     "subtitle": "Choisissez une formule adaptée à vos besoins. Changez quand vous voulez.",
     "viewAll": "Tout voir",
     "planSubtext": {
-      "free": "Idéal pour bien démarrer individuellement.",
-      "basic": "Idéal pour les petites équipes en croissance.",
-      "premium": "Idéal pour les entreprises qui ont besoin de plus de puissance."
+      "free": "Parfait pour débuter sa recherche d’emploi — progrès intelligent et régulier.",
+      "basic": "Accélérez votre recherche — soyez embauché 3× plus vite.",
+      "premium": "Débloquez toutes les opportunités — accédez en priorité."
     },
     "badges": {
       "bestPlan": "Meilleure offre",
@@ -76,10 +76,17 @@
       "taskListings": "annonces de tâche",
       "featuredListings": "Mises en avant",
       "prioritySupport": "Support prioritaire",
-      "analyticsAccess": "Accès aux analyses"
+      "analyticsAccess": "Accès aux analyses",
+      "applicationsPerMonth": "candidatures par mois",
+      "jobBoardAccess": "Accès au job board",
+      "resumeAtsScore": "Score ATS du CV",
+      "smartMatch": "Smart Match IA",
+      "autoApplyPerMonth": "auto‑candidatures par mois"
     },
     "choosePlan": "Choisir la formule",
-    "errors": { "loadPlansFailed": "Échec du chargement des formules. Réessayez." }
+    "errors": {
+      "loadPlansFailed": "Échec du chargement des formules. Réessayez."
+    }
   },
   "HeroSearchBar": {
     "tabs": {
@@ -92,30 +99,43 @@
   },
   "FAQ": {
     "title": "Questions fréquentes",
-    "subtitle": "Réponses aux questions courantes sur l’utilisation de Serrbi pour publier, découvrir et gérer du travail.",
+    "subtitle": "Réponses aux questions courantes sur l’utilisation de Serrbi.",
     "items": [
-      {
-        "q": "Qu’est‑ce que Serrbi ?",
-        "a": "Serrbi est une place de marché pour les emplois, services et tâches. Trouvez du travail, recrutez des talents et réalisez des missions au même endroit."
-      },
-      {
-        "q": "Comment fonctionnent les filtres sur les pages de liste ?",
-        "a": "Nous appliquons votre terme de recherche depuis les liens et cartes comme paramètre d’URL (ex. ?search=Dentiste) afin de préfiltrer les résultats."
-      },
-      {
-        "q": "Puis‑je publier gratuitement un emploi/service/tâche ?",
-        "a": "Oui. Commencez avec la formule Gratuite qui inclut un nombre limité d’annonces. Passez à tout moment à une formule supérieure."
-      },
-      {
-        "q": "Comment fonctionne l’Auto‑candidature ?",
-        "a": "Activez l’Auto‑candidature depuis votre compte et nous soumettrons des candidatures adaptées à chaque cycle selon vos préférences et votre CV."
-      }
-    ]
+  {
+    "q": "Qu’est-ce que Serrbi ?",
+    "a": "Serrbi est une plateforme tout-en-un où vous pouvez trouver un emploi, recruter des professionnels de confiance ou proposer vos propres services et missions — le tout propulsé par l’automatisation intelligente et l’IA."
+  },
+  {
+    "q": "Qui peut utiliser Serrbi ?",
+    "a": "Tout le monde ! Que vous cherchiez un emploi, que vous ayez besoin d’un professionnel ou que vous souhaitiez gagner de l’argent grâce à des missions, Serrbi connecte tout le monde sur une seule plateforme."
+  },
+  {
+    "q": "Qu’est-ce qui rend Serrbi différent des autres plateformes ?",
+    "a": "Contrairement aux sites d’emploi ou applications de missions classiques, Serrbi réunit emplois, services et tâches en un seul endroit — avec le Matching IA, l’Auto-candidature et un Analyseur de CV ATS pour maximiser vos chances de réussite."
+  },
+  {
+    "q": "Comment fonctionne l’Auto-candidature ?",
+    "a": "L’Auto-candidature envoie automatiquement vos candidatures selon votre profil et vos préférences, vous permettant de postuler à plus d’offres tout en gagnant du temps."
+  },
+  {
+    "q": "Qu’est-ce que l’Analyseur de CV ATS ?",
+    "a": "Notre Analyseur ATS évalue votre CV comme le ferait un système de recrutement, vous attribuant une note et des conseils pour l’améliorer et vous démarquer des autres candidats."
+  },
+  {
+    "q": "Puis-je publier ou postuler gratuitement ?",
+    "a": "Oui. Vous pouvez commencer avec la formule Gratuite pour publier ou postuler à un nombre limité d’annonces. Passez à une formule supérieure pour bénéficier de plus de visibilité et de fonctionnalités premium."
+  },
+  {
+    "q": "Serrbi est-il disponible dans ma ville ?",
+    "a": "Serrbi se développe rapidement — vous pouvez déjà trouver des professionnels et des opportunités dans les grandes villes, et nous ajoutons bientôt de nouvelles régions."
+  }
+]
+
   },
   "Footer": {
     "headings": {
       "product": "Produit",
-      "useCases": "Cas d’usage",
+      "useCases": "Solutions",
       "compare": "Comparer",
       "support": "Support",
       "company": "Entreprise",
@@ -128,10 +148,10 @@
       "pricing": "Tarifs",
       "findWork": "Trouver du travail",
       "hireTalent": "Recruter des talents",
-      "getTasksDone": "Faire réaliser des tâches",
+      "getTasksDone": "Réaliser des tâches",
       "contact": "Contact",
       "helpCenter": "Centre d’aide",
-      "plans": "Forfaits",
+      "plans": "Offres",
       "about": "À propos",
       "blog": "Blog",
       "careers": "Carrières",
@@ -143,8 +163,7 @@
       "vsPerplexity": "vs Assistant e‑mail Perplexity"
     },
     "copyright": "Tous droits réservés."
-  }
-  ,
+  },
   "JobsPage": {
     "title": "Emplois ouverts",
     "subtitleLg": "Trouvez un poste auprès d’entreprises nationales et internationales de premier plan.",
@@ -284,7 +303,7 @@
   "UserMenu": {
     "myAccount": "Mon compte",
     "favorites": "Favoris",
-    "plans": "Forfaits",
+    "plans": "Offres",
     "autoApply": "Auto‑candidature",
     "logout": "Se déconnecter",
     "loginCta": "Se connecter / S’inscrire"
@@ -364,7 +383,9 @@
   "Subscription": {
     "title": "Choisissez votre formule",
     "subtitle": "Passez à une formule supérieure pour débloquer plus d’annonces et de fonctionnalités.",
-    "errors": { "loadPlans": "Échec du chargement des formules. Actualisez la page." },
+    "errors": {
+      "loadPlans": "Échec du chargement des formules. Actualisez la page."
+    },
     "cta": {
       "openingCheckout": "Ouverture du paiement...",
       "currentPlan": "Formule actuelle",
@@ -375,7 +396,12 @@
     "features": {
       "featuredListings": "Mises en avant",
       "prioritySupport": "Support prioritaire",
-      "analyticsAccess": "Accès aux analyses"
+      "analyticsAccess": "Accès aux analyses",
+      "applicationsPerMonth": "candidatures par mois",
+      "jobBoardAccess": "Accès au job board",
+      "resumeAtsScore": "Score ATS du CV",
+      "smartMatch": "Smart Match IA",
+      "autoApplyPerMonth": "auto‑candidatures par mois"
     },
     "toasts": {
       "subscribedFree": "Abonné à la formule Gratuite",
@@ -390,7 +416,11 @@
     "title": "Facturation et abonnement",
     "subtitle": "Gérez votre abonnement et consultez l’historique des paiements.",
     "currentPlan": "Formule actuelle",
-    "details": { "period": "Facturation", "subscriptionId": "ID d’abonnement", "billingPeriod": "Période de facturation" },
+    "details": {
+      "period": "Facturation",
+      "subscriptionId": "ID d’abonnement",
+      "billingPeriod": "Période de facturation"
+    },
     "labels": {
       "plan": "Formule",
       "status": "Statut",
@@ -404,7 +434,10 @@
       "subtitle": "Abonnez‑vous pour voir vos fonctionnalités.",
       "jobs": "Annonces d’emploi",
       "services": "Annonces de service",
-      "tasks": "Annonces de tâche"
+      "tasks": "Annonces de tâche",
+      "applications": "Candidatures",
+      "autoApply": "Auto‑candidature",
+      "smartMatch": "Smart Match IA"
     },
     "remaining": "restants",
     "unlimited": "Illimité",
@@ -507,7 +540,7 @@
     "category": {
       "title": "Catégorie d’emploi"
     },
-    
+
     "stats": {
       "title": "Activité d’auto‑candidature (ce mois-ci)",
       "autoApplied": "Emplois auto‑candidatés",
@@ -714,7 +747,4 @@
       "Cancelled": "Annulé"
     }
   }
-  }
-
-
-
+}

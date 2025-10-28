@@ -66,14 +66,16 @@ function PlanPreview({ plan, onClick }: { plan: any; onClick: () => void }) {
   const subtext = t(PLAN_SUBTEXT[planKey]);
   const badgeLabel = planKey === "premium" ? t("badges.bestPlan") : planKey === "basic" ? t("badges.mostValue") : t("badges.getStarted");
 
-  const features: string[] = [
-    `${plan.maxJobListings} ${t("features.jobListings")}`,
-    `${plan.maxServiceListings} ${t("features.serviceListings")}`,
-    `${plan.maxTaskListings} ${t("features.taskListings")}`,
-  ];
-  if (plan.featuredListings) features.push(t("features.featuredListings"));
-  if (plan.prioritySupport) features.push(t("features.prioritySupport"));
-  if (plan.analyticsAccess) features.push(t("features.analyticsAccess"));
+  const features: string[] = [];
+  if (plan.monthlyApplyLimit) {
+    features.push(`${plan.monthlyApplyLimit} ${t("features.applicationsPerMonth")}`);
+  }
+  if (plan.jobBoardAccess) features.push(t("features.jobBoardAccess"));
+  if (plan.resumeAtsScoreAccess) features.push(t("features.resumeAtsScore"));
+  if (plan.smartMatchAccess) features.push(t("features.smartMatch"));
+  if (plan.autoApplyAccess && plan.autoApplyMonthlyLimit) {
+    features.push(`${plan.autoApplyMonthlyLimit} ${t("features.autoApplyPerMonth")}`);
+  }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLDivElement>) {
     if (e.key === "Enter" || e.key === " ") {

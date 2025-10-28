@@ -21,7 +21,7 @@
   },
   "ResumeInsight": {
     "title": "Get your resume checked by AI in seconds",
-    "subtitle": "Drop a single PDF below. We’ll score it instantly on the right — fully client-side, no upload.",
+    "subtitle": "Drop a single PDF below. We’ll score it instantly on the right.",
     "dropHint": "Drag & drop your PDF here, or click to browse",
     "dropNote": "PDF only • Max 10MB"
   },
@@ -61,9 +61,9 @@
     "subtitle": "Choose a plan that fits your needs. Upgrade anytime.",
     "viewAll": "View all",
     "planSubtext": {
-      "free": "Best for individuals getting started.",
-      "basic": "Best for small teams and growing use.",
-      "premium": "Best for businesses that need more power."
+      "free": "Perfect for those starting their job search.",
+      "basic": "Accelerate your job hunt — get hired 3× faster.",
+      "premium": "Unlock every opportunity — get priority access."
     },
     "badges": {
       "bestPlan": "Best plan",
@@ -76,7 +76,12 @@
       "taskListings": "task listings",
       "featuredListings": "Featured listings",
       "prioritySupport": "Priority support",
-      "analyticsAccess": "Analytics access"
+      "analyticsAccess": "Analytics access",
+      "applicationsPerMonth": "applications per month",
+      "jobBoardAccess": "Job board access",
+      "resumeAtsScore": "Resume ATS score",
+      "smartMatch": "Smart Match AI",
+      "autoApplyPerMonth": "auto-apply per month"
     },
     "choosePlan": "Choose plan",
     "errors": { "loadPlansFailed": "Failed to load plans. Please try again." }
@@ -92,30 +97,43 @@
   },
   "FAQ": {
     "title": "Frequently asked questions",
-    "subtitle": "Answers to common questions about using Serrbi to post, discover, and manage work.",
+    "subtitle": "Answers to common questions about using Serrbi.",
     "items": [
-      {
-        "q": "What is Serrbi?",
-        "a": "Serrbi is a marketplace for jobs, services, and tasks. Discover work, hire talent, and complete tasks in one place."
-      },
-      {
-        "q": "How do filters work on listing pages?",
-        "a": "We apply your search term from links and cards as a query parameter (e.g. ?search=Dentist) so results are prefiltered when you arrive."
-      },
-      {
-        "q": "Can I post a job/service/task for free?",
-        "a": "Yes. You can start on the Free plan which includes a limited number of listings. Upgrade anytime for higher limits and extra features."
-      },
-      {
-        "q": "How does Auto‑Apply work?",
-        "a": "Enable Auto‑Apply from your account and we’ll submit tailored applications each cycle using your preferences and uploaded resume."
-      }
-    ]
+  {
+    "q": "What is Serrbi?",
+    "a": "Serrbi is an all-in-one marketplace where you can find jobs, hire trusted professionals, or offer your own services and gigs — all powered by smart automation and AI."
+  },
+  {
+    "q": "Who can use Serrbi?",
+    "a": "Anyone! Whether you’re looking for a job, need to hire a professional, or want to earn from gigs — Serrbi connects everyone in one platform."
+  },
+  {
+    "q": "What makes Serrbi different from other platforms?",
+    "a": "Unlike typical job sites or gig apps, Serrbi brings together jobs, services, and tasks in one place — with AI Matching, Auto-Apply, and a Resume ATS Analyzer to boost your success rate."
+  },
+  {
+    "q": "How does Auto-Apply work?",
+    "a": "Auto-Apply automatically sends you job applications for you based on your profile and preferences, helping you apply to more opportunities while saving time."
+  },
+  {
+    "q": "What is the Resume ATS Analyzer?",
+    "a": "Our ATS Analyzer reviews your resume the same way recruiters’ systems do, giving you a score and feedback to help you improve and stand out from other candidates."
+  },
+  {
+    "q": "Can I post or apply for free?",
+    "a": "Yes. You can start with the Free plan and post or apply with limited listings. When you're ready to grow faster, upgrade to unlock premium features and higher visibility."
+  },
+  {
+    "q": "Is Serrbi available in my city?",
+    "a": "Serrbi is expanding quickly — you can already find professionals and opportunities in major cities, and we’re adding more regions soon."
+  }
+]
+
   },
   "Footer": {
     "headings": {
       "product": "Product",
-      "useCases": "Use Cases",
+      "useCases": "Solutions",
       "compare": "Compare",
       "support": "Support",
       "company": "Company",
@@ -128,7 +146,7 @@
       "pricing": "Pricing",
       "findWork": "Find work",
       "hireTalent": "Hire talent",
-      "getTasksDone": "Get tasks done",
+      "getTasksDone": "Complete tasks",
       "contact": "Contact",
       "helpCenter": "Help Center",
       "plans": "Plans",
@@ -374,7 +392,12 @@
     "features": {
       "featuredListings": "Featured listings",
       "prioritySupport": "Priority support",
-      "analyticsAccess": "Analytics access"
+      "analyticsAccess": "Analytics access",
+      "applicationsPerMonth": "applications per month",
+      "jobBoardAccess": "Job board access",
+      "resumeAtsScore": "Resume ATS score",
+      "smartMatch": "Smart Match AI",
+      "autoApplyPerMonth": "auto-apply per month"
     },
     "toasts": {
       "subscribedFree": "Subscribed to Free plan",
@@ -389,7 +412,11 @@
     "title": "Billing & Subscription",
     "subtitle": "Manage your subscription and view payment history.",
     "currentPlan": "Current Plan",
-    "details": { "period": "Billed", "subscriptionId": "Subscription ID", "billingPeriod": "Billing Period" },
+    "details": {
+      "period": "Billed",
+      "subscriptionId": "Subscription ID",
+      "billingPeriod": "Billing Period"
+    },
     "labels": {
       "plan": "Plan",
       "status": "Status",
@@ -403,7 +430,10 @@
       "subtitle": "Subscribe to a plan to see your features.",
       "jobs": "Job Listings",
       "services": "Service Listings",
-      "tasks": "Task Listings"
+      "tasks": "Task Listings",
+      "applications": "Applications",
+      "autoApply": "Auto-apply",
+      "smartMatch": "Smart Match AI"
     },
     "remaining": "remaining",
     "unlimited": "Unlimited",
@@ -506,7 +536,7 @@
     "category": {
       "title": "Job Category"
     },
-    
+
     "stats": {
       "title": "Auto-apply activity (this month)",
       "autoApplied": "Auto-applied jobs",
@@ -714,5 +744,3 @@
     }
   }
 }
-
-

@@ -89,7 +89,15 @@ export async function getPricePreview(
     });
     return preview;
   } catch (error) {
-    console.error('Error getting price preview:', error);
-    throw error;
+    // Log full error object (not just message) so we can see Paddle error details
+    if (typeof window !== 'undefined' && process.env.NODE_ENV !== 'production') {
+      try {
+        console.warn('Paddle PricePreview failed:', error);
+      } catch {
+        const message = (error as any)?.message || (error as any)?.error?.message || 'Unknown error';
+        console.warn('Paddle PricePreview failed:', message);
+      }
+    }
+    return null as any;
   }
 }

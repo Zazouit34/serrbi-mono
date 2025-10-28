@@ -174,6 +174,65 @@ export const jobRouter = router({
     .input(jobApplicationCreateSchema)
     .mutation(async ({ ctx, input }) => {
       const db = ctx.prisma as PrismaClient;
+      // Enforce monthly application cap based on user's subscription plan
+      try {
+        const startOfMonth = new Date();
+        startOfMonth.setDate(1);
+        startOfMonth.setHours(0, 0, 0, 0);
+
+        const email = input.email;
+
+        // Try to find a user and their active subscription
+        const userWithSub = await db.user.findUnique({
+          where: { email },
+          select: {
+            id: true,
+            email: true,
+            subscription: {
+              where: { status: "ACTIVE" },
+              select: {
+                id: true,
+                plan: {
+                  select: {
+                    monthlyApplyLimit: true,
+                  },
+                },
+              },
+            },
+          },
+        });
+
+        // Determine cap: subscription plan limit if present, else FREE plan cap
+        let applicationsLimit = 50; // default to FREE cap
+        if (userWithSub?.subscription?.plan?.monthlyApplyLimit != null) {
+          applicationsLimit = userWithSub.subscription.plan.monthlyApplyLimit as number;
+        } else {
+          // Fallback: read FREE plan config if available
+          const freePlan = await db.subscriptionPlanConfig.findFirst({
+            where: { name: "FREE" as any },
+            select: { monthlyApplyLimit: true },
+          });
+          if (freePlan?.monthlyApplyLimit != null) {
+            applicationsLimit = freePlan.monthlyApplyLimit;
+          }
+        }
+
+        if (applicationsLimit > 0) {
+          const applicationsUsed = await db.jobApplication.count({
+            where: { email, createdAt: { gte: startOfMonth } },
+          });
+          if (applicationsUsed >= applicationsLimit) {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: "Monthly application limit reached",
+            });
+          }
+        }
+      } catch (e) {
+        if (e instanceof TRPCError) throw e;
+        console.error("Error enforcing application cap:", e);
+      }
+
       // Reuse centralized service to ensure identical behavior across manual & auto flows
       const result = await applyAndNotify({
         db,

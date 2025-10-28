@@ -12,6 +12,7 @@ type ApplyInput = {
   resumeUrl?: string;
   cvData?: string;     // base64
   cvFilename?: string; // e.g. "resume.pdf"
+  source?: "manual" | "auto";
 };
 
 async function fetchResumeAsBase64(url: string) {
@@ -74,13 +75,16 @@ export async function applyAndNotify(input: ApplyInput) {
   }
 
   const app = await db.jobApplication.create({
-    data: {
-      jobId,
-      jobTitle: job.title,
-      name: userName,
-      email: userEmail,
-      cv: !!cvData, // schema has Boolean 'cv'
-    },
+    data: (
+      {
+        jobId,
+        jobTitle: job.title,
+        name: userName,
+        email: userEmail,
+        cv: !!cvData, // schema has Boolean 'cv'
+        source: input.source || "manual",
+      } as any
+    ),
   });
 
   try {

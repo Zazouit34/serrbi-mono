@@ -342,47 +342,48 @@ export const subscriptionRouter = router({
       include: { plan: true },
     });
 
-    if (!subscription)
+    if (!subscription || !subscription.plan)
       return {
-        jobListingsUsed: 0,
-        jobListingsLimit: 0,
-        serviceListingsUsed: 0,
-        serviceListingsLimit: 0,
-        taskListingsUsed: 0,
-        taskListingsLimit: 0,
+        applicationsUsed: 0,
+        applicationsLimit: 0,
+        autoAppliedUsed: 0,
+        autoApplyLimit: 0,
+        jobBoardAccess: false,
+        resumeAtsScoreAccess: false,
+        smartMatchAccess: false,
+        autoApplyAccess: false,
       };
 
-    const [jobCount, serviceCount, taskCount] = await Promise.all([
-      db.job.count({
-        where: {
-          userId: ctx.user.id,
-          status: { in: ["published", "pending"] },
-        },
+    // Start of current month
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+
+    // usage computed by email to cover both manual and auto submissions
+    const userEmail = ctx.user.email;
+
+    const [applicationsUsed, autoAppliedUsed] = await Promise.all([
+      db.jobApplication.count({
+        where: { email: userEmail, createdAt: { gte: startOfMonth } },
       }),
-      db.service.count({
+      db.jobApplication.count({
         where: {
-          userId: ctx.user.id,
-          status: { in: ["published", "pending"] },
-        },
-      }),
-      db.task.count({
-        where: {
-          userId: ctx.user.id,
-          status: { in: ["Active", "Pending", "Published"] },
+          email: userEmail,
+          createdAt: { gte: startOfMonth },
+          source: "auto",
         },
       }),
     ]);
 
     return {
-      jobListingsUsed: jobCount,
-      jobListingsLimit: subscription.plan.maxJobListings,
-      serviceListingsUsed: serviceCount,
-      serviceListingsLimit: subscription.plan.maxServiceListings,
-      taskListingsUsed: taskCount,
-      taskListingsLimit: subscription.plan.maxTaskListings,
-      featuredListings: subscription.plan.featuredListings,
-      prioritySupport: subscription.plan.prioritySupport,
-      analyticsAccess: subscription.plan.analyticsAccess,
+      applicationsUsed,
+      applicationsLimit: subscription.plan.monthlyApplyLimit ?? 0,
+      autoAppliedUsed,
+      autoApplyLimit: subscription.plan.autoApplyMonthlyLimit ?? 0,
+      jobBoardAccess: subscription.plan.jobBoardAccess,
+      resumeAtsScoreAccess: subscription.plan.resumeAtsScoreAccess,
+      smartMatchAccess: subscription.plan.smartMatchAccess,
+      autoApplyAccess: subscription.plan.autoApplyAccess,
     };
   }),
 
