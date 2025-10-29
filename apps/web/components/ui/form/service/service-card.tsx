@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useState } from "react";
 import { slugify } from "@/lib/slugify";
-import { Star, ChevronLeft, ChevronRight, Phone } from "lucide-react";
+import { Star, ChevronLeft, ChevronRight, Phone, MessageCircleMore } from "lucide-react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faWhatsapp } from "@fortawesome/free-brands-svg-icons";
 import { cn } from "@workspace/ui/lib/utils";
@@ -181,12 +181,13 @@ export function ServiceCard({
       </div>
 
       {/* Bottom Row */}
-      <div className="flex justify-between items-center px-3 py-4 -mt-2 text-sm text-gray-700 bg-white rounded-b-xl shadow">
+      <div className="flex justify-between items-center pt-6 -mt-2 text-sm text-gray-700">
         {/* Contact button */}
         {service.phoneNumber && (
           <Popover>
             <PopoverTrigger asChild>
-              <Button variant="outline" size="sm">
+              <Button className="bg-black text-white hover:bg-black/80 transition w-1/2" size="sm">
+                <MessageCircleMore className="size-4" />         
                 {t("Common.contact")}
               </Button>
             </PopoverTrigger>

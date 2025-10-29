@@ -38,7 +38,7 @@ const formatLocation = (t: ReturnType<typeof useTranslations>, city?: string | n
 
 const formatBudget = (budget?: number | null, t?: ReturnType<typeof useTranslations>) => { 
   if (!t) return `${budget} MAD`;
-  return `${budget ?? ""} ${t("Currency.MAD")}`;
+  return `${t("Common.from")} ${budget ?? ""} ${t("Currency.MAD")}`;
 };
 
 export function TaskCard({ task, className }: TaskCardProps) {
@@ -90,12 +90,12 @@ export function TaskCard({ task, className }: TaskCardProps) {
       </div>
 
       {/* Bottom Row */}
-      <div className="flex justify-between items-center px-3 py-4 -mt-2 text-sm text-gray-700 bg-white rounded-b-xl shadow">
+      <div className="flex justify-between items-center pt-6 -mt-2 text-sm text-gray-700">
         {/* Contact button */}
         {task.phoneNumber && (
           <Popover>
             <PopoverTrigger asChild>
-              <Button className="text-white bg-[#25D366] hover:bg-[#1ebe5d] transition" size="sm">
+              <Button className="bg-black text-white hover:bg-black/80 transition w-1/2" size="sm">
                 <MessageCircleMore className="size-4" />         
                   {t("Common.contact")}
               </Button>

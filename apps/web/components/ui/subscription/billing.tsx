@@ -326,50 +326,43 @@ export default function BillingPageClient() {
         </CardHeader>
         <CardContent>
           {sub?.plan && usage ? (
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-              {[
-                {
-                  label: t("usage.applications"),
-                  used: usage.applicationsUsed,
-                  limit: usage.applicationsLimit,
-                },
-                {
-                  label: t("usage.autoApply"),
-                  used: usage.autoAppliedUsed,
-                  limit: usage.autoApplyLimit,
-                },
-                {
-                  label: t("usage.smartMatch"),
-                  used: usage.smartMatchAccess ? 1 : 0,
-                  limit: usage.smartMatchAccess ? 1 : 0,
-                },
-              ].map((item) => {
-                const pct = item.limit ? (item.used / item.limit) * 100 : 0;
-                return (
-                  <div
-                    key={item.label}
-                    className="p-4 bg-gradient-to-br from-gray-50 to-white rounded-xl border border-gray-100 shadow-sm transition hover:shadow"
-                  >
-                    <div className="text-sm font-medium text-muted-foreground">
-                      {item.label}
-                    </div>
-                    <div className="text-xl font-semibold text-gray-900">
-                      {item.used}/{item.limit || "∞"}
-                    </div>
-                    <Progress value={pct} className="mt-2 h-2 bg-gray-200" />
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {item.limit
-                        ? `${Math.max(item.limit - item.used, 0)} ${t("remaining")}`
-                        : t("unlimited")}
-                    </p>
+            usage.autoApplyLimit ? (
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                <div className="p-4 bg-gradient-to-br from-gray-50 to-white rounded-xl border border-gray-100 shadow-sm transition hover:shadow">
+                  <div className="text-sm font-medium text-muted-foreground">{t("usage.autoApply")}</div>
+                  <div className="text-xl font-semibold text-gray-900">{usage.autoAppliedUsed}/{usage.autoApplyLimit}</div>
+                  <Progress value={(usage.autoAppliedUsed / usage.autoApplyLimit) * 100} className="mt-2 h-2 bg-gray-200" />
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {`${Math.max((usage.autoApplyLimit || 0) - (usage.autoAppliedUsed || 0), 0)} ${t("remaining")}`}
+                  </p>
+                </div>
+                <div className="p-4 bg-gradient-to-br from-gray-50 to-white rounded-xl border border-gray-100 shadow-sm">
+                  <div className="text-sm font-medium text-muted-foreground">{t("usage.smartMatch")}</div>
+                  <div className="mt-1 text-sm text-gray-900">{usage.smartMatchAccess ? t("unlimited") : "-"}</div>
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-3">
+                <div className="inline-flex items-center gap-2 text-sm text-gray-700">
+                  <span className="inline-block h-2 w-2 rounded-full bg-green-500" />
+                  {t("Subscription.features.unlimitedApplications")}
+                </div>
+                {usage.resumeAtsScoreAccess && (
+                  <div className="inline-flex items-center gap-2 text-sm text-gray-700">
+                    <span className="inline-block h-2 w-2 rounded-full bg-green-500" />
+                    {t("Subscription.features.resumeAtsScore")}
                   </div>
-                );
-              })}
-            </div>
+                )}
+                {usage.jobBoardAccess && (
+                  <div className="inline-flex items-center gap-2 text-sm text-gray-700">
+                    <span className="inline-block h-2 w-2 rounded-full bg-green-500" />
+                    {t("Pricing.features.jobBoardAccess")}
+                  </div>
+                )}
+              </div>
+            )
           ) : (
-            <p className="text-sm text-muted-foreground">
-              {t("usage.subtitle")}
-            </p>
+            <p className="text-sm text-muted-foreground">{t("usage.subtitle")}</p>
           )}
         </CardContent>
       </Card>

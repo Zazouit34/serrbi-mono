@@ -81,7 +81,8 @@
       "jobBoardAccess": "Job board access",
       "resumeAtsScore": "Resume ATS score",
       "smartMatch": "Smart Match AI",
-      "autoApplyPerMonth": "auto-apply per month"
+      "autoApplyPerMonth": "auto-apply per month",
+      "unlimitedApplications": "Unlimited manual applications"
     },
     "choosePlan": "Choose plan",
     "errors": { "loadPlansFailed": "Failed to load plans. Please try again." }
@@ -397,7 +398,8 @@
       "jobBoardAccess": "Job board access",
       "resumeAtsScore": "Resume ATS score",
       "smartMatch": "Smart Match AI",
-      "autoApplyPerMonth": "auto-apply per month"
+      "autoApplyPerMonth": "auto-apply per month",
+      "unlimitedApplications": "Unlimited manual applications"
     },
     "toasts": {
       "subscribedFree": "Subscribed to Free plan",

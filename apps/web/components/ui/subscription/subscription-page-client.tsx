@@ -184,11 +184,9 @@ export default function SubscriptionPageClient() {
 
   const PlanCard = ({ plan }: { plan: any }) => {
     const features: string[] = [];
-    // Applications per month
-    if (plan.monthlyApplyLimit) {
-      features.push(
-        `${plan.monthlyApplyLimit} ${tPricing("features.applicationsPerMonth")}`
-      );
+    // Free plan: Unlimited manual applications
+    if ((plan.name || "").toUpperCase() === "FREE") {
+      features.push(tPricing("features.unlimitedApplications"));
     }
     // Job board access
     if (plan.jobBoardAccess) features.push(tPricing("features.jobBoardAccess"));
@@ -312,7 +310,6 @@ export default function SubscriptionPageClient() {
     const isActive = subscription.status === "ACTIVE";
 
     const USAGE_ICONS = {
-      apps: "/images/jobs.png",
       auto: "/images/services.png",
     };
 
@@ -370,36 +367,9 @@ export default function SubscriptionPageClient() {
           <CardContent>
             {usage ? (
               <div className="space-y-5">
-                {/* Applications */}
-                <div className="flex gap-3 items-start">
-                  <img src={USAGE_ICONS.apps} alt="Applications" className="object-contain w-8 h-8 opacity-90" />
-                  <div className="flex-1 space-y-1.5">
-                    <p className="text-sm font-medium">
-                      {t("Billing.usage.applications")}: {usage.applicationsUsed}/
-                      {usage.applicationsLimit || "∞"}
-                    </p>
-                    <Progress
-                      value={
-                        usage?.applicationsLimit
-                          ? (usage.applicationsUsed / usage.applicationsLimit) *
-                            100
-                          : 0
-                      }
-                      className="h-2 bg-gray-200"
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      {usage?.applicationsLimit != null
-                        ? `${Math.max(
-                            usage.applicationsLimit - usage.applicationsUsed,
-                            0
-                          )} ${t("Billing.remaining")}`
-                        : t("Billing.unlimited")}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Auto-apply */}
-                <div className="flex gap-3 items-start">
+                {/* Auto-apply (only for paid) */}
+                {usage.autoApplyLimit ? (
+                  <div className="flex gap-3 items-start">
                   <img src={USAGE_ICONS.auto} alt="Auto-apply" className="object-contain w-8 h-8 opacity-90" />
                   <div className="flex-1 space-y-1.5">
                     <p className="text-sm font-medium">
@@ -427,6 +397,11 @@ export default function SubscriptionPageClient() {
                     </p>
                   </div>
                 </div>
+                ) : (
+                  <div className="text-sm text-muted-foreground">
+                    {t("Subscription.features.unlimitedApplications")}, {t("Subscription.features.resumeAtsScore")}
+                  </div>
+                )}
               </div>
             ) : (
               <div className="text-sm text-muted-foreground">{t("Billing.usage.noData")}</div>

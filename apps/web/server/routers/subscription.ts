@@ -344,8 +344,6 @@ export const subscriptionRouter = router({
 
     if (!subscription || !subscription.plan)
       return {
-        applicationsUsed: 0,
-        applicationsLimit: 0,
         autoAppliedUsed: 0,
         autoApplyLimit: 0,
         jobBoardAccess: false,
@@ -359,25 +357,17 @@ export const subscriptionRouter = router({
     startOfMonth.setDate(1);
     startOfMonth.setHours(0, 0, 0, 0);
 
-    // usage computed by email to cover both manual and auto submissions
+    // Auto-apply usage by email this month
     const userEmail = ctx.user.email;
-
-    const [applicationsUsed, autoAppliedUsed] = await Promise.all([
-      db.jobApplication.count({
-        where: { email: userEmail, createdAt: { gte: startOfMonth } },
-      }),
-      db.jobApplication.count({
-        where: {
-          email: userEmail,
-          createdAt: { gte: startOfMonth },
-          source: "auto",
-        },
-      }),
-    ]);
+    const autoAppliedUsed = await db.jobApplication.count({
+      where: {
+        email: userEmail,
+        createdAt: { gte: startOfMonth },
+        source: "auto",
+      },
+    });
 
     return {
-      applicationsUsed,
-      applicationsLimit: subscription.plan.monthlyApplyLimit ?? 0,
       autoAppliedUsed,
       autoApplyLimit: subscription.plan.autoApplyMonthlyLimit ?? 0,
       jobBoardAccess: subscription.plan.jobBoardAccess,

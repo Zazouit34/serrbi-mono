@@ -6,7 +6,7 @@ import { useLocale } from "next-intl";
 const carouselImages = [
   {
     id: 1,
-    src: "https://images.unsplash.com/photo-1559526324-4b87b5e36e44?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2670&q=80",
+    src: "https://images.unsplash.com/photo-1671722294182-ed01cbe66bd1?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MjN8fEFyY2hpdGVjdCUyMGluJTIwb2ZmaWNlJTIwcGxhbmluZ3xlbnwwfHwwfHx8MA%3D%3D&auto=format&fit=crop&q=60&w=400",
     alt: "Architect working on blueprints with dramatic lighting",
     width: 320,
     height: 240,
@@ -20,21 +20,21 @@ const carouselImages = [
   },
   {
     id: 3,
-    src: "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2126&q=80",
+    src: "https://plus.unsplash.com/premium_photo-1682974931688-7e8859add0f8?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NXx8ZW5naW5lZXJzJTIwd29ya2luZ3xlbnwwfHwwfHx8MA%3D%3D&auto=format&fit=crop&q=60&w=400",
     alt: "Modern office with cinematic lighting",
     width: 300,
     height: 280,
   },
   {
     id: 4,
-    src: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2574&q=80",
+    src: "https://images.unsplash.com/photo-1758518730250-9fde74eb4757?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=1031",
     alt: "Professional consultant with ambient workspace",
     width: 340,
     height: 320,
   },
   {
     id: 5,
-    src: "https://images.unsplash.com/photo-1600880292203-757bb62b4baf?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2574&q=80",
+    src: "https://plus.unsplash.com/premium_photo-1663011218145-c1d0c3ba3542?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=870",
     alt: "Male professional in sophisticated setting",
     width: 290,
     height: 220,
@@ -48,17 +48,24 @@ const carouselImages = [
   },
   {
     id: 7,
-    src: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2588&q=80",
+    src: "https://images.unsplash.com/photo-1562322140-8baeececf3df?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8OHx8aGFpciUyMHNhbG9ufGVufDB8fDB8fHww&auto=format&fit=crop&q=60&w=400",
     alt: "Healthcare professional with premium lighting",
     width: 330,
     height: 260,
   },
   {
     id: 8,
-    src: "https://images.unsplash.com/photo-1556157382-97eda2d62296?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2670&q=80",
+    src: "https://plus.unsplash.com/premium_photo-1661884973994-d7625e52631a?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8cGx1bWJlciUyMHdvcmtpbmd8ZW58MHx8MHx8fDA%3D&auto=format&fit=crop&q=60&w=400",
     alt: "Designer workspace with moody atmosphere",
     width: 270,
     height: 340,
+  },
+  {
+    id: 9,
+    src: "https://images.unsplash.com/photo-1596986952526-3be237187071?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8N3x8Y2FyJTIwd29ya3Nob3B8ZW58MHx8MHx8fDA%3D&auto=format&fit=crop&q=60&w=400",
+    alt: "Computer science professor in a modern classroom",
+    width: 350,
+    height: 280,
   },
 ];
 

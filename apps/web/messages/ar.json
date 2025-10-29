@@ -81,7 +81,8 @@
       "jobBoardAccess": "وصول إلى لوحة الوظائف",
       "resumeAtsScore": "تقييم ATS للسيرة",
       "smartMatch": "مطابقة ذكية بالذكاء الاصطناعي",
-      "autoApplyPerMonth": "تقديم تلقائي شهرياً"
+      "autoApplyPerMonth": "تقديم تلقائي شهرياً",
+      "unlimitedApplications": "تقديم غير محدود"
     },
     "choosePlan": "اختر الخطة",
     "errors": { "loadPlansFailed": "فشل تحميل الخطط. حاول مرة أخرى." }
@@ -396,7 +397,8 @@
       "jobBoardAccess": "وصول إلى لوحة الوظائف",
       "resumeAtsScore": "تقييم ATS للسيرة",
       "smartMatch": "مطابقة ذكية بالذكاء الاصطناعي",
-      "autoApplyPerMonth": "تقديم تلقائي شهرياً"
+      "autoApplyPerMonth": "تقديم تلقائي شهرياً",
+      "unlimitedApplications": "تقديم غير محدود"
     },
     "toasts": {
       "subscribedFree": "تم الاشتراك في الخطة المجانية",
@@ -432,7 +434,8 @@
       "tasks": "قوائم مهام",
       "applications": "التقديمات",
       "autoApply": "التقديم التلقائي",
-      "smartMatch": "مطابقة ذكية"
+      "smartMatch": "مطابقة ذكية",
+      "unlimitedApplications": "تقديم غير محدود"
     },
     "remaining": "متبقي",
     "unlimited": "غير محدود",

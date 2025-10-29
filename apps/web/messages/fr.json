@@ -81,7 +81,8 @@
       "jobBoardAccess": "Accès au job board",
       "resumeAtsScore": "Score ATS du CV",
       "smartMatch": "Smart Match IA",
-      "autoApplyPerMonth": "auto‑candidatures par mois"
+      "autoApplyPerMonth": "auto‑candidatures par mois",
+      "unlimitedApplications": "Candidatures manuelles illimitées"
     },
     "choosePlan": "Choisir la formule",
     "errors": {
@@ -401,7 +402,8 @@
       "jobBoardAccess": "Accès au job board",
       "resumeAtsScore": "Score ATS du CV",
       "smartMatch": "Smart Match IA",
-      "autoApplyPerMonth": "auto‑candidatures par mois"
+      "autoApplyPerMonth": "auto‑candidatures par mois",
+      "unlimitedApplications": "Candidatures manuelles illimitées"
     },
     "toasts": {
       "subscribedFree": "Abonné à la formule Gratuite",
@@ -437,7 +439,8 @@
       "tasks": "Annonces de tâche",
       "applications": "Candidatures",
       "autoApply": "Auto‑candidature",
-      "smartMatch": "Smart Match IA"
+      "smartMatch": "Smart Match IA",
+      "unlimitedApplications": "Candidatures manuelles illimitées"
     },
     "remaining": "restants",
     "unlimited": "Illimité",
