@@ -15,6 +15,7 @@ import { Check, Loader2 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { toast } from "sonner";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import {
   getPaddleInstance,
   openCheckout,
@@ -29,6 +30,7 @@ export default function SubscriptionPageClient() {
   const t = useTranslations();
   const tPricing = useTranslations("Pricing");
   const { data: session } = useSession();
+  const router = useRouter();
   const {
     data: plans,
     isLoading: loadingPlans,
@@ -107,9 +109,9 @@ export default function SubscriptionPageClient() {
 
       for (const plan of plans) {
         if (plan.paddlePriceId && plan.price > 0) {
-          const preview = await getPricePreview(paddle, {
-            items: [{ priceId: plan.paddlePriceId, quantity: 1 }],
-          });
+            const preview = await getPricePreview(paddle, {
+              items: [{ priceId: plan.paddlePriceId, quantity: 1 }],
+            });
           if (preview) {
             setPriceData((prev) => ({
               ...prev,
@@ -127,7 +129,8 @@ export default function SubscriptionPageClient() {
 
   const handleSubscribe = async (plan: any) => {
     if (!session?.user) {
-      toast.error(t("Subscription.toasts.notSignedIn"));
+      const callback = `${window.location.pathname}${window.location.search || ""}`;
+      router.push(`/login?callbackUrl=${encodeURIComponent(callback)}`);
       return;
     }
 
@@ -369,7 +372,7 @@ export default function SubscriptionPageClient() {
               <div className="space-y-5">
                 {/* Auto-apply (only for paid) */}
                 {usage.autoApplyLimit ? (
-                  <div className="flex gap-3 items-start">
+                <div className="flex gap-3 items-start">
                   <img src={USAGE_ICONS.auto} alt="Auto-apply" className="object-contain w-8 h-8 opacity-90" />
                   <div className="flex-1 space-y-1.5">
                     <p className="text-sm font-medium">
