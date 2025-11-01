@@ -111,7 +111,7 @@ export function getJobFiltersConfig(isSecondary: boolean): FilterConfig[] {
   const allowedIso2 = new Set(["DZ","TN","FR","DE","ES","IT","BE","AT","AE","SA","QA"]);
   const countryOptions = (countries as any[])
     .filter((c) => allowedIso2.has(String(c.iso2)))
-    .map((c) => ({ label: c.name as string, value: String(c.iso2) }));
+    .map((c) => ({ label: `${c.emoji ? c.emoji + ' ' : ''}${c.name}` as string, value: String(c.iso2) }));
 
   const base = jobFiltersConfig.filter((f) => f.key !== "city");
   return [
