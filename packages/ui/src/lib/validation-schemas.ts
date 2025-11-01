@@ -155,6 +155,15 @@ export const jobListingFormSchema = z
     }, z.number().int().positive().min(1).nullable().optional()),
 
     // Optional location bits (US-style state code if you use it)
+    countryIso2: z
+      .preprocess((val) => {
+        if (typeof val === "string") {
+          const v = val.trim();
+          return v === "" ? undefined : v.toUpperCase();
+        }
+        return val;
+      }, z.string().length(2, "Use 2-letter country code").optional())
+      .optional(),
     stateAbbreviation: z
       .union([z.string().length(3, "Use 3-letter code"), emptyToUndefined])
       .optional(),
@@ -195,6 +204,15 @@ export const jobListQuerySchema = z.object({
   type: z.enum(jobListingTypeValues).optional(),
   search: z.string().optional(),
   city: z.string().optional(),
+  countryIso2: z
+    .preprocess((val) => {
+      if (typeof val === "string") {
+        const v = val.trim();
+        return v === "" ? undefined : v.toUpperCase();
+      }
+      return val;
+    }, z.string().length(2))
+    .optional(),
 })
 export type JobListQueryValues = z.infer<typeof jobListQuerySchema>
 
@@ -422,6 +440,16 @@ export const jobImportRowSchema = z.object({
     if (typeof val === "string" && val.trim() !== "") return Number(val)
     return val
   }, z.number().int().positive().min(1).nullable().optional()),
+  countryIso2: z
+    .preprocess((val) => {
+      if (typeof val === "string") {
+        const v = val.trim();
+        return v === "" ? undefined : v.toUpperCase();
+      }
+      return val;
+    }, z.string().length(2))
+    .optional()
+    .nullable(),
   stateAbbreviation: z.string().length(3).optional().nullable(),
   city: z.string().optional().nullable(),
   applicationEmail: z.union([z.string().email(), emptyToUndefined]).optional().nullable(),

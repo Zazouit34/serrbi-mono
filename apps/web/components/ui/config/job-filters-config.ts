@@ -27,6 +27,7 @@ import {
   MapPin
 } from "lucide-react";
 import cities from "@workspace/ui/lib/cities.json" assert { type: "json" };
+import countries from "@workspace/ui/data/countries.json" assert { type: "json" };
 
 // Job category icons mapping
 export const jobCategoryIcons = {
@@ -105,6 +106,21 @@ export const jobFiltersConfig: FilterConfig[] = [
 
 // Factory to allow future domain-specific filters without breaking current imports.
 export function getJobFiltersConfig(isSecondary: boolean): FilterConfig[] {
-  // For now, secondary uses the same filters. We can branch later.
-  return jobFiltersConfig;
+  if (!isSecondary) return jobFiltersConfig;
+
+  const allowedIso2 = new Set(["DZ","TN","FR","DE","ES","IT","BE","AT","AE","SA","QA"]);
+  const countryOptions = (countries as any[])
+    .filter((c) => allowedIso2.has(String(c.iso2)))
+    .map((c) => ({ label: c.name as string, value: String(c.iso2) }));
+
+  return [
+    ...jobFiltersConfig,
+    {
+      key: "countryIso2",
+      label: "Country",
+      labelKey: "JobsFilters.country",
+      type: "select",
+      options: countryOptions,
+    },
+  ];
 }

@@ -195,7 +195,8 @@
     "category": "Category",
     "location": "Location",
     "experienceLevel": "Experience Level",
-    "jobType": "Job Type"
+    "jobType": "Job Type",
+    "country": "Country"
   },
   "ServicesFilters": {
     "serviceCategory": "Service Category",

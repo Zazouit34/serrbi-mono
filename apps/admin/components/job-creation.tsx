@@ -33,6 +33,7 @@ export default function JobsCreation() {
         <ImporterField name="experienceLevel" label="Experience Level" />
         <ImporterField name="wage" label="Wage" optional />
         <ImporterField name="stateAbbreviation" label="State (e.g. CA)" optional />
+        <ImporterField name="countryIso2" label="Country ISO2" optional />
         <ImporterField name="city" label="City" optional />
         <ImporterField name="applicationEmail" label="Application Email" optional />
         <ImporterField name="applicationUrl" label="Application URL" optional />

@@ -96,6 +96,7 @@ model Job {
   companyImage        String?
   description         String
   wage                Int?
+  countryIso2         String?
   stateAbbreviation   String?
   city                String?
   category            JobCategory
@@ -126,6 +127,7 @@ model Job {
   @@index([title])
   @@index([companyName])
   @@index([city])
+  @@index([countryIso2])
   @@index([createdAt])
   @@index([moderatedAt])
 }

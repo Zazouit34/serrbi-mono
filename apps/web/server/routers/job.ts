@@ -11,6 +11,9 @@ import { TRPCError } from "@trpc/server";
 import type { PrismaClient } from "@workspace/db";
 import { inngest } from "@/functions/inngest/client";
 import { applyAndNotify } from "@/server/services/job-application";
+import { headers } from "next/headers";
+import { getTenantFromHost } from "@/lib/domain";
+import maStates from "@workspace/ui/lib/states.json" assert { type: "json" };
 
 export const jobRouter = router({
   createJob: protectedProcedure
@@ -33,6 +36,7 @@ export const jobRouter = router({
             type: input.type,
             tags: input.tags || [],
             wage: input.wage || null,
+            countryIso2: (input as any).countryIso2 || null,
             stateAbbreviation: input.stateAbbreviation || null,
             city: input.city || null,
             applicationEmail: input.applicationEmail || "",
@@ -100,6 +104,7 @@ export const jobRouter = router({
       if (category) where.category = category;
       if (experienceLevel) where.experienceLevel = experienceLevel;
       if (type) where.type = type;
+      if ((input as any)?.countryIso2) where.countryIso2 = (input as any).countryIso2;
       if (search) {
         where.OR = [
           { title: { contains: search, mode: "insensitive" } },
@@ -107,6 +112,18 @@ export const jobRouter = router({
           { companyName: { contains: search, mode: "insensitive" } },
         ];
       }
+
+      // Exclude Morocco (stateAbbreviation present in MA states) for secondary domain
+      try {
+        const hdrs = await headers();
+        const host = hdrs.get("host") || "";
+        const tenant = getTenantFromHost(host);
+        if (tenant === "secondary") {
+          const maCodes = Object.keys(maStates as Record<string, string>);
+          where.NOT = where.NOT ?? {};
+          where.NOT.stateAbbreviation = { in: maCodes } as any;
+        }
+      } catch {}
 
       const [items, total] = await Promise.all([
         db.job.findMany({
@@ -124,6 +141,7 @@ export const jobRouter = router({
             applicationUrl: true,
             applicationEmail: true,
             wage: true,
+            countryIso2: true,
             stateAbbreviation: true,
             tags: true,
             city: true,
@@ -219,6 +237,7 @@ bulkCreate: adminProcedure
     type: r.type,
     tags: [],
     wage: r.wage ?? null,
+    countryIso2: (r as any).countryIso2 ?? null,
     stateAbbreviation: r.stateAbbreviation ?? null,
     city: r.city ?? null,
     applicationEmail: r.applicationEmail ?? "",
