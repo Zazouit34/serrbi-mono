@@ -25,6 +25,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu";
+import { isSecondaryClient } from "@/lib/domain";
 
 const DEFAULT_LINKS = [
   { href: "/jobs", key: "jobs", image: "/images/jobs.png" },
@@ -50,6 +51,11 @@ export function Navbar() {
   const router = useRouter();
 
   const [scrolled, setScrolled] = useState(false);
+  const isSecondary = isSecondaryClient();
+  const NAV_LINKS = React.useMemo(
+    () => (isSecondary ? [{ href: "/jobs", key: "jobs", image: "/images/jobs.png" }] : DEFAULT_LINKS),
+    [isSecondary]
+  );
 
   useEffect(() => {
     // Initialize selected language from cookie
@@ -97,7 +103,7 @@ export function Navbar() {
               className="hidden justify-center md:flex"
             >
               <NavigationMenuList>
-                {DEFAULT_LINKS.map((link) => {
+                {NAV_LINKS.map((link) => {
                   const isActive = pathname === link.href;
                   const visibleLabel = t(link.key as any);
 
@@ -238,7 +244,7 @@ export function Navbar() {
         {/* Bottom row: scroll-hiding icons */}
         <nav className="overflow-x-auto relative w-full no-scrollbar">
           <div className="flex justify-between items-center px-4 w-full">
-            {DEFAULT_LINKS.map((link) => (
+            {NAV_LINKS.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}

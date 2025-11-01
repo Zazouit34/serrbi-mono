@@ -102,3 +102,9 @@ export const jobFiltersConfig: FilterConfig[] = [
     })),
   },
 ];
+
+// Factory to allow future domain-specific filters without breaking current imports.
+export function getJobFiltersConfig(isSecondary: boolean): FilterConfig[] {
+  // For now, secondary uses the same filters. We can branch later.
+  return jobFiltersConfig;
+}
