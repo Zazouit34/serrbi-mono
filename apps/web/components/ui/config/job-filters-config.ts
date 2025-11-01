@@ -113,8 +113,9 @@ export function getJobFiltersConfig(isSecondary: boolean): FilterConfig[] {
     .filter((c) => allowedIso2.has(String(c.iso2)))
     .map((c) => ({ label: c.name as string, value: String(c.iso2) }));
 
+  const base = jobFiltersConfig.filter((f) => f.key !== "city");
   return [
-    ...jobFiltersConfig,
+    ...base,
     {
       key: "countryIso2",
       label: "Country",
