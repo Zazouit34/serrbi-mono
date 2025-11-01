@@ -113,15 +113,21 @@ export const jobRouter = router({
         ];
       }
 
-      // Exclude Morocco (stateAbbreviation present in MA states) for secondary domain
+      // Exclude Morocco for secondary domain: countryIso2 = 'MA' OR stateAbbreviation in MA codes
       try {
         const hdrs = await headers();
         const host = hdrs.get("host") || "";
         const tenant = getTenantFromHost(host);
         if (tenant === "secondary") {
           const maCodes = Object.keys(maStates as Record<string, string>);
-          where.NOT = where.NOT ?? {};
-          where.NOT.stateAbbreviation = { in: maCodes } as any;
+          where.NOT = [
+            {
+              OR: [
+                { countryIso2: "MA" },
+                { stateAbbreviation: { in: maCodes } },
+              ],
+            },
+          ];
         }
       } catch {}
 
