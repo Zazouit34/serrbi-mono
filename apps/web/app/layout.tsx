@@ -16,9 +16,14 @@ import Provider from "@/app/_trpc/provider";
 import { Navbar } from "@/components/navbar";
 import { MobileNavbar } from "@/components/mobile-navbar";
 import { Container } from "@workspace/ui/components/container";
+import { SeoDefaults } from "@/components/seo/default-seo";
 
 const fontSans = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
+export const metadata = {
+  manifest: "/manifest.json",
+  themeColor: "#ff040E", // Serrbi red
+};
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const locale = await getLocale();
@@ -32,6 +37,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <NextIntlClientProvider messages={messages} locale={locale} timeZone={Intl.DateTimeFormat().resolvedOptions().timeZone}>
             <Provider>
               <Providers>
+                <SeoDefaults />
                 <Navbar />
                 <MobileNavbar />
                 <main className="pt-4 pb-20 mb-4 md:pt-10 md:pb-4">

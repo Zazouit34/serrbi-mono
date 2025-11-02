@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { cn } from "@workspace/ui/lib/utils";
 import { Globe2, CircleCheckIcon, CircleIcon, Wallet, Zap, Menu } from "lucide-react";
 import {
@@ -119,10 +120,12 @@ export function Navbar() {
                               : "text-gray-500 hover:scale-105"
                           )}
                         >
-                          <img
+                          <Image
                             src={link.image}
                             alt={visibleLabel}
-                            className="size-10"
+                            width={40}
+                            height={40}
+                            priority={link.href === "/jobs"}
                           />
                           <span className="relative">{visibleLabel}</span>
 
@@ -251,14 +254,16 @@ export function Navbar() {
                 className="group flex relative flex-col justify-center items-center px-4 py-3 flex-1 text-xs font-medium transition-colors hover:text-black data-[active=true]:text-black"
                 data-active={pathname === link.href}
               >
-                <img
+                <Image
                   src={link.image}
                   alt={t(link.key as any)}
+                  width={40}
+                  height={40}
                   className={cn(
-                    "mb-1 transition-all duration-300 ease-in-out size-10",
+                    "mb-1 transition-all duration-300 ease-in-out",
                     scrolled
-                      ? "h-0 opacity-0 scale-75"
-                      : "h-10 opacity-100 scale-100"
+                      ? "opacity-0 scale-75"
+                      : "opacity-100 scale-100"
                   )}
                 />
                 {t(link.key as any)}

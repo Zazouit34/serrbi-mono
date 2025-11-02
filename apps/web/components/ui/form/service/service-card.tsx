@@ -186,7 +186,7 @@ export function ServiceCard({
         {service.phoneNumber && (
           <Popover>
             <PopoverTrigger asChild>
-              <Button className="bg-black text-white hover:bg-black/80 transition w-1/2" size="sm">
+              <Button className="bg-black text-white hover:bg-black/80 transition w-1/3" size="sm">
                 <MessageCircleMore className="size-4" />         
                 {t("Common.contact")}
               </Button>
