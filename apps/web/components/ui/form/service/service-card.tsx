@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useState } from "react";
 import { slugify } from "@/lib/slugify";
-import { Star, ChevronLeft, ChevronRight, Phone, MessageCircleMore } from "lucide-react";
+import { Star, ChevronLeft, ChevronRight, Phone } from "lucide-react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faWhatsapp } from "@fortawesome/free-brands-svg-icons";
 import { cn } from "@workspace/ui/lib/utils";
@@ -186,8 +186,7 @@ export function ServiceCard({
         {service.phoneNumber && (
           <Popover>
             <PopoverTrigger asChild>
-              <Button className="bg-black text-white hover:bg-black/80 transition w-1/3" size="sm">
-                <MessageCircleMore className="size-4" />         
+              <Button className="bg-black text-white hover:bg-black/80 transition w-1/3" size="sm">       
                 {t("Common.contact")}
               </Button>
             </PopoverTrigger>
