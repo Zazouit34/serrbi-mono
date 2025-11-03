@@ -102,7 +102,7 @@
     "title": "Questions fréquentes",
     "subtitle": "Réponses aux questions courantes sur l’utilisation de Serrbi.",
     "items": [
-  {
+      {
     "q": "Qu’est-ce que Serrbi ?",
     "a": "Serrbi est une plateforme tout-en-un où vous pouvez trouver un emploi, recruter des professionnels de confiance ou proposer vos propres services et missions — le tout propulsé par l’automatisation intelligente et l’IA."
   },
@@ -543,7 +543,7 @@
     "category": {
       "title": "Catégorie d’emploi"
     },
-
+    
     "stats": {
       "title": "Activité d’auto‑candidature (ce mois-ci)",
       "autoApplied": "Emplois auto‑candidatés",
@@ -750,4 +750,4 @@
       "Cancelled": "Annulé"
     }
   }
-}
+  }

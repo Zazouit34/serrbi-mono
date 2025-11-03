@@ -15,7 +15,12 @@ export default function Provider({ children }: { children: React.ReactNode }) {
           fetch(url, options) {
             return fetch(url, {
               ...options,
+              method: options?.method || 'POST', // Explicitly preserve method - mutations need POST
               credentials: "include", // send NextAuth cookies to admin origin
+              headers: {
+                'Content-Type': 'application/json',
+                ...options?.headers, // Preserve other headers after Content-Type
+              },
             });
           },
         }),
@@ -29,5 +34,3 @@ export default function Provider({ children }: { children: React.ReactNode }) {
     </trpc.Provider>
   );
 }
-
-
