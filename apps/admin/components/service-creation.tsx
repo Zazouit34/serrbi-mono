@@ -14,7 +14,31 @@ export default function ServicesCreation() {
       utils.service.getService.invalidate();
       alert("Import complete");
     },
+    onError: (error: any) => {
+      console.error("Import error:", error);
+      alert(`Import failed: ${error.message}`);
+    },
   });
+
+  const handleImport = () => {
+    // Transform rows to ensure images is an array and clean up undefined/empty values
+    const cleanedRows = rows.map((row) => ({
+      ...row,
+      images: row.images ? (Array.isArray(row.images) ? row.images : []) : [],
+      price: row.price ? (typeof row.price === 'string' ? Number(row.price) : row.price) : null,
+      // Ensure all optional fields are either valid or null
+      stateAbbreviation: row.stateAbbreviation || null,
+      city: row.city || null,
+      address: row.address || null,
+      phoneNumber: row.phoneNumber || null,
+      email: row.email || null,
+      website: row.website || null,
+      displayName: row.displayName || null,
+      displayImage: row.displayImage || null,
+    }));
+
+    bulk.mutate({ rows: cleanedRows });
+  };
 
   return (
     <div className="space-y-4">
@@ -38,7 +62,7 @@ export default function ServicesCreation() {
       <button
         className="px-4 py-2 text-white bg-black rounded disabled:opacity-50"
         disabled={!rows.length || bulk.isPending}
-        onClick={() => bulk.mutate({ rows })}
+        onClick={handleImport}
       >
         {bulk.isPending ? "Importing..." : `Import ${rows.length} services`}
       </button>
