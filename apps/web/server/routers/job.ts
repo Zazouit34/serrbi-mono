@@ -1,9 +1,4 @@
-import {
-  protectedProcedure,
-  router,
-  publicProcedure,
-  adminProcedure,
-} from "../trpc";
+import { protectedProcedure, router, publicProcedure, adminProcedure } from "../trpc";
 import {
   jobListingFormSchema,
   jobListQuerySchema,
@@ -19,7 +14,7 @@ import { applyAndNotify } from "@/server/services/job-application";
 import { headers } from "next/headers";
 import { getTenantFromHost } from "@/lib/domain";
 import maStates from "@workspace/ui/lib/states.json" assert { type: "json" };
-import { normalizeText } from "@/lib/normalize-text";
+
 
 export const jobRouter = router({
   createJob: protectedProcedure
@@ -102,119 +97,88 @@ export const jobRouter = router({
       const category = input?.category;
       const experienceLevel = input?.experienceLevel;
       const type = input?.type;
-      const search = input?.search;
+      const search = input?.search?.trim() || "";
       const db = ctx.prisma as PrismaClient;
 
-      const where: any = {};
-      if (locationRequirement) where.locationRequirement = locationRequirement;
-      if (category) where.category = category;
-      if (experienceLevel) where.experienceLevel = experienceLevel;
-      if (type) where.type = type;
-      if ((input as any)?.countryIso2)
-        where.countryIso2 = (input as any).countryIso2;
-      if (search) {
-        const normalizedSearch = normalizeText(search);
+      // Base filter conditions
+      const filters: string[] = [];
+      const params: any[] = [];
 
-        where.OR = [
-          {
-            title: {
-              contains: search,
-              mode: "insensitive",
-            },
-          },
-          {
-            title: {
-              contains: normalizedSearch,
-              mode: "insensitive",
-            },
-          },
-          {
-            description: {
-              contains: search,
-              mode: "insensitive",
-            },
-          },
-          {
-            description: {
-              contains: normalizedSearch,
-              mode: "insensitive",
-            },
-          },
-          {
-            companyName: {
-              contains: search,
-              mode: "insensitive",
-            },
-          },
-          {
-            companyName: {
-              contains: normalizedSearch,
-              mode: "insensitive",
-            },
-          },
-          {
-            city: {
-              contains: search,
-              mode: "insensitive",
-            },
-          },
-          {
-            city: {
-              contains: normalizedSearch,
-              mode: "insensitive",
-            },
-          },
-        ];
+      if (locationRequirement) {
+        filters.push(`"locationRequirement" = $${params.length + 1}`);
+        params.push(locationRequirement);
+      }
+      if (category) {
+        filters.push(`category = $${params.length + 1}`);
+        params.push(category);
+      }
+      if (experienceLevel) {
+        filters.push(`"experienceLevel" = $${params.length + 1}`);
+        params.push(experienceLevel);
+      }
+      if (type) {
+        filters.push(`type = $${params.length + 1}`);
+        params.push(type);
+      }
+      if ((input as any)?.countryIso2) {
+        filters.push(`"countryIso2" = $${params.length + 1}`);
+        params.push((input as any).countryIso2);
       }
 
-      // Exclude Morocco for secondary domain: countryIso2 = 'MA' OR stateAbbreviation in MA codes
+      // Search logic with unaccent
+      if (search) {
+        filters.push(`
+          (
+            unaccent(lower(title)) LIKE unaccent(lower($${params.length + 1}))
+            OR unaccent(lower(description)) LIKE unaccent(lower($${params.length + 1}))
+            OR unaccent(lower("companyName")) LIKE unaccent(lower($${params.length + 1}))
+            OR unaccent(lower(city)) LIKE unaccent(lower($${params.length + 1}))
+          )
+        `);
+        params.push(`%${search}%`);
+      }
+
+      // Exclude Morocco for secondary domain
       try {
         const hdrs = await headers();
         const host = hdrs.get("host") || "";
         const tenant = getTenantFromHost(host);
         if (tenant === "secondary") {
           const maCodes = Object.keys(maStates as Record<string, string>);
-          where.NOT = [
-            {
-              OR: [
-                { countryIso2: "MA" },
-                { stateAbbreviation: { in: maCodes } },
-              ],
-            },
-          ];
+          const maCodesPlaceholders = maCodes.map((_, i) => `$${params.length + 1 + i}`).join(", ");
+          filters.push(`NOT ("countryIso2" = 'MA' OR "stateAbbreviation" IN (${maCodesPlaceholders}))`);
+          params.push(...maCodes);
         }
       } catch {}
 
-      const [items, total] = await Promise.all([
-        db.job.findMany({
-          where,
-          orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-          skip: (page - 1) * pageSize,
-          take: pageSize,
-          select: {
-            id: true,
-            title: true,
-            companyName: true,
-            companyImage: true,
-            description: true,
-            category: true,
-            applicationUrl: true,
-            applicationEmail: true,
-            wage: true,
-            countryIso2: true,
-            stateAbbreviation: true,
-            tags: true,
-            city: true,
-            type: true,
-            experienceLevel: true,
-            locationRequirement: true,
-            status: true,
-            user: { select: { name: true, image: true } },
-            createdAt: true,
-          },
-        }),
-        db.job.count({ where }),
-      ]);
+      // Build final WHERE clause
+      const whereClause = filters.length > 0 ? `WHERE ${filters.join(" AND ")}` : "";
+
+      // Pagination and ordering
+      const offset = (page - 1) * pageSize;
+
+      // Get jobs
+      const items = await db.$queryRawUnsafe<any[]>(`
+        SELECT 
+          id, title, "companyName", "companyImage", description, category,
+          "applicationUrl", "applicationEmail", wage, "countryIso2",
+          "stateAbbreviation", tags, city, type, "experienceLevel",
+          "locationRequirement", status, "createdAt"
+        FROM "Job"
+        ${whereClause}
+        ORDER BY "createdAt" DESC, id DESC
+        LIMIT ${pageSize} OFFSET ${offset};
+      `, ...params);
+
+      // Get total count
+      const totalResult = await db.$queryRawUnsafe<{ count: number }[]>(`
+        SELECT COUNT(*)::int AS count
+        FROM "Job"
+        ${whereClause};
+      `, ...params);
+
+      const total = totalResult[0]?.count ?? 0;
+
       return { items, total, page, pageSize };
     }),
 
@@ -264,67 +228,57 @@ export const jobRouter = router({
       });
       return result;
     }),
-  //Bulk Import Jobs
-  bulkCreate: adminProcedure
-    .input(jobImportSchema)
-    .mutation(async ({ ctx, input }) => {
-      const db = ctx.prisma as PrismaClient;
-      const admin = (ctx as any).user as { id?: string };
+    //Bulk Import Jobs
+bulkCreate: adminProcedure
+.input(jobImportSchema)
+.mutation(async ({ ctx, input }) => {
+  const db = ctx.prisma as PrismaClient;
+  const admin = (ctx as any).user as { id?: string };
 
-      let ownerId = admin?.id;
-      if (!ownerId || ownerId === "admin-service") {
-        const byId = process.env.ADMIN_DEFAULT_OWNER_ID;
-        const byEmail = process.env.ADMIN_DEFAULT_OWNER_EMAIL;
-        if (byId) ownerId = byId;
-        else if (byEmail) {
-          const u = await db.user.findUnique({
-            where: { email: byEmail },
-            select: { id: true },
-          });
-          if (!u)
-            throw new TRPCError({
-              code: "BAD_REQUEST",
-              message: "ADMIN_DEFAULT_OWNER_EMAIL not found",
-            });
-          ownerId = u.id;
-        } else {
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: "No ownerId available for import",
-          });
-        }
-      }
+  let ownerId = admin?.id;
+  if (!ownerId || ownerId === "admin-service") {
+    const byId = process.env.ADMIN_DEFAULT_OWNER_ID;
+    const byEmail = process.env.ADMIN_DEFAULT_OWNER_EMAIL;
+    if (byId) ownerId = byId;
+    else if (byEmail) {
+      const u = await db.user.findUnique({ where: { email: byEmail }, select: { id: true } });
+      if (!u) throw new TRPCError({ code: "BAD_REQUEST", message: "ADMIN_DEFAULT_OWNER_EMAIL not found" });
+      ownerId = u.id;
+    } else {
+      throw new TRPCError({ code: "BAD_REQUEST", message: "No ownerId available for import" });
+    }
+  }
 
-      const data = input.rows.map((r) => ({
-        userId: ownerId!,
-        title: r.title,
-        companyName: r.companyName,
-        companyImage: r.companyImage ?? null,
-        description: r.description,
-        category: r.category,
-        locationRequirement: r.locationRequirement,
-        experienceLevel: r.experienceLevel,
-        type: r.type,
-        tags: [],
-        wage: r.wage ?? null,
-        countryIso2: (r as any).countryIso2 ?? null,
-        stateAbbreviation: r.stateAbbreviation ?? null,
-        city: r.city ?? null,
-        applicationEmail: r.applicationEmail ?? "",
-        applicationUrl: r.applicationUrl ?? null,
-        status: "draft" as const,
-      }));
+  const data = input.rows.map((r) => ({
+    userId: ownerId!,
+    title: r.title,
+    companyName: r.companyName,
+    companyImage: r.companyImage ?? null,
+    description: r.description,
+    category: r.category,
+    locationRequirement: r.locationRequirement,
+    experienceLevel: r.experienceLevel,
+    type: r.type,
+    tags: [],
+    wage: r.wage ?? null,
+    countryIso2: (r as any).countryIso2 ?? null,
+    stateAbbreviation: r.stateAbbreviation ?? null,
+    city: r.city ?? null,
+    applicationEmail: r.applicationEmail ?? "",
+    applicationUrl: r.applicationUrl ?? null,
+    status: "draft" as const,
+  }));
 
-      await db.job.createMany({ data });
-      // Background event for import (non-blocking)
-      try {
-        await inngest.send({
-          name: "jobs/imported",
-          data: { importedAt: new Date().toISOString() },
-        });
-      } catch (err) {
-        console.error("Failed to send jobs/imported event", err);
-      }
-      return { success: true, count: data.length };
-    }),
+  await db.job.createMany({ data });
+  // Background event for import (non-blocking)
+  try {
+    await inngest.send({
+      name: "jobs/imported",
+      data: { importedAt: new Date().toISOString() },
+    });
+  } catch (err) {
+    console.error("Failed to send jobs/imported event", err);
+  }
+  return { success: true, count: data.length };
+}),
 });

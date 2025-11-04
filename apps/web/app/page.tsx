@@ -16,8 +16,8 @@ export default async function Page() {
       <ResumeInsight />
       <HowItWorks />
       <PricingShowcase />
-      <FAQ />
       <CarouselMain />
+      <FAQ />
       <SiteFooter />
     </main>
   );
