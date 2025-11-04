@@ -103,21 +103,21 @@ export function JobListingGrid({ filters }: JobListingGridProps) {
         )
       }
 
-      // Show pages around current page - ensure at least 5 pages are visible
-      let start = Math.max(2, page - 2)
-      let end = Math.min(totalPages - 1, page + 2)
+      // Show pages around current page - ensure at least 3 pages are visible
+      let start = Math.max(2, page - 1)
+      let end = Math.min(totalPages - 1, page + 1)
       
-      // Adjust to show at least 5 pages total (including first and last)
+      // Adjust to show at least 3 pages total (including first and last)
       const middlePages = end - start + 1
       const totalVisible = middlePages + 2 // +2 for first and last page
       
-      if (totalVisible < 5 && totalPages >= 5) {
-        if (page <= 3) {
+      if (totalVisible < 3 && totalPages >= 3) {
+        if (page <= 2) {
           // If we're near the beginning, extend the end
-          end = Math.min(totalPages - 1, 4)
-        } else if (page >= totalPages - 2) {
+          end = Math.min(totalPages - 1, 2)
+        } else if (page >= totalPages - 1) {
           // If we're near the end, extend the start
-          start = Math.max(2, totalPages - 3)
+          start = Math.max(2, totalPages - 2)
         }
       }
       
