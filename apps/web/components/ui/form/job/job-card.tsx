@@ -100,12 +100,12 @@ export function JobCard({
           </div>
 
           {/* Company + Days ago + Favorite */}
-          <div className="flex justify-between items-center">
-            <div className="flex gap-2 items-center">
-              <span className="text-sm font-semibold text-gray-800 md:text-lg">
+          <div className="flex justify-between items-center min-h-[1.5rem] md:min-h-[2rem]">
+            <div className="flex gap-2 items-center flex-1 min-w-0">
+              <span className="text-sm font-semibold text-gray-800 md:text-lg truncate">
                 {job.companyName ?? t("unknownCompany")}
               </span>
-              <span className="flex gap-1 items-center text-xs text-gray-400 md:text-sm">
+              <span className="flex gap-1 items-center text-xs text-gray-400 md:text-sm whitespace-nowrap">
                 <ClockIcon className="size-3" />
                 {daysAgo !== null
                   ? daysAgo === 0
