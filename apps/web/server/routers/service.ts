@@ -29,7 +29,6 @@ export const serviceRouter = router({
             serviceCategory: input.serviceCategory,
             type: input.type,
             price: input.price,
-            // priceType removed
             stateAbbreviation: input.stateAbbreviation || null,
             city: input.city || null,
             address: input.address || null,
@@ -277,7 +276,7 @@ export const serviceRouter = router({
       serviceCategory: r.serviceCategory as any,
       type: r.type as any,
       price: (r.price ?? 0) as any,
-      // priceType removed
+      averageRating: (r.averageRating ?? 0) as any,
       stateAbbreviation: (r.stateAbbreviation ?? null) as any,
       city: (r.city ?? null) as any,
       address: (r.address ?? null) as any,

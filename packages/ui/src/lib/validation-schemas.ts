@@ -470,11 +470,15 @@ export const serviceImportRowSchema = z.object({
     if (typeof val === "string" && val.trim() !== "") return Number(val)
     return val
   }, z.number().int().positive().min(1).nullable().optional()),
-  // priceType removed
   stateAbbreviation: z.preprocess((val) => {
     if (typeof val === "string") return val.trim().toUpperCase();
     return val;
   }, z.union([z.string().length(2), z.string().length(3)]).optional().nullable()),
+  averageRating: z.preprocess((val) => {
+    if (val === "" || val === null || val === undefined) return 0;
+    const num = Number(val);
+    return Number.isNaN(num) ? 0 : num;
+  }, z.number().min(0).max(5).nullable().optional()),
   city: z.string().optional().nullable(),
   address: z.string().optional().nullable(),
   phoneNumber: z.string().optional().nullable(),

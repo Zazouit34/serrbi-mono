@@ -30,9 +30,10 @@ const Beam = ({
   const [ar, setAr] = useState(1);
   
   useEffect(() => {
-    setHue(Math.floor(Math.random() * 360));
+    setHue(Math.floor(Math.random() * 60)); // dark warm range (red-orange)
     setAr(Math.floor(Math.random() * 10) + 1);
   }, []);
+  
 
   return (
     <motion.div
@@ -41,7 +42,7 @@ const Beam = ({
           "--x": `${x}`,
           "--width": `${width}`,
           "--aspect-ratio": `${ar}`,
-          "--background": `linear-gradient(hsl(${hue} 80% 60%), transparent)`,
+          "--background": `linear-gradient(rgba(0,0,0,0.8), transparent)`,
         } as React.CSSProperties
       }
       className={`absolute left-[var(--x)] top-0 [aspect-ratio:1/var(--aspect-ratio)] [background:var(--background)] [width:var(--width)]`}

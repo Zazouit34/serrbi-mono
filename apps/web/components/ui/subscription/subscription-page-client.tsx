@@ -191,6 +191,12 @@ export default function SubscriptionPageClient() {
     if ((plan.name || "").toUpperCase() === "FREE") {
       features.push(tPricing("features.unlimitedApplications"));
     }
+     // Auto-apply
+     if (plan.autoApplyAccess && plan.autoApplyMonthlyLimit) {
+      features.push(
+        `${plan.autoApplyMonthlyLimit} ${tPricing("features.autoApplyPerMonth")}`
+      );
+    }
     // Job board access
     if (plan.jobBoardAccess) features.push(tPricing("features.jobBoardAccess"));
     // Resume ATS score
@@ -198,12 +204,7 @@ export default function SubscriptionPageClient() {
       features.push(tPricing("features.resumeAtsScore"));
     // Smart Match AI
     if (plan.smartMatchAccess) features.push(tPricing("features.smartMatch"));
-    // Auto-apply
-    if (plan.autoApplyAccess && plan.autoApplyMonthlyLimit) {
-      features.push(
-        `${plan.autoApplyMonthlyLimit} ${tPricing("features.autoApplyPerMonth")}`
-      );
-    }
+    
 
     const isCurrent = subscription?.planId === plan.id;
     const isCheckingOut = loadingCheckout === plan.id;

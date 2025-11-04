@@ -8,6 +8,7 @@ const nextConfig = {
       "lh3.googleusercontent.com",
       "imgs.search.brave.com",
       "images.unsplash.com",
+      "unsplash.com",
       "plus.unsplash.com",
       "serrbi-main-file-bucket.s3.amazonaws.com",
       "serrbi-main-file-bucket.s3.us-east-1.amazonaws.com",

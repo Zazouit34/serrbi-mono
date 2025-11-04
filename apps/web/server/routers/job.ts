@@ -14,6 +14,7 @@ import { applyAndNotify } from "@/server/services/job-application";
 import { headers } from "next/headers";
 import { getTenantFromHost } from "@/lib/domain";
 import maStates from "@workspace/ui/lib/states.json" assert { type: "json" };
+import { normalizeText } from "@/lib/normalize-text";
 
 export const jobRouter = router({
   createJob: protectedProcedure
@@ -106,12 +107,40 @@ export const jobRouter = router({
       if (type) where.type = type;
       if ((input as any)?.countryIso2) where.countryIso2 = (input as any).countryIso2;
       if (search) {
-        where.OR = [
-          { title: { contains: search, mode: "insensitive" } },
-          { description: { contains: search, mode: "insensitive" } },
-          { companyName: { contains: search, mode: "insensitive" } },
+        const normalizedSearch = normalizeText(search);
+      
+        where.AND = [
+          {
+            OR: [
+              {
+                title: {
+                  contains: normalizedSearch,
+                  mode: "insensitive",
+                },
+              },
+              {
+                description: {
+                  contains: normalizedSearch,
+                  mode: "insensitive",
+                },
+              },
+              {
+                companyName: {
+                  contains: normalizedSearch,
+                  mode: "insensitive",
+                },
+              },
+              {
+                city: {
+                  contains: normalizedSearch,
+                  mode: "insensitive",
+                },
+              },
+            ],
+          },
         ];
       }
+      
 
       // Exclude Morocco for secondary domain: countryIso2 = 'MA' OR stateAbbreviation in MA codes
       try {

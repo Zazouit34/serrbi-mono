@@ -7,6 +7,7 @@ import { Button } from "@workspace/ui/components/button";
 import { Search, Briefcase, Wrench, ClipboardList } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { FaGoogle, FaAws, FaMicrosoft, FaLinkedin } from "react-icons/fa";
+import { normalizeText } from "@/lib/normalize-text";
 
 type TabType = "jobs" | "services" | "tasks";
 
@@ -18,7 +19,11 @@ export function HeroSearchBar() {
   const handleSearch = () => {
     // Navigate to the appropriate listing page with search query
     const searchParams = new URLSearchParams();
-    if (searchQuery) searchParams.set("search", searchQuery);
+    if (searchQuery) {
+      // Normalize the search query for better matching
+      const normalizedQuery = normalizeText(searchQuery);
+      searchParams.set("search", normalizedQuery);
+    }
 
     const routes = {
       jobs: `/jobs?${searchParams.toString()}`,

@@ -1,6 +1,8 @@
 "use client";
 import Image from "next/image";
 import { useLocale } from "next-intl";
+import { useTranslations } from "next-intl";
+
 
 // Ultra high-quality 4K service-focused images with dark professional aesthetic
 const carouselImages = [
@@ -80,14 +82,19 @@ export const CarouselMain: React.FC<CarouselMainProps> = ({
   speed = 50,
   direction = "left",
 }) => {
+  const t = useTranslations("Hero");
   const locale = useLocale();
   const isRtl = locale === "ar";
   // Duplicate images for seamless loop
   const duplicatedImages = [...carouselImages, ...carouselImages];
 
   return (
+    <>
+    <p className="mt-0 mb-0 max-w-2xl text-[14px] md:text-[16px] text-balance text-muted-foreground text-center mx-auto">
+    {t("description")}
+  </p>
     <div
-      className={`pt-2 w-full md:pt-8 ${className}`}
+      className={`py-2 w-full md:py-8 ${className}`}
       style={{
         overflow: "hidden",
         marginLeft: "calc(-50vw + 50%)",
@@ -141,6 +148,7 @@ export const CarouselMain: React.FC<CarouselMainProps> = ({
         </div>
       </div>
     </div>
+    </>
   );
 };
 

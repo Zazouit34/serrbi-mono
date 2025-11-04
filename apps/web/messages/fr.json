@@ -57,8 +57,8 @@
     "next": "Suivant"
   },
   "Pricing": {
-    "title": "Formules flexibles",
-    "subtitle": "Choisissez une formule adaptée à vos besoins. Changez quand vous voulez.",
+    "title": "Plans flexibles",
+    "subtitle": "Choisissez un plan adapté à vos besoins. Changez quand vous voulez.",
     "viewAll": "Tout voir",
     "planSubtext": {
       "free": "Parfait pour débuter sa recherche d’emploi — progrès intelligent et régulier.",
@@ -84,9 +84,9 @@
       "autoApplyPerMonth": "auto‑candidatures par mois",
       "unlimitedApplications": "Candidatures manuelles illimitées"
     },
-    "choosePlan": "Choisir la formule",
+    "choosePlan": "Choisir le plan",
     "errors": {
-      "loadPlansFailed": "Échec du chargement des formules. Réessayez."
+      "loadPlansFailed": "Échec du chargement des plans. Réessayez."
     }
   },
   "HeroSearchBar": {
@@ -124,7 +124,7 @@
   },
   {
     "q": "Puis-je publier ou postuler gratuitement ?",
-    "a": "Oui. Vous pouvez commencer avec la formule Gratuite pour publier ou postuler à un nombre limité d’annonces. Passez à une formule supérieure pour bénéficier de plus de visibilité et de fonctionnalités premium."
+    "a": "Oui. Vous pouvez commencer avec le plan Gratuite pour publier ou postuler à un nombre limité d’annonces. Passez à un plan supérieur pour bénéficier de plus de visibilité et de fonctionnalités premium."
   },
   {
     "q": "Serrbi est-il disponible dans ma ville ?",
@@ -382,14 +382,14 @@
     }
   },
   "Subscription": {
-    "title": "Choisissez votre formule",
-    "subtitle": "Passez à une formule supérieure pour débloquer plus d’annonces et de fonctionnalités.",
+    "title": "Choisissez votre plan",
+    "subtitle": "Passez à un plan supérieur pour débloquer plus d’annonces et de fonctionnalités.",
     "errors": {
-      "loadPlans": "Échec du chargement des formules. Actualisez la page."
+      "loadPlans": "Échec du chargement des plans. Actualisez la page."
     },
     "cta": {
       "openingCheckout": "Ouverture du paiement...",
-      "currentPlan": "Formule actuelle",
+      "currentPlan": "Plan actuel",
       "subscribeNow": "S’abonner",
       "getStartedFree": "Commencer gratuitement"
     },
@@ -406,33 +406,33 @@
       "unlimitedApplications": "Candidatures manuelles illimitées"
     },
     "toasts": {
-      "subscribedFree": "Abonné à la formule Gratuite",
+      "subscribedFree": "Abonné au plan Gratuite",
       "paymentUnavailable": "Système de paiement indisponible",
       "notSignedIn": "Veuillez vous connecter pour vous abonner",
       "checkoutNotReady": "Paiement non prêt. Réessayez.",
-      "planMisconfigured": "Formule mal configurée",
+      "planMisconfigured": "Plan mal configuré",
       "checkoutFailed": "Échec du démarrage du paiement"
     }
   },
   "Billing": {
     "title": "Facturation et abonnement",
     "subtitle": "Gérez votre abonnement et consultez l’historique des paiements.",
-    "currentPlan": "Formule actuelle",
+    "currentPlan": "Plan actuel",
     "details": {
       "period": "Facturation",
       "subscriptionId": "ID d’abonnement",
       "billingPeriod": "Période de facturation"
     },
     "labels": {
-      "plan": "Formule",
+      "plan": "Plan",
       "status": "Statut",
       "nextBillingDate": "Prochaine date de facturation"
     },
     "endsOn": "Se termine le",
     "noActive": "Aucun abonnement actif.",
-    "choosePlan": "Choisir une formule",
+    "choosePlan": "Choisir un plan",
     "usage": {
-      "title": "Fonctionnalités de la formule",
+      "title": "Fonctionnalités du plan",
       "subtitle": "Abonnez‑vous pour voir vos fonctionnalités.",
       "jobs": "Annonces d’emploi",
       "services": "Annonces de service",
@@ -500,7 +500,7 @@
     "step1": {
       "title": "Paiement réussi !",
       "descPrefix": "Merci",
-      "descSuffix": "la formule est confirmée.",
+      "descSuffix": "le plan est confirmé.",
       "nextHint": "Appuyez sur Suivant pour configurer l’auto‑candidature."
     },
     "step2": {
@@ -533,8 +533,8 @@
     },
     "locked": {
       "title": "L’Auto‑candidature est réservée aux membres payants",
-      "subtitle": "Passez à une formule Basic ou Premium pour activer les candidatures automatiques et gagner du temps.",
-      "viewPlans": "Voir les formules"
+      "subtitle": "Passez à un plan supérieur pour débloquer plus d’annonces et de fonctionnalités.",
+      "viewPlans": "Voir les plans"
     },
     "toggle": {
       "title": "Auto‑candidature",

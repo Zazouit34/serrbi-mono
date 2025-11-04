@@ -1,6 +1,5 @@
 "use client";
 
-import { CarouselMain } from "@/components/ui/carousel-main";
 import { HeroSearchBar } from "@/components/ui/hero-search-bar";
 import { GradientText } from "@workspace/ui/components/ui/shadcn-io/gradient-text";
 
@@ -108,12 +107,6 @@ export default function Hero() {
         </h1>
 
         <HeroSearchBar />
-
-        <p className="mt-0 mb-0 max-w-2xl text-[14px] md:text-[16px] text-balance text-muted-foreground">
-          {t("description")}
-        </p>
-
-        <CarouselMain />
       </div>
     </div>
   );

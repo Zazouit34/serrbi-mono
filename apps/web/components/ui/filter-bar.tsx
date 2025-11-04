@@ -25,6 +25,7 @@ import {
   PopoverTrigger,
 } from "@workspace/ui/components/popover";
 import { useTranslations } from "next-intl";
+import { normalizeText } from "@/lib/normalize-text";
 
 export type FilterOption = {
   label: string;
@@ -87,7 +88,9 @@ export function FilterBar({
   }, [initialFilters]);
 
   const handleSearch = () => {
-    const newFilters = { ...filters, search: searchQuery };
+    // Normalize the search query for better matching
+    const normalizedQuery = searchQuery ? normalizeText(searchQuery) : "";
+    const newFilters = { ...filters, search: normalizedQuery };
     setFilters(newFilters);
     onFilterChange(newFilters);
   };
