@@ -1,4 +1,9 @@
-import { protectedProcedure, router, publicProcedure, adminProcedure } from "../trpc";
+import {
+  protectedProcedure,
+  router,
+  publicProcedure,
+  adminProcedure,
+} from "../trpc";
 import {
   jobListingFormSchema,
   jobListQuerySchema,
@@ -88,7 +93,7 @@ export const jobRouter = router({
       }
     }),
 
-    getJob: publicProcedure
+  getJob: publicProcedure
     .input(jobListQuerySchema.optional())
     .query(async ({ ctx, input }) => {
       const page = input?.page ?? 1;
@@ -105,42 +110,62 @@ export const jobRouter = router({
       if (category) where.category = category;
       if (experienceLevel) where.experienceLevel = experienceLevel;
       if (type) where.type = type;
-      if ((input as any)?.countryIso2) where.countryIso2 = (input as any).countryIso2;
+      if ((input as any)?.countryIso2)
+        where.countryIso2 = (input as any).countryIso2;
       if (search) {
         const normalizedSearch = normalizeText(search);
-      
-        where.AND = [
+
+        where.OR = [
           {
-            OR: [
-              {
-                title: {
-                  contains: normalizedSearch,
-                  mode: "insensitive",
-                },
-              },
-              {
-                description: {
-                  contains: normalizedSearch,
-                  mode: "insensitive",
-                },
-              },
-              {
-                companyName: {
-                  contains: normalizedSearch,
-                  mode: "insensitive",
-                },
-              },
-              {
-                city: {
-                  contains: normalizedSearch,
-                  mode: "insensitive",
-                },
-              },
-            ],
+            title: {
+              contains: search,
+              mode: "insensitive",
+            },
+          },
+          {
+            title: {
+              contains: normalizedSearch,
+              mode: "insensitive",
+            },
+          },
+          {
+            description: {
+              contains: search,
+              mode: "insensitive",
+            },
+          },
+          {
+            description: {
+              contains: normalizedSearch,
+              mode: "insensitive",
+            },
+          },
+          {
+            companyName: {
+              contains: search,
+              mode: "insensitive",
+            },
+          },
+          {
+            companyName: {
+              contains: normalizedSearch,
+              mode: "insensitive",
+            },
+          },
+          {
+            city: {
+              contains: search,
+              mode: "insensitive",
+            },
+          },
+          {
+            city: {
+              contains: normalizedSearch,
+              mode: "insensitive",
+            },
           },
         ];
       }
-      
 
       // Exclude Morocco for secondary domain: countryIso2 = 'MA' OR stateAbbreviation in MA codes
       try {
@@ -239,57 +264,67 @@ export const jobRouter = router({
       });
       return result;
     }),
-    //Bulk Import Jobs
-bulkCreate: adminProcedure
-.input(jobImportSchema)
-.mutation(async ({ ctx, input }) => {
-  const db = ctx.prisma as PrismaClient;
-  const admin = (ctx as any).user as { id?: string };
+  //Bulk Import Jobs
+  bulkCreate: adminProcedure
+    .input(jobImportSchema)
+    .mutation(async ({ ctx, input }) => {
+      const db = ctx.prisma as PrismaClient;
+      const admin = (ctx as any).user as { id?: string };
 
-  let ownerId = admin?.id;
-  if (!ownerId || ownerId === "admin-service") {
-    const byId = process.env.ADMIN_DEFAULT_OWNER_ID;
-    const byEmail = process.env.ADMIN_DEFAULT_OWNER_EMAIL;
-    if (byId) ownerId = byId;
-    else if (byEmail) {
-      const u = await db.user.findUnique({ where: { email: byEmail }, select: { id: true } });
-      if (!u) throw new TRPCError({ code: "BAD_REQUEST", message: "ADMIN_DEFAULT_OWNER_EMAIL not found" });
-      ownerId = u.id;
-    } else {
-      throw new TRPCError({ code: "BAD_REQUEST", message: "No ownerId available for import" });
-    }
-  }
+      let ownerId = admin?.id;
+      if (!ownerId || ownerId === "admin-service") {
+        const byId = process.env.ADMIN_DEFAULT_OWNER_ID;
+        const byEmail = process.env.ADMIN_DEFAULT_OWNER_EMAIL;
+        if (byId) ownerId = byId;
+        else if (byEmail) {
+          const u = await db.user.findUnique({
+            where: { email: byEmail },
+            select: { id: true },
+          });
+          if (!u)
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: "ADMIN_DEFAULT_OWNER_EMAIL not found",
+            });
+          ownerId = u.id;
+        } else {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "No ownerId available for import",
+          });
+        }
+      }
 
-  const data = input.rows.map((r) => ({
-    userId: ownerId!,
-    title: r.title,
-    companyName: r.companyName,
-    companyImage: r.companyImage ?? null,
-    description: r.description,
-    category: r.category,
-    locationRequirement: r.locationRequirement,
-    experienceLevel: r.experienceLevel,
-    type: r.type,
-    tags: [],
-    wage: r.wage ?? null,
-    countryIso2: (r as any).countryIso2 ?? null,
-    stateAbbreviation: r.stateAbbreviation ?? null,
-    city: r.city ?? null,
-    applicationEmail: r.applicationEmail ?? "",
-    applicationUrl: r.applicationUrl ?? null,
-    status: "draft" as const,
-  }));
+      const data = input.rows.map((r) => ({
+        userId: ownerId!,
+        title: r.title,
+        companyName: r.companyName,
+        companyImage: r.companyImage ?? null,
+        description: r.description,
+        category: r.category,
+        locationRequirement: r.locationRequirement,
+        experienceLevel: r.experienceLevel,
+        type: r.type,
+        tags: [],
+        wage: r.wage ?? null,
+        countryIso2: (r as any).countryIso2 ?? null,
+        stateAbbreviation: r.stateAbbreviation ?? null,
+        city: r.city ?? null,
+        applicationEmail: r.applicationEmail ?? "",
+        applicationUrl: r.applicationUrl ?? null,
+        status: "draft" as const,
+      }));
 
-  await db.job.createMany({ data });
-  // Background event for import (non-blocking)
-  try {
-    await inngest.send({
-      name: "jobs/imported",
-      data: { importedAt: new Date().toISOString() },
-    });
-  } catch (err) {
-    console.error("Failed to send jobs/imported event", err);
-  }
-  return { success: true, count: data.length };
-}),
+      await db.job.createMany({ data });
+      // Background event for import (non-blocking)
+      try {
+        await inngest.send({
+          name: "jobs/imported",
+          data: { importedAt: new Date().toISOString() },
+        });
+      } catch (err) {
+        console.error("Failed to send jobs/imported event", err);
+      }
+      return { success: true, count: data.length };
+    }),
 });

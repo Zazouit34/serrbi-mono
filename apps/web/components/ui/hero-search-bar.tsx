@@ -20,10 +20,9 @@ export function HeroSearchBar() {
     // Navigate to the appropriate listing page with search query
     const searchParams = new URLSearchParams();
     if (searchQuery) {
-      // Normalize the search query for better matching
-      const normalizedQuery = normalizeText(searchQuery);
-      searchParams.set("search", normalizedQuery);
+      searchParams.set("search", searchQuery);
     }
+    
 
     const routes = {
       jobs: `/jobs?${searchParams.toString()}`,

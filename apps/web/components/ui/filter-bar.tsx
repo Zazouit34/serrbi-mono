@@ -88,12 +88,11 @@ export function FilterBar({
   }, [initialFilters]);
 
   const handleSearch = () => {
-    // Normalize the search query for better matching
-    const normalizedQuery = searchQuery ? normalizeText(searchQuery) : "";
-    const newFilters = { ...filters, search: normalizedQuery };
+    const newFilters = { ...filters, search: searchQuery };
     setFilters(newFilters);
     onFilterChange(newFilters);
   };
+  
 
   const handleTempFilterChange = (key: string, value: string) => {
     setTempFilters((prev) => ({ ...prev, [key]: value }));
