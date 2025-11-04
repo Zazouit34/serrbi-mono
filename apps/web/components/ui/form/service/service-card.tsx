@@ -1,17 +1,12 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Star, ChevronLeft, ChevronRight, Phone } from "lucide-react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faWhatsapp } from "@fortawesome/free-brands-svg-icons";
 import { cn } from "@workspace/ui/lib/utils";
 import { CategoryBadge } from "@/components/ui/category-badge";
-import {
-  Popover,
-  PopoverTrigger,
-  PopoverContent,
-} from "@workspace/ui/components/popover";
 import { FavoriteButton } from "@/components/ui/favorite-button";
 import { useTranslations } from "next-intl";
 
@@ -37,6 +32,9 @@ export function ServiceCard({
 }) {
   const t = useTranslations();
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [contactOpen, setContactOpen] = useState(false);
+  const overlayRef = useRef<HTMLDivElement | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
 
   const formatPrice = (price: number) => {
     const currencyLabel =
@@ -53,13 +51,8 @@ export function ServiceCard({
   ];
 
   const imagesToShow = (() => {
-    // Priority: displayImage > images array > fallback images
-    if (service.displayImage) {
-      return [service.displayImage];
-    }
-    if (service.images && service.images.length > 0) {
-      return service.images;
-    }
+    if (service.displayImage) return [service.displayImage];
+    if (service.images && service.images.length > 0) return service.images;
     return fallbackImages;
   })();
 
@@ -73,158 +66,219 @@ export function ServiceCard({
     }
   })();
 
-  const nextImage = () => {
+  const nextImage = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
     setCurrentIndex((prev) => (prev + 1) % imagesToShow.length);
   };
 
-  const prevImage = () => {
+  const prevImage = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
     setCurrentIndex(
       (prev) => (prev - 1 + imagesToShow.length) % imagesToShow.length
     );
   };
 
-  const cardContent = (
-    <>
-      {/* Image Section with carousel */}
-      <div className="overflow-hidden relative w-full rounded-xl shadow-md aspect-square">
-        <Image
-          src={imagesToShow[currentIndex] || ""}
-          alt={service.title}
-          fill
-          className="object-cover"
-          unoptimized={isS3OrExternal}
-        />
+  // Close when clicking outside or pressing Escape
+  useEffect(() => {
+    function onDocClick(e: MouseEvent) {
+      if (
+        contactOpen &&
+        containerRef.current &&
+        !containerRef.current.contains(e.target as Node)
+      ) {
+        setContactOpen(false);
+      }
+    }
+    function onEsc(e: KeyboardEvent) {
+      if (e.key === "Escape") setContactOpen(false);
+    }
+    document.addEventListener("mousedown", onDocClick);
+    document.addEventListener("keydown", onEsc);
+    return () => {
+      document.removeEventListener("mousedown", onDocClick);
+      document.removeEventListener("keydown", onEsc);
+    };
+  }, [contactOpen]);
 
-        {/* Category badge - top left */}
+  // If there is no phone, just render the card (contact will be inactive anyway)
+  return (
+    <div className={cn("w-full", className)}>
+      {/* Entire card is clickable if you want; clicking outside closes the contact expanded state (handled above) */}
+      <div onClick={() => contactOpen && setContactOpen(false)}>
+        {/* Image Section with carousel */}
         <div
-          className="absolute top-2 left-2 z-10"
-          onClick={(e) => e.stopPropagation()}
+          ref={containerRef}
+          className="overflow-hidden relative w-full rounded-xl shadow-md aspect-square"
         >
-          <CategoryBadge category={service.serviceCategory} type="service" />
-        </div>
-
-        {/* Favorite button - top right */}
-        <div
-          className="absolute top-2 right-2 z-10"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <FavoriteButton
-            serviceId={service.id}
-            color={[255, 255, 255]}
-            className="p-1 rounded-full backdrop-blur-sm bg-black/20"
+          <Image
+            src={imagesToShow[currentIndex] || ""}
+            alt={service.title}
+            fill
+            className="object-cover"
+            unoptimized={isS3OrExternal}
           />
-        </div>
 
-        {/* Navigation arrows */}
-        {imagesToShow.length > 1 && (
-          <>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                prevImage();
-              }}
-              className="absolute left-2 top-1/2 z-10 p-1 rounded-full shadow -translate-y-1/2 bg-white/80 hover:bg-white transition"
-            >
-              <ChevronLeft className="size-4" />
-            </button>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                nextImage();
-              }}
-              className="absolute right-2 top-1/2 z-10 p-1 rounded-full shadow -translate-y-1/2 bg-white/80 hover:bg-white transition"
-            >
-              <ChevronRight className="size-4" />
-            </button>
-          </>
-        )}
-
-        {/* Dots */}
-        {imagesToShow.length > 1 && (
+          {/* Category badge - top left */}
           <div
-            className="flex absolute bottom-2 left-1/2 gap-1 -translate-x-1/2 z-10"
+            className="absolute top-2 left-2 z-10"
             onClick={(e) => e.stopPropagation()}
           >
-            {imagesToShow.map((_, i) => (
-              <span
-                key={i}
-                className={cn(
-                  "w-2 h-2 rounded-full",
-                  i === currentIndex ? "bg-primary" : "bg-white/70"
-                )}
-              />
-            ))}
+            <CategoryBadge category={service.serviceCategory} type="service" />
           </div>
-        )}
 
-        {/* Glass Overlay */}
-        <div className="flex absolute right-0 bottom-0 left-0 flex-col px-3 py-2 rounded-t-md rounded-b-xl backdrop-blur-md bg-black/30">
-          <div className="flex justify-between items-center">
-            {/* Price */}
-            <div className="text-sm font-semibold text-white">
-              {formatPrice(service.price)}
+          {/* Favorite button - top right */}
+          <div
+            className="absolute top-2 right-2 z-10"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <FavoriteButton
+              serviceId={service.id}
+              color={[255, 255, 255]}
+              className="p-1 rounded-full backdrop-blur-sm bg-black/20"
+            />
+          </div>
+
+          {/* Navigation arrows */}
+          {imagesToShow.length > 1 && (
+            <>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  prevImage(e);
+                }}
+                className="absolute left-2 top-1/2 z-10 p-1 rounded-full shadow -translate-y-1/2 bg-white/80 hover:bg-white transition"
+              >
+                <ChevronLeft className="size-4" />
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  nextImage(e);
+                }}
+                className="absolute right-2 top-1/2 z-10 p-1 rounded-full shadow -translate-y-1/2 bg-white/80 hover:bg-white transition"
+              >
+                <ChevronRight className="size-4" />
+              </button>
+            </>
+          )}
+
+          {/* Dots */}
+          {imagesToShow.length > 1 && (
+            <div
+              className="flex absolute bottom-2 left-1/2 gap-1 -translate-x-1/2 z-10"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {imagesToShow.map((_, i) => (
+                <span
+                  key={i}
+                  className={cn(
+                    "w-2 h-2 rounded-full",
+                    i === currentIndex ? "bg-primary" : "bg-white/70"
+                  )}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* Expandable Overlay (price + contact button collapsed; price + whatsapp/call when expanded) */}
+          <div
+            ref={overlayRef}
+            style={{
+              maxHeight: contactOpen ? 140 : 52,
+              transition: "max-height 280ms ease",
+            }}
+            className={cn(
+              "absolute right-0 bottom-0 left-0 z-10 px-3 py-2 rounded-t-md backdrop-blur-md bg-black/30 overflow-hidden"
+            )}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Top row inside overlay: price (left) + contact button (right when collapsed) */}
+            <div className="flex items-center justify-between">
+              <div className="text-sm font-semibold text-white leading-tight">
+                {formatPrice(service.price)}
+              </div>
+
+              {/* Collapsed contact button (visible when contactOpen === false) */}
+              {!contactOpen && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setContactOpen(true);
+                  }}
+                  className="bg-white/95 text-gray-900 text-xs font-medium px-2.5 py-1 rounded-md shadow-sm hover:bg-white transition focus:outline-none"
+                  aria-expanded="false"
+                >
+                  {t("Common.contact")}
+                </button>
+              )}
             </div>
 
-            {/* Rating */}
-            <div className="flex gap-1 items-center text-sm font-medium">
-              <Star className="w-3.5 h-3.5 text-[#FFDF22] fill-[#FFDF22]" />
-              <span className="text-[#FFDF22]">
-                {service.averageRating
-                  ? `${service.averageRating.toFixed(1)}`
-                  : "4.8"}
+            {/* Expanded area - collapses in layout when closed */}
+            <div
+              className={cn(
+                "transition-[opacity,max-height,margin] duration-300 overflow-hidden",
+                contactOpen
+                  ? "mt-2 max-h-40 opacity-100 pointer-events-auto"
+                  : "mt-0 max-h-0 opacity-0 pointer-events-none"
+              )}
+              aria-hidden={!contactOpen}
+            >
+              <div className="grid grid-cols-2 gap-2 items-center">
+                {/* WhatsApp */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (service.phoneNumber) {
+                      window.open(`https://wa.me/${service.phoneNumber}`, "_blank");
+                    }
+                  }}
+                  className="flex items-center justify-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-md transition"
+                  style={{ backgroundColor: "#25D366", color: "white" }}
+                >
+                  <FontAwesomeIcon icon={faWhatsapp} className="size-3.5" />
+                  <span className="truncate">{t("Common.whatsapp")}</span>
+                </button>
+
+                {/* Call */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (service.phoneNumber) {
+                      window.location.href = `tel:${service.phoneNumber}`;
+                    }
+                  }}
+                  className="flex items-center justify-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-md bg-white/95 text-gray-900 transition"
+                >
+                  <Phone className="size-3.5" />
+                  <span className="truncate">{t("Common.call")}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom Row - Service Title (80%) + Rating (20%) */}
+        <div className="pt-4 -mt-2">
+          <div className="flex items-start gap-3">
+            <h3
+              className="text-base font-semibold text-gray-900 line-clamp-2"
+              style={{ flex: "0 1 80%" }}
+            >
+              {service.title}
+            </h3>
+
+            <div
+              className="flex items-center gap-1 justify-end text-sm font-semibold"
+              style={{ flex: "0 0 20%" }}
+            >
+              <Star className="size-3 text-gray-400 fill-gray-400" />
+              <span className="text-gray-500">
+                {service.averageRating ? service.averageRating.toFixed(1) : "4.8"}
               </span>
             </div>
           </div>
         </div>
       </div>
-
-      {/* Bottom Row - Service Title */}
-      <div className="pt-4 -mt-2">
-        <h3 className="text-base font-semibold text-gray-900 line-clamp-2 text-left">
-          {service.title}
-        </h3>
-      </div>
-    </>
+    </div>
   );
-
-  if (service.phoneNumber) {
-    return (
-      <Popover>
-        <PopoverTrigger asChild>
-          <div className={cn("w-full cursor-pointer", className)}>
-            {cardContent}
-          </div>
-        </PopoverTrigger>
-        <PopoverContent
-          side="top"
-          align="center"
-          avoidCollisions={false}
-          collisionPadding={0}
-          sideOffset={0}
-          className="flex flex-col gap-2 w-48 absolute left-1/2 top-1/2 -translate-x-1/2 translate-y-[40%]"
-        >
-          <button
-            onClick={() =>
-              window.open(`https://wa.me/${service.phoneNumber}`, "_blank")
-            }
-            className="flex items-center gap-2 text-sm text-white bg-[#25D366] px-3 py-2 rounded-md hover:bg-[#1ebe5d] transition focus:outline-none focus:ring-0 border-none"
-          >
-            <FontAwesomeIcon icon={faWhatsapp} className="size-5" />
-            {t("Common.whatsapp")}
-          </button>
-          <button
-            onClick={() =>
-              (window.location.href = `tel:${service.phoneNumber}`)
-            }
-            className="flex gap-2 items-center px-3 py-2 text-sm rounded-md border transition hover:bg-gray-100 focus:outline-none focus:ring-0"
-          >
-            <Phone className="size-5" />
-            {t("Common.call")}
-          </button>
-        </PopoverContent>
-      </Popover>
-    );
-  }
-
-  return <div className={cn("w-full", className)}>{cardContent}</div>;
 }
