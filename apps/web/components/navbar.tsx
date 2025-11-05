@@ -251,7 +251,10 @@ export function Navbar() {
               <Link
                 key={link.href}
                 href={link.href}
-                className="group flex relative flex-col justify-center items-center px-4 py-3 flex-1 text-xs font-medium transition-colors hover:text-black data-[active=true]:text-black"
+                className={cn(
+                  "group flex relative flex-col justify-center items-center px-4 flex-1 text-xs font-medium transition-all duration-300 hover:text-black data-[active=true]:text-black",
+                  scrolled ? "py-2" : "py-3"
+                )}
                 data-active={pathname === link.href}
               >
                 <Image
@@ -262,7 +265,7 @@ export function Navbar() {
                   className={cn(
                     "mb-1 transition-all duration-300 ease-in-out",
                     scrolled
-                      ? "opacity-0 scale-75"
+                      ? "opacity-0 scale-75 h-0 mb-0"
                       : "opacity-100 scale-100"
                   )}
                 />
