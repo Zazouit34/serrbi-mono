@@ -30,7 +30,7 @@ export function ServiceListingGrid({ filters }: ServiceListingGridProps) {
   const queryInput = {
     ...filters,
     page,
-    pageSize: 12,
+    pageSize: 16,
   }
 
   const { data, isLoading, isFetching } = trpc.service.getService.useQuery(queryInput, {

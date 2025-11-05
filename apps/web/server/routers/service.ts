@@ -83,7 +83,7 @@ export const serviceRouter = router({
     .input(serviceListQuerySchema.optional())
     .query(async ({ ctx, input }) => {
       const page = input?.page ?? 1;
-      const pageSize = input?.pageSize ?? 12;
+      const pageSize = input?.pageSize ?? 16;
       const serviceCategory = input?.serviceCategory;
       const type = input?.type;
       const search = input?.search;

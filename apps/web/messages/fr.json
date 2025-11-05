@@ -8,7 +8,7 @@
     "jobs": "Emplois",
     "services": "Services",
     "tasks": "Tâches",
-    "plans": "Tarifs",
+    "plans": "Plans",
     "autoApply": "Candidature auto"
   },
   "Hero": {
@@ -136,32 +136,23 @@
   "Footer": {
     "headings": {
       "product": "Produit",
-      "useCases": "Solutions",
-      "compare": "Comparer",
       "support": "Support",
       "company": "Entreprise",
-      "legal": "Légal"
+      "resources": "Ressources"
     },
     "links": {
       "jobs": "Emplois",
       "services": "Services",
       "tasks": "Tâches",
-      "pricing": "Tarifs",
-      "findWork": "Trouver du travail",
-      "hireTalent": "Recruter des talents",
-      "getTasksDone": "Réaliser des tâches",
-      "contact": "Contact",
-      "helpCenter": "Centre d’aide",
-      "plans": "Offres",
+      "pricing": "Plans",
+      "Talents": "Talents",
+      "Support": "Support",
       "about": "À propos",
-      "blog": "Blog",
+      "get in touch": "Nous contacter",
       "careers": "Carrières",
+      "blog": "Blog",
       "terms": "Conditions",
-      "privacy": "Confidentialité",
-      "soc2": "Conforme SOC2",
-      "sitemap": "Plan du site",
-      "vsFyxer": "vs Fyxer.ai",
-      "vsPerplexity": "vs Assistant e‑mail Perplexity"
+      "privacy": "Confidentialité"
     },
     "copyright": "Tous droits réservés."
   },

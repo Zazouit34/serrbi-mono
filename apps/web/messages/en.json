@@ -134,32 +134,23 @@
   "Footer": {
     "headings": {
       "product": "Product",
-      "useCases": "Solutions",
-      "compare": "Compare",
       "support": "Support",
       "company": "Company",
-      "legal": "Legal"
+      "resources": "Resources"
     },
     "links": {
       "jobs": "Jobs",
       "services": "Services",
       "tasks": "Tasks",
       "pricing": "Pricing",
-      "findWork": "Find work",
-      "hireTalent": "Hire talent",
-      "getTasksDone": "Complete tasks",
-      "contact": "Contact",
-      "helpCenter": "Help Center",
-      "plans": "Plans",
+      "Talents": "Talents",
+      "Support": "Support",
       "about": "About",
-      "blog": "Blog",
+      "get in touch": "Get in touch",
       "careers": "Careers",
+      "blog": "Blog",
       "terms": "Terms",
-      "privacy": "Privacy",
-      "soc2": "SOC2 Compliant",
-      "sitemap": "Sitemap",
-      "vsFyxer": "vs Fyxer.ai",
-      "vsPerplexity": "vs Perplexity Email Assistant"
+      "privacy": "Privacy"
     },
     "copyright": "All rights reserved."
   },

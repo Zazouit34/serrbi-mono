@@ -1,132 +1,154 @@
 "use client";
 
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { Phone, MessageCircleMore } from "lucide-react";
+import { Phone, ChevronLeft, ChevronRight, Star } from "lucide-react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faWhatsapp } from "@fortawesome/free-brands-svg-icons";
 import { cn } from "@workspace/ui/lib/utils";
-import { Button } from "@workspace/ui/components/button";
 import { FavoriteButton } from "@/components/ui/favorite-button";
 import { useTranslations } from "next-intl";
 
-import {
-  Popover,
-  PopoverTrigger,
-  PopoverContent,
-} from "@workspace/ui/components/popover";
-
-type TaskCardProps = {
-  task: {
-    id: string;
-    description: string;
-    category: string;
-    bgStyle?: string | null;
-    budget?: number | null;
-    city?: string | null;
-    stateAbbreviation?: string | null;
-    phoneNumber?: string | null;
-    displayName?: string | null;
-    user?: { name?: string | null; image?: string | null } | null;
-  };
-  className?: string;
-};
-
-const formatLocation = (t: ReturnType<typeof useTranslations>, city?: string | null) => {
-  const tCity = city ? (t.has?.("Cities." + city) ? t("Cities." + city) : city) : undefined;
-  return tCity || "";
-};
-
-const formatBudget = (budget?: number | null, t?: ReturnType<typeof useTranslations>) => { 
-  if (!t) return `${budget} MAD`;
-  return `${t("Common.from")} ${budget ?? ""} ${t("Currency.MAD")}`;
-};
-
-export function TaskCard({ task, className }: TaskCardProps) {
+export function TaskCard({ task, className }: any) {
   const t = useTranslations();
+  const [contactOpen, setContactOpen] = useState(false);
+  const overlayRef = useRef<HTMLDivElement | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+
+  const formatLocation = (city?: string | null) => {
+    const tCity = city ? (t.has?.("Cities." + city) ? t("Cities." + city) : city) : undefined;
+    return tCity || "";
+  };
+
+  const formatBudget = (budget?: number | null) => {
+    return `${t("Common.from")} ${budget ?? ""} ${t("Currency.MAD")}`;
+  };
+
+  useEffect(() => {
+    function onDocClick(e: MouseEvent) {
+      if (contactOpen && containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setContactOpen(false);
+      }
+    }
+    function onEsc(e: KeyboardEvent) {
+      if (e.key === "Escape") setContactOpen(false);
+    }
+    document.addEventListener("mousedown", onDocClick);
+    document.addEventListener("keydown", onEsc);
+    return () => {
+      document.removeEventListener("mousedown", onDocClick);
+      document.removeEventListener("keydown", onEsc);
+    };
+  }, [contactOpen]);
+
   return (
     <div className={cn("w-full cursor-pointer", className)}>
-      {/* Description Section (replacing image carousel) */}
-      <div className="overflow-hidden relative w-full rounded-xl shadow-md aspect-square">
-        <div
-          className="flex justify-center items-center w-full h-full text-center"
-          style={{
-            background: task.bgStyle || "linear-gradient(to right, #ddd, #ccc)",
-          }}
-        >
-          <span className="px-4 text-xl font-bold text-white line-clamp-4">
-            {task.description}
-          </span>
-        </div>
-
-        {/* Category badge - top right */}
-        <div className="absolute top-2 right-2">
-          <div className="px-3 py-1 text-xs font-medium text-gray-800 bg-white rounded-full shadow-sm">
-            {task.category}
+      <div onClick={() => contactOpen && setContactOpen(false)}>
+        {/* Card visual */}
+        <div ref={containerRef} className="overflow-hidden relative w-full rounded-xl shadow-md aspect-square">
+          {/* Center text instead of image */}
+          <div
+            className="flex justify-center items-center w-full h-full text-center"
+            style={{ background: task.bgStyle || "linear-gradient(to right, #ddd, #ccc)" }}
+          >
+            <span className="px-4 text-xl font-bold text-white line-clamp-4">{task.description}</span>
           </div>
-        </div>
 
-        {/* Glass Overlay */}
-        <div className="flex absolute right-0 bottom-0 left-0 flex-col px-3 py-2 rounded-t-md rounded-b-xl backdrop-blur-md bg-gray-900/20">
-          <div className="flex justify-between items-center">
-            <div>
-              <Link href={`/tasks/${task.id}`}>
-                <h3 className="text-sm font-semibold text-white line-clamp-1">
-                  {task.displayName || task.user?.name || "Task Owner"}
-                </h3>
-              </Link>
-              <p className="text-xs font-semibold text-gray-200">
-                {formatLocation(t, task.city)}
-              </p>
+          {/* Category - top left */}
+          <div className="absolute top-2 left-2">
+            <div className="px-3 py-1 text-xs font-medium text-gray-800 bg-white rounded-full shadow-sm">
+              {task.category}
             </div>
+          </div>
 
-            {/* Favorite button - white color for visibility */}
-            <FavoriteButton 
-              taskId={task.id} 
+          {/* Favorite - top right */}
+          <div
+            className="absolute top-2 right-2 z-10"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <FavoriteButton
+              taskId={task.id}
               color={[255, 255, 255]}
               className="p-1 rounded-full backdrop-blur-sm bg-black/20"
             />
           </div>
-        </div>
-      </div>
 
-      {/* Bottom Row */}
-      <div className="flex justify-between items-center pt-6 -mt-2 text-sm text-gray-700">
-        {/* Contact button */}
-        {task.phoneNumber && (
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button className="bg-black text-white hover:bg-black/80 transition w-1/2" size="sm">
-                <MessageCircleMore className="size-4" />         
+          {/* Bottom Expandable Overlay (like service-card) */}
+          <div
+            ref={overlayRef}
+            style={{ maxHeight: contactOpen ? 140 : 52, transition: "max-height 280ms ease" }}
+            className={cn(
+              "absolute right-0 bottom-0 left-0 z-10 px-3 py-2 rounded-t-md backdrop-blur-md bg-black/30 overflow-hidden"
+            )}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between">
+              <div className="text-sm font-semibold text-white leading-tight">
+                {formatBudget(task.budget)}
+              </div>
+
+              {!contactOpen && task.phoneNumber && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setContactOpen(true);
+                  }}
+                  className="bg-white/95 text-gray-900 text-xs font-medium px-2.5 py-1 rounded-md shadow-sm hover:bg-white transition"
+                >
                   {t("Common.contact")}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="flex flex-col gap-2 w-40">
-              <button
-                onClick={() =>
-                  window.open(`https://wa.me/${task.phoneNumber}`, "_blank")
-                }
-                className="flex items-center gap-2 text-sm text-white bg-[#25D366] px-2 py-1 rounded-md hover:bg-[#1ebe5d] transition"
-              >
-                <FontAwesomeIcon icon={faWhatsapp} className="size-4" />
-                {t("Common.whatsapp")}
-              </button>
-              <button
-                onClick={() =>
-                  (window.location.href = `tel:${task.phoneNumber}`)
-                }
-                className="flex gap-2 items-center px-2 py-1 text-sm rounded-md border transition hover:bg-gray-100"
-              >
-                <Phone className="size-4" />
-                {t("Common.call")}
-              </button>
-            </PopoverContent>
-          </Popover>
-        )}
+                </button>
+              )}
+            </div>
 
-        {/* Budget/Price */}
-        <span className="text-base font-semibold text-gray-900">
-          {formatBudget(task.budget, t)}
-        </span>
+            <div
+              className={cn(
+                "transition-[opacity,max-height,margin] duration-300 overflow-hidden",
+                contactOpen ? "mt-2 max-h-40 opacity-100 pointer-events-auto" : "mt-0 max-h-0 opacity-0 pointer-events-none"
+              )}
+            >
+              <div className="grid grid-cols-2 gap-2 items-center">
+                {/* WhatsApp */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (task.phoneNumber) {
+                      window.open(`https://wa.me/${task.phoneNumber}`, "_blank");
+                    }
+                  }}
+                  className="flex items-center justify-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-md"
+                  style={{ backgroundColor: "#25D366", color: "white" }}
+                >
+                  <FontAwesomeIcon icon={faWhatsapp} className="size-3.5" />
+                  <span className="truncate">{t("Common.whatsapp")}</span>
+                </button>
+
+                {/* Call */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (task.phoneNumber) window.location.href = `tel:${task.phoneNumber}`;
+                  }}
+                  className="flex items-center justify-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-md bg-white/95 text-gray-900"
+                >
+                  <Phone className="size-3.5" />
+                  <span className="truncate">{t("Common.call")}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom row: name left, location right */}
+        <div className="pt-4 -mt-2">
+          <div className="flex items-start justify-between">
+            <h3 className="text-base font-semibold text-gray-900 line-clamp-2">
+              {task.displayName || task.user?.name || "Task Owner"}
+            </h3>
+            <span className="text-sm font-semibold text-gray-500">
+              {formatLocation(task.city)}
+            </span>
+          </div>
+        </div>
       </div>
     </div>
   );

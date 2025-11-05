@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { FaTwitter, FaGithub, FaDiscord } from "react-icons/fa";
+import { FaLinkedin , FaInstagram } from "react-icons/fa";
+import { FaXTwitter } from "react-icons/fa6";
+
 import { useTranslations } from "next-intl";
 import {
   Collapsible,
@@ -16,15 +18,17 @@ const navigation = {
     { key: "tasks", href: "/tasks" },
     { key: "pricing", href: "/subscription" },
   ],
-  useCases: [
-    { key: "findWork", href: "/jobs" },
-    { key: "hireTalent", href: "/services" },
-    { key: "getTasksDone", href: "/tasks" },
+  support: [
+    { key: "Talents", href: "mailto:talents@serrbi.com", displayName: "talents@serrbi.com" },
+    { key: "Support", href: "mailto:support@serrbi.com", displayName: "support@serrbi.com" },
   ],
   company: [
     { key: "about", href: "/about" },
+    { key: "get in touch", href: "/contact" },
   ],
-  legal: [
+  resources: [
+    { key: "careers", href: "/careers" },
+    { key: "blog", href: "/blog" },
     { key: "terms", href: "/terms" },
     { key: "privacy", href: "/privacy" },
   ],
@@ -37,24 +41,24 @@ export function SiteFooter() {
       <div className="mx-auto w-full overflow-hidden rounded-2xl bg-[#0b0b0f] px-6 py-20 text-gray-300 sm:px-8 sm:py-24">
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4 xl:col-span-2 xl:mt-0">
           <FooterGroup title={t("headings.product")} items={navigation.product.map((i) => ({ name: t(`links.${i.key}`), href: i.href, target: (i as any).target }))} />
-          <FooterGroup title={t("headings.useCases")} items={navigation.useCases.map((i) => ({ name: t(`links.${i.key}`), href: i.href, target: (i as any).target }))} />
+          <FooterGroup title={t("headings.support")} items={navigation.support.map((i) => ({ name: t(`links.${i.key}`), href: i.href, target: (i as any).target }))} />
           <FooterGroup title={t("headings.company")} items={navigation.company.map((i) => ({ name: t(`links.${i.key}`), href: i.href, target: (i as any).target }))} />
-          <FooterGroup title={t("headings.legal")} items={navigation.legal.map((i) => ({ name: t(`links.${i.key}`), href: i.href, target: (i as any).target }))} />
+          <FooterGroup title={t("headings.resources")} items={navigation.resources.map((i) => ({ name: t(`links.${i.key}`), href: i.href, target: (i as any).target }))} />
         </div>
 
         <div className="mt-16 flex justify-center gap-6">
-          <Link aria-label="Twitter" href="/twitter" className="text-gray-400 transition-colors hover:text-gray-200">
-            <FaTwitter className="h-5 w-5" />
+          <Link aria-label="Twitter" href="#" className="text-gray-400 transition-colors hover:text-gray-200">
+            <FaXTwitter className="h-5 w-5" />
           </Link>
-          <Link aria-label="GitHub" href="/github" className="text-gray-400 transition-colors hover:text-gray-200">
-            <FaGithub className="h-5 w-5" />
+          <Link aria-label="Instagram" href="#" className="text-gray-400 transition-colors hover:text-gray-200">
+            <FaInstagram  className="h-5 w-5" />
           </Link>
-          <Link aria-label="Discord" href="/discord" className="text-gray-400 transition-colors hover:text-gray-200">
-            <FaDiscord className="h-5 w-5" />
+          <Link aria-label="LinkedIn" href="#" className="text-gray-400 transition-colors hover:text-gray-200">
+            <FaLinkedin  className="h-5 w-5" />
           </Link>
         </div>
         <p className="mt-10 text-center text-xs leading-5 text-gray-500">
-          &copy; {new Date().getFullYear()} Serrbi Inc. {t("copyright")}
+          &copy; {new Date().getFullYear()} Serrbi. {t("copyright")}
         </p>
       </div>
     </footer>
@@ -126,5 +130,3 @@ function FooterGroup(props: {
 }
 
 export default SiteFooter;
-
-

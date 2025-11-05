@@ -133,32 +133,23 @@
   "Footer": {
     "headings": {
       "product": "المنتج",
-      "useCases": "حالات الاستخدام",
-      "compare": "قارن",
       "support": "الدعم",
       "company": "الشركة",
-      "legal": "قانوني"
+      "resources": "الموارد"
     },
     "links": {
       "jobs": "الوظائف",
       "services": "الخدمات",
       "tasks": "المهام",
       "pricing": "الأسعار",
-      "findWork": "ابحث عن عمل",
-      "hireTalent": "وظّف المواهب",
-      "getTasksDone": "أنجز المهام",
-      "contact": "اتصل بنا",
-      "helpCenter": "مركز المساعدة",
-      "plans": "الخطط",
+      "Talents": "المواهب",
+      "Support": "الدعم",
       "about": "حول",
-      "blog": "مدونة",
+      "get in touch": "تواصل معنا",
       "careers": "وظائف",
+      "blog": "مدونة",
       "terms": "الشروط",
-      "privacy": "الخصوصية",
-      "soc2": "متوافق SOC2",
-      "sitemap": "خريطة الموقع",
-      "vsFyxer": "مقارنة بـ Fyxer.ai",
-      "vsPerplexity": "مقارنة بمساعد بريد Perplexity"
+      "privacy": "الخصوصية"
     },
     "copyright": "جميع الحقوق محفوظة."
   },
