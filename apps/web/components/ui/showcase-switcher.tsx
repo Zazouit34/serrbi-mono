@@ -7,6 +7,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { ArrowLeft, ArrowRight, Star } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useLocale } from "next-intl";
+import { isSecondaryClient } from "@/lib/domain";
 
 type Tab = "services" | "jobs" | "tasks";
 
@@ -199,8 +200,10 @@ export function ShowcaseSwitcher() {
   const t = useTranslations("Showcase");
   const locale = useLocale();
   const isRtl = locale === "ar";
+  const isSecondary = isSecondaryClient();
 
-  const meta = tabMeta[tab];
+  const effectiveTab: Tab = isSecondary ? "jobs" : tab;
+  const meta = tabMeta[effectiveTab];
 
   const handlePrev = () => {
     setDir(-1);
@@ -220,9 +223,9 @@ export function ShowcaseSwitcher() {
   };
 
   return (
-    <section className="mx-auto my-18 w-full">
+    <section className="mx-auto w-full my-18">
       {/* Header */}
-      <div className="mb-4 flex items-start justify-between gap-4 md:mb-6">
+      <div className="flex gap-4 justify-between items-start mb-4 md:mb-6">
         <div>
           <AnimatePresence mode="wait" custom={dir}>
             <motion.h2
@@ -233,7 +236,7 @@ export function ShowcaseSwitcher() {
               transition={{ duration: 0.35 }}
               className="text-2xl font-semibold md:text-3xl"
             >
-              {t(`${tab}Title`)}
+              {t(`${effectiveTab}Title`)}
             </motion.h2>
           </AnimatePresence>
           <AnimatePresence mode="wait" custom={dir}>
@@ -243,48 +246,50 @@ export function ShowcaseSwitcher() {
               animate={{ x: 0, opacity: 1 }}
               exit={{ x: -dir * 20, opacity: 0 }}
               transition={{ duration: 0.3 }}
-              className="mt-1 text-sm text-muted-foreground max-w-xl"
+              className="mt-1 max-w-xl text-sm text-muted-foreground"
             >
-              {t(`${tab}Subtitle`)}
+              {t(`${effectiveTab}Subtitle`)}
             </motion.p>
           </AnimatePresence>
         </div>
-        <div className="flex items-center gap-2">
-          <button
-            aria-label={t("prev")}
-            onClick={handlePrev}
-            className="h-9 w-9 rounded-full border bg-white shadow-sm hover:bg-gray-50"
-          >
-            {isRtl ? (
-              <ArrowRight className="mx-auto h-4 w-4" />
-            ) : (
-              <ArrowLeft className="mx-auto h-4 w-4" />
-            )}
-          </button>
-          <button
-            aria-label={t("next")}
-            onClick={handleNext}
-            className="h-9 w-9 rounded-full border bg-white shadow-sm hover:bg-gray-50"
-          >
-            {isRtl ? (
-              <ArrowLeft className="mx-auto h-4 w-4" />
-            ) : (
-              <ArrowRight className="mx-auto h-4 w-4" />
-            )}
-          </button>
-        </div>
+        {!isSecondary && (
+          <div className="flex gap-2 items-center">
+            <button
+              aria-label={t("prev")}
+              onClick={handlePrev}
+              className="w-9 h-9 bg-white rounded-full border shadow-sm hover:bg-gray-50"
+            >
+              {isRtl ? (
+                <ArrowRight className="mx-auto w-4 h-4" />
+              ) : (
+                <ArrowLeft className="mx-auto w-4 h-4" />
+              )}
+            </button>
+            <button
+              aria-label={t("next")}
+              onClick={handleNext}
+              className="w-9 h-9 bg-white rounded-full border shadow-sm hover:bg-gray-50"
+            >
+              {isRtl ? (
+                <ArrowLeft className="mx-auto w-4 h-4" />
+              ) : (
+                <ArrowRight className="mx-auto w-4 h-4" />
+              )}
+            </button>
+          </div>
+        )}
       </div>
 
        {/* Cards Grid */}
        <div className="relative">
         <AnimatePresence mode="wait" custom={dir}>
           <motion.div
-            key={tab}
+            key={effectiveTab}
             initial={{ x: dir * 40, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: -dir * 40, opacity: 0 }}
             transition={{ duration: 0.35 }}
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+            className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
           >
             {gridItems.map((item, idx) => (
               <motion.button
@@ -292,7 +297,7 @@ export function ShowcaseSwitcher() {
                 onClick={() => handleClick(item)}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                className="group cursor-pointer bg-white border border-transparent rounded-xl shadow-md hover:shadow-lg hover:border-primary/50 transition-all duration-300 p-3 text-left flex items-center gap-3"
+                className="flex gap-3 items-center p-3 text-left bg-white rounded-xl border border-transparent shadow-md transition-all duration-300 cursor-pointer group hover:shadow-lg hover:border-primary/50"
               >
                 {/* Image */}
                 <div className="relative w-1/2 aspect-[4/3] overflow-hidden rounded-lg flex-shrink-0">
@@ -306,7 +311,7 @@ export function ShowcaseSwitcher() {
                 </div>
 
                 {/* Content */}
-                <div className="flex-1 flex flex-col justify-between h-full">
+                <div className="flex flex-col flex-1 justify-between h-full">
                   <div>
                     <h3 className="text-base font-semibold line-clamp-1">{item.title}</h3>
                     <div className="mt-1 flex flex-wrap gap-1.5">
@@ -321,8 +326,8 @@ export function ShowcaseSwitcher() {
                     </div>
                   </div>
                   <div className="mt-3 flex items-center justify-between text-[11px] text-muted-foreground md:text-xs">
-                    <span className="inline-flex items-center gap-1">
-                      <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" /> 4.85
+                    <span className="inline-flex gap-1 items-center">
+                      <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" /> 4.85
                     </span>
                     <span>{item.meta}</span>
                   </div>

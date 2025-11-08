@@ -7,7 +7,8 @@ import { Button } from "@workspace/ui/components/button";
 import { Search, Briefcase, Wrench, ClipboardList } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { FaGoogle, FaAws, FaMicrosoft, FaLinkedin } from "react-icons/fa";
-import { normalizeText } from "@/lib/normalize-text";
+import { isSecondaryClient } from "@/lib/domain";
+
 
 type TabType = "jobs" | "services" | "tasks";
 
@@ -15,6 +16,7 @@ export function HeroSearchBar() {
   const t = useTranslations("HeroSearchBar");
   const [activeTab, setActiveTab] = useState<TabType>("jobs");
   const [searchQuery, setSearchQuery] = useState("");
+  const isSecondary = isSecondaryClient();
 
   const handleSearch = () => {
     // Navigate to the appropriate listing page with search query
@@ -30,7 +32,8 @@ export function HeroSearchBar() {
       tasks: `/tasks?${searchParams.toString()}`,
     };
 
-    window.location.href = routes[activeTab];
+    const route = isSecondary ? `/jobs?${searchParams.toString()}` : routes[activeTab];
+    window.location.href = route;
   };
 
   const tabLabels = {
@@ -60,30 +63,32 @@ export function HeroSearchBar() {
       <div className="overflow-hidden bg-white rounded-2xl">
         {/* Tabs Header - Full width to match search content */}
         <div className="px-4 pt-3 pb-2 md:px-6 md:pt-4">
-          <Tabs
-            value={activeTab}
-            onValueChange={(value) => setActiveTab(value as TabType)}
-          >
-            <div className="overflow-x-auto no-scrollbar">
-              <TabsList className="flex-nowrap justify-start w-full h-10 bg-white rounded-full border border-gray-200 md:h-12 whitespace-nowrap">
-                {(["jobs", "services", "tasks"] as TabType[]).map((tab) => {
-                  const Icon = tabIcons[tab];
-                  return (
-                    <TabsTrigger
-                      key={tab}
-                      value={tab}
-                      className="gap-2 px-3 text-gray-400 data-[state=active]:text-[#000000] data-[state=active]:border-gray-200 data-[state=active]:bg-transparent rounded-full text-xs md:text-base min-w-[84px] md:min-w-0"
-                    >
-                      <Icon className="size-4 md:size-5" />
-                      <span className="hidden md:inline font-medium">
-                        {tabLabels[tab]}
-                      </span>
-                    </TabsTrigger>
-                  );
-                })}
-              </TabsList>
-            </div>
-          </Tabs>
+          {!isSecondary && (
+            <Tabs
+              value={activeTab}
+              onValueChange={(value) => setActiveTab(value as TabType)}
+            >
+              <div className="overflow-x-auto no-scrollbar">
+                <TabsList className="flex-nowrap justify-start w-full h-10 whitespace-nowrap bg-white rounded-full border border-gray-200 md:h-12">
+                  {(["jobs", "services", "tasks"] as TabType[]).map((tab) => {
+                    const Icon = tabIcons[tab];
+                    return (
+                      <TabsTrigger
+                        key={tab}
+                        value={tab}
+                        className="gap-2 px-3 text-gray-400 data-[state=active]:text-[#000000] data-[state=active]:border-gray-200 data-[state=active]:bg-transparent rounded-full text-xs md:text-base min-w-[84px] md:min-w-0"
+                      >
+                        <Icon className="size-4 md:size-5" />
+                        <span className="hidden font-medium md:inline">
+                          {tabLabels[tab]}
+                        </span>
+                      </TabsTrigger>
+                    );
+                  })}
+                </TabsList>
+              </div>
+            </Tabs>
+          )}
         </div>
 
         {/* Search Content - Increased height */}

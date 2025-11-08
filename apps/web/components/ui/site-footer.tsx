@@ -10,6 +10,7 @@ import {
   CollapsibleTrigger,
   CollapsibleContent,
 } from "@workspace/ui/components/collapsible";
+import { isSecondaryClient } from "@/lib/domain";
 
 const navigation = {
   product: [
@@ -36,11 +37,16 @@ const navigation = {
 
 export function SiteFooter() {
   const t = useTranslations("Footer");
+  const isSecondary = isSecondaryClient();
+  const productItems = (isSecondary
+    ? navigation.product.filter((i) => !["services", "tasks"].includes(i.key))
+    : navigation.product
+  ).map((i) => ({ name: t(`links.${i.key}`), href: i.href, target: (i as any).target }));
   return (
     <footer className="relative">
       <div className="mx-auto w-full overflow-hidden rounded-2xl bg-[#0b0b0f] px-6 py-20 text-gray-300 sm:px-8 sm:py-24">
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4 xl:col-span-2 xl:mt-0">
-          <FooterGroup title={t("headings.product")} items={navigation.product.map((i) => ({ name: t(`links.${i.key}`), href: i.href, target: (i as any).target }))} />
+          <FooterGroup title={t("headings.product")} items={productItems} />
           <FooterGroup title={t("headings.support")} items={navigation.support.map((i) => ({ name: t(`links.${i.key}`), href: i.href, target: (i as any).target }))} />
           <FooterGroup title={t("headings.company")} items={navigation.company.map((i) => ({ name: t(`links.${i.key}`), href: i.href, target: (i as any).target }))} />
           <FooterGroup title={t("headings.resources")} items={navigation.resources.map((i) => ({ name: t(`links.${i.key}`), href: i.href, target: (i as any).target }))} />
