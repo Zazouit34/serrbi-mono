@@ -54,7 +54,105 @@
     "tasksTitle": "Available Tasks",
     "tasksSubtitle": "Pick up quick gigs and short engagements near you",
     "prev": "Previous",
-    "next": "Next"
+    "next": "Next",
+    "items": {
+      "services": {
+        "construction": {
+          "title": "Construction",
+          "tags": { "0": "Mason", "1": "Plumber", "2": "Electrician" },
+          "meta": "294 skills"
+        },
+        "architect": {
+          "title": "Architect",
+          "tags": { "0": "Design", "1": "Planning", "2": "Blueprints" },
+          "meta": "210 skills"
+        },
+        "lawyer": {
+          "title": "Lawyer",
+          "tags": { "0": "Legal", "1": "Advice", "2": "Contract" },
+          "meta": "120 skills"
+        },
+        "dentist": {
+          "title": "Dentist",
+          "tags": { "0": "Health", "1": "Cleaning", "2": "Care" },
+          "meta": "879 skills"
+        },
+        "esthetician": {
+          "title": "Esthetician",
+          "tags": { "0": "Beauty", "1": "Skin", "2": "Spa" },
+          "meta": "188 skills"
+        },
+        "mechanic": {
+          "title": "Mechanic",
+          "tags": { "0": "Auto", "1": "Repair", "2": "Engine" },
+          "meta": "240 skills"
+        }
+      },
+      "jobs": {
+        "softwareEngineer": {
+          "title": "Software Engineer",
+          "tags": { "0": "React", "1": "TypeScript", "2": "Remote" },
+          "meta": "New"
+        },
+        "financialAnalyst": {
+          "title": "Financial Analyst",
+          "tags": { "0": "Excel", "1": "Modeling", "2": "Hybrid" },
+          "meta": "Today"
+        },
+        "restaurantManager": {
+          "title": "Restaurant Manager",
+          "tags": { "0": "Full-time", "1": "Leadership", "2": "On-site" },
+          "meta": "New"
+        },
+        "nurse": {
+          "title": "Nurse",
+          "tags": { "0": "Care", "1": "Clinic", "2": "Night" },
+          "meta": "3d"
+        },
+        "paralegal": {
+          "title": "Paralegal",
+          "tags": { "0": "Contracts", "1": "Cases", "2": "Full-time" },
+          "meta": "Hot"
+        },
+        "siteEngineer": {
+          "title": "Site Engineer",
+          "tags": { "0": "On-site", "1": "Senior", "2": "Full-time" },
+          "meta": "New"
+        }
+      },
+      "tasks": {
+        "houseCleaning": {
+          "title": "House Cleaning",
+          "tags": { "0": "Home", "1": "Hourly", "2": "Today" },
+          "meta": "$80 budget"
+        },
+        "fixBathroomLeak": {
+          "title": "Fix Bathroom Leak",
+          "tags": { "0": "Plumber", "1": "Urgent", "2": "City" },
+          "meta": "$120 budget"
+        },
+        "carDiagnostic": {
+          "title": "Car Diagnostic",
+          "tags": { "0": "Garage", "1": "Engine", "2": "Today" },
+          "meta": "$60 budget"
+        },
+        "landingPageCopy": {
+          "title": "Landing Page Copy",
+          "tags": { "0": "Writing", "1": "Remote", "2": "Web" },
+          "meta": "$150 budget"
+        },
+        "tutorAlgebra": {
+          "title": "Tutor Algebra I",
+          "tags": { "0": "Evening", "1": "Online", "2": "1h" },
+          "meta": "$40 budget"
+        },
+        "foodDelivery": {
+          "title": "Food Delivery",
+          "tags": { "0": "City", "1": "Today", "2": "Tips" },
+          "meta": "$30 budget"
+        }
+      }
+    }
   },
   "Pricing": {
     "title": "Flexible plans",

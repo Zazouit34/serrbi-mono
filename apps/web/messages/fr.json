@@ -54,7 +54,105 @@
     "tasksTitle": "Tâches disponibles",
     "tasksSubtitle": "Acceptez des missions rapides près de chez vous",
     "prev": "Précédent",
-    "next": "Suivant"
+    "next": "Suivant",
+    "items": {
+      "services": {
+        "construction": {
+          "title": "Construction",
+          "tags": { "0": "Maçon", "1": "Plombier", "2": "Électricien" },
+          "meta": "294 compétences"
+        },
+        "architect": {
+          "title": "Architecte",
+          "tags": { "0": "Conception", "1": "Planification", "2": "Plans" },
+          "meta": "210 compétences"
+        },
+        "lawyer": {
+          "title": "Avocat",
+          "tags": { "0": "Juridique", "1": "Conseil", "2": "Contrat" },
+          "meta": "120 compétences"
+        },
+        "dentist": {
+          "title": "Dentiste",
+          "tags": { "0": "Santé", "1": "Nettoyage", "2": "Soins" },
+          "meta": "879 compétences"
+        },
+        "esthetician": {
+          "title": "Esthéticien(ne)",
+          "tags": { "0": "Beauté", "1": "Peau", "2": "Spa" },
+          "meta": "188 compétences"
+        },
+        "mechanic": {
+          "title": "Mécanicien",
+          "tags": { "0": "Auto", "1": "Réparation", "2": "Moteur" },
+          "meta": "240 compétences"
+        }
+      },
+      "jobs": {
+        "softwareEngineer": {
+          "title": "Ingénieur logiciel",
+          "tags": { "0": "React", "1": "TypeScript", "2": "Télétravail" },
+          "meta": "Nouveau"
+        },
+        "financialAnalyst": {
+          "title": "Analyste financier",
+          "tags": { "0": "Excel", "1": "Modélisation", "2": "Hybride" },
+          "meta": "Aujourd'hui"
+        },
+        "restaurantManager": {
+          "title": "Manager de restaurant",
+          "tags": { "0": "Temps plein", "1": "Leadership", "2": "Sur site" },
+          "meta": "Nouveau"
+        },
+        "nurse": {
+          "title": "Infirmier",
+          "tags": { "0": "Soins", "1": "Clinique", "2": "Nuit" },
+          "meta": "3 j"
+        },
+        "paralegal": {
+          "title": "Assistant juridique",
+          "tags": { "0": "Contrats", "1": "Dossiers", "2": "Temps plein" },
+          "meta": "Tendance"
+        },
+        "siteEngineer": {
+          "title": "Ingénieur de chantier",
+          "tags": { "0": "Sur site", "1": "Senior", "2": "Temps plein" },
+          "meta": "Nouveau"
+        }
+      },
+      "tasks": {
+        "houseCleaning": {
+          "title": "Ménage",
+          "tags": { "0": "Maison", "1": "Horaire", "2": "Aujourd'hui" },
+          "meta": "Budget 80 $"
+        },
+        "fixBathroomLeak": {
+          "title": "Réparer fuite salle de bain",
+          "tags": { "0": "Plombier", "1": "Urgent", "2": "Ville" },
+          "meta": "Budget 120 $"
+        },
+        "carDiagnostic": {
+          "title": "Diagnostic voiture",
+          "tags": { "0": "Garage", "1": "Moteur", "2": "Aujourd'hui" },
+          "meta": "Budget 60 $"
+        },
+        "landingPageCopy": {
+          "title": "Rédaction page d’atterrissage",
+          "tags": { "0": "Rédaction", "1": "À distance", "2": "Web" },
+          "meta": "Budget 150 $"
+        },
+        "tutorAlgebra": {
+          "title": "Tuteur Algèbre I",
+          "tags": { "0": "Soir", "1": "En ligne", "2": "1 h" },
+          "meta": "Budget 40 $"
+        },
+        "foodDelivery": {
+          "title": "Livraison de nourriture",
+          "tags": { "0": "Ville", "1": "Aujourd'hui", "2": "Pourboires" },
+          "meta": "Budget 30 $"
+        }
+      }
+    }
   },
   "Pricing": {
     "title": "Plans flexibles",

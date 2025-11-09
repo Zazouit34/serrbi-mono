@@ -19,179 +19,123 @@ type ShowcaseItem = {
   meta?: string; // e.g., skills count or time
 };
 
-const servicesItems: ShowcaseItem[] = [
+// Item definitions (static data like category and image). Text is translated via i18n.
+const servicesDefs = [
   {
-    title: "Construction",
+    id: "construction",
     category: "Construction",
     image:
       "https://images.unsplash.com/photo-1485083269755-a7b559a4fe5e?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8Y29uc3RydWN0aW9ufGVufDB8fDB8fHwy&auto=format&fit=crop&q=60&w=400",
-    tags: ["Mason", "Plumber", "Electrician"],
-    meta: "294 skills",
   },
   {
-    title: "Architect",
+    id: "architect",
     category: "Architect",
     image:
       "https://images.unsplash.com/photo-1487958449943-2429e8be8625?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D?q=80&w=1200&auto=format&fit=crop",
-    tags: ["Design", "Planning", "Blueprints"],
-    meta: "210 skills",
   },
   {
-    title: "Avocat",
+    id: "lawyer",
     category: "Lawyer",
     image:
       "https://images.unsplash.com/photo-1662104935883-e9dd0619eaba?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTV8fGxhd3llcnxlbnwwfHwwfHx8MA%3D%3D&auto=format&fit=crop&q=60&w=400",
-    tags: ["Legal", "Advice", "Contract"],
-    meta: "120 skills",
   },
   {
-    title: "Dentist",
+    id: "dentist",
     category: "Doctor",
     image:
       "https://images.unsplash.com/photo-1629909613654-28e377c37b09?q=80&w=1200&auto=format&fit=crop",
-    tags: ["Health", "Cleaning", "Care"],
-    meta: "879 skills",
   },
   {
-    title: "Esthetician",
+    id: "esthetician",
     category: "Esthetician",
     image:
       "https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTB8fGJlYXV0eXxlbnwwfHwwfHx8Mg%3D%3D&auto=format&fit=crop&q=60&w=400",
-    tags: ["Beauty", "Skin", "Spa"],
-    meta: "188 skills",
   },
   {
-    title: "Mechanic",
+    id: "mechanic",
     category: "Mechanic",
     image:
       "https://images.unsplash.com/photo-1711386689622-1cda23e10217?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8Z2FyYWdlJTIwbWVjaGFuaWN8ZW58MHx8MHx8fDI%3D&auto=format&fit=crop&q=60&w=400",
-    tags: ["Auto", "Repair", "Engine"],
-    meta: "240 skills",
   },
 ];
 
-const jobsItems: ShowcaseItem[] = [
+const jobsDefs = [
   {
-    title: "Software Engineer",
+    id: "softwareEngineer",
     category: "Tech",
     image:
       "https://images.unsplash.com/photo-1519389950473-47ba0277781c?q=80&w=1200&auto=format&fit=crop",
-    tags: ["React", "TypeScript", "Remote"],
-    meta: "New",
   },
   {
-    title: "Financial Analyst",
+    id: "financialAnalyst",
     category: "Finance",
     image:
       "https://images.unsplash.com/photo-1518186233392-c232efbf2373?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D?q=80&w=1200&auto=format&fit=crop",
-    tags: ["Excel", "Modeling", "Hybrid"],
-    meta: "Today",
   },
   {
-    title: "Restaurant Manager",
+    id: "restaurantManager",
     category: "Hospitality",
     image:
       "https://images.unsplash.com/photo-1728044849321-4cbffc50cc1d?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D?q=80&w=1200&auto=format&fit=crop",
-    tags: ["Full-time", "Leadership", "On-site"],
-    meta: "New",
   },
   {
-    title: "Nurse",
+    id: "nurse",
     category: "Health",
     image:
       "https://images.unsplash.com/photo-1691139601099-932c01ec198b?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTZ8fG51cnNlfGVufDB8fDB8fHwy?q=80&w=1200&auto=format&fit=crop",
-    tags: ["Care", "Clinic", "Night"],
-    meta: "3d",
   },
   {
-    title: "Paralegal",
+    id: "paralegal",
     category: "Legal",
     image:
       "https://images.unsplash.com/photo-1589829545856-d10d557cf95f?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8bGVnYWx8ZW58MHx8MHx8fDI%3D&auto=format&fit=crop&q=60&w=400",
-    tags: ["Contracts", "Cases", "Full-time"],
-    meta: "Hot",
   },
   {
-    title: "Site Engineer",
+    id: "siteEngineer",
     category: "Construction",
     image:
       "https://images.unsplash.com/photo-1682063631532-b865521538fa?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MzB8fHNpdGUlMjBlbmdpbmVlcnxlbnwwfHwwfHx8Mg%3D%3D&auto=format&fit=crop&q=60&w=400",
-    tags: ["On-site", "Senior", "Full-time"],
-    meta: "New",
   },
 ];
 
-const tasksItems: ShowcaseItem[] = [
+const tasksDefs = [
   {
-    title: "House Cleaning",
+    id: "houseCleaning",
     category: "Cleaning",
     image:
       "https://images.unsplash.com/photo-1581578731548-c64695cc6952?q=80&w=1200&auto=format&fit=crop",
-    tags: ["Home", "Hourly", "Today"],
-    meta: "$80 budget",
   },
   {
-    title: "Fix Bathroom Leak",
+    id: "fixBathroomLeak",
     category: "Construction",
     image:
       "https://images.unsplash.com/photo-1749532125405-70950966b0e5?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8cGx1bWJlcnxlbnwwfHwwfHx8Mg%3D%3D&auto=format&fit=crop&q=60&w=400",
-    tags: ["Plumber", "Urgent", "City"],
-    meta: "$120 budget",
   },
   {
-    title: "Car Diagnostic",
+    id: "carDiagnostic",
     category: "Auto",
     image:
       "https://images.unsplash.com/photo-1504222490345-c075b6008014?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Nnx8Y2FyJTIwbWVjaGFuaWN8ZW58MHx8MHx8fDI%3D?q=80&w=1200&auto=format&fit=crop",
-    tags: ["Garage", "Engine", "Today"],
-    meta: "$60 budget",
   },
   {
-    title: "Landing Page Copy",
+    id: "landingPageCopy",
     category: "Tech",
     image:
       "https://images.unsplash.com/photo-1517511620798-cec17d428bc0?q=80&w=1200&auto=format&fit=crop",
-    tags: ["Writing", "Remote", "Web"],
-    meta: "$150 budget",
   },
   {
-    title: "Tutor Algebra I",
+    id: "tutorAlgebra",
     category: "Education",
     image:
       "https://images.unsplash.com/photo-1509062522246-3755977927d7?q=80&w=1200&auto=format&fit=crop",
-    tags: ["Evening", "Online", "1h"],
-    meta: "$40 budget",
   },
   {
-    title: "Food Delivery",
+    id: "foodDelivery",
     category: "Hospitality",
     image:
       "https://images.unsplash.com/photo-1572195577046-2f25894c06fc?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTN8fGRlbGl2ZXJ5fGVufDB8fDB8fHwy&auto=format&fit=crop&q=60&w=400",
-    tags: ["City", "Today", "Tips"],
-    meta: "$30 budget",
   },
 ];
-
-const tabMeta: Record<Tab, { title: string; subtitle: string; items: ShowcaseItem[]; path: string }> = {
-  services: {
-    title: "Popular Services",
-    subtitle: "Check out our top-notch services designed to help you highlight your talents",
-    items: servicesItems,
-    path: "/services",
-  },
-  jobs: {
-    title: "New Jobs",
-    subtitle: "Find your next role across multiple industries and skill levels",
-    items: jobsItems,
-    path: "/jobs",
-  },
-  tasks: {
-    title: "Available Tasks",
-    subtitle: "Pick up quick gigs and short engagements near you",
-    items: tasksItems,
-    path: "/tasks",
-  },
-};
 
 export function ShowcaseSwitcher() {
   const router = useRouter();
@@ -201,6 +145,63 @@ export function ShowcaseSwitcher() {
   const locale = useLocale();
   const isRtl = locale === "ar";
   const isSecondary = isSecondaryClient();
+
+  const servicesItems: ShowcaseItem[] = useMemo(
+    () =>
+      servicesDefs.map((d) => ({
+        title: t(`items.services.${d.id}.title` as any),
+        category: d.category,
+        image: d.image,
+        tags: [0, 1, 2].map((i) => t(`items.services.${d.id}.tags.${i}` as any)),
+        meta: t(`items.services.${d.id}.meta` as any),
+      })),
+    [t]
+  );
+
+  const jobsItems: ShowcaseItem[] = useMemo(
+    () =>
+      jobsDefs.map((d) => ({
+        title: t(`items.jobs.${d.id}.title` as any),
+        category: d.category,
+        image: d.image,
+        tags: [0, 1, 2].map((i) => t(`items.jobs.${d.id}.tags.${i}` as any)),
+        meta: t(`items.jobs.${d.id}.meta` as any),
+      })),
+    [t]
+  );
+
+  const tasksItems: ShowcaseItem[] = useMemo(
+    () =>
+      tasksDefs.map((d) => ({
+        title: t(`items.tasks.${d.id}.title` as any),
+        category: d.category,
+        image: d.image,
+        tags: [0, 1, 2].map((i) => t(`items.tasks.${d.id}.tags.${i}` as any)),
+        meta: t(`items.tasks.${d.id}.meta` as any),
+      })),
+    [t]
+  );
+
+  const tabMeta: Record<Tab, { title: string; subtitle: string; items: ShowcaseItem[]; path: string }> = {
+    services: {
+      title: "Popular Services",
+      subtitle: "Check out our top-notch services designed to help you highlight your talents",
+      items: servicesItems,
+      path: "/services",
+    },
+    jobs: {
+      title: "New Jobs",
+      subtitle: "Find your next role across multiple industries and skill levels",
+      items: jobsItems,
+      path: "/jobs",
+    },
+    tasks: {
+      title: "Available Tasks",
+      subtitle: "Pick up quick gigs and short engagements near you",
+      items: tasksItems,
+      path: "/tasks",
+    },
+  };
 
   const effectiveTab: Tab = isSecondary ? "jobs" : tab;
   const meta = tabMeta[effectiveTab];
