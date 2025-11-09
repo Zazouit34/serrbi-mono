@@ -21,7 +21,7 @@ export async function sendPasswordResetEmail(email: string, token: string) {
 export async function sendVerificationEmail(email: string, token: string) {
   const link = `/verify?email=${encodeURIComponent(email)}&token=${encodeURIComponent(token)}`
   await getResend().emails.send({
-    from: "Serrbi <onboarding@resend.dev>",
+    from: "Serrbi",
     to: email,
     subject: "Verify your email",
     html: `<h1>Verify</h1><p><a href="${link}">Verify account</a></p>`,
@@ -46,7 +46,7 @@ export async function sendJobApplicationEmail(
   }] : []
 
   await resend.emails.send({
-    from: "Serrbi <applications@resend.dev>",
+    from: applicantEmail,
     to: applicationEmail,
     subject: `New Application for ${jobTitle} - ${companyName}`,
     html: `
@@ -76,7 +76,7 @@ export async function sendServiceBookingEmail(
   const resend = getResend()
 
   await resend.emails.send({
-    from: "Serrbi <bookings@resend.dev>",
+    from: clientEmail,
     to: serviceEmail,
     subject: `New Service Booking for ${serviceTitle}`,
     html: `
@@ -98,7 +98,7 @@ export async function sendWelcomeEmail(email: string, name: string) {
   const resend = getResend()
 
   await resend.emails.send({
-    from: "Serrbi <welcome@resend.dev>",
+    from: "serrbi-team@serrbi.com",
     to: email,
     subject: "Welcome to Serrbi! 🎉",
     html: `
