@@ -94,7 +94,8 @@
       "tasks": "Complete tasks"
     },
     "placeholder": "Search by role, skills...",
-    "search": "Search"
+    "search": "Search",
+    "browseJobs": "Browse Jobs"
   },
   "FAQ": {
     "title": "Frequently asked questions",

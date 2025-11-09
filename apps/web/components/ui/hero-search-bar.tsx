@@ -8,6 +8,7 @@ import { Search, Briefcase, Wrench, ClipboardList } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { FaGoogle, FaAws, FaMicrosoft, FaLinkedin } from "react-icons/fa";
 import { isSecondaryClient } from "@/lib/domain";
+import Link from "next/link";
 
 
 type TabType = "jobs" | "services" | "tasks";
@@ -128,6 +129,15 @@ export function HeroSearchBar() {
               </div>
             ))}
           </div>
+          {isSecondary && (
+            <div className="mt-6 flex justify-center">
+              <Link href="/jobs">
+                <Button className="px-6 h-10 rounded-full bg-black text-white hover:bg-gray-800">
+                  {t("browseJobs")}
+                </Button>
+              </Link>
+            </div>
+          )}
         </div>
       </div>
     </div>

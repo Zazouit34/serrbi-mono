@@ -54,7 +54,7 @@ export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const isSecondary = isSecondaryClient();
   const NAV_LINKS = React.useMemo(
-    () => (isSecondary ? [{ href: "/jobs", key: "jobs", image: "/images/jobs.png" }] : DEFAULT_LINKS),
+    () => (isSecondary ? [] : DEFAULT_LINKS),
     [isSecondary]
   );
 

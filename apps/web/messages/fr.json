@@ -96,7 +96,8 @@
       "tasks": "Réaliser des tâches"
     },
     "placeholder": "Rechercher par poste, compétences...",
-    "search": "Rechercher"
+    "search": "Rechercher",
+    "browseJobs": "Parcourir Emplois"
   },
   "FAQ": {
     "title": "Questions fréquentes",
@@ -188,7 +189,8 @@
     "category": "Catégorie",
     "location": "Localisation",
     "experienceLevel": "Niveau d’expérience",
-    "jobType": "Type d’emploi"
+    "jobType": "Type d’emploi",
+    "country": "Pays"
   },
   "ServicesFilters": {
     "serviceCategory": "Catégorie de service",

@@ -94,7 +94,8 @@
       "tasks": "أكمل المهام"
     },
     "placeholder": "ابحث حسب الدور أو المهارات...",
-    "search": "بحث"
+    "search": "بحث",
+    "browseJobs": "تصفح الوظائف"
   },
   "FAQ": {
     "title": "الأسئلة الشائعة",
@@ -185,7 +186,8 @@
     "category": "الفئة",
     "location": "الموقع",
     "experienceLevel": "مستوى الخبرة",
-    "jobType": "نوع الوظيفة"
+    "jobType": "نوع الوظيفة",
+    "country": "البلد"
   },
   "ServicesFilters": {
     "serviceCategory": "فئة الخدمة",
