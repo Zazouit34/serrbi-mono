@@ -46,8 +46,9 @@ export async function sendJobApplicationEmail(
   }] : []
 
   await resend.emails.send({
-    from: applicantEmail,
+    from: "talents@serrbi.com", // ✅ MUST be on your verified sending domain
     to: applicationEmail,
+    replyTo: applicantEmail, 
     subject: `New Application for ${jobTitle} - ${companyName}`,
     html: `
       <h2>New Job Application</h2>
