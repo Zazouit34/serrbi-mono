@@ -15,6 +15,38 @@
     "title": "Blog",
     "continue": "Continue reading"
   },
+  "NotFound": {
+    "title": "Page not found",
+    "subtitle": "We couldn’t find the page you’re looking for. It may have been moved or deleted.",
+    "cta": "Go home"
+  },
+  "ServiceGrid": {
+    "noServices": "No services found"
+  },
+  "TaskGrid": {
+    "noTasks": "No tasks found"
+  },
+  "About": {
+    "title": "About Serrbi",
+    "sections": {
+      "mission": {
+        "title": "Our mission",
+        "text": "Serrbi is an AI‑assisted marketplace that connects people to jobs, services, and short‑term tasks—making opportunity discovery and matching faster, simpler, and fairer."
+      },
+      "offer": {
+        "title": "What we offer",
+        "text": "Browse job listings, find trusted service providers, or post tasks to get quick help. With features like Resume Analyzer, Auto‑Apply, and smart search, Serrbi helps both seekers and providers achieve more with less effort."
+      },
+      "how": {
+        "title": "How it works",
+        "text": "Tell us what you’re looking for, and our tooling elevates discovery: analyze resumes, surface relevant listings, and streamline outreach with quality safeguards."
+      },
+      "audience": {
+        "title": "Who it’s for",
+        "text": "Job seekers, local professionals (plumbers, electricians, dentists, lawyers, etc.), and anyone needing quick help for short gigs. Serrbi supports multilingual, multi‑category discovery."
+      }
+    }
+  },
   "Contact": {
     "title": "Contact Us",
     "subtitle": "Have a question or feedback? Fill out the form and we’ll reach out.",

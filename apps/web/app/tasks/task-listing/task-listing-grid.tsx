@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { trpc } from "@/app/_trpc/client"
 import { TaskCard } from "@/components/ui/form/task/task-card"
+import { useTranslations } from "next-intl"
 import { Skeleton } from "@workspace/ui/components/skeleton"
 import {
   Pagination,
@@ -19,6 +20,7 @@ type TaskListingGridProps = {
 }
 
 export function TaskListingGrid({ filters }: TaskListingGridProps) {
+  const t = useTranslations("TaskGrid")
   const [page, setPage] = useState(1)
 
   // Reset when filters change
@@ -171,7 +173,9 @@ export function TaskListingGrid({ filters }: TaskListingGridProps) {
     <div className="space-y-6">
       <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
         {!data || data.items.length === 0 ? (
-          <p>No tasks found</p>
+          <div className="col-span-full rounded-md border bg-muted/30 py-10 text-center text-base font-semibold text-muted-foreground">
+            {t("noTasks")}
+          </div>
         ) : (
           data.items.map((t: any) => <TaskCard key={t.id} task={t} />)
         )}

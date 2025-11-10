@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { trpc } from "@/app/_trpc/client"
 import { ServiceCard } from "@/components/ui/form/service/service-card"
+import { useTranslations } from "next-intl"
 import { Skeleton } from "@workspace/ui/components/skeleton"
 import {
   Pagination,
@@ -19,6 +20,7 @@ type ServiceListingGridProps = {
 }
 
 export function ServiceListingGrid({ filters }: ServiceListingGridProps) {
+  const t = useTranslations("ServiceGrid")
   const [page, setPage] = useState(1)
 
   // Reset when filters change
@@ -171,7 +173,9 @@ export function ServiceListingGrid({ filters }: ServiceListingGridProps) {
     <div className="space-y-6">
       <div className="grid grid-cols-1 gap-6 md:grid-cols-4">
         {!data || data.items.length === 0 ? (
-          <p>No services found</p>
+          <div className="col-span-full rounded-md border bg-muted/30 py-10 text-center text-base font-semibold text-muted-foreground">
+            {t("noServices")}
+          </div>
         ) : (
           data.items.map((s: any) => <ServiceCard key={s.id} service={s} />)
         )}

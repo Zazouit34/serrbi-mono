@@ -10,12 +10,6 @@ import { Input } from "@workspace/ui/components/input";
 import { useTranslations } from "next-intl";
 import { contactFormSchema } from "@workspace/ui/lib/validation-schemas";
 
-type ContactValues = {
-  name: string;
-  email: string;
-  subject: string;
-  message: string;
-};
 
 export default function ContactPage() {
   const t = useTranslations("Contact");

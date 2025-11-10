@@ -173,7 +173,9 @@ export function JobListingGrid({ filters }: JobListingGridProps) {
     <div className="space-y-6">
       <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
         {!data || data.items.length === 0 ? (
-          <p>{t("noJobs")}</p>
+          <div className="col-span-full rounded-md border bg-muted/30 py-10 text-center text-base font-semibold text-muted-foreground">
+            {t("noJobs")}
+          </div>
         ) : (
           data.items.map((j: any) => <JobCard key={j.id} job={j} />)
         )}

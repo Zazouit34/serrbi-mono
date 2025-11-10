@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getTranslations } from "next-intl/server";
+import { getTranslations, getLocale } from "next-intl/server";
 import { Avatar, AvatarFallback, AvatarImage } from "@workspace/ui/components/avatar";
 
 type Post = {
@@ -32,16 +32,18 @@ const posts: Post[] = [
 
 export default async function BlogPage() {
   const t = await getTranslations("Blog");
+  const locale = await getLocale();
+  const isRtl = locale === "ar";
   return (
-    <div className="mx-auto w-full max-w-2xl py-10">
-      <h1 className="mb-6 text-center text-3xl font-semibold">{t("title")}</h1>
+    <div className="py-10 mx-auto w-full max-w-2xl">
+      <h1 className="mb-6 text-3xl font-semibold text-center">{t("title")}</h1>
       <div className="space-y-10">
         {posts.map((post) => (
           <article key={post.id} className="space-y-3">
             <div className="text-xs text-muted-foreground">{post.date}</div>
             <h2 className="text-xl font-semibold">{post.title}</h2>
             <p className="text-sm text-muted-foreground">{post.subtitle}</p>
-            <div className="mt-3 flex items-center gap-3">
+            <div className="flex gap-3 items-center mt-3">
               <Avatar>
                 <AvatarImage src={post.author.avatarUrl} alt={post.author.name} />
                 <AvatarFallback>
@@ -59,8 +61,8 @@ export default async function BlogPage() {
               </div>
             </div>
             <div className="mt-2">
-              <Link href={post.href} className="text-primary hover:underline">
-                {t("continue")} →
+              <Link href={post.href} className="text-primary">
+                {t("continue")} {isRtl ? "←" : "→"}
               </Link>
             </div>
             <hr className="mt-4 border-muted" />
