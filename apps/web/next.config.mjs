@@ -14,6 +14,21 @@ const nextConfig = {
       "serrbi-main-file-bucket.s3.us-east-1.amazonaws.com",
     ],
   },
+  async redirects() {
+    return [
+      // Legacy French job URLs -> new apply route
+      {
+        source: "/emploi/:slug-:id",
+        destination: "/jobs/apply/:slug/:id",
+        permanent: true,
+      },
+      {
+        source: "/emploi/:slug/:id",
+        destination: "/jobs/apply/:slug/:id",
+        permanent: true,
+      },
+    ]
+  },
 }
 
 const withNextIntl = createNextIntlPlugin()
