@@ -5,11 +5,10 @@ import ApplyJobClientPage from "./client";
 
 export default async function ApplyJobPage({
   params,
-}: {
-  params: { jobId: string; slug: string };
-}) {
+}: any) {
+  const { jobId } = await params;
   const job = await prisma.job.findUnique({
-    where: { id: params.jobId },
+    where: { id: jobId },
     select: { id: true, status: true },
   });
   if (!job || job.status !== "published") {
