@@ -227,7 +227,7 @@ We may send notices to the email associated with your account or via in-product 
 export default function PrivacyPage() {
   return (
     <Container className="py-10">
-      <h1 className="mb-6 text-2xl font-semibold md:text-3xl">Terms & Privacy</h1>
+      <h1 className="mb-6 text-2xl font-semibold md:text-3xl">Privacy & Terms</h1>
       <MarkdownRenderer source={md} />
     </Container>
   );

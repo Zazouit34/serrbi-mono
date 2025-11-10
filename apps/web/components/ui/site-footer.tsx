@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { FaLinkedin , FaInstagram } from "react-icons/fa";
-import { FaXTwitter } from "react-icons/fa6";
+import { AiFillTikTok } from "react-icons/ai"
 
 import { useTranslations } from "next-intl";
 import {
@@ -51,18 +51,18 @@ export function SiteFooter() {
           <FooterGroup title={t("headings.resources")} items={navigation.resources.map((i) => ({ name: t(`links.${i.key}`), href: i.href, target: (i as any).target }))} />
         </div>
 
-        <div className="mt-16 flex justify-center gap-6">
-          <Link aria-label="Twitter" href="#" className="text-gray-400 transition-colors hover:text-gray-200">
-            <FaXTwitter className="h-5 w-5" />
+        <div className="flex gap-6 justify-center mt-16">
+          <Link aria-label="Tiktok" href="https://www.tiktok.com/@serrbi.ma" className="text-gray-400 transition-colors hover:text-gray-200">
+            <AiFillTikTok className="w-5 h-5" />
           </Link>
-          <Link aria-label="Instagram" href="#" className="text-gray-400 transition-colors hover:text-gray-200">
-            <FaInstagram  className="h-5 w-5" />
+          <Link aria-label="Instagram" href="https://www.instagram.com/serrbi.ma/" className="text-gray-400 transition-colors hover:text-gray-200">
+            <FaInstagram  className="w-5 h-5" />
           </Link>
-          <Link aria-label="LinkedIn" href="#" className="text-gray-400 transition-colors hover:text-gray-200">
-            <FaLinkedin  className="h-5 w-5" />
+          <Link aria-label="LinkedIn" href="https://www.linkedin.com/company/serrbi" className="text-gray-400 transition-colors hover:text-gray-200">
+            <FaLinkedin  className="w-5 h-5" />
           </Link>
         </div>
-        <p className="mt-10 text-center text-xs leading-5 text-gray-500">
+        <p className="mt-10 text-xs leading-5 text-center text-gray-500">
           &copy; {new Date().getFullYear()} Serrbi. {t("copyright")}
         </p>
       </div>
@@ -104,7 +104,7 @@ function FooterGroup(props: {
       {/* Mobile: collapsible */}
       <div className="md:hidden">
         <Collapsible>
-          <CollapsibleTrigger className="flex w-full items-center justify-between py-2 text-left text-sm font-semibold leading-6 text-gray-100">
+          <CollapsibleTrigger className="flex justify-between items-center py-2 w-full text-sm font-semibold leading-6 text-left text-gray-100">
             {props.title}
           </CollapsibleTrigger>
           <CollapsibleContent>

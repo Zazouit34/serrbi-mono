@@ -47,7 +47,7 @@ const DEFAULT_LANGUAGES: Array<{ code: string; label: string }> = [
 
 export function Navbar() {
   const t = useTranslations("Navbar");
-  const [selectedLang, setSelectedLang] = React.useState("en");
+  const [selectedLang, setSelectedLang] = React.useState("fr");
   const pathname = usePathname();
   const router = useRouter();
 
@@ -88,7 +88,12 @@ export function Navbar() {
   return (
     <>
       {/* Desktop navbar */}
-      <header className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60 hidden md:block">
+      <header
+        className={cn(
+          "hidden sticky top-0 z-50 w-full backdrop-blur duration-200 bg-background/80 supports-[backdrop-filter]:bg-background/60 md:block transition-[border-width]",
+          scrolled ? "border-b" : "border-b-0"
+        )}
+      >
         <Container className="grid grid-cols-[1fr_auto_1fr] items-center gap-4 py-2">
           {/* left */}
           <div className="flex items-center">
@@ -265,7 +270,7 @@ export function Navbar() {
                   className={cn(
                     "mb-1 transition-all duration-300 ease-in-out",
                     scrolled
-                      ? "opacity-0 scale-75 h-0 mb-0"
+                      ? "mb-0 h-0 opacity-0 scale-75"
                       : "opacity-100 scale-100"
                   )}
                 />
