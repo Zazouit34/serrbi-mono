@@ -2,6 +2,9 @@ import type { MetadataRoute } from "next";
 import { prisma } from "@workspace/db";
 import { slugify } from "@/lib/slugify";
 
+// Regenerate sitemap periodically so new published jobs are included without redeploy
+export const revalidate = 300; // seconds
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const primary = process.env.NEXT_PUBLIC_PRIMARY_DOMAIN || "serrbi.ma";
   const base = `https://${primary}`;
