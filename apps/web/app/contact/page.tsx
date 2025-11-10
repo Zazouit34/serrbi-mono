@@ -2,39 +2,38 @@
 
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { Card } from "@workspace/ui/components/card";
 import { Button } from "@workspace/ui/components/button";
 import { Input } from "@workspace/ui/components/input";
 import { useTranslations } from "next-intl";
+import { contactFormSchema } from "@workspace/ui/lib/validation-schemas";
 
-const contactSchema = z.object({
-  name: z.string().min(2, "Please enter your name"),
-  email: z.string().email("Enter a valid email"),
-  subject: z.string().min(4, "Subject is too short"),
-  message: z.string().min(10, "Message is too short"),
-});
-
-type ContactValues = z.infer<typeof contactSchema>;
+type ContactValues = {
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+};
 
 export default function ContactPage() {
   const t = useTranslations("Contact");
+  const [subject, setSubject] = useState("");
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
     reset,
-  } = useForm<ContactValues>({ resolver: zodResolver(contactSchema) });
+  } = useForm({ resolver: zodResolver(contactFormSchema) });
   const [charCount, setCharCount] = useState(0);
 
-  const onSubmit = async (values: ContactValues) => {
+  const onSubmit = async (values: any) => {
     try {
       const res = await fetch("/api/contact", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify(values),
+        body: JSON.stringify({ ...values, subject }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -42,6 +41,7 @@ export default function ContactPage() {
       }
       toast.success(t("toasts.success"));
       reset();
+      setSubject("");
       setCharCount(0);
     } catch (err: any) {
       toast.error(err?.message || t("toasts.error"));
@@ -86,10 +86,12 @@ export default function ContactPage() {
             <label htmlFor="subject" className="block mb-1 text-sm font-medium">
               {t("fields.subject")}
             </label>
-            <Input id="subject" placeholder={t("placeholders.subject")} {...register("subject")} />
-            {errors.subject && (
-              <p className="mt-1 text-xs text-red-600">{errors.subject.message}</p>
-            )}
+            <Input
+              id="subject"
+              placeholder={t("placeholders.subject")}
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+            />
           </div>
 
           <div>

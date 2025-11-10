@@ -99,7 +99,7 @@ export async function sendWelcomeEmail(email: string, name: string) {
   const resend = getResend()
 
   await resend.emails.send({
-    from: "serrbi-team@serrbi.com",
+    from: "support@serrbi.com", // ✅ MUST be on your verified sending domain
     to: email,
     subject: "Welcome to Serrbi! 🎉",
     html: `
