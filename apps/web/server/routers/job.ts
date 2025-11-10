@@ -104,6 +104,10 @@ export const jobRouter = router({
       const filters: string[] = [];
       const params: any[] = [];
 
+      // Only show published jobs in public listing
+      filters.push(`"status" = $${params.length + 1}`);
+      params.push("published");
+
       if (locationRequirement) {
         filters.push(`"locationRequirement" = $${params.length + 1}`);
         params.push(locationRequirement);
@@ -266,7 +270,7 @@ bulkCreate: adminProcedure
     city: r.city ?? null,
     applicationEmail: r.applicationEmail ?? "",
     applicationUrl: r.applicationUrl ?? null,
-    status: "draft" as const,
+    status: "published" as const,
   }));
 
   await db.job.createMany({ data });
