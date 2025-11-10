@@ -104,10 +104,6 @@ export const jobRouter = router({
       const filters: string[] = [];
       const params: any[] = [];
 
-      // Only show published jobs in public listing
-      filters.push(`"status" = $${params.length + 1}`);
-      params.push("published");
-
       if (locationRequirement) {
         filters.push(`"locationRequirement" = $${params.length + 1}`);
         params.push(locationRequirement);
