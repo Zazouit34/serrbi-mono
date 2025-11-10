@@ -11,6 +11,35 @@
     "plans": "Plans",
     "autoApply": "Auto-apply"
   },
+  "Blog": {
+    "title": "Blog",
+    "continue": "Continue reading"
+  },
+  "Contact": {
+    "title": "Contact Us",
+    "subtitle": "Have a question or feedback? Fill out the form and we’ll reach out.",
+    "fields": {
+      "name": "Name",
+      "email": "Email",
+      "subject": "Subject",
+      "message": "Message"
+    },
+    "placeholders": {
+      "name": "Jane Doe",
+      "email": "jane@example.com",
+      "subject": "How can we help?",
+      "message": "Write your message..."
+    },
+    "buttons": {
+      "reset": "Reset",
+      "send": "Send Message",
+      "sending": "Sending..."
+    },
+    "toasts": {
+      "success": "Message sent. We'll get back to you soon.",
+      "error": "Something went wrong"
+    }
+  },
   "Hero": {
     "announcementNew": "New",
     "announcementTitle": "Feature Release coming soon",

@@ -11,6 +11,35 @@
     "plans": "الباقات",
     "autoApply": "تقديم تلقائي"
   },
+  "Blog": {
+    "title": "مدونة",
+    "continue": "تابع القراءة"
+  },
+  "Contact": {
+    "title": "تواصل معنا",
+    "subtitle": "لديك سؤال أو ملاحظة؟ املأ النموذج وسنعاود الاتصال بك.",
+    "fields": {
+      "name": "الاسم",
+      "email": "البريد الإلكتروني",
+      "subject": "الموضوع",
+      "message": "الرسالة"
+    },
+    "placeholders": {
+      "name": "محمد أحمد",
+      "email": "mohamed@example.com",
+      "subject": "كيف يمكننا المساعدة؟",
+      "message": "اكتب رسالتك..."
+    },
+    "buttons": {
+      "reset": "إعادة تعيين",
+      "send": "إرسال الرسالة",
+      "sending": "جارٍ الإرسال..."
+    },
+    "toasts": {
+      "success": "تم إرسال الرسالة. سنعاود التواصل قريباً.",
+      "error": "حدث خطأ ما"
+    }
+  },
   "Hero": {
     "announcementNew": "جديد",
     "announcementTitle": "إطلاق ميزة قريباً",

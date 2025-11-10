@@ -30,7 +30,6 @@ const navigation = {
   resources: [
     { key: "careers", href: "/careers" },
     { key: "blog", href: "/blog" },
-    { key: "terms", href: "/terms" },
     { key: "privacy", href: "/privacy" },
   ],
 };

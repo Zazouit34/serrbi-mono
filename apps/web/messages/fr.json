@@ -11,6 +11,35 @@
     "plans": "Plans",
     "autoApply": "Candidature auto"
   },
+  "Blog": {
+    "title": "Blog",
+    "continue": "Lire la suite"
+  },
+  "Contact": {
+    "title": "Nous contacter",
+    "subtitle": "Une question ou un avis ? Remplissez le formulaire et nous vous répondrons.",
+    "fields": {
+      "name": "Nom",
+      "email": "Email",
+      "subject": "Sujet",
+      "message": "Message"
+    },
+    "placeholders": {
+      "name": "Jean Dupont",
+      "email": "jean@example.com",
+      "subject": "Comment pouvons‑nous aider ?",
+      "message": "Écrivez votre message..."
+    },
+    "buttons": {
+      "reset": "Réinitialiser",
+      "send": "Envoyer",
+      "sending": "Envoi..."
+    },
+    "toasts": {
+      "success": "Message envoyé. Nous revenons vers vous rapidement.",
+      "error": "Une erreur s’est produite"
+    }
+  },
   "Hero": {
     "announcementNew": "Nouveau",
     "announcementTitle": "Lancement de fonctionnalités bientôt",
