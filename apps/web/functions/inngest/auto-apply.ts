@@ -1,5 +1,5 @@
 import { inngest } from "./client";
-import { prisma, SubscriptionStatus } from "@workspace/db";
+import { prisma, SubscriptionStatus, Role } from "@workspace/db";
 import { PLANS } from "@/lib/plans"
 import { applyAndNotify } from "@/server/services/job-application";
 
@@ -79,9 +79,12 @@ export const autoApplyOnJobCreated = inngest.createFunction(
         title: true,
         description: true,
         tags: true,
+        user: { select: { role: true } },
       },
     });
     if (!job) return { success: false };
+    // Skip auto-apply for jobs owned by admins
+    if (job.user?.role === Role.ADMIN) return { success: true, skipped: "admin-owned-job" };
 
     const users = await getCandidates(job.category);
 
@@ -124,11 +127,16 @@ export const autoApplyOnJobsImported = inngest.createFunction(
         title: true,
         description: true,
         tags: true,
+        user: { select: { role: true } },
       },
     });
 
     let totalApplied = 0;
     for (const job of jobs) {
+      // Skip auto-apply for admin-owned imports
+      if (job.user?.role === Role.ADMIN) {
+        continue;
+      }
       const users = await getCandidates(job.category);
 
       // Build tokens from both tags and title+description
