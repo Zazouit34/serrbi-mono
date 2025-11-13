@@ -56,6 +56,11 @@ export default function AutoApplySettingsPage() {
       enabled: !!subscription?.eligible, // only runs when eligible
     });
 
+  // Real usage stats (cap and used) aligned with subscription usage
+  const { data: usage } = trpc.subscription.getUsageStats.useQuery(undefined, {
+    enabled: !!subscription?.eligible,
+  });
+
   // ✅ Hooks always consistent
   const [enabled, setEnabled] = useState(false);
   const [category, setCategory] = useState<JobCategory | null>(null);
@@ -99,10 +104,10 @@ export default function AutoApplySettingsPage() {
     }
   };
 
-  // Progress bar — purely visual
-  const displayCap = 20;
-  const appliedCount = stats?.appliedCount ?? 0;
-  const pct = Math.min((appliedCount / displayCap) * 100, 100);
+  // Progress bar — use real plan cap and usage when available
+  const appliedCount = usage?.autoAppliedUsed ?? stats?.appliedCount ?? 0;
+  const cap = usage?.autoApplyLimit ?? null;
+  const pct = cap ? Math.min((appliedCount / cap) * 100, 100) : 0;
 
   // 🌀 While checking subscription
   if (subLoading) {
@@ -279,7 +284,9 @@ export default function AutoApplySettingsPage() {
             <div className="flex flex-col items-end">
               <Progress value={pct} className="w-40 h-2" />
               <span className="mt-1 text-xs text-muted-foreground">
-                {tA("stats.progress", { used: appliedCount, cap: displayCap })}
+                {cap != null
+                  ? tA("stats.progress", { used: appliedCount, cap })
+                  : tAll("Billing.unlimited")}
               </span>
             </div>
           </div>

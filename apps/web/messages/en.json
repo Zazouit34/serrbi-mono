@@ -9,7 +9,7 @@
     "services": "Services",
     "tasks": "Tasks",
     "plans": "Plans",
-    "autoApply": "Auto-apply"
+    "autoApply": "AI Serrbi (AS)"
   },
   "Blog": {
     "title": "Blog",
@@ -101,9 +101,9 @@
         "action": "Discover Jobs"
       },
       "3": {
-        "title": "Enable Auto-Apply",
-        "description": "Sit back while Serrbi automatically sends personalized applications every month with your attached resume.",
-        "action": "Auto-Apply"
+        "title": "Enable AI Serrbi (AS)",
+        "description": "Sit back while AI Serrbi (AS) automatically sends personalized applications every month with your attached resume.",
+        "action": "AI Serrbi (AS)"
       }
     }
   },
@@ -240,7 +240,7 @@
       "jobBoardAccess": "Job board access",
       "resumeAtsScore": "Resume ATS score",
       "smartMatch": "Smart Match AI",
-      "autoApplyPerMonth": "auto-apply per month",
+      "autoApplyPerMonth": "AI Serrbi usage per month",
       "unlimitedApplications": "Unlimited manual applications"
     },
     "choosePlan": "Choose plan",
@@ -459,14 +459,14 @@
     "myAccount": "My Account",
     "favorites": "Favorites",
     "plans": "Plans",
-    "autoApply": "Auto Apply",
+    "autoApply": "AI Serrbi (AS)",
     "logout": "Log out",
     "loginCta": "Log in / Sign up"
   },
   "UserMenuMobile": {
     "login": "Log in",
     "profile": "Profile",
-    "autoApply": "Auto-apply",
+    "autoApply": "AI Serrbi (AS)",
     "billing": "Billing",
     "logout": "Log out",
     "openAria": "Open user menu"
@@ -554,7 +554,7 @@
       "jobBoardAccess": "Job board access",
       "resumeAtsScore": "Resume ATS score",
       "smartMatch": "Smart Match AI",
-      "autoApplyPerMonth": "auto-apply per month",
+      "autoApplyPerMonth": "AI Serrbi usage per month",
       "unlimitedApplications": "Unlimited manual applications"
     },
     "toasts": {
@@ -590,7 +590,7 @@
       "services": "Service Listings",
       "tasks": "Task Listings",
       "applications": "Applications",
-      "autoApply": "Auto-apply",
+      "autoApply": "AI Serrbi (AS)",
       "smartMatch": "Smart Match AI"
     },
     "remaining": "remaining",
@@ -652,22 +652,22 @@
       "title": "Payment Successful!",
       "descPrefix": "Thank you",
       "descSuffix": "plan is confirmed.",
-      "nextHint": "Press Next to set up your auto-apply preferences."
+      "nextHint": "Press Next to set up your AI Serrbi (AS) preferences."
     },
     "step2": {
-      "title": "Auto-Apply Setup",
-      "desc": "Choose your job category and suggested tags. You can change these later from user-menu → auto-apply."
+      "title": "AI Serrbi (AS) Setup",
+      "desc": "Choose your job category and suggested tags. You can change these later from user-menu → AI Serrbi (AS)."
     },
-    "enableAutoApply": "Enable Auto-apply",
+    "enableAutoApply": "Enable AI Serrbi (AS)",
     "jobCategory": "Job Category",
     "tags": "Tags (keywords)",
     "roles": "Roles",
     "step3": {
       "title": "All set!",
-      "desc1": "Your auto-apply preferences are saved. You can change them anytime.",
+      "desc1": "Your AI Serrbi (AS) preferences are saved. You can change them anytime.",
       "list": {
         "userMenu": "Open the User menu (top-right).",
-        "autoApply": "Select Auto-apply to view or edit your preferences."
+        "autoApply": "Select AI Serrbi (AS) to view or edit your preferences."
       }
     },
     "manageSubscription": "Manage subscription",
@@ -676,19 +676,19 @@
   "AutoApply": {
     "page": {
       "title": "Automated Job Application",
-      "subtitle": "Set up your auto-apply preferences to let us automatically apply to jobs for you."
+      "subtitle": "Set up your AI Serrbi (AS) preferences to let us automatically apply to jobs for you."
     },
     "toasts": {
       "saved": "Preferences saved",
       "saveFailed": "Failed to save"
     },
     "locked": {
-      "title": "Auto-Apply is for paid members only",
+      "title": "AI Serrbi (AS) is for paid members only",
       "subtitle": "Upgrade to a Basic or Premium plan to unlock automatic job applications and save time.",
       "viewPlans": "View Plans"
     },
     "toggle": {
-      "title": "Auto-apply",
+      "title": "AI Serrbi (AS)",
       "subtitle": "Automatically apply to matching jobs in your category"
     },
     "category": {
@@ -696,10 +696,10 @@
     },
 
     "stats": {
-      "title": "Auto-apply activity (this month)",
-      "autoApplied": "Auto-applied jobs",
+      "title": "AI Serrbi (AS) activity (this month)",
+      "autoApplied": "AI Serrbi applications",
       "progress": "{used} of {cap} jobs this month",
-      "recent": "Recent auto-applies",
+      "recent": "Recent AI Serrbi activity",
       "unknownJob": "Unknown Job"
     },
     "save": "Save preferences",
