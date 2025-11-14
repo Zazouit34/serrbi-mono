@@ -22,6 +22,7 @@
     "@fortawesome/free-solid-svg-icons": "^7.0.1",
     "@fortawesome/react-fontawesome": "^3.0.2",
     "@hookform/resolvers": "^5.2.1",
+    "@mdx-js/react": "^3.1.1",
     "@mdxeditor/editor": "^3.42.0",
     "@paddle/paddle-js": "^1.4.2",
     "@paddle/paddle-node-sdk": "^3.2.1",
@@ -76,8 +77,10 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.2.2",
+    "@mdx-js/loader": "^3.1.1",
     "@next/mdx": "^16.0.3",
     "@tailwindcss/typography": "^0.5.16",
+    "@types/mdx": "^2.0.13",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
