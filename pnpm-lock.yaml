@@ -292,6 +292,9 @@ importers:
       '@biomejs/biome':
         specifier: 2.2.2
         version: 2.2.2
+      '@next/mdx':
+        specifier: ^16.0.3
+        version: 16.0.3(@mdx-js/react@3.1.1(@types/react@19.1.12)(react@19.1.1))
       '@tailwindcss/typography':
         specifier: ^0.5.16
         version: 0.5.16(tailwindcss@4.1.13)
@@ -1615,6 +1618,17 @@ packages:
 
   '@next/eslint-plugin-next@15.5.2':
     resolution: {integrity: sha512-lkLrRVxcftuOsJNhWatf1P2hNVfh98k/omQHrCEPPriUypR6RcS13IvLdIrEvkm9AH2Nu2YpR5vLqBuy6twH3Q==}
+
+  '@next/mdx@16.0.3':
+    resolution: {integrity: sha512-uVl2JSEGAjBV+EVnpt1cZN88SK3lJ2n7Fc+iqTsgVx2g9+Y6ru+P6nuUgXd38OHPUIwzL6k2V1u4iV3kwuTySQ==}
+    peerDependencies:
+      '@mdx-js/loader': '>=0.15.0'
+      '@mdx-js/react': '>=0.15.0'
+    peerDependenciesMeta:
+      '@mdx-js/loader':
+        optional: true
+      '@mdx-js/react':
+        optional: true
 
   '@next/swc-darwin-arm64@15.5.2':
     resolution: {integrity: sha512-8bGt577BXGSd4iqFygmzIfTYizHb0LGWqH+qgIF/2EDxS5JsSdERJKA8WgwDyNBZgTIIA4D8qUtoQHmxIIquoQ==}
@@ -8609,6 +8623,12 @@ snapshots:
   '@next/eslint-plugin-next@15.5.2':
     dependencies:
       fast-glob: 3.3.1
+
+  '@next/mdx@16.0.3(@mdx-js/react@3.1.1(@types/react@19.1.12)(react@19.1.1))':
+    dependencies:
+      source-map: 0.7.6
+    optionalDependencies:
+      '@mdx-js/react': 3.1.1(@types/react@19.1.12)(react@19.1.1)
 
   '@next/swc-darwin-arm64@15.5.2':
     optional: true
