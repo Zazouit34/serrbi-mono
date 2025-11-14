@@ -1,32 +1,26 @@
 import Link from "next/link";
 import { getTranslations, getLocale } from "next-intl/server";
 import { Avatar, AvatarFallback, AvatarImage } from "@workspace/ui/components/avatar";
+import { SerrbiMark } from "@/components/SerrbiMark";
 
-type Post = {
-  id: string;
-  date: string;
-  title: string;
-  subtitle: string;
-  author: { name: string; role: string; avatarUrl?: string };
-  href: string;
-};
-
-const posts: Post[] = [
+const posts = [
   {
-    id: "1",
-    date: "Nov 10, 2025",
-    title: "Launching Serrbi Jobs: Smarter Discovery",
-    subtitle: "How we’re improving job discovery and applications with AI workflows.",
-    author: { name: "Serrbi Team", role: "Product", avatarUrl: "" },
-    href: "/blog/launch-serrbi-jobs",
+    id: "afdal-mawaqi3-al-amel-maroc-2025",
+    date: "Nov 14, 2025",
+    title: "أفضل المواقع للبحث عن عمل في المغرب (دليل عملي لعام 2025)",
+    subtitle:
+      "تعرف على أهم المواقع المغربية والدولية للبحث عن عمل في المغرب وكيف تستفيد منها خطوة بخطوة.",
+    author: { name: "Serrbi Editorial", role: "Rédaction", avatarUrl: "" },
+    href: "/blog/afdal-mawaqi3-al-amel-maroc-2025",
   },
   {
-    id: "2",
-    date: "Oct 28, 2025",
-    title: "Behind the Resume Analyzer",
-    subtitle: "A look at our ATS heuristics and what ‘good’ looks like in 2025.",
-    author: { name: "Serrbi Team", role: "Engineering", avatarUrl: "" },
-    href: "/blog/resume-analyzer",
+    id: "meilleurs-sites-emploi-maroc-2025",
+    date: "Nov 14, 2025",
+    title: "Meilleurs sites pour trouver un emploi au Maroc (Guide pratique 2025)",
+    subtitle:
+      "Découvrez les principaux sites marocains et internationaux pour trouver un emploi au Maroc et comment en tirer parti étape par étape.",
+    author: { name: "Serrbi Editorial", role: "Rédaction", avatarUrl: "" },
+    href: "/blog/meilleurs-sites-emploi-maroc-2025",
   },
 ];
 
@@ -46,13 +40,8 @@ export default async function BlogPage() {
             <div className="flex gap-3 items-center mt-3">
               <Avatar>
                 <AvatarImage src={post.author.avatarUrl} alt={post.author.name} />
-                <AvatarFallback>
-                  {post.author.name
-                    .split(" ")
-                    .map((s) => s[0])
-                    .join("")
-                    .slice(0, 2)
-                    .toUpperCase()}
+                <AvatarFallback className="flex items-center justify-center">
+                  <SerrbiMark width={20} height={20} />
                 </AvatarFallback>
               </Avatar>
               <div className="text-sm">

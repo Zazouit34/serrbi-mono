@@ -1,8 +1,10 @@
 import createNextIntlPlugin from 'next-intl/plugin'
+import createMDX from '@next/mdx'
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   transpilePackages: ["@workspace/ui"],
+  pageExtensions: ['ts', 'tsx', 'mdx'],
   images: {
     domains: [
       "lh3.googleusercontent.com",
@@ -32,4 +34,7 @@ const nextConfig = {
 }
 
 const withNextIntl = createNextIntlPlugin()
-export default withNextIntl(nextConfig)
+const withMDX = createMDX({
+  extension: /\.mdx?$/,
+})
+export default withNextIntl(withMDX(nextConfig))

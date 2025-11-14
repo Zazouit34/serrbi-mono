@@ -208,8 +208,8 @@ export function Navbar() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-56">
               {LINKS.map((link) => (
-                <DropdownMenuItem key={link.href} className="p-0">
-                  <Link href={link.href} className="flex items-center gap-2 w-full px-2 py-1.5">
+                <DropdownMenuItem key={link.href} asChild>
+                  <Link href={link.href} className="flex gap-2 items-center w-full">
                     {link.icon && <link.icon className="size-4" />}
                     {t(link.key as any)}
                   </Link>
