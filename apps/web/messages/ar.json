@@ -9,7 +9,7 @@
     "services": "الخدمات",
     "tasks": "المهام",
     "plans": "الباقات",
-    "autoApply": "الذكاء الاصطناعي سيربي"
+    "autoApply": "AI Serrbi"
   },
   "Blog": {
     "title": "مدونة",
@@ -101,9 +101,9 @@
         "action": "اكتشف الوظائف"
       },
       "3": {
-        "title": "فعّل AI Serrbi (AS)",
-        "description": "استرخِ بينما يقوم AI Serrbi (AS) بإرسال طلبات مخصّصة تلقائياً كل شهر مع سيرتك الذاتية.",
-        "action": "AI Serrbi (AS)"
+        "title": "فعّل AI Serrbi",
+        "description": "استرخِ بينما يقوم AI Serrbi بإرسال طلبات مخصّصة تلقائياً كل شهر مع سيرتك الذاتية.",
+        "action": "AI Serrbi"
       }
     }
   },
@@ -240,7 +240,7 @@
       "jobBoardAccess": "وصول إلى لوحة الوظائف",
       "resumeAtsScore": "تقييم ATS للسيرة",
       "smartMatch": "مطابقة ذكية بالذكاء الاصطناعي",
-      "autoApplyPerMonth": "AI Serrbi usage per month",
+      "autoApplyPerMonth": "استخدام AI Serrbi شهرياً",
       "unlimitedApplications": "تقديم غير محدود"
     },
     "choosePlan": "اختر الخطة",
@@ -458,14 +458,14 @@
     "myAccount": "حسابي",
     "favorites": "المفضلة",
     "plans": "الخطط",
-    "autoApply": "الذكاء الاصطناعي سيربي",
+    "autoApply": "AI S",
     "logout": "تسجيل الخروج",
     "loginCta": "تسجيل الدخول / إنشاء حساب"
   },
   "UserMenuMobile": {
     "login": "تسجيل الدخول",
     "profile": "الملف الشخصي",
-    "autoApply": "الذكاء الاصطناعي سيربي",
+    "autoApply": "AI S",
     "billing": "الفوترة",
     "logout": "تسجيل الخروج",
     "openAria": "فتح قائمة المستخدم"
@@ -553,7 +553,7 @@
       "jobBoardAccess": "وصول إلى لوحة الوظائف",
       "resumeAtsScore": "تقييم ATS للسيرة",
       "smartMatch": "مطابقة ذكية بالذكاء الاصطناعي",
-      "autoApplyPerMonth": "استخدام الذكاء الاصطناعي سيربي شهرياً",
+      "autoApplyPerMonth": "استخدام AI S شهرياً",
       "unlimitedApplications": "تقديم غير محدود"
     },
     "toasts": {
@@ -589,7 +589,7 @@
       "services": "قوائم خدمات",
       "tasks": "قوائم مهام",
       "applications": "التقديمات",
-      "autoApply": "الذكاء الاصطناعي سيربي",
+      "autoApply": "AI Serrbi",
       "smartMatch": "مطابقة ذكية",
       "unlimitedApplications": "تقديم غير محدود"
     },
@@ -652,22 +652,22 @@
       "title": "تم الدفع بنجاح!",
       "descPrefix": "شكراً لك",
       "descSuffix": "تم تأكيد الخطة.",
-      "nextHint": "اضغط التالي لإعداد تفضيلات الذكاء الاصطناعي سيربي."
+      "nextHint": "اضغط التالي لإعداد تفضيلات AI Serrbi."
     },
     "step2": {
-      "title": "إعداد الذكاء الاصطناعي سيربي",
-      "desc": "اختر فئة الوظيفة والكلمات المقترحة. يمكنك تغييرها لاحقاً من قائمة المستخدم → AI Serrbi (AS)."
+      "title": "إعداد AI S",
+      "desc": "اختر فئة الوظيفة والكلمات المقترحة. يمكنك تغييرها لاحقاً من قائمة المستخدم → AI Serrbi."
     },
-    "enableAutoApply": "تفعيل الذكاء الاصطناعي سيربي",
+    "enableAutoApply": "تفعيل AI S",
     "jobCategory": "فئة الوظيفة",
     "tags": "الوسوم",
     "roles": "الأدوار",
     "step3": {
       "title": "كل شيء جاهز!",
-      "desc1": "تم حفظ تفضيلات الذكاء الاصطناعي سيربي. يمكنك تعديلها في أي وقت.",
+      "desc1": "تم حفظ تفضيلات AI S. يمكنك تعديلها في أي وقت.",
       "list": {
         "userMenu": "افتح قائمة المستخدم (أعلى اليمين).",
-        "autoApply": "اختر الذكاء الاصطناعي سيربي لعرض/تعديل تفضيلاتك."
+        "autoApply": "اختر AI S لعرض/تعديل تفضيلاتك."
       }
     },
     "manageSubscription": "إدارة الاشتراك",
@@ -688,17 +688,17 @@
       "viewPlans": "عرض الخطط"
     },
     "toggle": {
-      "title": "الذكاء الاصطناعي سيربي",
+      "title": "AI S",
       "subtitle": "قدّم تلقائياً على الوظائف المطابقة لفئتك"
     },
     "category": {
       "title": "فئة الوظيفة"
     },
     "stats": {
-      "title": "نشاط الذكاء الاصطناعي سيربي (هذا الشهر)",
-      "autoApplied": "طلبات الذكاء الاصطناعي سيربي",
+      "title": "نشاط AI S (هذا الشهر)",
+      "autoApplied": "طلبات AI S",
       "progress": "{used} من {cap} وظيفة هذا الشهر",
-      "recent": "نشاط الذكاء الاصطناعي سيربي حديث",
+      "recent": "نشاط AI S حديث",
       "unknownJob": "وظيفة غير معروفة"
     },
     "save": "حفظ التفضيلات",
