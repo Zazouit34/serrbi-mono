@@ -9,6 +9,7 @@ import { cn } from "@workspace/ui/lib/utils";
 import { CategoryBadge } from "@/components/ui/category-badge";
 import { FavoriteButton } from "@/components/ui/favorite-button";
 import { useTranslations } from "next-intl";
+import { Skeleton } from "@workspace/ui/components/skeleton";
 
 export function ServiceCard({
   service,
@@ -56,19 +57,12 @@ export function ServiceCard({
     return fallbackImages;
   })();
 
-  const isS3OrExternal = (() => {
-    const src = imagesToShow[currentIndex] || "";
-    try {
-      const u = new URL(src);
-      return u.hostname.includes("amazonaws.com") || u.hostname.includes("s3.");
-    } catch {
-      return false;
-    }
-  })();
+  const [imageLoaded, setImageLoaded] = useState(false);
 
   const nextImage = (e?: React.MouseEvent) => {
     e?.stopPropagation();
     setCurrentIndex((prev) => (prev + 1) % imagesToShow.length);
+    setImageLoaded(false);
   };
 
   const prevImage = (e?: React.MouseEvent) => {
@@ -76,6 +70,7 @@ export function ServiceCard({
     setCurrentIndex(
       (prev) => (prev - 1 + imagesToShow.length) % imagesToShow.length
     );
+    setImageLoaded(false);
   };
 
   // Close when clicking outside or pressing Escape
@@ -110,12 +105,18 @@ export function ServiceCard({
           ref={containerRef}
           className="overflow-hidden relative w-full rounded-xl shadow-md aspect-square"
         >
+          {!imageLoaded && (
+            <div className="absolute inset-0 z-0">
+              <Skeleton className="w-full h-full" />
+            </div>
+          )}
           <Image
             src={imagesToShow[currentIndex] || ""}
             alt={service.title}
             fill
-            className="object-cover"
-            unoptimized={isS3OrExternal}
+            className={`object-cover transition-opacity duration-200 ${imageLoaded ? "opacity-100" : "opacity-0"}`}
+            sizes="(max-width: 768px) 100vw, 25vw"
+            onLoadingComplete={() => setImageLoaded(true)}
           />
 
           {/* Category badge - top left */}
@@ -146,7 +147,7 @@ export function ServiceCard({
                   e.stopPropagation();
                   prevImage(e);
                 }}
-                className="absolute left-2 top-1/2 z-10 p-1 rounded-full shadow -translate-y-1/2 bg-white/80 hover:bg-white transition"
+                className="absolute left-2 top-1/2 z-10 p-1 rounded-full shadow transition -translate-y-1/2 bg-white/80 hover:bg-white"
               >
                 <ChevronLeft className="size-4" />
               </button>
@@ -155,7 +156,7 @@ export function ServiceCard({
                   e.stopPropagation();
                   nextImage(e);
                 }}
-                className="absolute right-2 top-1/2 z-10 p-1 rounded-full shadow -translate-y-1/2 bg-white/80 hover:bg-white transition"
+                className="absolute right-2 top-1/2 z-10 p-1 rounded-full shadow transition -translate-y-1/2 bg-white/80 hover:bg-white"
               >
                 <ChevronRight className="size-4" />
               </button>
@@ -165,7 +166,7 @@ export function ServiceCard({
           {/* Dots */}
           {imagesToShow.length > 1 && (
             <div
-              className="flex absolute bottom-2 left-1/2 gap-1 -translate-x-1/2 z-10"
+              className="flex absolute bottom-2 left-1/2 z-10 gap-1 -translate-x-1/2"
               onClick={(e) => e.stopPropagation()}
             >
               {imagesToShow.map((_, i) => (
@@ -188,13 +189,13 @@ export function ServiceCard({
               transition: "max-height 280ms ease",
             }}
             className={cn(
-              "absolute right-0 bottom-0 left-0 z-10 px-3 py-2 rounded-t-md backdrop-blur-md bg-black/30 overflow-hidden"
+              "overflow-hidden absolute right-0 bottom-0 left-0 z-10 px-3 py-2 rounded-t-md backdrop-blur-md bg-black/30"
             )}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Top row inside overlay: price (left) + contact button (right when collapsed) */}
-            <div className="flex items-center justify-between">
-              <div className="text-sm font-semibold text-white leading-tight">
+            <div className="flex justify-between items-center">
+              <div className="text-sm font-semibold leading-tight text-white">
                 {formatPrice(service.price)}
               </div>
 
@@ -259,7 +260,7 @@ export function ServiceCard({
 
         {/* Bottom Row - Service Title (80%) + Rating (20%) */}
         <div className="pt-4 -mt-2">
-          <div className="flex items-start gap-3">
+          <div className="flex gap-3 items-start">
             <h3
               className="text-base font-semibold text-gray-900 line-clamp-2"
               style={{ flex: "0 1 80%" }}
@@ -268,10 +269,10 @@ export function ServiceCard({
             </h3>
 
             <div
-              className="flex items-center gap-1 justify-end text-sm font-semibold"
+              className="flex gap-1 justify-end items-center text-sm font-semibold"
               style={{ flex: "0 0 20%" }}
             >
-              <Star className="size-3 text-gray-400 fill-gray-400" />
+              <Star className="text-gray-400 size-3 fill-gray-400" />
               <span className="text-gray-500">
                 {service.averageRating ? service.averageRating.toFixed(1) : "4.8"}
               </span>
