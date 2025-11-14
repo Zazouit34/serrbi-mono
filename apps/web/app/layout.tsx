@@ -28,17 +28,28 @@ export async function generateMetadata() {
   const host = (hdrs.get("host") || primary).toLowerCase();
   const isSecondary = host.includes(secondary);
   const base = new URL(`https://${isSecondary ? secondary : primary}`);
+  const locale = await getLocale();
+  const messages = await getMessages();
+  const siteTitle =
+    (messages as any)?.SEO?.siteTitle ||
+    (locale === "fr"
+      ? "Serrbi — Emplois, Services & Tâches"
+      : locale === "ar"
+      ? "سيربي — وظائف، خدمات، مهام"
+      : "Serrbi — Jobs, Services & Tasks");
+  const description =
+    (messages as any)?.Hero?.description ||
+    "Serrbi is a unified marketplace for jobs, services and tasks with AI matching and a Resume ATS analyzer.";
 
   return {
     manifest: "/manifest.json",
     themeColor: "#ff040E",
     metadataBase: base,
     title: {
-      default: "Serrbi — Jobs, Services & Tasks",
+      default: siteTitle,
       template: "%s | Serrbi",
     },
-    description:
-      "Serrbi is a unified marketplace for jobs, services and tasks with AI matching, Auto-Apply and a Resume ATS analyzer.",
+    description,
     alternates: {
       canonical: base.toString(),
       languages: {
