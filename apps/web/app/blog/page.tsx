@@ -22,6 +22,24 @@ const posts = [
     author: { name: "Serrbi Editorial", role: "Rédaction", avatarUrl: "" },
     href: "/blog/meilleurs-sites-emploi-maroc-2025",
   },
+  {
+    id: "amal-belgika-lilmaghariba-2025",
+    date: "Nov 15, 2025",
+    title: "عمل بلجيكا للمغاربة في 2025: دليلك السريع من العقد إلى الفيزا",
+    subtitle:
+      "القطاعات المطلوبة والرواتب، طريقة إيجاد عقد قانوني عبر EURES، والوثائق الأساسية لفيزا العمل، وكيف تطوّر سيرتك عبر Serrbi.",
+    author: { name: "Serrbi Editorial", role: "Rédaction", avatarUrl: "" },
+    href: "/blog/amal-belgika-lilmaghariba-2025",
+  },
+  {
+    id: "travail-belgique-marocains-2025",
+    date: "Nov 15, 2025",
+    title: "Travail en Belgique pour les Marocains en 2025 : guide rapide du contrat au visa",
+    subtitle:
+      "Secteurs en demande et salaires, EURES, documents du visa, et optimisation du CV avec Serrbi.",
+    author: { name: "Serrbi Editorial", role: "Rédaction", avatarUrl: "" },
+    href: "/blog/travail-belgique-marocains-2025",
+  },
 ];
 
 export default async function BlogPage() {
@@ -40,7 +58,7 @@ export default async function BlogPage() {
             <div className="flex gap-3 items-center mt-3">
               <Avatar>
                 <AvatarImage src={post.author.avatarUrl} alt={post.author.name} />
-                <AvatarFallback className="flex items-center justify-center">
+                <AvatarFallback className="flex justify-center items-center">
                   <SerrbiMark width={20} height={20} />
                 </AvatarFallback>
               </Avatar>
