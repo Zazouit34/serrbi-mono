@@ -21,6 +21,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${base}/blog`, lastModified: now, changeFrequency: "weekly", priority: 0.6 },
     { url: `${base}/blog/afdal-mawaqi3-al-amel-maroc-2025`, lastModified: now, changeFrequency: "weekly", priority: 0.7 },
     { url: `${base}/blog/meilleurs-sites-emploi-maroc-2025`, lastModified: now, changeFrequency: "weekly", priority: 0.7 },
+    { url: `${base}/blog/travail-belgique-marocains-2025`, lastModified: now, changeFrequency: "weekly", priority: 0.7 },
+    { url: `${base}/blog/amal-belgika-lilmaghariba-2025`, lastModified: now, changeFrequency: "weekly", priority: 0.7 },
     { url: `${base}/privacy`, lastModified: now, changeFrequency: "yearly", priority: 0.3 },
   ];
 
