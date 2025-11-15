@@ -105,6 +105,9 @@ export default function Hero() {
             text={t("headingHighlight")}
           />
         </h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          {t("tagline")}
+        </p>
 
         <HeroSearchBar />
       </div>
