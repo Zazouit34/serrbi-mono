@@ -387,14 +387,21 @@ export const jobRouter = router({
             alreadyApplied: appliedSet.has(job.id),
             _score: score,
           };
+        })
+        // If user specified keywords or roles, require at least one match (score > 0)
+        .filter((item) => {
+          if (!hasKeywordFilters && !hasRoleFilters) {
+            return true;
+          }
+          return item._score > 0;
         });
 
-      // Sort by score desc, then createdAt desc (they're already in createdAt desc)
-      scoredItems.sort((a, b) => b._score - a._score);
+      // NOTE: we intentionally do NOT resort here so we preserve DB ordering (newest first).
 
-      // When filters are present, paginate after sorting but keep total equal to all jobs in category.
+      // When filters are present, paginate after filtering and update total to reflect the filtered set.
       let items: typeof scoredItems;
       if (hasKeywordFilters || hasRoleFilters) {
+        total = scoredItems.length;
         const start = skip;
         const end = start + pageSize;
         items = scoredItems.slice(start, end);
