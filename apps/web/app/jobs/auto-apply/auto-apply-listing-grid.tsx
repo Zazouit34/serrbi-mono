@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Mail } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { trpc } from "@/app/_trpc/client";
 import { AutoApplyCard } from "@/components/ui/form/job/auto-apply-card";
 import { Skeleton } from "@workspace/ui/components/skeleton";
@@ -33,6 +34,7 @@ export function AutoApplyListingGrid({
   roles,
 }: AutoApplyListingGridProps) {
   const [page, setPage] = useState(1);
+  const tA = useTranslations("AutoApply");
 
   const filtersKey = useMemo(
     () => JSON.stringify({ enabled, category, keywords, roles }),
@@ -182,16 +184,16 @@ export function AutoApplyListingGrid({
           </div>
           <div>
             <CardTitle className="text-base md:text-lg font-semibold tracking-tight">
-              Auto Apply To Jobs
+              {tA("listing.title")}
             </CardTitle>
             <p className="text-[11px] text-slate-500">
-              Serrbi is applying for you in the background.
+              {tA("listing.subtitle")}
             </p>
           </div>
         </div>
 
         <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 text-[11px] px-3 py-1 rounded-full">
-          {isFetching ? "Updating…" : `${totalQueue} jobs in queue`}
+          {isFetching ? tA("listing.updating") : tA("listing.jobsInQueue", { count: totalQueue })}
         </Badge>
       </CardHeader>
 
@@ -216,7 +218,7 @@ export function AutoApplyListingGrid({
           </div>
         ) : !data || data.items.length === 0 ? (
           <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50/60 py-8 text-center text-sm text-slate-500">
-            No matching jobs yet for your auto-apply preferences.
+            {tA("listing.noMatching")}
           </div>
         ) : (
           <>

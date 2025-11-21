@@ -137,7 +137,7 @@ export default function AutoApplySettingsPage() {
 
   // ✅ Eligible user — show normal UI
   return (
-    <div className="space-y-6 max-w-2xl">
+    <div className="space-y-6 max-w-4xl">
       {/* 🔘 Auto-apply toggle */}
       <div className="flex justify-between items-center p-4 rounded-xl border shadow-sm backdrop-blur-sm bg-white/70">
         <div>

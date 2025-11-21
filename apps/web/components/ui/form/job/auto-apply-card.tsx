@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Mail } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Card, CardContent } from "@workspace/ui/components/card";
 import { Badge } from "@workspace/ui/components/badge";
 import {
@@ -44,16 +45,17 @@ function formatTimeAgo(createdAt?: Date | string | null): string {
   return `${diffDays}d`;
 }
 
-function AppliedBadge() {
+function AppliedBadge({ label }: { label: string }) {
   return (
     <Badge className="bg-black text-white border-black text-[11px] px-3 py-1 rounded-full">
-      Applied
+      {label}
     </Badge>
   );
 }
 
 export function AutoApplyCard({ job, alreadyApplied, onApply }: AutoApplyCardProps) {
   const [status, setStatus] = useState<Status>(alreadyApplied ? "applied" : "idle");
+  const tA = useTranslations("AutoApply");
 
   const timeAgo = useMemo(() => formatTimeAgo(job.createdAt), [job.createdAt]);
 
@@ -106,12 +108,6 @@ export function AutoApplyCard({ job, alreadyApplied, onApply }: AutoApplyCardPro
               <p className="mt-0.5 text-[11px] text-slate-500 line-clamp-1">{location}</p>
             )}
 
-            {job.description && (
-              <p className="mt-1 text-[11px] text-slate-500 line-clamp-2">
-                {job.description}
-              </p>
-            )}
-
             {displayTags.length > 0 && (
               <div className="mt-2 flex flex-wrap gap-1.5">
                 {displayTags.map((tag) => (
@@ -135,7 +131,7 @@ export function AutoApplyCard({ job, alreadyApplied, onApply }: AutoApplyCardPro
           </span>
 
           {status === "applied" ? (
-            <AppliedBadge />
+            <AppliedBadge label={tA("card.applied")} />
           ) : (
             <Button
               size="sm"
@@ -143,7 +139,7 @@ export function AutoApplyCard({ job, alreadyApplied, onApply }: AutoApplyCardPro
               onClick={handleApply}
               disabled={status === "applying"}
             >
-              {status === "applying" ? "Applying…" : "Apply"}
+              {status === "applying" ? tA("card.applying") : tA("card.apply")}
             </Button>
           )}
         </div>

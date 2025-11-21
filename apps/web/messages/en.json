@@ -801,6 +801,18 @@
       "sanitation": "Sanitation",
       "disinfection": "Disinfection",
       "mechanic": "Mechanic"
+    },
+    "card": {
+      "applied": "Applied",
+      "apply": "Apply",
+      "applying": "Applying…"
+    },
+    "listing": {
+      "title": "Auto Apply To Jobs",
+      "subtitle": "Serrbi is applying for you in the background.",
+      "updating": "Updating…",
+      "jobsInQueue": "{count} jobs in queue",
+      "noMatching": "No matching jobs yet for your auto-apply preferences."
     }
   },
   "ResumeForm": {

@@ -703,7 +703,7 @@
     "category": {
       "title": "Catégorie d’emploi"
     },
-    
+
     "stats": {
       "title": "Activité AI Serrbi (ce mois‑ci)",
       "autoApplied": "Candidatures AI Serrbi",
@@ -806,6 +806,18 @@
       "sanitation": "Assainissement",
       "disinfection": "Désinfection",
       "mechanic": "Mécanique"
+    },
+    "card": {
+      "applied": "Candidature envoyée",
+      "apply": "Postuler",
+      "applying": "Candidature en cours…"
+    },
+    "listing": {
+      "title": "Candidature automatique aux emplois",
+      "subtitle": "Serrbi postule pour vous en arrière-plan.",
+      "updating": "Mise à jour…",
+      "jobsInQueue": "{count} emplois en file",
+      "noMatching": "Aucun emploi correspondant pour le moment à vos préférences AI Serrbi."
     }
   },
   "ResumeForm": {
