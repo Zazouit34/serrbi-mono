@@ -306,14 +306,19 @@ export const jobRouter = router({
           ...Array.from(textTokens),
         ]);
 
-        const keywordMatches = (effectiveKeywords || []).reduce(
-          (acc, kw) => acc + (jobTokens.has(kw.toLowerCase()) ? 1 : 0),
-          0
-        );
-        const roleMatches = (effectiveRoles || []).reduce(
-          (acc, role) => acc + (titleTokens.has(role.toLowerCase()) ? 1 : 0),
-          0
-        );
+        let keywordMatches = 0;
+        for (const kw of effectiveKeywords || []) {
+          if (jobTokens.has(kw.toLowerCase())) {
+            keywordMatches += 1;
+          }
+        }
+
+        let roleMatches = 0;
+        for (const role of effectiveRoles || []) {
+          if (titleTokens.has(role.toLowerCase())) {
+            roleMatches += 1;
+          }
+        }
 
         const score = keywordMatches + roleMatches;
 
