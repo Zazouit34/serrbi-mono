@@ -26,6 +26,7 @@ import {
 } from "@workspace/ui/components/popover";
 import { useTranslations } from "next-intl";
 
+
 export type FilterOption = {
   label: string;
   value: string;
@@ -91,6 +92,7 @@ export function FilterBar({
     setFilters(newFilters);
     onFilterChange(newFilters);
   };
+  
 
   const handleTempFilterChange = (key: string, value: string) => {
     setTempFilters((prev) => ({ ...prev, [key]: value }));
@@ -153,8 +155,8 @@ export function FilterBar({
             <Button
               className={`p-2 size-10 rounded-full flex items-center justify-center flex-shrink-0 sm:w-14 sm:h-14 sm:p-4 ${
                 hasActiveFilters
-                  ? "border-gray-400 bg-gray-100 text-gray-900"
-                  : "border-gray-200 text-gray-700 hover:bg-gray-50"
+                  ? "bg-[#FF040E] hover:bg-[#FF040E]/80"
+                  : "bg-[#FF040E] hover:bg-[#FF040E]/80"
               }`}
             >
               <Filter className="w-3 h-3 sm:w-5 sm:h-5" />
@@ -200,9 +202,7 @@ export function FilterBar({
                         <SelectContent>
                           {filter.options?.map((option) => (
                             <SelectItem key={option.value} value={option.value}>
-                              {option.labelKey
-                                ? t(option.labelKey)
-                                : option.label}
+                              {option.labelKey ? t(option.labelKey) : option.label}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -301,11 +301,7 @@ export function FilterBar({
                                         className={`w-3 h-3 ${isSelected ? "text-black" : "text-gray-500"}`}
                                       />
                                     )}
-                                    <span>
-                                      {option.labelKey
-                                        ? t(option.labelKey)
-                                        : option.label}
-                                    </span>
+                                    <span>{option.labelKey ? t(option.labelKey) : option.label}</span>
                                     {isSelected && (
                                       <Check className="w-3 h-3 text-black" />
                                     )}
