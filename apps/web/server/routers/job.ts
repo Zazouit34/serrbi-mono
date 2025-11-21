@@ -284,7 +284,7 @@ export const jobRouter = router({
             });
       const appliedSet = new Set(existingApps.map((a) => a.jobId));
 
-      // Simple relevance scoring based on keywords & roles, similar to auto-apply worker
+      // Simple relevance scoring & filtering based on category + keywords (tags/text) & roles (title/description)
       const tokenize = (text: string) =>
         new Set(
           text
@@ -293,41 +293,52 @@ export const jobRouter = router({
             .filter(Boolean)
         );
 
-      const scoredItems = jobs.map((job) => {
-        const titleTokens = tokenize(job.title ?? "");
-        const textTokens = tokenize(
-          `${job.title ?? ""} ${job.description ?? ""}`
-        );
-        const tagTokens = new Set(
-          (job.tags ?? []).map((t) => t.toLowerCase())
-        );
-        const jobTokens = new Set<string>([
-          ...tagTokens,
-          ...Array.from(textTokens),
-        ]);
+      const scoredItems = jobs
+        .map((job) => {
+          const textTokens = tokenize(
+            `${job.title ?? ""} ${job.description ?? ""}`
+          );
+          const tagTokens = new Set(
+            (job.tags ?? []).map((t) => t.toLowerCase())
+          );
+          const jobTokens = new Set<string>([
+            ...tagTokens,
+            ...Array.from(textTokens),
+          ]);
 
-        let keywordMatches = 0;
-        for (const kw of effectiveKeywords || []) {
-          if (jobTokens.has(kw.toLowerCase())) {
-            keywordMatches += 1;
+          let keywordMatches = 0;
+          for (const kw of effectiveKeywords || []) {
+            if (jobTokens.has(kw.toLowerCase())) {
+              keywordMatches += 1;
+            }
           }
-        }
 
-        let roleMatches = 0;
-        for (const role of effectiveRoles || []) {
-          if (titleTokens.has(role.toLowerCase())) {
-            roleMatches += 1;
+          let roleMatches = 0;
+          for (const role of effectiveRoles || []) {
+            const roleToken = role.toLowerCase();
+            // Match roles against both title and description tokens
+            if (textTokens.has(roleToken)) {
+              roleMatches += 1;
+            }
           }
-        }
 
-        const score = keywordMatches + roleMatches;
+          const score = keywordMatches + roleMatches;
 
-        return {
-          ...job,
-          alreadyApplied: appliedSet.has(job.id),
-          _score: score,
-        };
-      });
+          return {
+            ...job,
+            alreadyApplied: appliedSet.has(job.id),
+            _score: score,
+          };
+        })
+        // If user specified keywords or roles, require at least one match (score > 0)
+        .filter((item) => {
+          const hasKeywordFilters = !!(effectiveKeywords && effectiveKeywords.length);
+          const hasRoleFilters = !!(effectiveRoles && effectiveRoles.length);
+          if (!hasKeywordFilters && !hasRoleFilters) {
+            return true;
+          }
+          return item._score > 0;
+        });
 
       // Sort by score desc, then createdAt desc (they're already in createdAt desc)
       scoredItems.sort((a, b) => b._score - a._score);
