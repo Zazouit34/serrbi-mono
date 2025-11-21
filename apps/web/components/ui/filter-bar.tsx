@@ -25,7 +25,7 @@ import {
   PopoverTrigger,
 } from "@workspace/ui/components/popover";
 import { useTranslations } from "next-intl";
-import { normalizeText } from "@/lib/normalize-text";
+
 
 export type FilterOption = {
   label: string;
