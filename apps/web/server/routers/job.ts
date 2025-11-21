@@ -229,18 +229,44 @@ export const jobRouter = router({
         return { items: [], total: 0, page, pageSize };
       }
 
-      // Fetch recent jobs in the selected category
+      // Determine if we have extra filters beyond category
+      const hasKeywordFilters = !!(effectiveKeywords && effectiveKeywords.length);
+      const hasRoleFilters = !!(effectiveRoles && effectiveRoles.length);
+
       const skip = (page - 1) * pageSize;
 
-      const [jobs, total] = await Promise.all([
-        db.job.findMany({
+      // When extra filters are present, fetch all matching-category jobs and paginate after scoring/filtering.
+      // Otherwise, rely on DB pagination for performance.
+      let jobs:
+        | {
+            id: string;
+            title: string | null;
+            companyName: string | null;
+            companyImage: string | null;
+            description: string | null;
+            category: any;
+            applicationUrl: string | null;
+            applicationEmail: string | null;
+            wage: number | null;
+            countryIso2: string | null;
+            stateAbbreviation: string | null;
+            tags: string[] | null;
+            city: string | null;
+            type: any;
+            experienceLevel: any;
+            locationRequirement: any;
+            status: any;
+            createdAt: Date;
+          }[];
+      let total: number;
+
+      if (hasKeywordFilters || hasRoleFilters) {
+        jobs = await db.job.findMany({
           where: {
             category: effectiveCategory as any,
             status: "published" as any,
           },
           orderBy: { createdAt: "desc" },
-          skip,
-          take: pageSize,
           select: {
             id: true,
             title: true,
@@ -261,14 +287,49 @@ export const jobRouter = router({
             status: true,
             createdAt: true,
           },
-        }),
-        db.job.count({
-          where: {
-            category: effectiveCategory as any,
-            status: "published" as any,
-          },
-        }),
-      ]);
+        });
+        total = jobs.length;
+      } else {
+        const [pageJobs, catTotal] = await Promise.all([
+          db.job.findMany({
+            where: {
+              category: effectiveCategory as any,
+              status: "published" as any,
+            },
+            orderBy: { createdAt: "desc" },
+            skip,
+            take: pageSize,
+            select: {
+              id: true,
+              title: true,
+              companyName: true,
+              companyImage: true,
+              description: true,
+              category: true,
+              applicationUrl: true,
+              applicationEmail: true,
+              wage: true,
+              countryIso2: true,
+              stateAbbreviation: true,
+              tags: true,
+              city: true,
+              type: true,
+              experienceLevel: true,
+              locationRequirement: true,
+              status: true,
+              createdAt: true,
+            },
+          }),
+          db.job.count({
+            where: {
+              category: effectiveCategory as any,
+              status: "published" as any,
+            },
+          }),
+        ]);
+        jobs = pageJobs;
+        total = catTotal;
+      }
 
       // Pre-fetch existing applications for this user to mark alreadyApplied
       const jobIds = jobs.map((j) => j.id);
@@ -332,8 +393,6 @@ export const jobRouter = router({
         })
         // If user specified keywords or roles, require at least one match (score > 0)
         .filter((item) => {
-          const hasKeywordFilters = !!(effectiveKeywords && effectiveKeywords.length);
-          const hasRoleFilters = !!(effectiveRoles && effectiveRoles.length);
           if (!hasKeywordFilters && !hasRoleFilters) {
             return true;
           }
@@ -343,9 +402,20 @@ export const jobRouter = router({
       // Sort by score desc, then createdAt desc (they're already in createdAt desc)
       scoredItems.sort((a, b) => b._score - a._score);
 
-      const items = scoredItems.map(({ _score, ...rest }) => rest);
+      // When filters are present, paginate after filtering so "total" and visible items stay in sync.
+      let items: typeof scoredItems;
+      if (hasKeywordFilters || hasRoleFilters) {
+        total = scoredItems.length;
+        const start = skip;
+        const end = start + pageSize;
+        items = scoredItems.slice(start, end);
+      } else {
+        items = scoredItems;
+      }
 
-      return { items, total, page, pageSize };
+      const resultItems = items.map(({ _score, ...rest }) => rest);
+
+      return { items: resultItems, total, page, pageSize };
     }),
 
   getById: publicProcedure
