@@ -388,12 +388,13 @@ export const jobRouter = router({
         };
       });
 
-      // When filters are present, sort by score (desc) then recency, but keep all jobs in the category.
+      // When filters are present, sort by recency first, then score, while keeping all jobs in the category.
       let ordered: typeof scoredItems;
       if (hasKeywordFilters || hasRoleFilters) {
         ordered = [...scoredItems].sort((a, b) => {
-          if (b._score !== a._score) return b._score - a._score;
-          return b.createdAt.getTime() - a.createdAt.getTime();
+          const timeDiff = b.createdAt.getTime() - a.createdAt.getTime();
+          if (timeDiff !== 0) return timeDiff;
+          return b._score - a._score;
         });
         // total remains the count of all jobs in the category
       } else {
