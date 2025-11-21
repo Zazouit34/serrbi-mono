@@ -352,53 +352,59 @@ export const jobRouter = router({
         );
 
       const scoredItems = jobs.map((job) => {
-          const textTokens = tokenize(
-            `${job.title ?? ""} ${job.description ?? ""}`
-          );
-          const tagTokens = new Set(
-            (job.tags ?? []).map((t) => t.toLowerCase())
-          );
-          const jobTokens = new Set<string>([
-            ...tagTokens,
-            ...Array.from(textTokens),
-          ]);
+        const textTokens = tokenize(
+          `${job.title ?? ""} ${job.description ?? ""}`
+        );
+        const tagTokens = new Set(
+          (job.tags ?? []).map((t) => t.toLowerCase())
+        );
+        const jobTokens = new Set<string>([
+          ...tagTokens,
+          ...Array.from(textTokens),
+        ]);
 
-          let keywordMatches = 0;
-          for (const kw of effectiveKeywords || []) {
-            if (jobTokens.has(kw.toLowerCase())) {
-              keywordMatches += 1;
-            }
+        let keywordMatches = 0;
+        for (const kw of effectiveKeywords || []) {
+          if (jobTokens.has(kw.toLowerCase())) {
+            keywordMatches += 1;
           }
+        }
 
-          let roleMatches = 0;
-          for (const role of effectiveRoles || []) {
-            const roleToken = role.toLowerCase();
-            // Match roles against both title and description tokens
-            if (textTokens.has(roleToken)) {
-              roleMatches += 1;
-            }
+        let roleMatches = 0;
+        for (const role of effectiveRoles || []) {
+          const roleToken = role.toLowerCase();
+          // Match roles against both title and description tokens
+          if (textTokens.has(roleToken)) {
+            roleMatches += 1;
           }
+        }
 
-          const score = keywordMatches + roleMatches;
+        const score = keywordMatches + roleMatches;
 
-          return {
-            ...job,
-            alreadyApplied: appliedSet.has(job.id),
-            _score: score,
-          };
-        });
+        return {
+          ...job,
+          alreadyApplied: appliedSet.has(job.id),
+          _score: score,
+        };
+      });
 
-      // When filters are present, keep only matching jobs (score > 0) but preserve DB ordering (newest first).
-      let filtered = scoredItems;
+      // When filters are present, sort by score (desc) then recency, but keep all jobs in the category.
+      let ordered: typeof scoredItems;
       if (hasKeywordFilters || hasRoleFilters) {
-        filtered = scoredItems.filter((item) => item._score > 0);
-        total = filtered.length;
+        ordered = [...scoredItems].sort((a, b) => {
+          if (b._score !== a._score) return b._score - a._score;
+          return b.createdAt.getTime() - a.createdAt.getTime();
+        });
+        // total remains the count of all jobs in the category
+      } else {
+        // No extra filters: rely on DB ordering (createdAt desc, id desc)
+        ordered = scoredItems;
       }
 
-      // Apply pagination after optional filtering.
+      // Apply pagination after optional reordering.
       const start = skip;
       const end = start + pageSize;
-      const paged = filtered.slice(start, end);
+      const paged = ordered.slice(start, end);
 
       const resultItems = paged.map(({ _score, ...rest }) => rest);
 
