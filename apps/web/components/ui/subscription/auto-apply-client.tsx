@@ -33,6 +33,7 @@ import { Progress } from "@workspace/ui/components/progress";
 
 import keywordsByCategory from "@workspace/ui/data/auto-apply-keyword.json";
 import rolesByCategory from "@workspace/ui/data/auto-apply-roles.json";
+import { AutoApplyListingGrid } from "@/app/jobs/auto-apply/auto-apply-listing-grid";
 
 type JobCategory = (typeof jobCategoryValues)[number];
 
@@ -337,6 +338,16 @@ export default function AutoApplySettingsPage() {
       >
         {tA("save")}
       </Button>
+
+      {/* 🎯 Live auto-apply matches */}
+      <div className="pt-4">
+        <AutoApplyListingGrid
+          enabled={enabled}
+          category={category}
+          keywords={keywords}
+          roles={roles}
+        />
+      </div>
     </div>
   );
 }

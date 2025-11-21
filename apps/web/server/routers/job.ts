@@ -5,6 +5,8 @@ import {
   jobGetByIdSchema,
   jobApplicationCreateSchema,
   jobImportSchema,
+  autoApplyJobListQuerySchema,
+  jobApplyForAutoJobSchema,
 } from "@workspace/ui/lib/validation-schemas";
 
 import { TRPCError } from "@trpc/server";
@@ -182,6 +184,154 @@ export const jobRouter = router({
       return { items, total, page, pageSize };
     }),
 
+  // Jobs suggested for the auto-apply feature, based on user prefs and live overrides
+  getAutoApplyJobs: protectedProcedure
+    .input(autoApplyJobListQuerySchema.optional())
+    .query(async ({ ctx, input }) => {
+      const db = ctx.prisma as PrismaClient;
+      const user = ctx.user as {
+        id: string;
+        email: string;
+      };
+
+      const page = input?.page ?? 1;
+      const pageSize = input?.pageSize ?? 8;
+      const enabled = input?.enabled ?? true;
+
+      if (!enabled) {
+        return { items: [], total: 0, page, pageSize };
+      }
+
+      // Load persisted auto-apply prefs
+      const fullUser = await (db.user.findUnique as any)({
+        where: { id: user.id },
+        select: {
+          autoApplyEnabled: true,
+          autoApplyCategory: true,
+          autoApplyKeywords: true,
+          autoApplyRoles: true,
+        },
+      });
+
+      const effectiveEnabled = input?.enabled ?? !!fullUser?.autoApplyEnabled;
+      if (!effectiveEnabled) {
+        return { items: [], total: 0, page, pageSize };
+      }
+
+      const effectiveCategory =
+        input?.category ?? (fullUser?.autoApplyCategory ?? null);
+      const effectiveKeywords =
+        input?.keywords ?? (fullUser?.autoApplyKeywords ?? []);
+      const effectiveRoles =
+        input?.roles ?? (fullUser?.autoApplyRoles ?? []);
+
+      if (!effectiveCategory) {
+        return { items: [], total: 0, page, pageSize };
+      }
+
+      // Fetch recent jobs in the selected category
+      const skip = (page - 1) * pageSize;
+
+      const [jobs, total] = await Promise.all([
+        db.job.findMany({
+          where: {
+            category: effectiveCategory as any,
+            status: "published" as any,
+          },
+          orderBy: { createdAt: "desc" },
+          skip,
+          take: pageSize,
+          select: {
+            id: true,
+            title: true,
+            companyName: true,
+            companyImage: true,
+            description: true,
+            category: true,
+            applicationUrl: true,
+            applicationEmail: true,
+            wage: true,
+            countryIso2: true,
+            stateAbbreviation: true,
+            tags: true,
+            city: true,
+            type: true,
+            experienceLevel: true,
+            locationRequirement: true,
+            status: true,
+            createdAt: true,
+          },
+        }),
+        db.job.count({
+          where: {
+            category: effectiveCategory as any,
+            status: "published" as any,
+          },
+        }),
+      ]);
+
+      // Pre-fetch existing applications for this user to mark alreadyApplied
+      const jobIds = jobs.map((j) => j.id);
+      const existingApps =
+        jobIds.length === 0
+          ? []
+          : await db.jobApplication.findMany({
+              where: {
+                jobId: { in: jobIds },
+                email: user.email,
+              },
+              select: { jobId: true },
+            });
+      const appliedSet = new Set(existingApps.map((a) => a.jobId));
+
+      // Simple relevance scoring based on keywords & roles, similar to auto-apply worker
+      const tokenize = (text: string) =>
+        new Set(
+          text
+            .toLowerCase()
+            .split(/[^a-z0-9+.#]/i)
+            .filter(Boolean)
+        );
+
+      const scoredItems = jobs.map((job) => {
+        const titleTokens = tokenize(job.title ?? "");
+        const textTokens = tokenize(
+          `${job.title ?? ""} ${job.description ?? ""}`
+        );
+        const tagTokens = new Set(
+          (job.tags ?? []).map((t) => t.toLowerCase())
+        );
+        const jobTokens = new Set<string>([
+          ...tagTokens,
+          ...Array.from(textTokens),
+        ]);
+
+        const keywordMatches = (effectiveKeywords || []).reduce(
+          (acc, kw) => acc + (jobTokens.has(kw.toLowerCase()) ? 1 : 0),
+          0
+        );
+        const roleMatches = (effectiveRoles || []).reduce(
+          (acc, role) => acc + (titleTokens.has(role.toLowerCase()) ? 1 : 0),
+          0
+        );
+
+        const score = keywordMatches + roleMatches;
+
+        return {
+          ...job,
+          alreadyApplied: appliedSet.has(job.id),
+          _score: score,
+        };
+      });
+
+      // Sort by score desc, then createdAt desc (they're already in createdAt desc)
+      scoredItems.sort((a, b) => b._score - a._score);
+
+      const items = scoredItems.map(({ _score, ...rest }) => rest);
+
+      return { items, total, page, pageSize };
+    }),
+
   getById: publicProcedure
     .input(jobGetByIdSchema)
     .query(async ({ ctx, input }) => {
@@ -226,6 +376,21 @@ export const jobRouter = router({
         cvFilename: input.cvFilename,
         resumeUrl: input.resumeUrl,
       });
+      return result;
+    }),
+  applyForAutoJob: protectedProcedure
+    .input(jobApplyForAutoJobSchema)
+    .mutation(async ({ ctx, input }) => {
+      const db = ctx.prisma as PrismaClient;
+      const user = ctx.user as { id: string };
+
+      const result = await applyAndNotify({
+        db,
+        jobId: input.jobId,
+        userId: user.id,
+        source: "manual",
+      });
+
       return result;
     }),
     //Bulk Import Jobs
