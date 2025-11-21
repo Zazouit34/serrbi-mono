@@ -100,6 +100,7 @@ export const jobRouter = router({
       const experienceLevel = input?.experienceLevel;
       const type = input?.type;
       const search = input?.search?.trim() || "";
+      const city = input?.city;
       const db = ctx.prisma as PrismaClient;
 
       // Base filter conditions
@@ -121,6 +122,13 @@ export const jobRouter = router({
       if (type) {
         filters.push(`type = $${params.length + 1}`);
         params.push(type);
+      }
+      if (city) {
+        // Match city exactly but case/accent-insensitive, similar to search behavior
+        filters.push(
+          `unaccent(lower(city)) = unaccent(lower($${params.length + 1}))`
+        );
+        params.push(city);
       }
       if ((input as any)?.countryIso2) {
         filters.push(`"countryIso2" = $${params.length + 1}`);
@@ -387,22 +395,14 @@ export const jobRouter = router({
             alreadyApplied: appliedSet.has(job.id),
             _score: score,
           };
-        })
-        // If user specified keywords or roles, require at least one match (score > 0)
-        .filter((item) => {
-          if (!hasKeywordFilters && !hasRoleFilters) {
-            return true;
-          }
-          return item._score > 0;
         });
 
       // Sort by score desc, then createdAt desc (they're already in createdAt desc)
       scoredItems.sort((a, b) => b._score - a._score);
 
-      // When filters are present, paginate after filtering so "total" and visible items stay in sync.
+      // When filters are present, paginate after sorting but keep total equal to all jobs in category.
       let items: typeof scoredItems;
       if (hasKeywordFilters || hasRoleFilters) {
-        total = scoredItems.length;
         const start = skip;
         const end = start + pageSize;
         items = scoredItems.slice(start, end);
