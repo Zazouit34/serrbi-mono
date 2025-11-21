@@ -93,6 +93,7 @@ export const jobRouter = router({
   getJob: publicProcedure
     .input(jobListQuerySchema.optional())
     .query(async ({ ctx, input }) => {
+      const db = ctx.prisma as PrismaClient;
       const page = input?.page ?? 1;
       const pageSize = input?.pageSize ?? 12;
       const locationRequirement = input?.locationRequirement;
@@ -101,93 +102,84 @@ export const jobRouter = router({
       const type = input?.type;
       const search = input?.search?.trim() || "";
       const city = input?.city;
-      const db = ctx.prisma as PrismaClient;
+      const countryIso2 = (input as any)?.countryIso2 as string | undefined;
 
-      // Base filter conditions
-      const filters: string[] = [];
-      const params: any[] = [];
+      const where: any = {};
 
       if (locationRequirement) {
-        filters.push(`"locationRequirement" = $${params.length + 1}`);
-        params.push(locationRequirement);
+        where.locationRequirement = locationRequirement;
       }
       if (category) {
-        filters.push(`category = $${params.length + 1}`);
-        params.push(category);
+        where.category = category;
       }
       if (experienceLevel) {
-        filters.push(`"experienceLevel" = $${params.length + 1}`);
-        params.push(experienceLevel);
+        where.experienceLevel = experienceLevel;
       }
       if (type) {
-        filters.push(`type = $${params.length + 1}`);
-        params.push(type);
+        where.type = type;
       }
       if (city) {
-        // Match city exactly but case/accent-insensitive, similar to search behavior
-        filters.push(
-          `unaccent(lower(city)) = unaccent(lower($${params.length + 1}))`
-        );
-        params.push(city);
+        // Case-insensitive city match, similar to services
+        where.city = { equals: city, mode: "insensitive" };
       }
-      if ((input as any)?.countryIso2) {
-        filters.push(`"countryIso2" = $${params.length + 1}`);
-        params.push((input as any).countryIso2);
+      if (countryIso2) {
+        where.countryIso2 = countryIso2;
       }
 
-      // Search logic with unaccent
       if (search) {
-        filters.push(`
-          (
-            unaccent(lower(title)) LIKE unaccent(lower($${params.length + 1}))
-            OR unaccent(lower(description)) LIKE unaccent(lower($${params.length + 1}))
-            OR unaccent(lower("companyName")) LIKE unaccent(lower($${params.length + 1}))
-            OR unaccent(lower(city)) LIKE unaccent(lower($${params.length + 1}))
-          )
-        `);
-        params.push(`%${search}%`);
+        where.OR = [
+          { title: { contains: search, mode: "insensitive" } },
+          { description: { contains: search, mode: "insensitive" } },
+          { companyName: { contains: search, mode: "insensitive" } },
+          { city: { contains: search, mode: "insensitive" } },
+        ];
       }
 
-      // Exclude Morocco for secondary domain
+      // Exclude Morocco for secondary domain (mirror previous behavior)
       try {
         const hdrs = await headers();
         const host = hdrs.get("host") || "";
         const tenant = getTenantFromHost(host);
         if (tenant === "secondary") {
           const maCodes = Object.keys(maStates as Record<string, string>);
-          const maCodesPlaceholders = maCodes.map((_, i) => `$${params.length + 1 + i}`).join(", ");
-          filters.push(`NOT ("countryIso2" = 'MA' OR "stateAbbreviation" IN (${maCodesPlaceholders}))`);
-          params.push(...maCodes);
+          where.NOT = {
+            OR: [
+              { countryIso2: "MA" },
+              { stateAbbreviation: { in: maCodes } },
+            ],
+          };
         }
       } catch {}
 
-      // Build final WHERE clause
-      const whereClause = filters.length > 0 ? `WHERE ${filters.join(" AND ")}` : "";
-
-      // Pagination and ordering
-      const offset = (page - 1) * pageSize;
-
-      // Get jobs
-      const items = await db.$queryRawUnsafe<any[]>(`
-        SELECT 
-          id, title, "companyName", "companyImage", description, category,
-          "applicationUrl", "applicationEmail", wage, "countryIso2",
-          "stateAbbreviation", tags, city, type, "experienceLevel",
-          "locationRequirement", status, "createdAt"
-        FROM "Job"
-        ${whereClause}
-        ORDER BY "createdAt" DESC, id DESC
-        LIMIT ${pageSize} OFFSET ${offset};
-      `, ...params);
-
-      // Get total count
-      const totalResult = await db.$queryRawUnsafe<{ count: number }[]>(`
-        SELECT COUNT(*)::int AS count
-        FROM "Job"
-        ${whereClause};
-      `, ...params);
-
-      const total = totalResult[0]?.count ?? 0;
+      const [items, total] = await Promise.all([
+        db.job.findMany({
+          where,
+          orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+          skip: (page - 1) * pageSize,
+          take: pageSize,
+          select: {
+            id: true,
+            title: true,
+            companyName: true,
+            companyImage: true,
+            description: true,
+            category: true,
+            applicationUrl: true,
+            applicationEmail: true,
+            wage: true,
+            countryIso2: true,
+            stateAbbreviation: true,
+            tags: true,
+            city: true,
+            type: true,
+            experienceLevel: true,
+            locationRequirement: true,
+            status: true,
+            createdAt: true,
+          },
+        }),
+        db.job.count({ where }),
+      ]);
 
       return { items, total, page, pageSize };
     }),
