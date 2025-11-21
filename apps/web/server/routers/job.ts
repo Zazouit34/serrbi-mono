@@ -264,7 +264,6 @@ export const jobRouter = router({
         jobs = await db.job.findMany({
           where: {
             category: effectiveCategory as any,
-            status: "published" as any,
           },
           orderBy: { createdAt: "desc" },
           select: {
@@ -294,7 +293,6 @@ export const jobRouter = router({
           db.job.findMany({
             where: {
               category: effectiveCategory as any,
-              status: "published" as any,
             },
             orderBy: { createdAt: "desc" },
             skip,
@@ -323,7 +321,6 @@ export const jobRouter = router({
           db.job.count({
             where: {
               category: effectiveCategory as any,
-              status: "published" as any,
             },
           }),
         ]);
