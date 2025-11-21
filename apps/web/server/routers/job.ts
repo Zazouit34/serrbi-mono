@@ -342,7 +342,7 @@ export const jobRouter = router({
             });
       const appliedSet = new Set(existingApps.map((a) => a.jobId));
 
-      // Simple relevance scoring & filtering based on category + keywords (tags/text) & roles (title/description)
+      // Simple relevance scoring based on category + keywords (tags/text) & roles (title/description)
       const tokenize = (text: string) =>
         new Set(
           text
@@ -351,8 +351,7 @@ export const jobRouter = router({
             .filter(Boolean)
         );
 
-      const scoredItems = jobs
-        .map((job) => {
+      const scoredItems = jobs.map((job) => {
           const textTokens = tokenize(
             `${job.title ?? ""} ${job.description ?? ""}`
           );
@@ -387,29 +386,21 @@ export const jobRouter = router({
             alreadyApplied: appliedSet.has(job.id),
             _score: score,
           };
-        })
-        // If user specified keywords or roles, require at least one match (score > 0)
-        .filter((item) => {
-          if (!hasKeywordFilters && !hasRoleFilters) {
-            return true;
-          }
-          return item._score > 0;
         });
 
-      // NOTE: we intentionally do NOT resort here so we preserve DB ordering (newest first).
-
-      // When filters are present, paginate after filtering and update total to reflect the filtered set.
-      let items: typeof scoredItems;
+      // When filters are present, keep only matching jobs (score > 0) but preserve DB ordering (newest first).
+      let filtered = scoredItems;
       if (hasKeywordFilters || hasRoleFilters) {
-        total = scoredItems.length;
-        const start = skip;
-        const end = start + pageSize;
-        items = scoredItems.slice(start, end);
-      } else {
-        items = scoredItems;
+        filtered = scoredItems.filter((item) => item._score > 0);
+        total = filtered.length;
       }
 
-      const resultItems = items.map(({ _score, ...rest }) => rest);
+      // Apply pagination after optional filtering.
+      const start = skip;
+      const end = start + pageSize;
+      const paged = filtered.slice(start, end);
+
+      const resultItems = paged.map(({ _score, ...rest }) => rest);
 
       return { items: resultItems, total, page, pageSize };
     }),
