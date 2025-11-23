@@ -9,7 +9,6 @@ export interface SerrbiJob {
 
 export interface ScoredJob extends SerrbiJob {
   denseScore: number;
-  rerankScore: number;
   finalScore: number;
 }
 

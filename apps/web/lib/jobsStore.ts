@@ -1,6 +1,5 @@
 import { headers } from "next/headers";
 import { embedBatch } from "./embedding";
-import { rerankPairs } from "./reranker";
 import type { SerrbiJob, ScoredJob } from "../types/job";
 import { prisma, type Prisma } from "@workspace/db";
 import { getTenantFromHost } from "@/lib/domain";
@@ -134,6 +133,7 @@ async function fetchJobsForHybridSearch(
   }));
 }
 
+// Semantic search over jobs using dense embeddings and cosine similarity only.
 export async function hybridSearchJobs(
   query: string,
   queryEmbedding: number[],
@@ -177,36 +177,19 @@ export async function hybridSearchJobs(
 
   const topDense = denseScored.slice(0, Math.min(topKDense, denseScored.length));
 
-  const docs = topDense.map(({ jobEmbedding }) => buildJobText(jobEmbedding.job));
-
-  const rerankScores = await rerankPairs(query, docs);
-
-  if (rerankScores.length !== topDense.length) {
-    throw new Error(
-      `Reranker returned ${rerankScores.length} scores for ${topDense.length} docs`,
-    );
-  }
-
   const denseScores = topDense.map((item) => item.denseScore);
   const denseNorm = minMaxNormalize(denseScores);
-  const rerankNorm = minMaxNormalize(rerankScores);
-
-  const DENSE_WEIGHT = 0.4;
-  const RERANK_WEIGHT = 0.6;
 
   const scoredJobs: ScoredJob[] = topDense.map((item, idx) => {
     const { job } = item.jobEmbedding;
     const denseScore = denseScores[idx] ?? 0;
-    const rerankScore = rerankScores[idx] ?? 0;
     const denseNormScore = denseNorm[idx] ?? 0;
-    const rerankNormScore = rerankNorm[idx] ?? 0;
-    const finalScore =
-      DENSE_WEIGHT * denseNormScore + RERANK_WEIGHT * rerankNormScore;
+    // In pure semantic search, the final score is just the normalized dense score.
+    const finalScore = denseNormScore;
 
     return {
       ...job,
       denseScore,
-      rerankScore,
       finalScore,
     };
   });
