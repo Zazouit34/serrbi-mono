@@ -1,12 +1,15 @@
 /**
  * Required environment variables:
- * - EMBEDDING_API_URL
- * - EMBEDDING_API_KEY
+ * - EMBEDDING_API_URL  (e.g. your OpenAI-compatible or custom embedding server URL.
+ *   For DashScope text-embedding-v4, this would typically be
+ *   "https://dashscope-intl.aliyuncs.com/api/v1")
+ * - EMBEDDING_API_KEY  (API key or shared secret for that server, if required.
+ *   For DashScope, set this to your DashScope API key, e.g. "sk-...".)
  *
- * This module encapsulates all calls to the embedding provider (BAAI/bge-m3).
+ * This module encapsulates all calls to the embedding provider (DashScope text-embedding-v4).
  */
 
-const EMBEDDING_MODEL = "BAAI/bge-m3" as const;
+const EMBEDDING_MODEL = "text-embedding-v4" as const;
 
 interface EmbeddingApiRequest {
   model: string;
