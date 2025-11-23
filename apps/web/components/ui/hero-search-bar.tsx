@@ -9,6 +9,7 @@ import { useTranslations } from "next-intl";
 import { FaGoogle, FaAws, FaMicrosoft, FaLinkedin } from "react-icons/fa";
 import { isSecondaryClient } from "@/lib/domain";
 import Link from "next/link";
+import { slugify } from "@/lib/slugify";
 import type { JobsSearchResponse, ScoredJob } from "@/types/job";
 
 type TabType = "jobs" | "services" | "tasks";
@@ -60,6 +61,8 @@ export function HeroSearchBar() {
         },
         body: JSON.stringify({
           query: trimmedQuery,
+          topKDense: 25,
+          topKFinal: 3,
         }),
       });
 
@@ -82,7 +85,8 @@ export function HeroSearchBar() {
       }
 
       const data = (await response.json()) as JobsSearchResponse;
-      setJobsResults(data.results);
+      // Ensure we only render the top 3 results, even if the API returns more.
+      setJobsResults(data.results.slice(0, 3));
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Unexpected error occurred.";
@@ -175,9 +179,13 @@ export function HeroSearchBar() {
           </div>
 
           {activeTab === "jobs" && (
-            <div className="mt-3 text-xs">
+            <div className="mt-3 space-y-2 text-xs">
+              <p className="text-[11px] text-gray-500">
+                AI‑enhanced search shows the <span className="font-semibold">3 closest job matches</span> to your query.
+              </p>
+
               {jobsLoading && (
-                <p className="text-gray-600">Running hybrid job search...</p>
+                <p className="text-gray-600">Finding the best AI job matches…</p>
               )}
 
               {!jobsLoading && jobsError && (
@@ -188,47 +196,16 @@ export function HeroSearchBar() {
                 !jobsError &&
                 jobsResults.length === 0 &&
                 searchQuery.trim().length > 0 && (
-                  <p className="text-gray-500">No matching jobs found yet.</p>
+                  <p className="text-gray-500">
+                    No matching jobs found yet. Try different keywords or a broader role.
+                  </p>
                 )}
 
               {!jobsLoading && jobsResults.length > 0 && (
-                <ul className="overflow-y-auto mt-2 space-y-2 max-h-64">
+                <ul className="mt-1 space-y-2">
                   {jobsResults.map((job) => (
-                    <li
-                      key={job.id}
-                      className="p-3 bg-white rounded border border-gray-200"
-                    >
-                      <div className="flex gap-2 justify-between items-center mb-1">
-                        <div>
-                          <h3 className="text-sm font-semibold">{job.title}</h3>
-                          <p className="text-xs text-gray-700">
-                            {job.company}
-                            {job.location ? ` · ${job.location}` : ""}
-                          </p>
-                        </div>
-                        <div className="text-right text-[10px] text-gray-500">
-                          <div>final: {job.finalScore.toFixed(3)}</div>
-                          <div>dense: {job.denseScore.toFixed(3)}</div>
-                          <div>rerank: {job.rerankScore.toFixed(3)}</div>
-                        </div>
-                      </div>
-                      <p className="text-xs text-gray-700">
-                        {job.description.length > 160
-                          ? `${job.description.slice(0, 160)}…`
-                          : job.description}
-                      </p>
-                      {job.tags && job.tags.length > 0 && (
-                        <div className="flex flex-wrap gap-1 mt-1">
-                          {job.tags.map((tag) => (
-                            <span
-                              key={tag}
-                              className="rounded bg-gray-100 px-2 py-0.5 text-[10px] text-gray-700"
-                            >
-                              {tag}
-                            </span>
-                          ))}
-                        </div>
-                      )}
+                    <li key={job.id}>
+                      <HeroJobResultCard job={job} />
                     </li>
                   ))}
                 </ul>
@@ -263,3 +240,41 @@ export function HeroSearchBar() {
     </div>
   );
 }
+
+function HeroJobResultCard({ job }: { job: ScoredJob }) {
+  const href = `/jobs/apply/${slugify(job.title)}/${job.id}`;
+
+  return (
+    <Link href={href} className="block">
+      <div className="flex flex-col gap-1 px-3 py-2 bg-white rounded-xl border border-gray-200 transition-colors hover:border-gray-300 hover:bg-gray-50">
+        <div className="flex gap-2 justify-between items-start">
+          <div className="min-w-0">
+            <h3 className="text-sm font-semibold text-gray-900 line-clamp-1">
+              {job.title}
+            </h3>
+            <p className="text-[11px] text-gray-600 line-clamp-1">
+              {job.company}
+              {job.location ? ` · ${job.location}` : ""}
+            </p>
+          </div>
+        </div>
+        <p className="text-[11px] text-gray-700 line-clamp-2">
+          {job.description}
+        </p>
+        {job.tags && job.tags.length > 0 && (
+          <div className="flex flex-wrap gap-1 mt-1">
+            {job.tags.slice(0, 3).map((tag) => (
+              <span
+                key={tag}
+                className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] text-gray-700"
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+    </Link>
+  );
+}
+
