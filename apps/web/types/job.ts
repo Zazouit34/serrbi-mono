@@ -18,7 +18,6 @@ export interface JobsSearchMeta {
   topKDense: number;
   topKFinal: number;
   denseModel: "text-embedding-v4";
-  rerankerModel: "BAAI/bge-reranker-v2-m3";
 }
 
 export interface JobsSearchResponse {

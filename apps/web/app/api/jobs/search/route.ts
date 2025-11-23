@@ -47,7 +47,6 @@ export async function POST(req: Request) {
         topKDense,
         topKFinal,
         denseModel: "text-embedding-v4",
-        rerankerModel: "BAAI/bge-reranker-v2-m3",
       },
     };
 

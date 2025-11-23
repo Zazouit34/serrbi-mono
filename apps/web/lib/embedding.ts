@@ -1,8 +1,11 @@
 /**
  * Required environment variables:
  * - EMBEDDING_API_URL  (e.g. your OpenAI-compatible or custom embedding server URL.
- *   For DashScope text-embedding-v4, this would typically be
- *   "https://dashscope-intl.aliyuncs.com/api/v1")
+ *   For DashScope text-embedding-v4, you can either set this to the full endpoint:
+ *     "https://dashscope-intl.aliyuncs.com/api/v1/services/embeddings/text-embedding/text-embedding"
+ *   or just the base API URL:
+ *     "https://dashscope-intl.aliyuncs.com/api/v1"
+ *   (in which case the DashScope embedding path will be appended automatically).
  * - EMBEDDING_API_KEY  (API key or shared secret for that server, if required.
  *   For DashScope, set this to your DashScope API key, e.g. "sk-...".)
  *
@@ -35,8 +38,25 @@ function getRequiredEnv(name: string): string {
 async function callEmbeddingApi(
   body: EmbeddingApiRequest,
 ): Promise<EmbeddingApiResponse> {
-  const url = getRequiredEnv("EMBEDDING_API_URL");
+  const baseUrl = getRequiredEnv("EMBEDDING_API_URL");
   const apiKey = getRequiredEnv("EMBEDDING_API_KEY");
+
+  // If the user provided only the DashScope base URL, append the embedding path.
+  const url = baseUrl.includes("/services/embeddings/")
+    ? baseUrl
+    : `${baseUrl.replace(/\/$/, "")}/services/embeddings/text-embedding/text-embedding`;
+
+  // Adapt our internal request shape to DashScope's HTTP API.
+  const dashscopeBody = {
+    model: body.model,
+    input: {
+      texts: Array.isArray(body.input) ? body.input : [body.input],
+    },
+    parameters: {
+      output_type: "dense",
+      // dimension: 1024, // Optional: set a custom embedding dimension if desired.
+    },
+  };
 
   const response = await fetch(url, {
     method: "POST",
@@ -44,7 +64,7 @@ async function callEmbeddingApi(
       "Content-Type": "application/json",
       Authorization: `Bearer ${apiKey}`,
     },
-    body: JSON.stringify(body),
+    body: JSON.stringify(dashscopeBody),
   });
 
   if (!response.ok) {
@@ -61,15 +81,22 @@ async function callEmbeddingApi(
   if (
     typeof json !== "object" ||
     json === null ||
-    !("data" in json) ||
-    !Array.isArray((json as { data: unknown }).data)
+    !("output" in json) ||
+    typeof (json as { output: unknown }).output !== "object" ||
+    (json as { output: { embeddings?: unknown } }).output.embeddings ===
+      undefined ||
+    !Array.isArray(
+      (json as { output: { embeddings: unknown[] } }).output.embeddings,
+    )
   ) {
     throw new Error("Unexpected embedding API response shape");
   }
 
-  const data = (json as { data: unknown[] }).data;
+  const embeddingsRaw = (json as {
+    output: { embeddings: { embedding: unknown }[] };
+  }).output.embeddings;
 
-  const vectors: EmbeddingApiVector[] = data.map((item) => {
+  const vectors: EmbeddingApiVector[] = embeddingsRaw.map((item) => {
     if (
       typeof item !== "object" ||
       item === null ||

@@ -113,6 +113,8 @@ model Job {
   createdAt           DateTime            @default(now())
   updatedAt           DateTime            @updatedAt
   tags                String[]            @default([])  //skill tags
+  // Dense embedding vector for semantic search (DashScope text-embedding-v4)
+  embedding           Float[]             @default([])
   favorites           Favorite?
   moderator           User?               @relation("JobModerator", fields: [moderatedBy], references: [id])
   user                User                @relation(fields: [userId], references: [id])
