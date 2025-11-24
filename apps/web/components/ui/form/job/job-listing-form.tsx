@@ -396,6 +396,7 @@ export function JobListingForm() {
                             <UppyImageUploader
                               category="jobs"
                               onUploadSuccess={(url) => field.onChange(url)}
+                              onUploadError={(msg) => setError(msg)}
                               note={tForm("uploadLogoNote")}
                             />
                           </FormControl>
