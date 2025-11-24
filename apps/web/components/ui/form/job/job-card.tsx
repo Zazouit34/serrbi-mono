@@ -197,7 +197,7 @@ export function JobCard({
             <h2
               className={cn(
                 "text-base font-bold leading-tight text-gray-900 md:text-2xl line-clamp-2",
-                compact && "text-sm md:text-base line-clamp-2"
+                compact && "text-sm md:text-base line-clamp-2 text-left"
               )}
             >
               {job.title}
