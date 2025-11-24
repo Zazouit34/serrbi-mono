@@ -61,7 +61,7 @@ export function JobCard({
   const wageMax = wageMin != null ? wageMin + 200 : null;
 
   return (
-    <div className={cn("flex justify-center sm:block", compact && "justify-start")}>
+    <div className={cn(compact ? "block" : "flex justify-center sm:block")}>
       <Card
         className={cn(
           "overflow-hidden w-full sm:max-w-none rounded-3xl shadow-md hover:shadow-lg transition-all !py-0 cursor-pointer",

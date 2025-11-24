@@ -3,6 +3,11 @@ export interface SerrbiJob {
   title: string;
   company: string;
   companyImage?: string | null;
+  category?: any;
+  type?: any;
+  experienceLevel?: any;
+  locationRequirement?: any;
+  createdAt?: string;
   location?: string;
   description: string;
   tags?: string[];

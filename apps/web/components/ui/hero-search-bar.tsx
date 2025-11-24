@@ -176,7 +176,7 @@ export function HeroSearchBar() {
 
       {/* Search Content - Ask AI panel + suggestions + results, inside its own border */}
       <div className="px-4 md:px-6 md:pb-4">
-        <div className="w-full md:w-[600px] mx-auto flex flex-col gap-4 rounded-3xl border bg-white shadow p-4 md:p-6">
+        <div className="flex flex-col gap-4 p-4 mx-auto w-full bg-white rounded-3xl border shadow md:p-6">
           {/* Ask AI header */}
           <h2 className="flex gap-2 items-center text-sm font-semibold text-gray-900">
             <Sparkles size={16} className="text-violet-500" />
@@ -186,13 +186,13 @@ export function HeroSearchBar() {
           </h2>
 
           {/* AI-style search bar */}
-          <div className="flex justify-between items-center px-3 h-12 text-gray-400 rounded-full border border-gray-200">
+          <div className="flex justify-between items-center px-2 h-12 text-gray-400 rounded-full border border-gray-200">
             <Input
               placeholder={t("placeholder")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyPress={(e) => e.key === "Enter" && handleSearch()}
-              className="flex-1 px-0 h-10 text-sm text-gray-900 bg-transparent border-none shadow-none outline-none placeholder:text-gray-400 focus-visible:ring-0 focus-visible:ring-offset-0"
+              className="flex-1 px-0 pl-4 h-10 text-sm text-gray-900 bg-transparent border-none shadow-none outline-none placeholder:text-gray-400 focus-visible:ring-0 focus-visible:ring-offset-0"
             />
             <Button
               type="button"
@@ -260,12 +260,12 @@ export function HeroSearchBar() {
                           wage: null,
                           stateAbbreviation: null,
                           city: job.location ?? null,
-                          type: "full_time",
-                          experienceLevel: "junior",
-                          locationRequirement: "in_office",
-                          category: undefined,
+                          type: job.type ?? undefined,
+                          experienceLevel: job.experienceLevel ?? undefined,
+                          locationRequirement: undefined,
+                          category: job.category ?? undefined,
                           user: null,
-                          createdAt: undefined,
+                          createdAt: job.createdAt,
                           description: job.description,
                           status: undefined,
                         }}
