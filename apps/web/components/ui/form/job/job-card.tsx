@@ -130,13 +130,6 @@ export function JobCard({
                   )}
                 </div>
               )}
-              {!job.category && compact && (
-                <FavoriteButton
-                  jobId={job.id}
-                  color={[239, 68, 68]}
-                  className="scale-75"
-                />
-              )}
               <span
                 className={cn(
                   "px-2 py-0.5 rounded-md border text-foreground/70 text-xs md:text-sm",
@@ -155,7 +148,7 @@ export function JobCard({
               compact && "min-h-[1.25rem]"
             )}
           >
-            <div className="flex gap-2 items-center flex-1 min-w-0">
+            <div className="flex flex-1 gap-2 items-center min-w-0">
               <span
                 className={cn(
                   "text-sm font-semibold text-gray-800 md:text-lg truncate",
@@ -224,7 +217,7 @@ export function JobCard({
             <div className="flex justify-between items-center pt-3 border-t">
               {wageMin != null && wageMax != null && (
                 <div className="flex gap-1 items-baseline md:gap-2">
-                  <span className="text-sm font-semibold md:text-base text-emerald-600">
+                  <span className="text-sm font-semibold text-emerald-600 md:text-base">
                     {wageMin.toLocaleString()} - {wageMax.toLocaleString()}{" "}
                     {tAll("Currency.MAD")}
                   </span>
