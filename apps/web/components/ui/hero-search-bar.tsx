@@ -143,7 +143,7 @@ export function HeroSearchBar() {
   ];
 
   return (
-    <div className="-mx-4 w-screen max-w-none sm:mx-0 md:max-w-2xl md:mx-auto">
+    <div className="-mx-4 w-screen max-w-none sm:mx-0 md:max-w-3xl md:mx-auto">
       {/* Tabs Header - outside AI border */}
       <div className="px-4 pt-3 pb-2 md:px-6 md:pt-4">
         {!isSecondary && (
@@ -178,12 +178,15 @@ export function HeroSearchBar() {
       <div className="px-4 md:px-6 md:pb-4">
         <div className="w-full md:w-[600px] mx-auto flex flex-col gap-4 rounded-3xl border bg-white shadow p-4 md:p-6">
           {/* Ask AI header */}
-          <h2 className="flex items-center gap-2 text-sm font-semibold bg-gradient-to-r from-[#7f5cff] to-[#ba9cff] text-transparent bg-clip-text">
-            <Sparkles size={16} /> Ask AI
+          <h2 className="flex gap-2 items-center text-sm font-semibold text-gray-900">
+            <Sparkles size={16} className="text-violet-500" />
+            <span className="bg-gradient-to-r from-[#7f5cff] to-[#ba9cff] text-transparent bg-clip-text">
+              Ask AI
+            </span>
           </h2>
 
           {/* AI-style search bar */}
-          <div className="flex justify-between items-center px-3 h-12 text-gray-400 bg-gray-100 rounded-2xl">
+          <div className="flex justify-between items-center px-3 h-12 text-gray-400 rounded-full border border-gray-200">
             <Input
               placeholder={t("placeholder")}
               value={searchQuery}
@@ -253,7 +256,7 @@ export function HeroSearchBar() {
                           id: job.id,
                           title: job.title,
                           companyName: job.company,
-                          companyImage: null,
+                          companyImage: job.companyImage ?? null,
                           wage: null,
                           stateAbbreviation: null,
                           city: job.location ?? null,

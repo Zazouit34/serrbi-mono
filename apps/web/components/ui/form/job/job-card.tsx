@@ -61,7 +61,7 @@ export function JobCard({
   const wageMax = wageMin != null ? wageMin + 200 : null;
 
   return (
-    <div className={cn("flex justify-center sm:block", compact && "sm:block")}>
+    <div className={cn("flex justify-center sm:block", compact && "justify-start")}>
       <Card
         className={cn(
           "overflow-hidden w-full sm:max-w-none rounded-3xl shadow-md hover:shadow-lg transition-all !py-0 cursor-pointer",
@@ -86,7 +86,7 @@ export function JobCard({
             compact && "p-3 space-y-3 md:p-3"
           )}
         >
-          {/* Top Row: Avatar + Category + Type */}
+          {/* Top Row: Avatar + Category + Type + Favorite (compact) */}
           <div className="flex justify-between items-start">
             <Avatar
               className={cn(
@@ -115,10 +115,26 @@ export function JobCard({
               )}
             >
               {job.category && (
-                <CategoryBadge
-                  category={job.category}
-                  type="job"
-                  className={cn(compact && "text-[10px] px-1.5 py-0.5")}
+                <div className={cn("flex items-center gap-2", compact && "gap-1")}>
+                  <CategoryBadge
+                    category={job.category}
+                    type="job"
+                    className={cn(compact && "text-[10px] px-1.5 py-0.5")}
+                  />
+                  {compact && (
+                    <FavoriteButton
+                      jobId={job.id}
+                      color={[239, 68, 68]}
+                      className="scale-75"
+                    />
+                  )}
+                </div>
+              )}
+              {!job.category && compact && (
+                <FavoriteButton
+                  jobId={job.id}
+                  color={[239, 68, 68]}
+                  className="scale-75"
                 />
               )}
               <span
@@ -132,7 +148,7 @@ export function JobCard({
             </div>
           </div>
 
-          {/* Company + Days ago + Favorite */}
+          {/* Company + Days ago + Favorite (non-compact) */}
           <div
             className={cn(
               "flex justify-between items-center min-h-[1.5rem] md:min-h-[2rem]",
@@ -165,16 +181,17 @@ export function JobCard({
                   : ""}
               </span>
             </div>
-            <div
-              onClick={(e) => e.stopPropagation()}
-              onKeyDown={(e) => e.stopPropagation()}
-            >
-              <FavoriteButton
-                jobId={job.id}
-                color={[239, 68, 68]}
-                className={cn(compact && "scale-75")}
-              />
-            </div>
+            {!compact && (
+              <div
+                onClick={(e) => e.stopPropagation()}
+                onKeyDown={(e) => e.stopPropagation()}
+              >
+                <FavoriteButton
+                  jobId={job.id}
+                  color={[239, 68, 68]}
+                />
+              </div>
+            )}
           </div>
 
           {/* Job Title */}
@@ -202,52 +219,31 @@ export function JobCard({
             compact={compact}
           />
 
-          {/* Wage + Apply button */}
-          <div
-            className={cn(
-              "flex justify-between items-center pt-3 border-t",
-              compact && "pt-2"
-            )}
-          >
-            {wageMin != null && wageMax != null && (
-              <div
-                className={cn(
-                  "flex gap-1 items-baseline md:gap-2",
-                  compact && "gap-1"
-                )}
-              >
-                <span
-                  className={cn(
-                    "text-sm font-semibold md:text-base text-emerald-600",
-                    compact && "text-xs md:text-sm"
-                  )}
-                >
-                  {wageMin.toLocaleString()} - {wageMax.toLocaleString()}{" "}
-                  {tAll("Currency.MAD")}
-                </span>
-              </div>
-            )}
+          {/* Wage + Apply button (hidden in compact mode) */}
+          {!compact && (
+            <div className="flex justify-between items-center pt-3 border-t">
+              {wageMin != null && wageMax != null && (
+                <div className="flex gap-1 items-baseline md:gap-2">
+                  <span className="text-sm font-semibold md:text-base text-emerald-600">
+                    {wageMin.toLocaleString()} - {wageMax.toLocaleString()}{" "}
+                    {tAll("Currency.MAD")}
+                  </span>
+                </div>
+              )}
 
-            <Button
-              variant="outline"
-              size={compact ? "icon" : "sm"}
-              className={cn(
-                compact && "h-7 w-7 p-0 rounded-full flex items-center justify-center"
-              )}
-              onClick={(e) => {
-                e.stopPropagation();
-                router.push(href);
-              }}
-            >
-              {!compact && (
-                <>
-                  {t("apply")}
-                  <ArrowRight className="ml-1 md:ml-2 size-3 md:size-4" />
-                </>
-              )}
-              {compact && <ArrowRight className="size-3" />}
-            </Button>
-          </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  router.push(href);
+                }}
+              >
+                {t("apply")}
+                <ArrowRight className="ml-1 md:ml-2 size-3 md:size-4" />
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

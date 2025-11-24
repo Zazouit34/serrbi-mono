@@ -2,6 +2,7 @@ export interface SerrbiJob {
   id: string;
   title: string;
   company: string;
+  companyImage?: string | null;
   location?: string;
   description: string;
   tags?: string[];
