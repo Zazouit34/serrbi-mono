@@ -262,7 +262,7 @@ export function HeroSearchBar() {
                           city: job.location ?? null,
                           type: job.type ?? undefined,
                           experienceLevel: job.experienceLevel ?? undefined,
-                          locationRequirement: undefined,
+                          locationRequirement: job.locationRequirement ?? undefined,
                           category: job.category ?? undefined,
                           user: null,
                           createdAt: job.createdAt,
