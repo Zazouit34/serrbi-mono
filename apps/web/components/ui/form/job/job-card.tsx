@@ -86,7 +86,7 @@ export function JobCard({
             compact && "p-3 space-y-3 md:p-3"
           )}
         >
-          {/* Top Row: Avatar + Category + Type + Favorite (compact) */}
+          {/* Top Row: Avatar + Category + Type */}
           <div className="flex justify-between items-start">
             <Avatar
               className={cn(
@@ -115,20 +115,11 @@ export function JobCard({
               )}
             >
               {job.category && (
-                <div className={cn("flex items-center gap-2", compact && "gap-1")}>
-                  <CategoryBadge
-                    category={job.category}
-                    type="job"
-                    className={cn(compact && "text-[10px] px-1.5 py-0.5")}
-                  />
-                  {compact && (
-                    <FavoriteButton
-                      jobId={job.id}
-                      color={[239, 68, 68]}
-                      className="scale-75"
-                    />
-                  )}
-                </div>
+                <CategoryBadge
+                  category={job.category}
+                  type="job"
+                  className={cn(compact && "text-[10px] px-1.5 py-0.5")}
+                />
               )}
               <span
                 className={cn(
@@ -141,7 +132,7 @@ export function JobCard({
             </div>
           </div>
 
-          {/* Company + Days ago + Favorite (non-compact) */}
+          {/* Company + Days ago + Favorite */}
           <div
             className={cn(
               "flex justify-between items-center min-h-[1.5rem] md:min-h-[2rem]",
@@ -197,7 +188,7 @@ export function JobCard({
             <h2
               className={cn(
                 "text-base font-bold leading-tight text-gray-900 md:text-2xl line-clamp-2",
-                compact && "text-sm md:text-base line-clamp-2 text-left"
+                compact && "text-left text-sm md:text-base line-clamp-2"
               )}
             >
               {job.title}

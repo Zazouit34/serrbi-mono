@@ -432,6 +432,10 @@
     "serviceCategory": "فئة الخدمة",
     "serviceType": "نوع الخدمة",
     "taskCategory": "فئة المهمة",
+    "companyLogo": "شعار الشركة",
+    "wageMonthly": "الأجر (شهرياً)",
+    "applicationEmailLabel": "بريد التقديم",
+    "applicationUrlLabel": "رابط التقديم",
     "placeholders": {
       "jobTitle": "مهندس برمجيات",
       "companyName": "اسم الشركة",

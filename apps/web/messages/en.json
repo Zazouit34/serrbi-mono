@@ -433,6 +433,10 @@
     "serviceCategory": "Service Category",
     "serviceType": "Service Type",
     "taskCategory": "Task Category",
+    "companyLogo": "Company Logo",
+    "wageMonthly": "Wage (Monthly)",
+    "applicationEmailLabel": "Application Email",
+    "applicationUrlLabel": "Application URL",
     "placeholders": {
       "jobTitle": "Software Engineer",
       "companyName": "Company Name",

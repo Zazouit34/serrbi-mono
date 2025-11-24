@@ -435,6 +435,10 @@
     "serviceCategory": "Catégorie de service",
     "serviceType": "Type de service",
     "taskCategory": "Catégorie de tâche",
+    "companyLogo": "Entreprise logo",
+    "wageMonthly": "Salaire (mensuel)",
+    "applicationEmailLabel": "Email de candidature",
+    "applicationUrlLabel": "URL de candidature",
     "placeholders": {
       "jobTitle": "Ingénieur logiciel",
       "companyName": "Nom de l’entreprise",
