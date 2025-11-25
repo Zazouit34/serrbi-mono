@@ -85,7 +85,8 @@
     "title": "Get your resume checked by AI in seconds",
     "subtitle": "Drop a single PDF below. We’ll score it instantly on the right.",
     "dropHint": "Drag & drop your PDF here, or click to browse",
-    "dropNote": "PDF only • Max 10MB"
+    "dropNote": "PDF only • Max 10MB",
+    "analyzing": "AI is analyzing your resume, estimating salary and generating tailored suggestions..."
   },
   "HowItWorks": {
     "title": "How It Works",
@@ -826,7 +827,7 @@
     "email": "Email",
     "resumeLabel": "Resume (PDF)",
     "note": "Upload your resume (PDF, max 2 MB)",
-    "analyzing": "Analyzing resume...",
+    "analyzing": "AI is analyzing your resume and computing your score...",
     "uploadToProfile": "Upload to Profile",
     "uploadSuccess": "Resume uploaded successfully.",
     "analysisFailed": "Failed to analyze resume. Please try again.",
@@ -845,7 +846,12 @@
     "structure": "Resume Structure",
     "measurable": "Measurable Results",
     "keywords": "Keyword Usage",
-    "issuesCount": "{count} Issues"
+    "issuesCount": "{count} Issues",
+    "skillGaps": "Skill gaps",
+    "suggestedRoles": "Suggested roles",
+    "salaryRange": "Estimated salary (€/month)",
+    "improvements": "Recommendations",
+    "noInsights": "AI insights will appear here after analyzing your resume."
   },
   "Cities": {
     "Casablanca": "Casablanca",

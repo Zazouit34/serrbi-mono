@@ -72,7 +72,7 @@ export default function ResumeListingForm() {
     try {
       setAnalyzing(true);
       const text = await parsePDF(file);
-      const score = scoreResume(text);
+      const score = await scoreResume(text);
       setResumeScore(score);
     } catch (err) {
       console.error("Resume analysis failed:", err);
@@ -181,6 +181,7 @@ export default function ResumeListingForm() {
               <ResumeScoreCard
                 score={resumeScore.score}
                 breakdown={resumeScore.breakdown}
+                llm={resumeScore.llm}
               />
             </div>
           )}

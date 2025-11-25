@@ -5,7 +5,10 @@ import { CloudUpload } from "lucide-react";
 import { ResumeScoreCard } from "@/components/ui/pdf/resume-score-card";
 import { useTranslations } from "next-intl";
 import { parsePDF } from "@/app/utils/pdf/prase-pdf";
-import { scoreResume } from "@/app/utils/pdf/score-calculator";
+import {
+  scoreResume,
+  type ResumeScore,
+} from "@/app/utils/pdf/score-calculator";
 
 type BreakdownItem = {
   category: string;
@@ -83,8 +86,8 @@ export function ResumeInsight() {
     };
   }, []);
 
-  const [score, setScore] = useState(72);
-  const [breakdown, setBreakdown] = useState<BreakdownItem[]>(defaultBreakdown(72));
+  const [scoreData, setScoreData] = useState<ResumeScore | null>(null);
+  const [analyzing, setAnalyzing] = useState(false);
 
   // When a file is selected, actually parse and score like resume-listing-form
   useEffect(() => {
@@ -92,11 +95,11 @@ export function ResumeInsight() {
     async function analyze() {
       if (!file) return;
       try {
+        setAnalyzing(true);
         const text = await parsePDF(file);
-        const r = scoreResume(text);
+        const r = await scoreResume(text);
         if (!cancelled) {
-          setScore(r.score);
-          setBreakdown(r.breakdown as any);
+          setScoreData(r);
         }
       } catch {
         if (!cancelled) {
@@ -106,8 +109,15 @@ export function ResumeInsight() {
           let seed = size % 101;
           for (let i = 0; i < name.length; i++) seed = (seed + name.charCodeAt(i)) % 101;
           const base = Math.max(35, Math.min(95, seed));
-          setScore(base);
-          setBreakdown(defaultBreakdown(base));
+          setScoreData({
+            score: base,
+            breakdown: defaultBreakdown(base),
+            suggestions: [],
+          });
+        }
+      } finally {
+        if (!cancelled) {
+          setAnalyzing(false);
         }
       }
     }
@@ -191,8 +201,22 @@ export function ResumeInsight() {
             <div className="absolute inset-0 pointer-events-none" aria-hidden>
               <div className="absolute right-[-20%] top-1/2 h-[120%] w-[120%] -translate-y-1/2 rounded-full bg-[radial-gradient(closest-side,#c8ff2b22,#00000000)]" />
             </div>
-            <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
-              <ResumeScoreCard score={score} breakdown={breakdown as any} loading={loading} darkMode />
+            <div className="flex flex-col gap-2 rounded-2xl border border-white/10 bg-black/20 p-4 w-full max-w-md">
+              {analyzing && (
+                <p className="text-xs text-white/70 animate-pulse">
+                  {tr(
+                    "ResumeInsight.analyzing",
+                    "AI is analyzing your resume, estimating salary and generating tailored suggestions..."
+                  )}
+                </p>
+              )}
+              <ResumeScoreCard
+                score={scoreData?.score ?? 72}
+                breakdown={(scoreData?.breakdown as any) ?? defaultBreakdown(72)}
+                llm={scoreData?.llm}
+                loading={loading && !scoreData}
+                darkMode
+              />
             </div>
           </div>
         </div>
