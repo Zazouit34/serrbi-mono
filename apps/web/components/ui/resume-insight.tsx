@@ -127,12 +127,10 @@ export function ResumeInsight() {
     };
   }, [file]);
 
-  const hasResult = !!scoreData;
-
   return (
     <section className="mx-auto mt-10 w-full">
       <div className="relative overflow-hidden rounded-3xl bg-[#0e0f10] text-white border border-white/10">
-        {!hasResult ? (
+        {!scoreData ? (
           <div className="grid grid-cols-1 md:grid-cols-2">
             {/* Left: heading + dropzone */}
             <div className="relative p-6 sm:p-10">
@@ -218,9 +216,9 @@ export function ResumeInsight() {
                 </p>
               )}
               <ResumeScoreCard
-                score={scoreData?.score ?? 72}
-                breakdown={(scoreData?.breakdown as any) ?? defaultBreakdown(72)}
-                llm={scoreData?.llm}
+                score={(scoreData as unknown as ResumeScore)?.score ?? 72}
+                breakdown={(scoreData as unknown as ResumeScore)?.breakdown ?? defaultBreakdown(72)}
+                llm={(scoreData as unknown as ResumeScore)?.llm}
                 loading={analyzing && !scoreData}
                 darkMode
               />
@@ -228,15 +226,15 @@ export function ResumeInsight() {
           </div>
         </div>
         ) : (
-        <div className="p-6 sm:p-10">
-          <ResumeScoreCard
-            score={scoreData!.score}
-            breakdown={scoreData!.breakdown as any}
-            llm={scoreData!.llm}
-            loading={false}
-            darkMode
-          />
-        </div>
+          <div className="p-6 sm:p-10">
+            <ResumeScoreCard
+              score={scoreData.score}
+              breakdown={scoreData.breakdown as any}
+              llm={scoreData.llm}
+              loading={false}
+              darkMode
+            />
+          </div>
         )}
       </div>
     </section>
