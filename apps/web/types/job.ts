@@ -20,6 +20,7 @@ export interface ScoredJob extends SerrbiJob {
 
 export interface JobsSearchMeta {
   query: string;
+  rewrittenQuery?: string;
   topKDense: number;
   topKFinal: number;
   denseModel: "text-embedding-v4";

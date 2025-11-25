@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { Tabs, TabsList, TabsTrigger } from "@workspace/ui/components/tabs";
 import { Input } from "@workspace/ui/components/input";
 import { Button } from "@workspace/ui/components/button";
@@ -10,11 +10,7 @@ import { FaGoogle, FaAws, FaMicrosoft, FaLinkedin } from "react-icons/fa";
 import { isSecondaryClient } from "@/lib/domain";
 import Link from "next/link";
 import { JobCard } from "@/components/ui/form/job/job-card";
-import type {
-  JobsSearchResponse,
-  ScoredJob,
-  SynthesizedJobsResponse,
-} from "@/types/job";
+import type { JobsSearchResponse, ScoredJob } from "@/types/job";
 
 type TabType = "jobs" | "services" | "tasks";
 
@@ -25,63 +21,7 @@ export function HeroSearchBar() {
   const [jobsResults, setJobsResults] = useState<ScoredJob[]>([]);
   const [jobsLoading, setJobsLoading] = useState(false);
   const [jobsError, setJobsError] = useState<string | null>(null);
-  const [synthResponse, setSynthResponse] = useState<string | null>(null);
-  const [synthJobs, setSynthJobs] = useState<
-    SynthesizedJobsResponse["jobsUsed"]
-  >([]);
-  const [synthLoading, setSynthLoading] = useState(false);
-  const [synthError, setSynthError] = useState<string | null>(null);
-  const synthRequestId = useRef(0);
   const isSecondary = isSecondaryClient();
-
-  const fetchSynthResponse = async (query: string) => {
-    const requestId = ++synthRequestId.current;
-    setSynthLoading(true);
-    setSynthError(null);
-    setSynthResponse(null);
-    setSynthJobs([]);
-    try {
-      const response = await fetch("/api/jobs/synth-response", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ query, topK: 5 }),
-      });
-      if (!response.ok) {
-        let message = `Request failed with status ${response.status}`;
-        try {
-          const data = (await response.json()) as {
-            error?: string;
-            details?: string;
-          };
-          if (data?.error) {
-            message = data.details
-              ? `${data.error}: ${data.details}`
-              : data.error;
-          }
-        } catch {
-          // ignore JSON parse errors
-        }
-        throw new Error(message);
-      }
-      const data = (await response.json()) as SynthesizedJobsResponse;
-      if (synthRequestId.current !== requestId) return;
-      setSynthResponse(data.responseText);
-      setSynthJobs(data.jobsUsed);
-    } catch (err) {
-      if (synthRequestId.current !== requestId) return;
-      const message =
-        err instanceof Error ? err.message : "Impossible de générer la synthèse.";
-      setSynthError(message);
-      setSynthResponse(null);
-      setSynthJobs([]);
-    } finally {
-      if (synthRequestId.current === requestId) {
-        setSynthLoading(false);
-      }
-    }
-  };
 
   const handleSearch = async (overrideQuery?: string) => {
     const effectiveQuery = overrideQuery ?? searchQuery;
@@ -108,9 +48,6 @@ export function HeroSearchBar() {
     if (!trimmedQuery) {
       setJobsError("Please enter a search query.");
       setJobsResults([]);
-      setSynthResponse(null);
-      setSynthJobs([]);
-      setSynthError(null);
       return;
     }
 
@@ -151,14 +88,11 @@ export function HeroSearchBar() {
       const data = (await response.json()) as JobsSearchResponse;
       // Ensure we only render the top 3 results, even if the API returns more.
       setJobsResults(data.results.slice(0, 3));
-      void fetchSynthResponse(trimmedQuery);
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Unexpected error occurred.";
       setJobsError(message);
       setJobsResults([]);
-      setSynthResponse(null);
-      setSynthJobs([]);
     } finally {
       setJobsLoading(false);
     }
@@ -288,115 +222,65 @@ export function HeroSearchBar() {
 
           {/* Jobs AI results */}
           {activeTab === "jobs" && (
-            <div className="mt-1 space-y-4 text-xs">
-              <div className="p-4 rounded-2xl border border-gray-200 bg-gray-50/80">
-                <div className="flex gap-2 items-center text-[11px] font-semibold text-gray-900 uppercase tracking-wide">
-                  <Sparkles className="size-4 text-violet-500" />
-                  Synthèse IA
+            <div className="mt-1 space-y-2 text-xs">
+              <p className="flex gap-2 items-center text-[11px] text-gray-600 uppercase tracking-wide">
+                <Sparkles className="size-4 text-violet-500" />
+                <span>
+                  AI‑enhanced search highlights the{" "}
+                  <span className="font-semibold">3 closest job matches</span> for your query.
+                </span>
+              </p>
+
+              {jobsLoading && (
+                <p className="text-gray-600">Letting our AI match you with the best roles…</p>
+              )}
+
+              {!jobsLoading && jobsError && (
+                <p className="text-red-600">{jobsError}</p>
+              )}
+
+              {!jobsLoading &&
+                !jobsError &&
+                jobsResults.length === 0 &&
+                searchQuery.trim().length > 0 && (
+                  <p className="text-gray-500">
+                    No matching jobs found yet. Try different keywords or broaden your request.
+                  </p>
+                )}
+
+              {!jobsLoading && jobsResults.length > 0 && (
+                <div className="flex overflow-x-auto gap-3 pb-1 mt-2">
+                  {jobsResults.map((job) => (
+                    <div
+                      key={job.id}
+                      className="min-w-[260px] max-w-[280px] flex-shrink-0"
+                    >
+                      <JobCard
+                        job={{
+                          id: job.id,
+                          title: job.title,
+                          companyName: job.company,
+                          companyImage: job.companyImage ?? null,
+                          wage: null,
+                          stateAbbreviation: null,
+                          city: job.location ?? null,
+                          type: job.type ?? undefined,
+                          experienceLevel: job.experienceLevel ?? undefined,
+                          locationRequirement: job.locationRequirement ?? undefined,
+                          category: job.category ?? undefined,
+                          user: null,
+                          createdAt: job.createdAt,
+                          description: job.description,
+                          status: undefined,
+                        }}
+                        featured={false}
+                        compact
+                        className="h-full"
+                      />
+                    </div>
+                  ))}
                 </div>
-                <div className="mt-2 text-sm text-gray-700">
-                  {synthLoading && (
-                    <p className="animate-pulse text-gray-500">
-                      Synthèse en cours… Merci de patienter quelques secondes.
-                    </p>
-                  )}
-
-                  {!synthLoading && synthError && (
-                    <p className="text-red-600">{synthError}</p>
-                  )}
-
-                  {!synthLoading && !synthError && synthResponse && (
-                    <p className="whitespace-pre-line">{synthResponse}</p>
-                  )}
-
-                  {!synthLoading && !synthError && !synthResponse && (
-                    <p className="text-gray-500">
-                      {searchQuery.trim().length === 0
-                        ? "Lancez une recherche pour obtenir une synthèse intelligente de vos opportunités."
-                        : "Appuyez sur Rechercher pour générer une synthèse adaptée à votre requête."}
-                    </p>
-                  )}
-                </div>
-
-                {!synthLoading && !synthError && synthJobs.length > 0 && (
-                  <div className="mt-3 pt-3 border-t border-gray-200">
-                    <p className="mb-2 text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                      Postes cités
-                    </p>
-                    <ul className="space-y-2 text-sm text-gray-700">
-                      {synthJobs.map((job) => (
-                        <li key={job.id} className="flex flex-col">
-                          <span className="font-medium text-gray-900">
-                            {job.title ?? "Titre indisponible"}
-                          </span>
-                          <span className="text-xs text-gray-500">
-                            {job.company ?? "Entreprise inconnue"}
-                            {job.location ? ` • ${job.location}` : ""}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <p className="text-[11px] text-gray-500">
-                  AI‑enhanced search shows the{" "}
-                  <span className="font-semibold">3 closest job matches</span> to your query.
-                </p>
-
-                {jobsLoading && (
-                  <p className="text-gray-600">Finding the best AI job matches…</p>
-                )}
-
-                {!jobsLoading && jobsError && (
-                  <p className="text-red-600">{jobsError}</p>
-                )}
-
-                {!jobsLoading &&
-                  !jobsError &&
-                  jobsResults.length === 0 &&
-                  searchQuery.trim().length > 0 && (
-                    <p className="text-gray-500">
-                      No matching jobs found yet. Try different keywords or a broader role.
-                    </p>
-                  )}
-
-                {!jobsLoading && jobsResults.length > 0 && (
-                  <div className="flex overflow-x-auto gap-3 pb-1 mt-2">
-                    {jobsResults.map((job) => (
-                      <div
-                        key={job.id}
-                        className="min-w-[260px] max-w-[280px] flex-shrink-0"
-                      >
-                        <JobCard
-                          job={{
-                            id: job.id,
-                            title: job.title,
-                            companyName: job.company,
-                            companyImage: job.companyImage ?? null,
-                            wage: null,
-                            stateAbbreviation: null,
-                            city: job.location ?? null,
-                            type: job.type ?? undefined,
-                            experienceLevel: job.experienceLevel ?? undefined,
-                            locationRequirement: job.locationRequirement ?? undefined,
-                            category: job.category ?? undefined,
-                            user: null,
-                            createdAt: job.createdAt,
-                            description: job.description,
-                            status: undefined,
-                          }}
-                          featured={false}
-                          compact
-                          className="h-full"
-                        />
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+              )}
             </div>
           )}
         </div>

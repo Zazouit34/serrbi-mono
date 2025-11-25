@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { embedText } from "@/lib/embedding";
 import { hybridSearchJobs } from "@/lib/jobsStore";
+import { rewriteSearchQuery } from "@/lib/query-rewriter";
 import type { JobsSearchResponse } from "@/types/job";
 
 interface JobsSearchRequestBody {
@@ -33,9 +34,12 @@ export async function POST(req: Request) {
         ? body.topKFinal
         : 20;
 
-    const queryEmbedding = await embedText(query);
+    const rewrittenQuery = await rewriteSearchQuery(query);
+    const searchQuery = rewrittenQuery || query;
 
-    const results = await hybridSearchJobs(query, queryEmbedding, {
+    const queryEmbedding = await embedText(searchQuery);
+
+    const results = await hybridSearchJobs(searchQuery, queryEmbedding, {
       topKDense,
       topKFinal,
     });
@@ -44,6 +48,7 @@ export async function POST(req: Request) {
       results,
       meta: {
         query,
+        rewrittenQuery: searchQuery === query ? undefined : searchQuery,
         topKDense,
         topKFinal,
         denseModel: "text-embedding-v4",
