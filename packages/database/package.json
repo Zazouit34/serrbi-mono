@@ -19,7 +19,8 @@
         "tsx": "^4.7.0"
     },
     "dependencies": {
-        "@prisma/client": "^6.14.0"
+        "@prisma/client": "^6.14.0",
+        "@vigillabs/timescale-db-core": "^0.0.22"
     },
     "exports": {
         ".": "./src/index.ts"

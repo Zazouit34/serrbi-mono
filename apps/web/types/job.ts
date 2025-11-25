@@ -30,4 +30,14 @@ export interface JobsSearchResponse {
   meta: JobsSearchMeta;
 }
 
+export interface SynthesizedJobsResponse {
+  responseText: string;
+  jobsUsed: {
+    id: string;
+    title?: string | null;
+    company?: string | null;
+    location?: string | null;
+  }[];
+}
+
 

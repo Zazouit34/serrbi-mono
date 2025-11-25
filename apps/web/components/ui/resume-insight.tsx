@@ -206,23 +206,34 @@ export function ResumeInsight() {
             <div className="absolute inset-0 pointer-events-none" aria-hidden>
               <div className="absolute right-[-20%] top-1/2 h-[120%] w-[120%] -translate-y-1/2 rounded-full bg-[radial-gradient(closest-side,#c8ff2b22,#00000000)]" />
             </div>
-            <div className="flex flex-col gap-2 p-4 w-full max-w-md rounded-2xl border border-white/10 bg-black/20">
-              {analyzing && (
-                <p className="text-xs animate-pulse text-white/70">
+            {analyzing && !scoreData ? (
+              <div className="flex flex-col gap-6 justify-center items-center w-full max-w-md">
+                <p className="text-lg font-medium text-center animate-pulse text-white/90">
                   {tr(
                     "ResumeInsight.analyzing",
                     "AI is analyzing your resume, estimating salary and generating tailored suggestions..."
                   )}
                 </p>
-              )}
-              <ResumeScoreCard
-                score={(scoreData as unknown as ResumeScore)?.score ?? 72}
-                breakdown={(scoreData as unknown as ResumeScore)?.breakdown ?? defaultBreakdown(72)}
-                llm={(scoreData as unknown as ResumeScore)?.llm}
-                loading={analyzing && !scoreData}
-                darkMode
-              />
-            </div>
+                <div className="w-full max-w-xs">
+                  <div className="overflow-hidden relative w-full h-2 rounded-full bg-white/10">
+                    <div
+                      className="absolute top-0 left-0 h-full rounded-full bg-gradient-to-r from-[#c8ff2b] to-[#a0d922] animate-pulse"
+                      style={{ width: `${progress}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-2 p-4 w-full max-w-md rounded-2xl border border-white/10 bg-black/20">
+                <ResumeScoreCard
+                  score={(scoreData as unknown as ResumeScore)?.score ?? 72}
+                  breakdown={(scoreData as unknown as ResumeScore)?.breakdown ?? defaultBreakdown(72)}
+                  llm={(scoreData as unknown as ResumeScore)?.llm}
+                  loading={false}
+                  darkMode
+                />
+              </div>
+            )}
           </div>
         </div>
         ) : (

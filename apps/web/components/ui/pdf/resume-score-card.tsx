@@ -153,10 +153,10 @@ export function ResumeScoreCard({
 
       {/* Right: LLM-driven insights in a 2x2 style layout */}
       <div className="flex-1">
-        {hasLLM ? (
+          {hasLLM ? (
           <div className="grid grid-cols-1 gap-3 text-xs sm:text-sm sm:grid-cols-2">
-            {/* Suggested roles */}
-            {llm?.suggestedRoles?.length ? (
+              {/* Suggested roles */}
+              {llm?.suggestedRoles?.length ? (
               <div className="sm:col-span-1">
                 <p
                   className={cn(
@@ -164,30 +164,30 @@ export function ResumeScoreCard({
                     darkMode ? "text-white" : "text-gray-900"
                   )}
                 >
-                  {t("suggestedRoles")}
-                </p>
+                    {t("suggestedRoles")}
+                  </p>
                 <p
                   className={cn(
                     "flex flex-wrap gap-1.5",
                     darkMode ? "text-white/80" : "text-gray-700"
                   )}
                 >
-                  {llm.suggestedRoles.map((role, idx) => (
-                    <span
-                      key={`${role}-${idx}`}
-                      className={cn(
-                        "inline-flex items-center rounded-full border px-2 py-0.5 text-[11px]",
+                    {llm.suggestedRoles.map((role, idx) => (
+                      <span
+                        key={`${role}-${idx}`}
+                        className={cn(
+                          "inline-flex items-center rounded-full border px-2 py-0.5 text-[11px]",
                         darkMode
                           ? "border-white/15 bg-black/40 text-white/80"
                           : "border-gray-200 bg-white text-gray-700"
-                      )}
-                    >
-                      {role}
-                    </span>
-                  ))}
-                </p>
-              </div>
-            ) : null}
+                        )}
+                      >
+                        {role}
+                      </span>
+                    ))}
+                  </p>
+                </div>
+              ) : null}
 
             {/* Salary range */}
             {llm?.salaryRange &&
@@ -215,7 +215,7 @@ export function ResumeScoreCard({
               )}
 
             {/* Skill gaps / missing keywords */}
-            {llm?.skillGaps?.length ? (
+              {llm?.skillGaps?.length ? (
               <div className="sm:col-span-2">
                 <p
                   className={cn(
@@ -223,28 +223,28 @@ export function ResumeScoreCard({
                     darkMode ? "text-white" : "text-gray-900"
                   )}
                 >
-                  {t("skillGaps")}
-                </p>
+                    {t("skillGaps")}
+                  </p>
                 <ul
                   className={cn(
                     "list-disc pl-4 space-y-0.5",
                     darkMode ? "text-white/80" : "text-gray-700"
                   )}
                 >
-                  {llm.skillGaps.map((gap, idx) => (
+                    {llm.skillGaps.map((gap, idx) => (
                     <li
                       key={`${gap}-${idx}`}
                       className="text-[11px] sm:text-xs leading-snug"
                     >
-                      {gap}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ) : null}
+                        {gap}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
 
-            {/* Improvements */}
-            {llm?.improvements?.length ? (
+              {/* Improvements */}
+              {llm?.improvements?.length ? (
               <div className="sm:col-span-2">
                 <p
                   className={cn(
@@ -252,36 +252,36 @@ export function ResumeScoreCard({
                     darkMode ? "text-white" : "text-gray-900"
                   )}
                 >
-                  {t("improvements")}
-                </p>
+                    {t("improvements")}
+                  </p>
                 <ul
                   className={cn(
                     "list-disc pl-4 space-y-0.5 max-h-32 overflow-y-auto pr-1",
                     darkMode ? "text-white/80" : "text-gray-700"
                   )}
                 >
-                  {llm.improvements.map((imp, idx) => (
+                    {llm.improvements.map((imp, idx) => (
                     <li
                       key={`${imp}-${idx}`}
                       className="text-[11px] sm:text-xs leading-snug"
                     >
-                      {imp}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ) : null}
-          </div>
-        ) : (
+                        {imp}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+            </div>
+          ) : (
           <p
             className={cn(
               "text-[11px] sm:text-xs mt-4",
               darkMode ? "text-white/60" : "text-gray-500"
             )}
           >
-            {t("noInsights")}
-          </p>
-        )}
+              {t("noInsights")}
+            </p>
+          )}
       </div>
     </div>
   );
