@@ -5,7 +5,7 @@ import { TimescaleDB } from "@vigillabs/timescale-db-core";
  * Prisma still owns the schema, but when we need to (re)apply the hypertable
  * definition we can reuse this builder to generate the SQL.
  */
-const baseHypertable = TimescaleDB.createHypertable('"Job"', {
+const baseHypertable = TimescaleDB.createHypertable("Job", {
   by_range: {
     column_name: "createdAt",
   },
