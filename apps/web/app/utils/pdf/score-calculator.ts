@@ -218,9 +218,17 @@ function scoreResumeHeuristic(textInput: string): ResumeScore {
 }
 
 async function callLLMForResume(textInput: string): Promise<LLMResumeAnalysis | null> {
-  const apiKey = process.env.OPENROUTER_API_KEY;
+  // NOTE: This function is currently called from client components.
+  // To make the LLM actually run in the browser for now, we also
+  // check NEXT_PUBLIC_OPENROUTER_API_KEY. Do NOT use this in production
+  // with real secrets.
+  const apiKey =
+    process.env.OPENROUTER_API_KEY || process.env.NEXT_PUBLIC_OPENROUTER_API_KEY;
   if (!apiKey) {
-    // If not configured, just skip LLM enhancement.
+    // eslint-disable-next-line no-console
+    console.warn(
+      "OPENROUTER_API_KEY / NEXT_PUBLIC_OPENROUTER_API_KEY is not set – LLM resume analysis is disabled."
+    );
     return null;
   }
 
@@ -278,7 +286,11 @@ Resume text:
 
   if (!response.ok) {
     // eslint-disable-next-line no-console
-    console.error("LLM resume analysis failed:", response.status, await response.text().catch(() => ""));
+    console.error(
+      "LLM resume analysis failed:",
+      response.status,
+      await response.text().catch(() => "")
+    );
     return null;
   }
 
@@ -311,6 +323,8 @@ Resume text:
     typeof parsed.salaryRange.max !== "number" ||
     !Array.isArray(parsed.improvements)
   ) {
+    // eslint-disable-next-line no-console
+    console.error("LLM resume analysis returned invalid shape:", parsed);
     return null;
   }
 
@@ -329,22 +343,23 @@ Resume text:
 }
 
 export async function scoreResume(textInput: string): Promise<ResumeScore> {
+  // For now, we want to rely **only** on the LLM.
+  // We still reuse the heuristic breakdown just for the category bars UI,
+  // but the final score + suggestions come 100% from the model.
   const base = scoreResumeHeuristic(textInput);
-  try {
-    const llm = await callLLMForResume(textInput);
-    if (!llm) return base;
 
-    return {
-      ...base,
-      score: llm.overallScore,
-      suggestions: Array.from(
-        new Set<string>([...base.suggestions, ...llm.improvements])
-      ),
-      llm,
-    };
-  } catch (e) {
-    // eslint-disable-next-line no-console
-    console.error("Error during LLM enhancement, falling back to heuristic:", e);
-    return base;
+  const llm = await callLLMForResume(textInput);
+
+  if (!llm) {
+    // If the LLM is not available, surface an error instead of silently
+    // falling back to the old heuristic so it's obvious during testing.
+    throw new Error("LLM resume analysis is not available (missing API key or request failed).");
   }
+
+  return {
+    ...base,
+    score: llm.overallScore,
+    suggestions: Array.from(new Set<string>(llm.improvements)),
+    llm,
+  };
 }
