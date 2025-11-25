@@ -127,12 +127,15 @@ export function ResumeInsight() {
     };
   }, [file]);
 
+  const hasResult = !!scoreData;
+
   return (
     <section className="mx-auto mt-10 w-full">
       <div className="relative overflow-hidden rounded-3xl bg-[#0e0f10] text-white border border-white/10">
-        <div className="grid grid-cols-1 md:grid-cols-2">
-          {/* Left: heading + dropzone */}
-          <div className="relative p-6 sm:p-10">
+        {!hasResult ? (
+          <div className="grid grid-cols-1 md:grid-cols-2">
+            {/* Left: heading + dropzone */}
+            <div className="relative p-6 sm:p-10">
             {/* Diagonal stripes background */}
             <div
               className="absolute inset-0 opacity-[0.12] pointer-events-none"
@@ -178,8 +181,12 @@ export function ResumeInsight() {
                 <CloudUpload className="w-10 h-10 text-white/80" />
                 {!file ? (
                   <>
-                    <p className="text-sm text-white/80">{tr("ResumeInsight.dropHint", "Drag & drop your PDF here, or click to browse")}</p>
-                    <p className="text-xs text-white/50">{tr("ResumeInsight.dropNote", "PDF only • Max 10MB")}</p>
+                    <p className="text-sm text-white/80">
+                      {tr("ResumeInsight.dropHint", "Drag & drop your PDF here, or click to browse")}
+                    </p>
+                    <p className="text-xs text-white/50">
+                      {tr("ResumeInsight.dropNote", "PDF only • Max 10MB")}
+                    </p>
                   </>
                 ) : (
                   <div className="w-full">
@@ -196,7 +203,7 @@ export function ResumeInsight() {
             </div>
           </div>
 
-          {/* Right: live AI score */}
+          {/* Right: mock / live global score */}
           <div className="flex relative justify-center items-center p-6 sm:p-10">
             <div className="absolute inset-0 pointer-events-none" aria-hidden>
               <div className="absolute right-[-20%] top-1/2 h-[120%] w-[120%] -translate-y-1/2 rounded-full bg-[radial-gradient(closest-side,#c8ff2b22,#00000000)]" />
@@ -210,18 +217,27 @@ export function ResumeInsight() {
                   )}
                 </p>
               )}
-              {scoreData && (
-                <ResumeScoreCard
-                  score={scoreData.score}
-                  breakdown={scoreData.breakdown as any}
-                  llm={scoreData.llm}
-                  loading={analyzing && !scoreData}
-                  darkMode
-                />
-              )}
+              <ResumeScoreCard
+                score={scoreData?.score ?? 72}
+                breakdown={(scoreData?.breakdown as any) ?? defaultBreakdown(72)}
+                llm={scoreData?.llm}
+                loading={analyzing && !scoreData}
+                darkMode
+              />
             </div>
           </div>
         </div>
+        ) : (
+        <div className="p-6 sm:p-10">
+          <ResumeScoreCard
+            score={scoreData!.score}
+            breakdown={scoreData!.breakdown as any}
+            llm={scoreData!.llm}
+            loading={false}
+            darkMode
+          />
+        </div>
+        )}
       </div>
     </section>
   );

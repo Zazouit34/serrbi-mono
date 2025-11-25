@@ -83,43 +83,17 @@ export function ResumeScoreCard({
     [displayValue]
   );
 
-  // Group breakdown into 3 high-level bars
-  const grouped = useMemo(() => {
-    const structure = breakdown.filter((b) =>
-      ["Contact Info", "Experience", "Education", "Skills", "Summary"].includes(b.category)
-    );
-    const measurable = breakdown.filter((b) =>
-      ["Impact / Metrics", "Projects / Certifications", "Recency"].includes(b.category)
-    );
-    const keywords = breakdown.filter((b) =>
-      ["Action Verbs", "Professional Links", "Bullets / Formatting"].includes(b.category)
-    );
-
-    const avg = (items: BreakdownItem[]) =>
-      items.length
-        ? Math.round(
-            (items.reduce((a, b) => a + (b.score / b.max) * 100, 0) / items.length)
-          )
-        : 0;
-
-    return [
-      { name: t("structure"), value: avg(structure), color: "#991b1b" },
-      { name: t("measurable"), value: avg(measurable), color: "#4f46e5" },
-      { name: t("keywords"), value: avg(keywords), color: "#ca8a04" },
-    ];
-  }, [breakdown]);
-
   const hasLLM = !!llm;
 
   return (
     <div
       className={cn(
-        "flex flex-col items-stretch gap-5 rounded-2xl p-5 w-full max-w-md md:max-w-lg lg:max-w-xl mx-auto",
+        "flex flex-col md:flex-row items-stretch gap-5 rounded-2xl p-5 w-full max-w-2xl mx-auto",
         darkMode ? "bg-transparent shadow-none" : "bg-white shadow-sm"
       )}
     >
-      {/* Top: large radial score */}
-      <div className="w-full flex justify-center">
+      {/* Left: radial overall score */}
+      <div className="flex items-center justify-center md:justify-start w-full md:w-auto">
         <RadialBarChart
           width={200}
           height={200}
@@ -177,52 +151,13 @@ export function ResumeScoreCard({
         </RadialBarChart>
       </div>
 
-      {/* Middle: high-level progress bars (structure / measurable / keywords) */}
-      <div className="flex flex-col justify-center space-y-4 w-full">
-        <div className="space-y-3">
-          {grouped.map((item, idx) => (
-            <div key={idx} className="w-full">
-              <div className="flex justify-between mb-1 text-xs sm:text-sm">
-                <span
-                  className={darkMode ? "font-medium text-white" : "font-medium text-gray-700"}
-                >
-                  {item.name}
-                </span>
-                <span className={darkMode ? "text-white/60" : "text-gray-500"}>
-                  {t("issuesCount", { count: 100 - item.value })}
-                </span>
-              </div>
-              <div
-                className={
-                  "h-2 rounded-full overflow-hidden " +
-                  (darkMode ? "bg-white/10" : "bg-gray-200")
-                }
-              >
-                <div
-                  className={cn("h-2 rounded-full transition-all duration-700")}
-                  style={{
-                    width: `${item.value}%`,
-                    backgroundColor: item.color,
-                  }}
-                />
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Bottom: LLM-driven insights, full-width under the score + bars */}
-      <div
-        className={cn(
-          "px-3 py-3 rounded-xl border sm:px-4 sm:py-3",
-          darkMode ? "border-white/10 bg-black/20" : "bg-gray-50 border-gray-100"
-        )}
-      >
+      {/* Right: LLM-driven insights in a 2x2 style layout */}
+      <div className="flex-1">
         {hasLLM ? (
-          <div className="space-y-3 text-xs sm:text-sm">
+          <div className="grid grid-cols-1 gap-3 text-xs sm:text-sm sm:grid-cols-2">
             {/* Suggested roles */}
             {llm?.suggestedRoles?.length ? (
-              <div>
+              <div className="sm:col-span-1">
                 <p
                   className={cn(
                     "mb-1.5 font-semibold",
@@ -254,9 +189,34 @@ export function ResumeScoreCard({
               </div>
             ) : null}
 
+            {/* Salary range */}
+            {llm?.salaryRange &&
+              Number.isFinite(llm.salaryRange.min) &&
+              Number.isFinite(llm.salaryRange.max) && (
+                <div className="sm:col-span-1">
+                  <p
+                    className={cn(
+                      "mb-1.5 font-semibold",
+                      darkMode ? "text-white" : "text-gray-900"
+                    )}
+                  >
+                    {t("salaryRange")}
+                  </p>
+                  <p
+                    className={cn(
+                      "text-xs font-medium sm:text-sm",
+                      darkMode ? "text-lime-300" : "text-emerald-700"
+                    )}
+                  >
+                    €{Math.round(llm.salaryRange.min).toLocaleString()} – €
+                    {Math.round(llm.salaryRange.max).toLocaleString()}
+                  </p>
+                </div>
+              )}
+
             {/* Skill gaps / missing keywords */}
             {llm?.skillGaps?.length ? (
-              <div>
+              <div className="sm:col-span-2">
                 <p
                   className={cn(
                     "mb-1.5 font-semibold",
@@ -283,34 +243,9 @@ export function ResumeScoreCard({
               </div>
             ) : null}
 
-            {/* Salary range */}
-            {llm?.salaryRange &&
-              Number.isFinite(llm.salaryRange.min) &&
-              Number.isFinite(llm.salaryRange.max) && (
-                <div className="flex justify-between items-center">
-                  <p
-                    className={cn(
-                      "font-semibold",
-                      darkMode ? "text-white" : "text-gray-900"
-                    )}
-                  >
-                    {t("salaryRange")}
-                  </p>
-                  <p
-                    className={cn(
-                      "text-xs font-medium sm:text-sm",
-                      darkMode ? "text-lime-300" : "text-emerald-700"
-                    )}
-                  >
-                    €{Math.round(llm.salaryRange.min).toLocaleString()} – €
-                    {Math.round(llm.salaryRange.max).toLocaleString()}
-                  </p>
-                </div>
-              )}
-
             {/* Improvements */}
             {llm?.improvements?.length ? (
-              <div>
+              <div className="sm:col-span-2">
                 <p
                   className={cn(
                     "mb-1.5 font-semibold",
@@ -340,7 +275,7 @@ export function ResumeScoreCard({
         ) : (
           <p
             className={cn(
-              "text-[11px] sm:text-xs",
+              "text-[11px] sm:text-xs mt-4",
               darkMode ? "text-white/60" : "text-gray-500"
             )}
           >
