@@ -222,8 +222,7 @@ async function callLLMForResume(textInput: string): Promise<LLMResumeAnalysis | 
   // To make the LLM actually run in the browser for now, we also
   // check NEXT_PUBLIC_OPENROUTER_API_KEY. Do NOT use this in production
   // with real secrets.
-  const apiKey =
-    process.env.OPENROUTER_API_KEY || process.env.NEXT_PUBLIC_OPENROUTER_API_KEY;
+  const apiKey ="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";
   if (!apiKey) {
     // eslint-disable-next-line no-console
     console.warn(
