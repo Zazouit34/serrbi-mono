@@ -142,7 +142,7 @@ export function ResumeInsight() {
               }}
             />
             <div className="max-w-xl">
-              <h2 className="text-3xl sm:text-4xl font-semibold leading-tight">
+              <h2 className="text-3xl font-semibold leading-tight sm:text-4xl">
                 {tr("ResumeInsight.title", "Get your resume checked by AI in seconds")}
               </h2>
               <p className="mt-3 text-sm sm:text-base text-white/70">
@@ -156,7 +156,7 @@ export function ResumeInsight() {
             <div className="mt-6">
               <div
                 ref={dropRef}
-                className="relative flex flex-col items-center justify-center gap-3 rounded-xl bg-white/5 p-6 border border-dashed border-white/10 transition cursor-pointer hover:bg-white/10 hover:border-white/20 focus:outline-none focus:ring-2 focus:ring-white/30"
+                className="flex relative flex-col gap-3 justify-center items-center p-6 rounded-xl border border-dashed transition cursor-pointer bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20 focus:outline-none focus:ring-2 focus:ring-white/30"
                 onClick={() => inputRef.current?.click()}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {
@@ -175,7 +175,7 @@ export function ResumeInsight() {
                   className="hidden"
                   onChange={(e) => onFiles(e.target.files)}
                 />
-                <CloudUpload className="h-10 w-10 text-white/80" />
+                <CloudUpload className="w-10 h-10 text-white/80" />
                 {!file ? (
                   <>
                     <p className="text-sm text-white/80">{tr("ResumeInsight.dropHint", "Drag & drop your PDF here, or click to browse")}</p>
@@ -184,9 +184,9 @@ export function ResumeInsight() {
                 ) : (
                   <div className="w-full">
                     <div className="text-sm font-medium truncate">{file.name}</div>
-                    <div className="relative mt-2 h-2 w-full bg-white/10 rounded-full overflow-hidden">
+                    <div className="overflow-hidden relative mt-2 w-full h-2 rounded-full bg-white/10">
                       <div
-                        className="absolute left-0 top-0 h-full bg-gradient-to-r from-white/80 to-white/40"
+                        className="absolute top-0 left-0 h-full bg-gradient-to-r from-white/80 to-white/40"
                         style={{ width: `${progress}%` }}
                       />
                     </div>
@@ -196,27 +196,29 @@ export function ResumeInsight() {
             </div>
           </div>
 
-          {/* Right: mock score */}
-          <div className="relative p-6 sm:p-10 flex items-center justify-center">
+          {/* Right: live AI score */}
+          <div className="flex relative justify-center items-center p-6 sm:p-10">
             <div className="absolute inset-0 pointer-events-none" aria-hidden>
               <div className="absolute right-[-20%] top-1/2 h-[120%] w-[120%] -translate-y-1/2 rounded-full bg-[radial-gradient(closest-side,#c8ff2b22,#00000000)]" />
             </div>
-            <div className="flex flex-col gap-2 rounded-2xl border border-white/10 bg-black/20 p-4 w-full max-w-md">
+            <div className="flex flex-col gap-2 p-4 w-full max-w-md rounded-2xl border border-white/10 bg-black/20">
               {analyzing && (
-                <p className="text-xs text-white/70 animate-pulse">
+                <p className="text-xs animate-pulse text-white/70">
                   {tr(
                     "ResumeInsight.analyzing",
                     "AI is analyzing your resume, estimating salary and generating tailored suggestions..."
                   )}
                 </p>
               )}
-              <ResumeScoreCard
-                score={scoreData?.score ?? 72}
-                breakdown={(scoreData?.breakdown as any) ?? defaultBreakdown(72)}
-                llm={scoreData?.llm}
-                loading={loading && !scoreData}
-                darkMode
-              />
+              {scoreData && (
+                <ResumeScoreCard
+                  score={scoreData.score}
+                  breakdown={scoreData.breakdown as any}
+                  llm={scoreData.llm}
+                  loading={analyzing && !scoreData}
+                  darkMode
+                />
+              )}
             </div>
           </div>
         </div>
