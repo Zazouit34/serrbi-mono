@@ -11,14 +11,14 @@ const steps = [
     image:
       "https://images.unsplash.com/photo-1584907797015-7554cd315667?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D?q=80&w=1200&auto=format&fit=crop",
     key: "1",
-    href: "/jobs/resume-listing/new",
+    href: "/resume-analyzer",
   },
   {
     id: 2,
     image:
       "https://images.unsplash.com/photo-1758874384554-a00d65bca8aa?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D?q=80&w=1200&auto=format&fit=crop",
     key: "2",
-    href: "/jobs",
+    href: "/career-switch",
   },
   {
     id: 3,

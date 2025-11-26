@@ -86,21 +86,22 @@
     "subtitle": "Déposez un PDF ci‑dessous. Nous l’évaluerons instantanément à droite.",
     "dropHint": "Glissez‑déposez votre PDF ici, ou cliquez pour parcourir",
     "dropNote": "PDF uniquement • 10 Mo max",
-    "analyzing": "L’IA analyse votre CV, estime votre salaire et prépare des recommandations sur mesure..."
+    "analyzing": "L’IA analyse votre CV, estime votre salaire et prépare des recommandations sur mesure...",
+    "loginRequired": "Veuillez vous connecter pour accéder à l’analyseur de CV."
   },
   "HowItWorks": {
     "title": "Comment ça marche",
     "subtitle": "Laissez l’IA faire le travail difficile — de l’analyse de votre CV aux candidatures adaptées à vos objectifs.",
     "steps": {
       "1": {
-        "title": "Importez votre CV",
-        "description": "Obtenez un retour instantané et une note assistée par IA pour évaluer la solidité de votre CV avant de postuler.",
-        "action": "Importer le CV"
+        "title": "Analysez votre CV",
+        "description": "Utilisez l’analyseur de CV pour obtenir une note, des écarts de compétences et une estimation de salaire avant de postuler.",
+        "action": "Ouvrir l’analyseur de CV"
       },
       "2": {
-        "title": "Définissez vos préférences",
-        "description": "Choisissez les postes, catégories et mots‑clés qui vous intéressent. Serrbi adaptera votre découverte d’emplois.",
-        "action": "Découvrir des emplois"
+        "title": "Planifiez votre reconversion",
+        "description": "Décrivez vos compétences et intérêts pour générer des parcours de transition personnalisés avec les compétences à acquérir.",
+        "action": "Explorer les parcours"
       },
       "3": {
       "title": "Activer AI Serrbi",
@@ -471,6 +472,7 @@
     "favorites": "Favoris",
     "plans": "Offres",
     "autoApply": "AI Serrbi",
+    "billing": "Abonnement",
     "logout": "Se déconnecter",
     "loginCta": "Se connecter / S’inscrire"
   },
@@ -478,7 +480,7 @@
     "login": "Se connecter",
     "profile": "Profil",
     "autoApply": "AI Serrbi",
-    "billing": "Facturation",
+    "billing": "Abonnement",
     "logout": "Se déconnecter",
     "openAria": "Ouvrir le menu utilisateur"
   },
@@ -827,17 +829,17 @@
   },
   "ResumeForm": {
     "headingTitle": "Importer un CV",
-    "headingSubtitle": "Importez votre CV au format PDF pour l’attacher à votre profil et analyser instantanément sa qualité.",
+    "headingSubtitle": "Importez votre CV en PDF pour l’associer à votre profil et gagner du temps lors des candidatures.",
     "name": "Nom",
     "email": "Email",
     "resumeLabel": "CV (PDF)",
     "note": "Importez votre CV (PDF, 2 Mo max)",
-    "analyzing": "L’IA analyse votre CV et calcule votre score...",
     "uploadToProfile": "Importer dans le profil",
     "uploadSuccess": "CV importé avec succès.",
-    "analysisFailed": "Échec de l’analyse du CV. Réessayez.",
     "selectFileFirst": "Veuillez d’abord sélectionner un CV PDF.",
-    "saveFailed": "Échec de l’enregistrement du CV"
+    "saveFailed": "Échec de l’enregistrement du CV",
+    "analyzerCta": "Besoin d’un avis IA ?",
+    "analyzerLink": "Ouvrir l’analyseur de CV"
   },
   "ResumeUploader": {
     "dragDrop": "Glissez-déposez votre PDF ici, ou",
@@ -857,6 +859,92 @@
     "salaryRange": "Salaire estimé (€/mois)",
     "improvements": "Recommandations",
     "noInsights": "Les analyses IA apparaîtront ici après l’analyse de votre CV."
+  },
+  "CareerSwitchPage": {
+    "badge": "Coaching carrière",
+    "title": "Préparez votre prochaine étape",
+    "subtitle": "Partagez votre profil avec Serrbi AI pour obtenir des transitions réalistes, des estimations salariales et un plan d’action."
+  },
+  "CareerSwitch": {
+    "form": {
+      "title": "Parlez-nous de votre profil",
+      "subtitle": "Deux champs obligatoires suffisent pour démarrer. Ajoutez des détails pour un résultat plus précis.",
+      "currentRole": "Poste actuel *",
+      "currentSkills": "Compétences clés",
+      "interests": "Centres d’intérêt *",
+      "targetIndustry": "Secteur visé",
+      "timeframe": "Délai de transition",
+      "budget": "Budget formation",
+      "placeholders": {
+        "currentRole": "ex. Ingénieur logiciel",
+        "currentSkills": "React, leadership, analyse de données",
+        "interests": "ex. Data, design, durabilité",
+        "targetIndustry": "Sélectionner un secteur",
+        "timeframe": "Sélectionner un délai",
+        "budget": "Sélectionner un budget"
+      },
+      "options": {
+        "industries": {
+          "tech": "Technologie",
+          "finance": "Finance",
+          "healthcare": "Santé",
+          "ecommerce": "E-commerce",
+          "consulting": "Conseil",
+          "startup": "Startup"
+        },
+        "timeframes": {
+          "3-6": "3-6 mois",
+          "6-12": "6-12 mois",
+          "1-2": "1-2 ans",
+          "flexible": "Flexible"
+        },
+        "budgets": {
+          "0-25k": "0 - 25 k€",
+          "25-50k": "25 k€ - 50 k€",
+          "50-100k": "50 k€ - 100 k€",
+          "100k+": "100 k€ et plus"
+        }
+      },
+      "submit": "Générer des parcours",
+      "analyzing": "Analyse en cours…"
+    },
+    "results": {
+      "empty": "Remplissez le formulaire pour générer des transitions personnalisées.",
+      "rank": "Recommandation n°{index}",
+      "salaryGrowth": "+{growth}% de progression salariale potentielle",
+      "currentSalary": "Salaire actuel estimé (€/mois)",
+      "targetSalary": "Salaire cible (€/mois)",
+      "skills": "Compétences à renforcer",
+      "stepsTitle": "Plan étape par étape"
+    },
+    "difficulty": {
+      "Easy": "Facile",
+      "Moderate": "Modérée",
+      "Challenging": "Exigeante"
+    },
+    "errors": {
+      "generic": "Impossible de générer des parcours. Réessayez.",
+      "empty": "L’IA n’a pas pu proposer de transitions. Ajustez vos informations."
+    },
+    "toasts": {
+      "missing": {
+        "title": "Champs requis manquants",
+        "description": "Merci de saisir votre poste actuel et vos intérêts."
+      },
+      "success": {
+        "title": "Parcours générés",
+        "description": "L’IA a proposé de nouvelles directions professionnelles."
+      },
+      "failure": {
+        "title": "Échec de génération",
+        "description": "L’IA n’a pas pu générer de suggestions. Essayez à nouveau."
+      }
+    }
+  },
+  "ResumeAnalyzerPage": {
+    "badge": "Analyseur de CV",
+    "title": "Analyseur de CV IA",
+    "subtitle": "Importez votre PDF, obtenez une note et des recommandations adaptées au Maroc, à la France, à la Belgique et à l’Allemagne."
   },
   "Cities": {
     "Casablanca": "Casablanca",

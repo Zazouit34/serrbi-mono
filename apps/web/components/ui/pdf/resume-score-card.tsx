@@ -88,12 +88,12 @@ export function ResumeScoreCard({
   return (
     <div
       className={cn(
-        "flex flex-col md:flex-row items-stretch gap-5 rounded-2xl p-5 w-full max-w-2xl mx-auto",
+        "flex flex-col gap-5 items-stretch p-5 mx-auto w-full max-w-2xl rounded-2xl md:flex-row",
         darkMode ? "bg-transparent shadow-none" : "bg-white shadow-sm"
       )}
     >
       {/* Left: radial overall score */}
-      <div className="flex items-center justify-center md:justify-start w-full md:w-auto">
+      <div className="flex justify-center items-center w-full md:justify-start md:w-auto">
         <RadialBarChart
           width={200}
           height={200}
@@ -125,8 +125,8 @@ export function ResumeScoreCard({
                         y={v.cy}
                         className={
                           darkMode
-                            ? "text-3xl md:text-4xl font-bold fill-lime-300"
-                            : "text-3xl md:text-4xl font-bold fill-emerald-600"
+                            ? "text-3xl font-bold md:text-4xl fill-lime-300"
+                            : "text-3xl font-bold md:text-4xl fill-emerald-600"
                         }
                       >
                         {displayValue}%
@@ -136,8 +136,8 @@ export function ResumeScoreCard({
                         y={v.cy + 22}
                         className={
                           darkMode
-                            ? "text-xs md:text-sm font-medium fill-white/70"
-                            : "text-xs md:text-sm font-medium fill-gray-500"
+                            ? "text-xs font-medium md:text-sm fill-white/70"
+                            : "text-xs font-medium md:text-sm fill-gray-500"
                         }
                       >
                         {t("overallScore")}
@@ -273,14 +273,16 @@ export function ResumeScoreCard({
               ) : null}
             </div>
           ) : (
-          <p
-            className={cn(
-              "text-[11px] sm:text-xs mt-4",
-              darkMode ? "text-white/60" : "text-gray-500"
-            )}
-          >
-              {t("noInsights")}
-            </p>
+          <div className="flex items-center justify-center min-h-[100px]">
+            <p
+              className={cn(
+                "text-[11px] sm:text-xs",
+                darkMode ? "text-white/60" : "text-gray-500"
+              )}
+            >
+                {t("noInsights")}
+              </p>
+            </div>
           )}
       </div>
     </div>

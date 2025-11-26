@@ -9,6 +9,12 @@ import {
   scoreResume,
   type ResumeScore,
 } from "@/app/utils/pdf/score-calculator";
+import { useAuthRedirect } from "@/lib/auth-client";
+
+type ResumeInsightProps = {
+  requireLogin?: boolean;
+  callbackUrl?: string;
+};
 
 type BreakdownItem = {
   category: string;
@@ -17,7 +23,10 @@ type BreakdownItem = {
   missing?: string[];
 };
 
-export function ResumeInsight() {
+export function ResumeInsight({
+  requireLogin = false,
+  callbackUrl = "/resume-analyzer",
+}: ResumeInsightProps) {
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -25,6 +34,8 @@ export function ResumeInsight() {
   const dropRef = useRef<HTMLDivElement | null>(null);
   const tAll = useTranslations();
   const tr = (key: string, fallback: string) => (tAll as any).has?.(key) ? (tAll as any)(key) : fallback;
+
+  const authStatus = useAuthRedirect(requireLogin, callbackUrl);
 
   // Animate progress similar to uppy component
   useEffect(() => {
@@ -126,6 +137,19 @@ export function ResumeInsight() {
       cancelled = true;
     };
   }, [file]);
+
+  if (requireLogin && authStatus !== "authenticated") {
+    return (
+      <section className="mx-auto mt-10 w-full">
+        <div className="rounded-3xl border border-dashed border-white/20 bg-[#0e0f10] p-10 text-center text-white/80">
+          {tr(
+            "ResumeInsight.loginRequired",
+            "Please sign in to access the AI resume analyzer.",
+          )}
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="mx-auto mt-10 w-full">

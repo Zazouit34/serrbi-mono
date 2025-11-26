@@ -218,69 +218,14 @@ function scoreResumeHeuristic(textInput: string): ResumeScore {
 }
 
 async function callLLMForResume(textInput: string): Promise<LLMResumeAnalysis | null> {
-  // NOTE: This function is currently called from client components.
-  // To make the LLM actually run in the browser for now, we also
-  // check NEXT_PUBLIC_OPENROUTER_API_KEY. Do NOT use this in production
-  // with real secrets.
-  const apiKey =
-    process.env.OPENROUTER_API_KEY || process.env.NEXT_PUBLIC_OPENROUTER_API_KEY;
-  if (!apiKey) {
-    // eslint-disable-next-line no-console
-    console.warn(
-      "OPENROUTER_API_KEY / NEXT_PUBLIC_OPENROUTER_API_KEY is not set – LLM resume analysis is disabled."
-    );
-    return null;
-  }
-
-  const prompt = `
-You are an expert career coach and resume analyst.
-
-Analyze the resume text below and respond ONLY in valid JSON following exactly this structure:
-
-{
-  "overallScore": number,
-  "skillGaps": string[],
-  "suggestedRoles": string[],
-  "salaryRange": { "min": number, "max": number },
-  "improvements": string[]
-}
-
-### Language
-- Detect whether the resume is primarily written in English, French or Arabic.
-- Write all strings in "skillGaps", "suggestedRoles" and "improvements" in the **same language as the resume**.
-- If you are unsure, default to English.
-
-### Scoring Rules
-- Increase the score for resumes that are well-written, structured, and professional.
-- Decrease the score if the resume is incomplete, messy, extremely short, or not a real resume.
-- Score must always be between 0 and 100.
-
-### Salary
-- Estimate the monthly salary range in EURO (€) based on the resume’s skills, experience, and job roles.
-- Provide realistic numbers for Europe (Morocco / France / Belgium / Germany).
-
-Resume text:
-"""${textInput || ""}"""
-`.trim();
-
-  const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+  const response = await fetch("/api/ai/analyze", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-      "HTTP-Referer": process.env.OPENROUTER_REFERRER || "http://localhost",
-      "X-Title": "SerrbiResumeAnalyzer",
-      Accept: "application/json",
     },
     body: JSON.stringify({
-      model: "tngtech/deepseek-r1t2-chimera:free",
-      messages: [
-        {
-          role: "user",
-          content: prompt,
-        },
-      ],
-      response_format: { type: "json_object" },
+      action: "resumeAnalysis",
+      payload: { text: textInput },
     }),
   });
 
@@ -294,33 +239,20 @@ Resume text:
     return null;
   }
 
-  const json = (await response.json()) as any;
-  const content = json?.choices?.[0]?.message?.content;
-  if (typeof content !== "string") return null;
-
-  // Some models might still wrap JSON; try to extract the JSON object.
-  let parsed: any;
-  try {
-    const firstBrace = content.indexOf("{");
-    const lastBrace = content.lastIndexOf("}");
-    const toParse =
-      firstBrace !== -1 && lastBrace !== -1 ? content.slice(firstBrace, lastBrace + 1) : content;
-    parsed = JSON.parse(toParse);
-  } catch (e) {
-    // eslint-disable-next-line no-console
-    console.error("Failed to parse LLM JSON:", e, content);
-    return null;
-  }
+  const parsed = (await response.json()) as {
+    overallScore: number;
+    skillGaps: string[];
+    suggestedRoles: string[];
+    salaryRange: { min: number; max: number };
+    improvements: string[];
+  };
 
   if (
-    typeof parsed !== "object" ||
-    parsed === null ||
-    typeof parsed.overallScore !== "number" ||
+    typeof parsed?.overallScore !== "number" ||
     !Array.isArray(parsed.skillGaps) ||
     !Array.isArray(parsed.suggestedRoles) ||
-    typeof parsed.salaryRange !== "object" ||
-    typeof parsed.salaryRange.min !== "number" ||
-    typeof parsed.salaryRange.max !== "number" ||
+    typeof parsed.salaryRange?.min !== "number" ||
+    typeof parsed.salaryRange?.max !== "number" ||
     !Array.isArray(parsed.improvements)
   ) {
     // eslint-disable-next-line no-console

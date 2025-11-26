@@ -86,21 +86,22 @@
     "subtitle": "Drop a single PDF below. We’ll score it instantly on the right.",
     "dropHint": "Drag & drop your PDF here, or click to browse",
     "dropNote": "PDF only • Max 10MB",
-    "analyzing": "AI is analyzing your resume, estimating salary and generating tailored suggestions..."
+    "analyzing": "AI is analyzing your resume, estimating salary and generating tailored suggestions...",
+    "loginRequired": "Please sign in to access the AI resume analyzer."
   },
   "HowItWorks": {
     "title": "How It Works",
     "subtitle": "Let AI handle the hard work — from analyzing your resume to applying for jobs that fit your goals.",
     "steps": {
       "1": {
-        "title": "Upload Your Resume",
-        "description": "Get instant feedback and an AI-powered score to see how strong your CV is before applying.",
-        "action": "Upload Resume"
+        "title": "Analyze Your Resume",
+        "description": "Use the AI Resume Analyzer to score your CV, surface missing skills, and estimate salary before you apply.",
+        "action": "Open Resume Analyzer"
       },
       "2": {
-        "title": "Set Your Preferences",
-        "description": "Select roles, categories, and keywords you’re interested in. Serrbi will tailor your job discovery experience.",
-        "action": "Discover Jobs"
+        "title": "Plan Your Career Switch",
+        "description": "Describe your skills and interests to generate curated transition paths with required skills and salary growth.",
+        "action": "Explore Career Paths"
       },
       "3": {
         "title": "Enable AI Serrbi",
@@ -469,6 +470,7 @@
     "favorites": "Favorites",
     "plans": "Plans",
     "autoApply": "AI Serrbi",
+    "billing": "Billing",
     "logout": "Log out",
     "loginCta": "Log in / Sign up"
   },
@@ -822,17 +824,17 @@
   },
   "ResumeForm": {
     "headingTitle": "Upload Resume",
-    "headingSubtitle": "Upload your PDF resume to attach it to your profile and instantly analyze its quality score.",
+    "headingSubtitle": "Upload your PDF resume to attach it to your profile so it’s ready for quick applications.",
     "name": "Name",
     "email": "Email",
     "resumeLabel": "Resume (PDF)",
     "note": "Upload your resume (PDF, max 2 MB)",
-    "analyzing": "AI is analyzing your resume and computing your score...",
     "uploadToProfile": "Upload to Profile",
     "uploadSuccess": "Resume uploaded successfully.",
-    "analysisFailed": "Failed to analyze resume. Please try again.",
     "selectFileFirst": "Please select a PDF resume first.",
-    "saveFailed": "Failed to save resume"
+    "saveFailed": "Failed to save resume",
+    "analyzerCta": "Want AI feedback?",
+    "analyzerLink": "Open the Resume Analyzer"
   },
   "ResumeUploader": {
     "dragDrop": "Drag & drop your PDF here, or",
@@ -852,6 +854,92 @@
     "salaryRange": "Estimated salary (€/month)",
     "improvements": "Recommendations",
     "noInsights": "AI insights will appear here after analyzing your resume."
+  },
+  "CareerSwitchPage": {
+    "badge": "Career guidance",
+    "title": "Plan your next career chapter",
+    "subtitle": "Share your background with Serrbi AI to discover curated transition paths, realistic salaries, and step-by-step plans."
+  },
+  "CareerSwitch": {
+    "form": {
+      "title": "Tell us about your background",
+      "subtitle": "Two required fields are enough to start. Add more detail for sharper paths.",
+      "currentRole": "Current role *",
+      "currentSkills": "Key skills",
+      "interests": "Interests & passions *",
+      "targetIndustry": "Target industry",
+      "timeframe": "Transition timeframe",
+      "budget": "Learning budget",
+      "placeholders": {
+        "currentRole": "e.g., Software Engineer",
+        "currentSkills": "React, leadership, data analysis",
+        "interests": "e.g., Data, design, sustainability",
+        "targetIndustry": "Select an industry",
+        "timeframe": "Select a timeframe",
+        "budget": "Select a budget"
+      },
+      "options": {
+        "industries": {
+          "tech": "Technology",
+          "finance": "Finance",
+          "healthcare": "Healthcare",
+          "ecommerce": "E-commerce",
+          "consulting": "Consulting",
+          "startup": "Startup"
+        },
+        "timeframes": {
+          "3-6": "3-6 months",
+          "6-12": "6-12 months",
+          "1-2": "1-2 years",
+          "flexible": "Flexible"
+        },
+        "budgets": {
+          "0-25k": "€0 - €25k",
+          "25-50k": "€25k - €50k",
+          "50-100k": "€50k - €100k",
+          "100k+": "€100k+"
+        }
+      },
+      "submit": "Find career paths",
+      "analyzing": "Analyzing…"
+    },
+    "results": {
+      "empty": "Fill out the form to generate AI-backed transitions tailored to your skills.",
+      "rank": "Recommendation #{index}",
+      "salaryGrowth": "{growth}% potential salary lift",
+      "currentSalary": "Estimated current salary (€/month)",
+      "targetSalary": "Target salary (€/month)",
+      "skills": "Skills to focus on",
+      "stepsTitle": "Step-by-step plan"
+    },
+    "difficulty": {
+      "Easy": "Easy",
+      "Moderate": "Moderate",
+      "Challenging": "Challenging"
+    },
+    "errors": {
+      "generic": "Unable to generate career paths. Please try again.",
+      "empty": "AI could not return any transitions. Adjust your inputs."
+    },
+    "toasts": {
+      "missing": {
+        "title": "Add required fields",
+        "description": "Please enter your current role and interests to continue."
+      },
+      "success": {
+        "title": "Career paths generated",
+        "description": "AI analyzed your profile and suggested new directions."
+      },
+      "failure": {
+        "title": "Generation failed",
+        "description": "AI could not generate suggestions. Try again."
+      }
+    }
+  },
+  "ResumeAnalyzerPage": {
+    "badge": "Resume analyzer",
+    "title": "AI resume analyzer",
+    "subtitle": "Upload your PDF, get a score, and receive salary estimates and improvement tips tailored to Morocco, France, Belgium, and Germany."
   },
   "Cities": {
     "Casablanca": "Casablanca",
