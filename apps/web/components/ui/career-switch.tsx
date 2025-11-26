@@ -95,10 +95,8 @@ export function CareerSwitchPlanner() {
 
   const handleGenerate = async () => {
     if (!formData.currentRole || !formData.interests) {
-      toast({
-        title: t("toasts.missing.title"),
+      toast.error(t("toasts.missing.title"), {
         description: t("toasts.missing.description"),
-        variant: "destructive",
       });
       return;
     }
@@ -131,18 +129,15 @@ export function CareerSwitchPlanner() {
       }
 
       setPaths(receivedPaths.slice(0, 3));
-      toast({
-        title: t("toasts.success.title"),
+      toast.success(t("toasts.success.title"), {
         description: t("toasts.success.description"),
       });
     } catch (err) {
       const message =
         err instanceof Error ? err.message : t("errors.generic");
       setError(message);
-      toast({
-        title: t("toasts.failure.title"),
+      toast.error(t("toasts.failure.title"), {
         description: message,
-        variant: "destructive",
       });
     } finally {
       setIsAnalyzing(false);
