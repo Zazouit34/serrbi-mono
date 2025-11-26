@@ -32,26 +32,20 @@ const steps = [
 export function HowItWorks() {
   const t = useTranslations("HowItWorks");
   return (
-    <section className="py-18 flex flex-col gap-12">
+    <section className="flex flex-col gap-12 py-18">
       {/* Section header */}
-      <div className="flex flex-col items-center gap-4 text-center">
-        <h2 className="text-4xl md:text-5xl font-semibold tracking-tight">
+      <div className="flex flex-col gap-4 items-center text-center">
+        <h2 className="text-4xl font-semibold tracking-tight md:text-5xl">
           {t("title")}
         </h2>
-        <p className="text-muted-foreground max-w-2xl">
+        <p className="max-w-2xl text-muted-foreground">
           {t("subtitle")}
         </p>
       </div>
 
       {/* Cards container */}
       <div
-        className="
-          flex md:grid md:grid-cols-3 gap-6 md:gap-8
-          overflow-x-auto md:overflow-visible
-          snap-x snap-mandatory md:snap-none
-          pb-4 md:pb-0
-          -mx-6 px-6 md:mx-0 md:px-0
-        "
+        className="flex overflow-x-auto gap-6 px-6 pb-4 -mx-6  md:grid md:grid-cols-3 md:gap-8 md:overflow-visible snap-x snap-mandatory md:snap-none md:pb-0 md:mx-0 md:px-0"
       >
         {steps.map((step, index) => (
           <motion.div
@@ -62,23 +56,23 @@ export function HowItWorks() {
             viewport={{ once: true }}
             className="min-w-[85%] sm:min-w-[70%] md:min-w-0 snap-center flex flex-col overflow-hidden bg-white"
           >
-            <div className="relative w-full h-52 md:h-60 overflow-hidden rounded-xl">
+            <div className="overflow-hidden relative w-full h-52 rounded-xl md:h-60">
               <Image
                 src={step.image}
                 alt={t(`steps.${step.key}.title`)}
                 fill
-                className="object-cover hover:scale-105 transition-transform duration-500"
+                className="object-cover transition-transform duration-500 hover:scale-105"
                 sizes="(max-width: 768px) 100vw, 33vw"
               />
             </div>
 
-            <div className="flex flex-col items-start text-left mt-5">
+            <div className="flex flex-col items-start mt-5 text-left">
               <h3 className="text-xl font-semibold">{t(`steps.${step.key}.title`)}</h3>
-              <p className="text-muted-foreground text-sm mt-2 leading-relaxed">
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
                 {t(`steps.${step.key}.description`)}
               </p>
               <div>
-                <Button asChild className="mt-4 bg-black text-white hover:bg-black/80"><a href={step.href}>{t(`steps.${step.key}.action`)}</a></Button>
+                <Button asChild className="mt-4 text-white bg-black hover:bg-black/80"><a href={step.href}>{t(`steps.${step.key}.action`)}</a></Button>
               </div>
             </div>
           </motion.div>

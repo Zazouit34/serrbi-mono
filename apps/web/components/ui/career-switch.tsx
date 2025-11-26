@@ -20,7 +20,7 @@ import {
   SelectValue,
 } from "@workspace/ui/components/select";
 import { Badge } from "@workspace/ui/components/badge";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { Loader2, TrendingUp, Clock } from "lucide-react";
 
 type CareerPath = {
@@ -75,7 +75,6 @@ const initialForm: FormState = {
 
 export function CareerSwitchPlanner() {
   const t = useTranslations("CareerSwitch");
-  const { toast } = useToast();
   const [formData, setFormData] = useState<FormState>(initialForm);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [paths, setPaths] = useState<CareerPath[]>([]);
