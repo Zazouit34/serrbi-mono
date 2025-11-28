@@ -110,6 +110,45 @@
       }
     }
   },
+  "AiAutoApplySection": {
+    "badge": "Candidature auto IA",
+    "title": "Laissez l’IA postuler pour vous pendant que vous gérez votre carrière",
+    "subtitle": "Serrbi AI Auto‑Apply s’occupe des candidatures répétitives pour que vous puissiez investir votre énergie dans les vraies décisions de carrière.",
+    "equation": {
+      "label": "Exemple :",
+      "left": "15 min",
+      "middle": "15 candidatures / jour",
+      "right": "225 min ≈ 3 heures gagnées"
+    },
+    "cards": {
+      "time": {
+        "title": "Gagnez des heures chaque semaine",
+        "body": "Au lieu de remplir manuellement des formulaires pour chaque poste, Auto‑Apply aligne et envoie vos meilleures candidatures automatiquement — un temps économisé qui s’additionne jour après jour."
+      },
+      "matching": {
+        "title": "Des emplois pertinents, pas du bruit",
+        "body": "Serrbi apprend vos catégories, rôles et mots‑clés, puis met en avant les meilleures correspondances pour que les candidatures partent vers les bons postes, et non vers tous les listings."
+      },
+      "control": {
+        "title": "Envois automatiques + candidature en un clic",
+        "body": "Auto‑Apply peut postuler pour vous selon un rythme défini, tout en vous laissant la possibilité de postuler manuellement en un clic sur les offres stratégiques — avec votre CV déjà prêt."
+      }
+    },
+    "useTime": {
+      "cv": {
+        "title": "Peaufinez votre CV et votre profil",
+        "body": "Affinez votre CV avec l’analyseur IA, mettez à jour votre portfolio et alignez votre récit avec les rôles que vous visez."
+      },
+      "skills": {
+        "title": "Développez des compétences clés",
+        "body": "Utilisez le temps libéré pour suivre une formation, lancer un projet personnel ou approfondir les compétences qui vous feront passer au niveau supérieur."
+      },
+      "plan": {
+        "title": "Préparez vos entretiens et votre trajectoire",
+        "body": "Entraînez vos réponses, documentez les entreprises ciblées et utilisez le planificateur de reconversion pour tracer la suite de votre parcours."
+      }
+    }
+  },
   "Showcase": {
     "servicesTitle": "Services populaires",
     "servicesSubtitle": "Découvrez nos meilleurs services conçus pour mettre en valeur vos talents",
@@ -944,8 +983,8 @@
   "ResumeAnalyzerPage": {
     "badge": "Analyseur de CV",
     "title": "Analyseur de CV IA",
-    "subtitle": "Importez votre PDF, obtenez une note et des recommandations adaptées au Maroc, à la France, à la Belgique et à l’Allemagne."
-  },
+      "subtitle": "Importez votre PDF, obtenez une note et des recommandations adaptées pour vous."
+    },
   "Cities": {
     "Casablanca": "Casablanca",
     "Rabat": "Rabat",

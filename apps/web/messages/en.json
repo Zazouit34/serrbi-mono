@@ -110,6 +110,45 @@
       }
     }
   },
+  "AiAutoApplySection": {
+    "badge": "AI auto‑apply",
+    "title": "Let AI apply for you while you focus on your career",
+    "subtitle": "Serrbi AI Auto‑Apply takes care of repetitive applications so you can invest your energy in real career moves.",
+    "equation": {
+      "label": "Example:",
+      "left": "15 min",
+      "middle": "15 applications / day",
+      "right": "225 min ≈ 3 hours saved"
+    },
+    "cards": {
+      "time": {
+        "title": "Win back hours every week",
+        "body": "Instead of manually filling forms for every role, Auto‑Apply queues and submits your best‑fit applications automatically — compounding time saved over days and weeks."
+      },
+      "matching": {
+        "title": "AI‑matched jobs, not random spam",
+        "body": "Serrbi learns your categories, roles and keywords, then surfaces the closest matches so applications go to the right jobs — not every listing on the internet."
+      },
+      "control": {
+        "title": "Automatic sends + one‑click manual apply",
+        "body": "Auto‑Apply can send for you on a schedule, and you can still review and apply manually to standout roles in one click — with your resume already attached."
+      }
+    },
+    "useTime": {
+      "cv": {
+        "title": "Polish your CV & profile",
+        "body": "Refine your resume with the AI analyzer, update your portfolio, and align your story with your target roles."
+      },
+      "skills": {
+        "title": "Learn high‑impact skills",
+        "body": "Use the freed‑up hours to take a course, build a side project, or deepen the skills that move you to the next level."
+      },
+      "plan": {
+        "title": "Prepare interviews & roadmap",
+        "body": "Rehearse answers, research companies, and use the career switch planner to map where you’re going next."
+      }
+    }
+  },
   "Showcase": {
     "servicesTitle": "Popular Services",
     "servicesSubtitle": "Check out our top-notch services designed to help you highlight your talents",
@@ -939,7 +978,7 @@
   "ResumeAnalyzerPage": {
     "badge": "Resume analyzer",
     "title": "AI resume analyzer",
-    "subtitle": "Upload your PDF, get a score, and receive salary estimates and improvement tips tailored to Morocco, France, Belgium, and Germany."
+    "subtitle": "Upload your PDF, get a score, and receive salary estimates and improvement tips tailored for you."
   },
   "Cities": {
     "Casablanca": "Casablanca",
