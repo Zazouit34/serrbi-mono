@@ -28,7 +28,7 @@ export function PricingShowcase() {
 
   return (
     <section className="mx-auto w-full my-18">
-      <div className="flex items-start mb-6">   
+      <div className="flex flex-col items-start mb-6">   
           <h2 className="text-2xl font-semibold md:text-3xl">{t("title")}</h2>
           <p className="mt-1 max-w-xl text-sm text-muted-foreground">{t("subtitle")}</p>
       </div>
@@ -76,10 +76,10 @@ function PlanPreview({ plan, onClick }: { plan: any; onClick: () => void }) {
     (plan.displayName || plan.name || "").toString().toUpperCase() === "FREE";
   // Add AI tools individually
   if (isFree) {
-    features.push(`1/month: ${t("features.aiResumeAnalyzer")}`);
-    features.push(`1/month: ${t("features.careerSwitch")}`);
-    features.push(`1/month: ${t("features.aiRoadmap")}`);
-    features.push(`1/month: ${t("features.atsInsight")}`);
+    features.push(`1 ${t("features.aiResumeAnalyzer")}`);
+    features.push(`1 ${t("features.careerSwitch")}`);
+    features.push(`1 ${t("features.aiRoadmap")}`);
+    features.push(`1 ${t("features.atsInsight")}`);
   } else {
     features.push(t("features.aiResumeAnalyzer"));
     features.push(t("features.careerSwitch"));
