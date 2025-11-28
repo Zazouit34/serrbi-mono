@@ -28,12 +28,9 @@ export function PricingShowcase() {
 
   return (
     <section className="mx-auto w-full my-18">
-      <div className="flex justify-between items-end mb-6">
-        <div>
+      <div className="flex items-start mb-6">   
           <h2 className="text-2xl font-semibold md:text-3xl">{t("title")}</h2>
           <p className="mt-1 max-w-xl text-sm text-muted-foreground">{t("subtitle")}</p>
-        </div>
-        <Button variant="outline" onClick={() => router.push("/subscription")}>{t("viewAll")}</Button>
       </div>
 
       {error && (
