@@ -283,7 +283,9 @@
       "resumeAtsScore": "Score ATS du CV",
       "smartMatch": "Smart Match IA",
       "autoApplyPerMonth": "AI Serrbi usage per month",
-      "unlimitedApplications": "Candidatures manuelles illimitées"
+      "unlimitedApplications": "Candidatures manuelles illimitées",
+      "aiToolsFree": "1 fois par mois : analyseur de CV IA, reconversion, feuille de route carrière, insights ATS",
+      "aiToolsFull": "Accès complet aux outils IA : analyseur de CV, reconversion, feuille de route carrière, insights ATS"
     },
     "choosePlan": "Choisir le plan",
     "errors": {
@@ -609,7 +611,9 @@
       "resumeAtsScore": "Score ATS du CV",
       "smartMatch": "Smart Match IA",
       "autoApplyPerMonth": "auto‑candidatures par mois",
-      "unlimitedApplications": "Candidatures manuelles illimitées"
+      "unlimitedApplications": "Candidatures manuelles illimitées",
+      "aiToolsFree": "1 fois par mois : analyseur de CV IA, reconversion, feuille de route carrière, insights ATS",
+      "aiToolsFull": "Accès complet aux outils IA : analyseur de CV, reconversion, feuille de route carrière, insights ATS"
     },
     "toasts": {
       "subscribedFree": "Abonné au plan Gratuite",

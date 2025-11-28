@@ -283,7 +283,9 @@
       "resumeAtsScore": "تقييم ATS للسيرة",
       "smartMatch": "مطابقة ذكية بالذكاء الاصطناعي",
       "autoApplyPerMonth": "استخدام AI Serrbi شهرياً",
-      "unlimitedApplications": "تقديم غير محدود"
+      "unlimitedApplications": "تقديم غير محدود",
+      "aiToolsFree": "مرة واحدة شهرياً: محلل سيرة ذاتية بالذكاء الاصطناعي، أداة تغيير المسار، خريطة مسار مهني، وInsights ATS",
+      "aiToolsFull": "وصول كامل لأدوات الذكاء الاصطناعي: محلل السيرة، تغيير المسار، خريطة المسار المهني وInsights ATS"
     },
     "choosePlan": "اختر الخطة",
     "errors": { "loadPlansFailed": "فشل تحميل الخطط. حاول مرة أخرى." }
@@ -604,7 +606,9 @@
       "resumeAtsScore": "تقييم ATS للسيرة",
       "smartMatch": "مطابقة ذكية بالذكاء الاصطناعي",
       "autoApplyPerMonth": "استخدام AI S شهرياً",
-      "unlimitedApplications": "تقديم غير محدود"
+      "unlimitedApplications": "تقديم غير محدود",
+      "aiToolsFree": "مرة واحدة شهرياً: محلل سيرة ذاتية بالذكاء الاصطناعي، أداة تغيير المسار، خريطة مسار مهني، وInsights ATS",
+      "aiToolsFull": "وصول كامل لأدوات الذكاء الاصطناعي: محلل السيرة، تغيير المسار، خريطة المسار المهني وInsights ATS"
     },
     "toasts": {
       "subscribedFree": "تم الاشتراك في الخطة المجانية",

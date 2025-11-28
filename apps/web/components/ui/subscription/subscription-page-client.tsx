@@ -197,13 +197,17 @@ export default function SubscriptionPageClient() {
         `${plan.autoApplyMonthlyLimit} ${tPricing("features.autoApplyPerMonth")}`
       );
     }
-    // Job board access
-    if (plan.jobBoardAccess) features.push(tPricing("features.jobBoardAccess"));
     // Resume ATS score
     if (plan.resumeAtsScoreAccess)
       features.push(tPricing("features.resumeAtsScore"));
     // Smart Match AI
     if (plan.smartMatchAccess) features.push(tPricing("features.smartMatch"));
+    const isFreePlan = (plan.name || "").toUpperCase() === "FREE";
+    features.push(
+      isFreePlan
+        ? tPricing("features.aiToolsFree")
+        : tPricing("features.aiToolsFull"),
+    );
     
 
     const isCurrent = subscription?.planId === plan.id;

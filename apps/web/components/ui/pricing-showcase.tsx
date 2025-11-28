@@ -73,9 +73,13 @@ function PlanPreview({ plan, onClick }: { plan: any; onClick: () => void }) {
   if (plan.monthlyApplyLimit) {
     features.push(`${plan.monthlyApplyLimit} ${t("features.applicationsPerMonth")}`);
   }
-  if (plan.jobBoardAccess) features.push(t("features.jobBoardAccess"));
   if (plan.resumeAtsScoreAccess) features.push(t("features.resumeAtsScore"));
   if (plan.smartMatchAccess) features.push(t("features.smartMatch"));
+  const isFree =
+    (plan.displayName || plan.name || "").toString().toUpperCase() === "FREE";
+  features.push(
+    isFree ? t("features.aiToolsFree") : t("features.aiToolsFull"),
+  );
   
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLDivElement>) {
