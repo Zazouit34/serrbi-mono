@@ -205,10 +205,10 @@ export default function SubscriptionPageClient() {
     const isFreePlan = (plan.name || "").toUpperCase() === "FREE";
     // Add AI tools individually
     if (isFreePlan) {
-      features.push(`1/month: ${tPricing("features.aiResumeAnalyzer")}`);
-      features.push(`1/month: ${tPricing("features.careerSwitch")}`);
-      features.push(`1/month: ${tPricing("features.aiRoadmap")}`);
-      features.push(`1/month: ${tPricing("features.atsInsight")}`);
+      features.push(`1 ${tPricing("features.aiResumeAnalyzer")}`);
+      features.push(`1 ${tPricing("features.careerSwitch")}`);
+      features.push(`1 ${tPricing("features.aiRoadmap")}`);
+      features.push(`1 ${tPricing("features.atsInsight")}`);
     } else {
       features.push(tPricing("features.aiResumeAnalyzer"));
       features.push(tPricing("features.careerSwitch"));
