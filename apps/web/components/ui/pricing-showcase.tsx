@@ -74,9 +74,18 @@ function PlanPreview({ plan, onClick }: { plan: any; onClick: () => void }) {
   if (plan.smartMatchAccess) features.push(t("features.smartMatch"));
   const isFree =
     (plan.displayName || plan.name || "").toString().toUpperCase() === "FREE";
-  features.push(
-    isFree ? t("features.aiToolsFree") : t("features.aiToolsFull"),
-  );
+  // Add AI tools individually
+  if (isFree) {
+    features.push(`1/month: ${t("features.aiResumeAnalyzer")}`);
+    features.push(`1/month: ${t("features.careerSwitch")}`);
+    features.push(`1/month: ${t("features.aiRoadmap")}`);
+    features.push(`1/month: ${t("features.atsInsight")}`);
+  } else {
+    features.push(t("features.aiResumeAnalyzer"));
+    features.push(t("features.careerSwitch"));
+    features.push(t("features.aiRoadmap"));
+    features.push(t("features.atsInsight"));
+  }
   
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLDivElement>) {

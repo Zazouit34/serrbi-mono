@@ -284,8 +284,10 @@
       "smartMatch": "Smart Match AI",
       "autoApplyPerMonth": "AI Serrbi usage per month",
       "unlimitedApplications": "Unlimited manual applications",
-      "aiToolsFree": "1 per month: Resume AI analyzer, Career Switch, Career Roadmap, ATS insights",
-      "aiToolsFull": "Full access to AI tools: Resume analyzer, Career Switch, Career Roadmap, ATS insights"
+      "aiResumeAnalyzer": "AI Resume Analyzer",
+      "careerSwitch": "Career Switch",
+      "aiRoadmap": "AI Roadmap",
+      "atsInsight": "ATS Insight"
     },
     "choosePlan": "Choose plan",
     "errors": { "loadPlansFailed": "Failed to load plans. Please try again." }
@@ -608,8 +610,10 @@
       "smartMatch": "Smart Match AI",
       "autoApplyPerMonth": "AI Serrbi usage per month",
       "unlimitedApplications": "Unlimited manual applications",
-      "aiToolsFree": "1 per month: Resume AI analyzer, Career Switch, Career Roadmap, ATS insights",
-      "aiToolsFull": "Full access to AI tools: Resume analyzer, Career Switch, Career Roadmap, ATS insights"
+      "aiResumeAnalyzer": "AI Resume Analyzer",
+      "careerSwitch": "Career Switch",
+      "aiRoadmap": "AI Roadmap",
+      "atsInsight": "ATS Insight"
     },
     "toasts": {
       "subscribedFree": "Subscribed to Free plan",

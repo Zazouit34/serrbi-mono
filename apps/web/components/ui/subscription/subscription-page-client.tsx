@@ -203,11 +203,18 @@ export default function SubscriptionPageClient() {
     // Smart Match AI
     if (plan.smartMatchAccess) features.push(tPricing("features.smartMatch"));
     const isFreePlan = (plan.name || "").toUpperCase() === "FREE";
-    features.push(
-      isFreePlan
-        ? tPricing("features.aiToolsFree")
-        : tPricing("features.aiToolsFull"),
-    );
+    // Add AI tools individually
+    if (isFreePlan) {
+      features.push(`1/month: ${tPricing("features.aiResumeAnalyzer")}`);
+      features.push(`1/month: ${tPricing("features.careerSwitch")}`);
+      features.push(`1/month: ${tPricing("features.aiRoadmap")}`);
+      features.push(`1/month: ${tPricing("features.atsInsight")}`);
+    } else {
+      features.push(tPricing("features.aiResumeAnalyzer"));
+      features.push(tPricing("features.careerSwitch"));
+      features.push(tPricing("features.aiRoadmap"));
+      features.push(tPricing("features.atsInsight"));
+    }
     
 
     const isCurrent = subscription?.planId === plan.id;
