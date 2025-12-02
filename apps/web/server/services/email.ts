@@ -39,24 +39,91 @@ export async function sendJobApplicationEmail(
   cvFilename?: string
 ) {
   const resend = getResend()
-  
-  const attachments = cvData && cvFilename ? [{
-    filename: cvFilename,
-    content: cvData, // base64 string
-  }] : []
+
+  const attachments =
+    cvData && cvFilename
+      ? [
+          {
+            filename: cvFilename,
+            content: cvData, // base64 string
+          },
+        ]
+      : []
+
+  const appUrl =
+    process.env.NEXT_PUBLIC_APP_URL ||
+    process.env.APP_URL ||
+    "https://serrbi.ma"
+  const baseUrl = appUrl.replace(/\/$/, "")
+  const logoUrl = `${baseUrl}/og/og-default.png`
 
   await resend.emails.send({
-    from: "talents@serrbi.com", // ✅ MUST be on your verified sending domain
+    from: "Serrbi Talent Team <talents@serrbi.com>", // ✅ must be on your verified sending domain
     to: applicationEmail,
-    replyTo: applicantEmail, 
-    subject: `New Application for ${jobTitle} - ${companyName}`,
+    replyTo: applicantEmail,
+    subject: `Candidate from Serrbi for ${jobTitle} – ${applicantName}`,
     html: `
-      <h2>New Job Application</h2>
-      <p><strong>Position:</strong> ${jobTitle}</p>
-      <p><strong>Company:</strong> ${companyName}</p>
-      <p><strong>Applicant:</strong> ${applicantName}</p>
-      <p><strong>Email:</strong> ${applicantEmail}</p>
-       ${cvData ? '<p><strong>CV:</strong> Attached</p>' : '<p><strong>CV:</strong> Not provided</p>'}
+      <div style="font-family: system, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background-color:#f3f4f6; padding:24px 0;">
+        <div style="max-width:640px; margin:0 auto; padding:0 16px;">
+          <!-- Header / visual -->
+          <div style="text-align:center; margin-bottom:24px;">
+            <img src="${logoUrl}" alt="Serrbi" style="max-width:100%; border-radius:16px; border:1px solid #e5e7eb;" />
+          </div>
+
+          <div style="background-color:#ffffff; border-radius:16px; padding:24px 24px 20px; border:1px solid #e5e7eb;">
+            <p style="font-size:14px; color:#4b5563; margin:0 0 16px;">
+              Bonjour${companyName ? " " + companyName : ""},
+            </p>
+
+            <p style="font-size:14px; color:#111827; margin:0 0 12px;">
+              Je vous écris au nom de <strong>Serrbi</strong>, une plateforme de recrutement assistée par l’IA.
+              Un talent vient de postuler à votre offre&nbsp;:
+            </p>
+
+            <table role="presentation" style="width:100%; border-collapse:collapse; font-size:14px; margin:12px 0 16px;">
+              <tr>
+                <td style="padding:4px 0; color:#6b7280; width:120px;">Poste</td>
+                <td style="padding:4px 0; color:#111827;"><strong>${jobTitle}</strong></td>
+              </tr>
+              <tr>
+                <td style="padding:4px 0; color:#6b7280;">Entreprise</td>
+                <td style="padding:4px 0; color:#111827;">${companyName}</td>
+              </tr>
+              <tr>
+                <td style="padding:4px 0; color:#6b7280;">Candidat</td>
+                <td style="padding:4px 0; color:#111827;">${applicantName}</td>
+              </tr>
+              <tr>
+                <td style="padding:4px 0; color:#6b7280;">Contact</td>
+                <td style="padding:4px 0; color:#111827;">
+                  <a href="mailto:${applicantEmail}" style="color:#2563eb; text-decoration:none;">
+                    ${applicantEmail}
+                  </a>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:4px 0; color:#6b7280;">CV</td>
+                <td style="padding:4px 0; color:#111827;">
+                  ${cvData ? "Fourni en pièce jointe" : "Non fourni"}
+                </td>
+              </tr>
+            </table>
+
+            <p style="font-size:14px; color:#111827; margin:0 0 12px;">
+              Vous pouvez répondre directement à ce message ou contacter le candidat via son adresse e‑mail ci‑dessus.
+            </p>
+
+            <p style="font-size:13px; color:#6b7280; margin:16px 0 0;">
+              Bien à vous,<br/>
+              <strong>L’équipe Serrbi Talent</strong>
+            </p>
+          </div>
+
+          <p style="font-size:11px; color:#9ca3af; text-align:center; margin:16px 0 0;">
+            Cet e‑mail vous a été envoyé car une candidature a été soumise à votre offre via Serrbi.
+          </p>
+        </div>
+      </div>
     `,
     attachments,
   })
