@@ -249,14 +249,14 @@ export function ResumeInsight({
               </div>
             ) : (
               <div className="flex flex-col gap-2 p-4 w-full max-w-md rounded-2xl border border-white/10 bg-black/20">
-                <ResumeScoreCard
-                  score={(scoreData as unknown as ResumeScore)?.score ?? 72}
-                  breakdown={(scoreData as unknown as ResumeScore)?.breakdown ?? defaultBreakdown(72)}
-                  llm={(scoreData as unknown as ResumeScore)?.llm}
+              <ResumeScoreCard
+                score={(scoreData as unknown as ResumeScore)?.score ?? 72}
+                breakdown={(scoreData as unknown as ResumeScore)?.breakdown ?? defaultBreakdown(72)}
+                llm={(scoreData as unknown as ResumeScore)?.llm}
                   loading={false}
-                  darkMode
-                />
-              </div>
+                darkMode
+              />
+            </div>
             )}
           </div>
         </div>

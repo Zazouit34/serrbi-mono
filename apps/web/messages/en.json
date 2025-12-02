@@ -112,40 +112,40 @@
   },
   "AiAutoApplySection": {
     "badge": "AI auto‑apply",
-    "title": "Let AI apply for you while you focus on your career",
-    "subtitle": "Serrbi AI Auto‑Apply takes care of repetitive applications so you can invest your energy in real career moves.",
+    "title": "AI auto‑apply that gives you your time back",
+    "subtitle": "Serrbi sends repetitive applications for you so you can use that time to actually grow your career.",
     "equation": {
       "label": "Example:",
       "left": "15 min",
       "middle": "15 applications / day",
-      "right": "225 min ≈ 3 hours saved"
+      "right": "225 min ≈ 3 hours back"
     },
     "cards": {
       "time": {
-        "title": "Win back hours every week",
-        "body": "Instead of manually filling forms for every role, Auto‑Apply queues and submits your best‑fit applications automatically — compounding time saved over days and weeks."
+        "title": "Save hours, every week",
+        "body": "Auto‑Apply fills and sends the repetitive applications in the background."
       },
       "matching": {
-        "title": "AI‑matched jobs, not random spam",
-        "body": "Serrbi learns your categories, roles and keywords, then surfaces the closest matches so applications go to the right jobs — not every listing on the internet."
+        "title": "Smart, AI‑matched jobs",
+        "body": "Serrbi targets roles that match your profile instead of spamming every listing."
       },
       "control": {
-        "title": "Automatic sends + one‑click manual apply",
-        "body": "Auto‑Apply can send for you on a schedule, and you can still review and apply manually to standout roles in one click — with your resume already attached."
+        "title": "You keep full control",
+        "body": "Toggle auto‑apply or send standout roles yourself in one click."
       }
     },
     "useTime": {
       "cv": {
-        "title": "Polish your CV & profile",
-        "body": "Refine your resume with the AI analyzer, update your portfolio, and align your story with your target roles."
+        "title": "Polish your resume",
+        "body": "Use the AI resume analyzer to tighten your CV and profile."
       },
       "skills": {
-        "title": "Learn high‑impact skills",
-        "body": "Use the freed‑up hours to take a course, build a side project, or deepen the skills that move you to the next level."
+        "title": "Learn new skills",
+        "body": "Invest freed‑up time into courses and projects that grow you."
       },
       "plan": {
-        "title": "Prepare interviews & roadmap",
-        "body": "Rehearse answers, research companies, and use the career switch planner to map where you’re going next."
+        "title": "Plan your next move",
+        "body": "Use Serrbi career tools to map your path and prepare interviews."
       }
     }
   },
