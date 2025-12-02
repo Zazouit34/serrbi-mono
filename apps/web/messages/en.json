@@ -760,6 +760,11 @@
       "recent": "Recent AI Serrbi activity",
       "unknownJob": "Unknown Job"
     },
+    "listing": {
+      "title": "Jobs AI Serrbi can apply to",
+      "subtitle": "These roles are selected using your category, tags and roles.",
+      "resumeHint": "Matched to your resume and preferences"
+    },
     "save": "Save preferences",
     "roles": {
       "title": "Roles",

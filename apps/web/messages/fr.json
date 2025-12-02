@@ -765,6 +765,11 @@
       "recent": "Activité récente AI Serrbi",
       "unknownJob": "Emploi inconnu"
     },
+    "listing": {
+      "title": "Emplois où AI Serrbi peut postuler",
+      "subtitle": "Ces offres sont filtrées selon votre catégorie, vos tags et vos rôles.",
+      "resumeHint": "Correspondant à votre CV et à vos préférences"
+    },
     "save": "Enregistrer les préférences",
     "roles": {
       "title": "Rôles",

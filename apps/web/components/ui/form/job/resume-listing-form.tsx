@@ -24,6 +24,7 @@ import {
 import { Trash2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
+import { parsePDF } from "@/app/utils/pdf/prase-pdf";
 
 const resumeSchema = z.object({
   resumeUrl: z.string().url("Invalid URL").optional(),
@@ -49,6 +50,7 @@ export default function ResumeListingForm() {
     onSuccess: () => setSuccess(tResume("uploadSuccess")),
     onError: (e) => setError(e.message || tResume("saveFailed")),
   });
+  const setResumeEmbedding = trpc.auth.updateResumeEmbedding.useMutation();
 
   const clearResume = trpc.auth.clearResume.useMutation({
     onSuccess: async () => {
@@ -78,6 +80,11 @@ export default function ResumeListingForm() {
 
       try {
         await setResumeUrl.mutateAsync({ resumeUrl: url });
+        // Parse PDF on client and update resume embedding
+        const text = await parsePDF(file);
+        if (text) {
+          await setResumeEmbedding.mutateAsync({ resumeText: text });
+        }
         router.push("/jobs/resume-listing/new");
       } catch (e: any) {
         setError(e?.message || tResume("saveFailed"));
@@ -141,7 +148,9 @@ export default function ResumeListingForm() {
                       ref={uploaderRef}
                       note={tResume("note")}
                       onUploadError={(err) => setError(err)}
-                      onUploadSuccess={(url) => form.setValue("resumeUrl", url)}
+                      onUploadSuccess={(url) => {
+                        form.setValue("resumeUrl", url);
+                      }}
                     />
                   )}
                 </FormControl>

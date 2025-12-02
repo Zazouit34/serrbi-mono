@@ -441,6 +441,12 @@ export const resumeUpdateSchema = z.object({
 });
 export type ResumeUpdateValues = z.infer<typeof resumeUpdateSchema>;
 
+// Resume embedding update schema (extracted text from uploaded PDF)
+export const resumeEmbeddingUpdateSchema = z.object({
+  resumeText: z.string().min(20, "Resume text too short to embed"),
+});
+export type ResumeEmbeddingUpdateValues = z.infer<typeof resumeEmbeddingUpdateSchema>;
+
 
 //Job bulk Import Schema
 export const jobImportRowSchema = z.object({

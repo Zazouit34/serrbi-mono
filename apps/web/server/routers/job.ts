@@ -202,7 +202,7 @@ export const jobRouter = router({
         return { items: [], total: 0, page, pageSize };
       }
 
-      // Load persisted auto-apply prefs
+      // Load persisted auto-apply prefs and resume embedding
       const fullUser = await (db.user.findUnique as any)({
         where: { id: user.id },
         select: {
@@ -210,6 +210,7 @@ export const jobRouter = router({
           autoApplyCategory: true,
           autoApplyKeywords: true,
           autoApplyRoles: true,
+          resumeEmbedding: true,
         },
       });
 
@@ -342,21 +343,44 @@ export const jobRouter = router({
             });
       const appliedSet = new Set(existingApps.map((a) => a.jobId));
 
-      // Simple relevance scoring based on category + keywords (tags/text) & roles (title/description)
-      const tokenize = (text: string) =>
+      // Simple relevance scoring based on category + keywords (tags/text) & roles (title/description),
+      // enhanced with semantic similarity between the user's resume and each job embedding.
+      const tokenize = (text: string): Set<string> =>
         new Set(
           text
             .toLowerCase()
             .split(/[^a-z0-9+.#]/i)
-            .filter(Boolean)
+            .filter((token): token is string => Boolean(token)),
         );
 
-      const scoredItems = jobs.map((job) => {
+      const userEmbedding: number[] | null =
+        (fullUser as any)?.resumeEmbedding && Array.isArray((fullUser as any).resumeEmbedding)
+          ? ((fullUser as any).resumeEmbedding as number[])
+          : null;
+
+      const norm = (vec: number[] | null): number =>
+        !vec || !vec.length
+          ? 0
+          : Math.sqrt(vec.reduce((sum, v) => sum + v * v, 0));
+
+      const dot = (a: number[], b: number[]): number => {
+        const len = Math.min(a.length, b.length);
+        let acc = 0;
+        for (let i = 0; i < len; i += 1) {
+          acc += a[i]! * b[i]!;
+        }
+        return acc;
+      };
+
+      const userNorm = norm(userEmbedding);
+      const usedResumeEmbedding = !!(userEmbedding && userNorm > 0);
+
+      const scoredItems = jobs.map((job: any) => {
         const textTokens = tokenize(
           `${job.title ?? ""} ${job.description ?? ""}`
         );
-        const tagTokens = new Set(
-          (job.tags ?? []).map((t) => t.toLowerCase())
+        const tagTokens = new Set<string>(
+          (job.tags ?? []).map((t: string) => t.toLowerCase()),
         );
         const jobTokens = new Set<string>([
           ...tagTokens,
@@ -379,7 +403,25 @@ export const jobRouter = router({
           }
         }
 
-        const score = keywordMatches + roleMatches;
+        // Semantic similarity term: cosine(resumeEmbedding, job.embedding)
+        let embeddingScore = 0;
+        if (userEmbedding && userNorm > 0 && Array.isArray(job.embedding) && job.embedding.length) {
+          const jobEmbedding = job.embedding as number[];
+          const jobNorm = norm(jobEmbedding);
+          if (jobNorm > 0) {
+            embeddingScore = dot(userEmbedding, jobEmbedding) / (userNorm * jobNorm);
+          }
+        }
+
+        // Combine semantic + keyword/role signals into a single score.
+        // Weights can be tuned; start with semantic dominant.
+        const wEmbedding = 0.7;
+        const wKeyword = 0.2;
+        const wRole = 0.1;
+        const score =
+          wEmbedding * embeddingScore +
+          wKeyword * keywordMatches +
+          wRole * roleMatches;
 
         return {
           ...job,
@@ -388,19 +430,17 @@ export const jobRouter = router({
         };
       });
 
-      // When filters are present, sort by recency first, then score, while keeping all jobs in the category.
+      // Sort primarily by combined score (semantic + filters), then by recency.
       let ordered: typeof scoredItems;
-      if (hasKeywordFilters || hasRoleFilters) {
-        ordered = [...scoredItems].sort((a, b) => {
-          const timeDiff = b.createdAt.getTime() - a.createdAt.getTime();
-          if (timeDiff !== 0) return timeDiff;
-          return b._score - a._score;
-        });
-        // total remains the count of all jobs in the category
-      } else {
-        // No extra filters: rely on DB ordering (createdAt desc, id desc)
-        ordered = scoredItems;
-      }
+      ordered = [...scoredItems].sort((a, b) => {
+        // Higher score first
+        const scoreDiff = (b._score ?? 0) - (a._score ?? 0);
+        if (Math.abs(scoreDiff) > 1e-6) return scoreDiff;
+        // Tie-breaker: newer jobs first
+        const timeDiff = b.createdAt.getTime() - a.createdAt.getTime();
+        if (timeDiff !== 0) return timeDiff;
+        return 0;
+      });
 
       // Apply pagination after optional reordering.
       const start = skip;
@@ -409,7 +449,7 @@ export const jobRouter = router({
 
       const resultItems = paged.map(({ _score, ...rest }) => rest);
 
-      return { items: resultItems, total, page, pageSize };
+      return { items: resultItems, total, page, pageSize, usedResumeEmbedding };
     }),
 
   getById: publicProcedure
@@ -468,7 +508,10 @@ export const jobRouter = router({
         db,
         jobId: input.jobId,
         userId: user.id,
-        source: "manual",
+        // Count this as auto-apply usage so it is reflected
+        // in subscription.getUsageStats (autoAppliedUsed) together
+        // with background auto-apply triggered by Inngest.
+        source: "auto",
       });
 
       return result;

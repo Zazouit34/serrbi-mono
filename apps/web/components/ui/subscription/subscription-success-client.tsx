@@ -33,6 +33,7 @@ import {
   DialogFooter,
 } from "@workspace/ui/components/dialog";
 import { UppyPDFUploader, type UppyPDFUploaderHandle } from "@/components/ui/uppy-pdf-uploader";
+import { parsePDF } from "@/app/utils/pdf/prase-pdf";
 
 type JobCategory = (typeof jobCategoryValues)[number];
 
@@ -61,6 +62,7 @@ const [open, setOpen] = useState(true);
 const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
 const uploaderRef = useRef<UppyPDFUploaderHandle | null>(null);
 const setResumeUrl = trpc.auth.updateResume.useMutation();
+const setResumeEmbedding = trpc.auth.updateResumeEmbedding.useMutation();
 
   const handleOpenChange = (nextOpen: boolean) => {
     // Prevent closing the dialog until the final step
@@ -190,6 +192,14 @@ const setResumeUrl = trpc.auth.updateResume.useMutation();
                   try {
                     await setResumeUrl.mutateAsync({ resumeUrl: url });
                     toast.success(tAll("ResumeForm.uploadSuccess"));
+                    // Best-effort: also compute resume embedding if we still have the file in memory
+                    const file = uploaderRef.current?.getFile();
+                    if (file) {
+                      const text = await parsePDF(file);
+                      if (text) {
+                        await setResumeEmbedding.mutateAsync({ resumeText: text });
+                      }
+                    }
                   } catch (e: any) {
                     toast.error(e?.message || tAll("ResumeForm.saveFailed"));
                   }
@@ -212,6 +222,11 @@ const setResumeUrl = trpc.auth.updateResume.useMutation();
                     try {
                       await setResumeUrl.mutateAsync({ resumeUrl: url });
                       toast.success(tAll("ResumeForm.uploadSuccess"));
+                      // Parse PDF and update resume embedding based on the uploaded file
+                      const text = await parsePDF(file);
+                      if (text) {
+                        await setResumeEmbedding.mutateAsync({ resumeText: text });
+                      }
                       setStep(3);
                     } catch (e: any) {
                       toast.error(e?.message || tAll("ResumeForm.saveFailed"));

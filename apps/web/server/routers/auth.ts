@@ -12,8 +12,10 @@ import {
   resetPasswordFormSchema,
   updateUserRoleSchema,
   resumeUpdateSchema,
+  resumeEmbeddingUpdateSchema,
   autoApplyPrefsSchema,
 } from "@workspace/ui/lib/validation-schemas";
+import { z } from "zod";
 import bcrypt from "bcryptjs";
 
 import { PLANS } from "@/lib/plans";
@@ -26,6 +28,7 @@ import {
   getResetPasswordTokenbyToken,
 } from "../services/verification";
 import { inngest } from "@/functions/inngest/client";
+import { embedText } from "@/lib/embedding";
 
 export const authRouter = router({
   // Keep login for compatibility with existing UI
@@ -221,6 +224,23 @@ export const authRouter = router({
       });
       return { success: true };
     }),
+  // Update resume embedding from extracted resume text
+  updateResumeEmbedding: protectedProcedure
+    .input(resumeEmbeddingUpdateSchema)
+    .mutation(async ({ ctx, input }) => {
+      const db = ctx.prisma as PrismaClient;
+      const user = (ctx as any).user;
+
+      // Compute embedding using shared embedding helper
+      const embedding = await embedText(input.resumeText);
+
+      await (db.user.update as any)({
+        where: { id: user.id },
+        data: { resumeEmbedding: embedding },
+      });
+
+      return { success: true };
+    }),
   // clear resume
   clearResume: protectedProcedure.mutation(async ({ ctx }) => {
     const db = ctx.prisma as PrismaClient;
@@ -275,6 +295,40 @@ export const authRouter = router({
       return { success: true };
     }),
 
+  // Suggest auto-apply keywords and roles heuristically from existing prefs/resume (extension point)
+  suggestAutoApplyPrefs: protectedProcedure.query(async ({ ctx }) => {
+    const db = ctx.prisma as PrismaClient;
+    const user = await (db.user.findUnique as any)({
+      where: { id: (ctx as any).user.id },
+      select: {
+        resumeEmbedding: true,
+        autoApplyCategory: true,
+        autoApplyKeywords: true,
+        autoApplyRoles: true,
+      },
+    });
+
+    // If the user already has prefs, just echo them back as \"suggestions\"
+    if (
+      user?.autoApplyCategory ||
+      (user?.autoApplyKeywords?.length || user?.autoApplyRoles?.length)
+    ) {
+      return {
+        category: user.autoApplyCategory ?? null,
+        keywords: user.autoApplyKeywords ?? [],
+        roles: user.autoApplyRoles ?? [],
+      };
+    }
+
+    // For now, return empty suggestions; this is a safe hook to plug in
+    // more advanced heuristics or LLM-based extraction later.
+    return {
+      category: null,
+      keywords: [] as string[],
+      roles: [] as string[],
+    };
+  }),
+
   //auto apply stats
   getAutoApplyStats: protectedProcedure.query(async ({ ctx }) => {
     const db = ctx.prisma as PrismaClient;
@@ -285,11 +339,12 @@ export const authRouter = router({
     startOfMonth.setDate(1);
     startOfMonth.setHours(0, 0, 0, 0);
 
-    // Get all job applications for this user this month
+    // Get recent auto-apply applications for this user this month
     const apps = await db.jobApplication.findMany({
       where: {
         email: user.email,
         createdAt: { gte: startOfMonth },
+        source: "auto",
       },
       orderBy: { createdAt: "desc" },
       take: 5, // limit to latest 5 for now

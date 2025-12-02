@@ -63,6 +63,8 @@ export function AutoApplyListingGrid({
 
   const totalPages = data ? Math.ceil(data.total / data.pageSize) : 0;
   const totalQueue = data?.total ?? 0;
+  const usedResumeEmbedding =
+    data && "usedResumeEmbedding" in data ? (data as any).usedResumeEmbedding : false;
 
   const renderPaginationItems = () => {
     const items = [];
@@ -189,6 +191,11 @@ export function AutoApplyListingGrid({
             <p className="text-[11px] text-slate-500">
               {tA("listing.subtitle")}
             </p>
+            {usedResumeEmbedding && (
+              <p className="mt-1 text-[11px] text-emerald-700">
+                {tA("listing.resumeHint")}
+              </p>
+            )}
           </div>
         </div>
 
