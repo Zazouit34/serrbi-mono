@@ -96,31 +96,6 @@ export function HeroSearchBar() {
     }
   };
 
-  const handleSuggestionClick = (value: string) => {
-    setSearchQuery(value);
-    void handleSearch(value);
-  };
-
-  const suggestionsByTab: Record<TabType, string[]> = {
-    jobs: [
-      "Frontend developer in Casablanca",
-      "Remote React developer role",
-      "Junior marketing job in Rabat",
-    ],
-    services: [
-      "Lawyer in Casablanca",
-      "Plumber near Marrakech",
-      "Doctor in Rabat",
-    ],
-    tasks: [
-      "Cleaning job in Casablanca",
-      "Construction help this weekend",
-      "Tech support task remote",
-    ],
-  };
-
-  const currentSuggestions = suggestionsByTab[activeTab];
-
   const tabLabels = {
     jobs: t("tabs.jobs"),
     services: t("tabs.services"),
@@ -182,7 +157,7 @@ export function HeroSearchBar() {
           <h2 className="flex gap-2 items-center text-sm font-semibold text-gray-900">
             <Sparkles size={16} className="text-violet-500" />
             <span className="bg-gradient-to-r from-[#7f5cff] to-[#ba9cff] text-transparent bg-clip-text">
-              Ask AI
+              {t("askAiTitle")}
             </span>
           </h2>
 
@@ -212,40 +187,23 @@ export function HeroSearchBar() {
             </Button>
           </div>
 
-          {/* Tab-aware AI suggestions */}
-          <div className="flex flex-wrap gap-2">
-            {currentSuggestions.map((suggestion) => (
-              <button
-                key={suggestion}
-                type="button"
-                onClick={() => handleSuggestionClick(suggestion)}
-                className="px-4 py-2 rounded-full border text-[11px] text-gray-500 hover:bg-gray-100 transition"
-              >
-                {suggestion}
-              </button>
-            ))}
-          </div>
-
           {/* Jobs results */}
           {activeTab === "jobs" && (
             <div className="mt-1 space-y-2 text-xs">
               <p className="flex gap-2 items-center text-[11px] text-gray-600 uppercase tracking-wide">
                 <Sparkles className="text-violet-500 size-4" />
-                <span>
-                  AI‑enhanced search highlights the{" "}
-                  <span className="font-semibold">3 closest job matches</span> for your query.
-                </span>
+                <span>{t("jobsHint")}</span>
               </p>
 
               {isSearching && (
                 <p className="text-gray-600">
-                  Letting our AI search recent roles that match your query…
+                  {t("searchingHint.jobs")}
                 </p>
               )}
 
               {!isSearching && hasSearched && jobsQuery.error && (
                 <p className="text-red-600">
-                  We couldn’t fetch results. Please try again.
+                  {t("searchError")}
                 </p>
               )}
 
@@ -254,7 +212,7 @@ export function HeroSearchBar() {
                 !jobsQuery.error &&
                 (jobsQuery.data?.items.length ?? 0) === 0 && (
                   <p className="text-gray-500">
-                    No matching jobs found yet. Try different keywords or broaden your request.
+                    {t("noResults.jobs")}
                   </p>
                 )}
 
@@ -301,21 +259,18 @@ export function HeroSearchBar() {
             <div className="mt-1 space-y-2 text-xs">
               <p className="flex gap-2 items-center text-[11px] text-gray-600 uppercase tracking-wide">
                 <Sparkles className="text-violet-500 size-4" />
-                <span>
-                  AI‑enhanced search highlights the{" "}
-                  <span className="font-semibold">3 closest services</span> for your request.
-                </span>
+                <span>{t("servicesHint")}</span>
               </p>
 
               {isSearching && (
                 <p className="text-gray-600">
-                  Letting our AI search recommended services near you…
+                  {t("searchingHint.services")}
                 </p>
               )}
 
               {!isSearching && hasSearched && servicesQuery.error && (
                 <p className="text-red-600">
-                  We couldn’t fetch results. Please try again.
+                  {t("searchError")}
                 </p>
               )}
 
@@ -324,7 +279,7 @@ export function HeroSearchBar() {
                 !servicesQuery.error &&
                 (servicesQuery.data?.items.length ?? 0) === 0 && (
                   <p className="text-gray-500">
-                    No services found. Try a different query.
+                    {t("noResults.services")}
                   </p>
                 )}
 
@@ -350,21 +305,18 @@ export function HeroSearchBar() {
             <div className="mt-1 space-y-2 text-xs">
               <p className="flex gap-2 items-center text-[11px] text-gray-600 uppercase tracking-wide">
                 <Sparkles className="text-violet-500 size-4" />
-                <span>
-                  AI‑enhanced search highlights the{" "}
-                  <span className="font-semibold">3 closest tasks</span> for your request.
-                </span>
+                <span>{t("tasksHint")}</span>
               </p>
 
               {isSearching && (
                 <p className="text-gray-600">
-                  Letting our AI search relevant tasks matching your query…
+                  {t("searchingHint.tasks")}
                 </p>
               )}
 
               {!isSearching && hasSearched && tasksQuery.error && (
                 <p className="text-red-600">
-                  We couldn’t fetch results. Please try again.
+                  {t("searchError")}
                 </p>
               )}
 
@@ -373,7 +325,7 @@ export function HeroSearchBar() {
                 !tasksQuery.error &&
                 (tasksQuery.data?.items.length ?? 0) === 0 && (
                   <p className="text-gray-500">
-                    No tasks found. Try a different query.
+                    {t("noResults.tasks")}
                   </p>
                 )}
 

@@ -302,6 +302,22 @@
     },
     "placeholder": "Rechercher par poste, compétences...",
     "search": "Rechercher",
+    "searching": "Recherche en cours...",
+    "askAiTitle": "Demander à l’IA",
+    "jobsHint": "La recherche assistée par IA met en avant les 3 offres les plus proches de votre profil.",
+    "servicesHint": "La recherche assistée par IA met en avant les 3 services les plus pertinents pour votre demande.",
+    "tasksHint": "La recherche assistée par IA met en avant les 3 missions les plus pertinentes pour votre demande.",
+    "searchingHint": {
+      "jobs": "Nous laissons notre IA rechercher les offres récentes qui correspondent à votre requête...",
+      "services": "Nous laissons notre IA chercher les services recommandés près de chez vous...",
+      "tasks": "Nous laissons notre IA trouver les missions les plus pertinentes selon votre requête..."
+    },
+    "searchError": "Impossible de récupérer les résultats. Veuillez réessayer.",
+    "noResults": {
+      "jobs": "Aucune offre correspondante trouvée pour le moment. Essayez d’autres mots-clés ou élargissez votre recherche.",
+      "services": "Aucun service trouvé. Essayez une autre recherche.",
+      "tasks": "Aucune mission trouvée. Essayez une autre recherche."
+    },
     "browseJobs": "Parcourir Emplois"
   },
   "FAQ": {
