@@ -45,7 +45,7 @@ export function HowItWorks() {
 
       {/* Cards container */}
       <div
-        className="flex overflow-x-auto gap-6 px-6 pb-4 -mx-6  md:grid md:grid-cols-3 md:gap-8 md:overflow-visible snap-x snap-mandatory md:snap-none md:pb-0 md:mx-0 md:px-0"
+        className="flex overflow-x-auto gap-6 px-6 pb-4 -mx-6 md:grid md:grid-cols-3 md:gap-8 md:overflow-visible snap-x snap-mandatory md:snap-none md:pb-0 md:mx-0 md:px-0"
       >
         {steps.map((step, index) => (
           <motion.div

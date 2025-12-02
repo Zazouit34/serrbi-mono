@@ -94,18 +94,18 @@
     "subtitle": "Let AI handle the hard work — from analyzing your resume to applying for jobs that fit your goals.",
     "steps": {
       "1": {
-        "title": "Analyze Your Resume",
-        "description": "Use the AI Resume Analyzer to score your CV, surface missing skills, and estimate salary before you apply.",
+        "title": "Start with a stronger resume",
+        "description": "Upload your CV to get an AI score, missing skills, and suggestions before you start applying.",
         "action": "Open Resume Analyzer"
       },
       "2": {
-        "title": "Plan Your Career Switch",
-        "description": "Describe your skills and interests to generate curated transition paths with required skills and salary growth.",
+        "title": "Design your next career move",
+        "description": "Use AI to map realistic career paths, required skills, and salary ranges that fit you.",
         "action": "Explore Career Paths"
       },
       "3": {
-        "title": "Enable AI Serrbi",
-        "description": "Sit back while AI Serrbi automatically sends personalized applications every month with your attached resume.",
+        "title": "Let Serrbi apply while you grow",
+        "description": "Turn on AI auto‑apply so Serrbi sends targeted applications while you focus on learning and planning.",
         "action": "AI Serrbi"
       }
     }

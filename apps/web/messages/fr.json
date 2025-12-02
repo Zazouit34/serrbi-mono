@@ -94,18 +94,18 @@
     "subtitle": "Laissez l’IA faire le travail difficile — de l’analyse de votre CV aux candidatures adaptées à vos objectifs.",
     "steps": {
       "1": {
-        "title": "Analysez votre CV",
-        "description": "Utilisez l’analyseur de CV pour obtenir une note, des écarts de compétences et une estimation de salaire avant de postuler.",
+        "title": "Commencez avec un meilleur CV",
+        "description": "Importez votre CV pour obtenir un score IA, les compétences manquantes et des conseils avant de postuler.",
         "action": "Ouvrir l’analyseur de CV"
       },
       "2": {
-        "title": "Planifiez votre reconversion",
-        "description": "Décrivez vos compétences et intérêts pour générer des parcours de transition personnalisés avec les compétences à acquérir.",
+        "title": "Dessinez votre prochaine étape de carrière",
+        "description": "Utilisez l’IA pour générer des pistes réalistes, les compétences à acquérir et des fourchettes de salaire cohérentes.",
         "action": "Explorer les parcours"
       },
       "3": {
-      "title": "Activer AI Serrbi",
-      "description": "Laissez AI Serrbi envoyer automatiquement des candidatures personnalisées chaque mois avec votre CV joint.",
+      "title": "Laissez Serrbi postuler pendant que vous progressez",
+      "description": "Activez l’auto‑apply pour envoyer des candidatures ciblées pendant que vous apprenez et préparez la suite.",
       "action": "AI Serrbi"
       }
     }
