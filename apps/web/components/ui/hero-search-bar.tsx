@@ -10,7 +10,9 @@ import { FaGoogle, FaAws, FaMicrosoft, FaLinkedin } from "react-icons/fa";
 import { isSecondaryClient } from "@/lib/domain";
 import Link from "next/link";
 import { JobCard } from "@/components/ui/form/job/job-card";
-import type { JobsSearchResponse, ScoredJob } from "@/types/job";
+import { ServiceCard } from "@/components/ui/form/service/service-card";
+import { TaskCard } from "@/components/ui/form/task/task-card";
+import { trpc } from "@/app/_trpc/client";
 
 type TabType = "jobs" | "services" | "tasks";
 
@@ -18,83 +20,79 @@ export function HeroSearchBar() {
   const t = useTranslations("HeroSearchBar");
   const [activeTab, setActiveTab] = useState<TabType>("jobs");
   const [searchQuery, setSearchQuery] = useState("");
-  const [jobsResults, setJobsResults] = useState<ScoredJob[]>([]);
-  const [jobsLoading, setJobsLoading] = useState(false);
-  const [jobsError, setJobsError] = useState<string | null>(null);
+  const [hasSearched, setHasSearched] = useState(false);
   const isSecondary = isSecondaryClient();
 
-  const handleSearch = async (overrideQuery?: string) => {
-    const effectiveQuery = overrideQuery ?? searchQuery;
-    const searchParams = new URLSearchParams();
-    if (effectiveQuery) {
-      searchParams.set("search", effectiveQuery);
-    }
+  // Jobs query (manual trigger)
+  const jobsQuery = trpc.job.getJob.useQuery(
+    {
+      page: 1,
+      pageSize: 3,
+      search: searchQuery || undefined,
+    },
+    { enabled: false, refetchOnWindowFocus: false },
+  );
 
-    if (activeTab !== "jobs") {
-      const routes = {
+  // Services query (manual trigger)
+  const servicesQuery = trpc.service.getService.useQuery(
+    {
+      page: 1,
+      pageSize: 3,
+      search: searchQuery || undefined,
+    },
+    { enabled: false, refetchOnWindowFocus: false },
+  );
+
+  // Tasks query (manual trigger)
+  const tasksQuery = trpc.task.getTask.useQuery(
+    {
+      page: 1,
+      pageSize: 3,
+      search: searchQuery || undefined,
+    },
+    { enabled: false, refetchOnWindowFocus: false },
+  );
+
+  const isSearching =
+    jobsQuery.isFetching || servicesQuery.isFetching || tasksQuery.isFetching;
+
+  const handleSearch = async (overrideQuery?: string) => {
+    const effectiveQuery = (overrideQuery ?? searchQuery).trim();
+
+    // For the secondary client, keep simple redirect behavior
+    if (isSecondary) {
+      const searchParams = new URLSearchParams();
+      if (effectiveQuery) {
+        searchParams.set("search", effectiveQuery);
+      }
+      const routes: Record<TabType, string> = {
         jobs: `/jobs?${searchParams.toString()}`,
         services: `/services?${searchParams.toString()}`,
         tasks: `/tasks?${searchParams.toString()}`,
       };
-
-      const route = isSecondary
-        ? `/jobs?${searchParams.toString()}`
-        : routes[activeTab];
+      const route = routes[activeTab] ?? routes.jobs;
       window.location.href = route;
       return;
     }
 
-    const trimmedQuery = effectiveQuery.trim();
-    if (!trimmedQuery) {
-      setJobsError("Please enter a search query.");
-      setJobsResults([]);
+    if (!effectiveQuery) {
+      // Clear results if user cleared the search
+      setHasSearched(false);
       return;
     }
 
-    setJobsLoading(true);
-    setJobsError(null);
+    setHasSearched(true);
 
     try {
-      const response = await fetch("/api/jobs/search", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          query: trimmedQuery,
-          topKDense: 25,
-          topKFinal: 3,
-        }),
-      });
-
-      if (!response.ok) {
-        let message = `Request failed with status ${response.status}`;
-        try {
-          const data = (await response.json()) as {
-            error?: string;
-            details?: string;
-          };
-          if (data.error) {
-            message = data.details
-              ? `${data.error}: ${data.details}`
-              : data.error;
-          }
-        } catch {
-          // ignore JSON parse errors and keep default message
-        }
-        throw new Error(message);
+      if (activeTab === "jobs") {
+        await jobsQuery.refetch();
+      } else if (activeTab === "services") {
+        await servicesQuery.refetch();
+      } else if (activeTab === "tasks") {
+        await tasksQuery.refetch();
       }
-
-      const data = (await response.json()) as JobsSearchResponse;
-      // Ensure we only render the top 3 results, even if the API returns more.
-      setJobsResults(data.results.slice(0, 3));
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Unexpected error occurred.";
-      setJobsError(message);
-      setJobsResults([]);
-    } finally {
-      setJobsLoading(false);
+    } catch {
+      // Errors are exposed via query.error; we show generic messages in UI
     }
   };
 
@@ -149,7 +147,10 @@ export function HeroSearchBar() {
         {!isSecondary && (
           <Tabs
             value={activeTab}
-            onValueChange={(value) => setActiveTab(value as TabType)}
+            onValueChange={(value) => {
+              setActiveTab(value as TabType);
+              setHasSearched(false);
+            }}
           >
             <div className="overflow-x-auto no-scrollbar">
               <TabsList className="flex-nowrap justify-start w-full h-10 whitespace-nowrap bg-white rounded-full border border-gray-200 md:h-12">
@@ -191,17 +192,22 @@ export function HeroSearchBar() {
               placeholder={t("placeholder")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyPress={(e) => e.key === "Enter" && handleSearch()}
+              onKeyPress={(e) => {
+                if (e.key === "Enter" && !isSearching) {
+                  void handleSearch();
+                }
+              }}
               className="flex-1 px-0 pl-4 h-10 text-sm text-gray-900 bg-transparent border-none shadow-none outline-none placeholder:text-gray-400 focus-visible:ring-0 focus-visible:ring-offset-0"
             />
             <Button
               type="button"
-              onClick={() => handleSearch()}
-              className="flex gap-1 items-center px-3 ml-2 h-9 text-sm font-medium text-white bg-black rounded-full md:px-4 md:h-10 hover:bg-gray-800 focus:ring-black"
+              onClick={() => void handleSearch()}
+              disabled={isSearching}
+              className="flex gap-1 items-center px-3 ml-2 h-9 text-sm font-medium text-white bg-black rounded-full md:px-4 md:h-10 hover:bg-gray-800 focus:ring-black disabled:opacity-60 disabled:cursor-not-allowed"
             >
               <Search className="size-4" />
               <span className="hidden md:inline md:ml-1 md:pr-1">
-                {t("search")}
+                {isSearching ? t("searching") : t("search")}
               </span>
             </Button>
           </div>
@@ -220,67 +226,171 @@ export function HeroSearchBar() {
             ))}
           </div>
 
-          {/* Jobs AI results */}
+          {/* Jobs results */}
           {activeTab === "jobs" && (
             <div className="mt-1 space-y-2 text-xs">
               <p className="flex gap-2 items-center text-[11px] text-gray-600 uppercase tracking-wide">
-                <Sparkles className="size-4 text-violet-500" />
+                <Sparkles className="text-violet-500 size-4" />
                 <span>
                   AI‑enhanced search highlights the{" "}
                   <span className="font-semibold">3 closest job matches</span> for your query.
                 </span>
               </p>
 
-              {jobsLoading && (
-                <p className="text-gray-600">Letting our AI match you with the best roles…</p>
+              {isSearching && (
+                <p className="text-gray-600">
+                  Letting our AI search recent roles that match your query…
+                </p>
               )}
 
-              {!jobsLoading && jobsError && (
-                <p className="text-red-600">{jobsError}</p>
+              {!isSearching && hasSearched && jobsQuery.error && (
+                <p className="text-red-600">
+                  We couldn’t fetch results. Please try again.
+                </p>
               )}
 
-              {!jobsLoading &&
-                !jobsError &&
-                jobsResults.length === 0 &&
-                searchQuery.trim().length > 0 && (
+              {!isSearching &&
+                hasSearched &&
+                !jobsQuery.error &&
+                (jobsQuery.data?.items.length ?? 0) === 0 && (
                   <p className="text-gray-500">
                     No matching jobs found yet. Try different keywords or broaden your request.
                   </p>
                 )}
 
-              {!jobsLoading && jobsResults.length > 0 && (
-                <div className="flex overflow-x-auto gap-3 pb-1 mt-2">
-                  {jobsResults.map((job) => (
-                    <div
-                      key={job.id}
-                      className="min-w-[260px] max-w-[280px] flex-shrink-0"
-                    >
-                      <JobCard
-                        job={{
-                          id: job.id,
-                          title: job.title,
-                          companyName: job.company,
-                          companyImage: job.companyImage ?? null,
-                          wage: null,
-                          stateAbbreviation: null,
-                          city: job.location ?? null,
-                          type: job.type ?? undefined,
-                          experienceLevel: job.experienceLevel ?? undefined,
-                          locationRequirement: job.locationRequirement ?? undefined,
-                          category: job.category ?? undefined,
-                          user: null,
-                          createdAt: job.createdAt,
-                          description: job.description,
-                          status: undefined,
-                        }}
-                        featured={false}
-                        compact
-                        className="h-full"
-                      />
-                    </div>
-                  ))}
-                </div>
+              {!isSearching &&
+                jobsQuery.data &&
+                jobsQuery.data.items.length > 0 && (
+                  <div className="flex overflow-x-auto gap-3 pb-1 mt-2">
+                    {jobsQuery.data.items.map((job: any) => (
+                      <div
+                        key={job.id}
+                        className="min-w-[260px] max-w-[280px] flex-shrink-0"
+                      >
+                        <JobCard
+                          job={{
+                            id: job.id,
+                            title: job.title,
+                            companyName: job.companyName ?? null,
+                            companyImage: job.companyImage ?? null,
+                            wage: job.wage ?? null,
+                            stateAbbreviation: job.stateAbbreviation ?? null,
+                            city: job.city ?? null,
+                            type: job.type,
+                            experienceLevel: job.experienceLevel,
+                            locationRequirement: job.locationRequirement,
+                            category: job.category,
+                            user: null,
+                            createdAt: job.createdAt,
+                            description: job.description,
+                            status: job.status,
+                          }}
+                          featured={false}
+                          compact
+                          className="h-full"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
+            </div>
+          )}
+
+          {/* Services results */}
+          {activeTab === "services" && (
+            <div className="mt-1 space-y-2 text-xs">
+              <p className="flex gap-2 items-center text-[11px] text-gray-600 uppercase tracking-wide">
+                <Sparkles className="text-violet-500 size-4" />
+                <span>
+                  AI‑enhanced search highlights the{" "}
+                  <span className="font-semibold">3 closest services</span> for your request.
+                </span>
+              </p>
+
+              {isSearching && (
+                <p className="text-gray-600">
+                  Letting our AI search recommended services near you…
+                </p>
               )}
+
+              {!isSearching && hasSearched && servicesQuery.error && (
+                <p className="text-red-600">
+                  We couldn’t fetch results. Please try again.
+                </p>
+              )}
+
+              {!isSearching &&
+                hasSearched &&
+                !servicesQuery.error &&
+                (servicesQuery.data?.items.length ?? 0) === 0 && (
+                  <p className="text-gray-500">
+                    No services found. Try a different query.
+                  </p>
+                )}
+
+              {!isSearching &&
+                servicesQuery.data &&
+                servicesQuery.data.items.length > 0 && (
+                  <div className="flex overflow-x-auto gap-3 pb-1 mt-2">
+                    {servicesQuery.data.items.map((service: any) => (
+                      <div
+                        key={service.id}
+                        className="min-w-[260px] max-w-[280px] flex-shrink-0"
+                      >
+                        <ServiceCard service={service} compact className="h-full" />
+                      </div>
+                    ))}
+                  </div>
+                )}
+            </div>
+          )}
+
+          {/* Tasks results */}
+          {activeTab === "tasks" && (
+            <div className="mt-1 space-y-2 text-xs">
+              <p className="flex gap-2 items-center text-[11px] text-gray-600 uppercase tracking-wide">
+                <Sparkles className="text-violet-500 size-4" />
+                <span>
+                  AI‑enhanced search highlights the{" "}
+                  <span className="font-semibold">3 closest tasks</span> for your request.
+                </span>
+              </p>
+
+              {isSearching && (
+                <p className="text-gray-600">
+                  Letting our AI search relevant tasks matching your query…
+                </p>
+              )}
+
+              {!isSearching && hasSearched && tasksQuery.error && (
+                <p className="text-red-600">
+                  We couldn’t fetch results. Please try again.
+                </p>
+              )}
+
+              {!isSearching &&
+                hasSearched &&
+                !tasksQuery.error &&
+                (tasksQuery.data?.items.length ?? 0) === 0 && (
+                  <p className="text-gray-500">
+                    No tasks found. Try a different query.
+                  </p>
+                )}
+
+              {!isSearching &&
+                tasksQuery.data &&
+                tasksQuery.data.items.length > 0 && (
+                  <div className="flex overflow-x-auto gap-3 pb-1 mt-2">
+                    {tasksQuery.data.items.map((task: any) => (
+                      <div
+                        key={task.id}
+                        className="min-w-[260px] max-w-[280px] flex-shrink-0"
+                      >
+                        <TaskCard task={task} compact className="h-full" />
+                      </div>
+                    ))}
+                  </div>
+                )}
             </div>
           )}
         </div>
