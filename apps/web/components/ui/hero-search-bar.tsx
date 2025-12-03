@@ -116,7 +116,7 @@ export function HeroSearchBar() {
   ];
 
   return (
-    <div className="-mx-4 w-screen max-w-none sm:mx-0 md:max-w-5xl lg:max-w-6xl md:mx-auto">
+    <div className="-mx-4 w-screen max-w-none sm:mx-0 md:max-w-4xl">
       {/* Tabs Header - outside AI border */}
       <div className="px-4 pt-3 pb-2 md:px-6 md:pt-4">
         {!isSecondary && (
