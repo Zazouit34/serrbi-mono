@@ -179,13 +179,13 @@ export function AutoApplyListingGrid({
 
   return (
     <Card className="rounded-2xl border border-slate-100 shadow-[0_16px_40px_rgba(15,23,42,0.08)] bg-white">
-      <CardHeader className="flex flex-row items-center justify-between gap-3 pb-3">
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-2xl bg-violet-600 flex items-center justify-center">
-            <Mail className="h-5 w-5 text-white" />
+      <CardHeader className="flex flex-row gap-3 justify-between items-center pb-3">
+        <div className="flex gap-3 items-center">
+          <div className="flex justify-center items-center w-10 h-10 bg-violet-600 rounded-2xl">
+            <Mail className="w-5 h-5 text-white" />
           </div>
           <div>
-            <CardTitle className="text-base md:text-lg font-semibold tracking-tight">
+            <CardTitle className="text-base font-semibold tracking-tight md:text-lg">
               {tA("listing.title")}
             </CardTitle>
             <p className="text-[11px] text-slate-500">
@@ -204,27 +204,27 @@ export function AutoApplyListingGrid({
         </Badge>
       </CardHeader>
 
-      <CardContent className="space-y-4 pt-1">
+      <CardContent className="pt-1 space-y-4">
         {isLoading ? (
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             {Array.from({ length: 4 }).map((_, i) => (
               <div
                 key={i}
-                className="rounded-2xl border border-slate-100 bg-slate-50/70 px-3 py-3 flex items-start justify-between gap-3"
+                className="flex gap-3 justify-between items-start px-3 py-3 rounded-2xl border border-slate-100 bg-slate-50/70"
               >
-                <div className="flex items-start gap-3 w-full">
-                  <Skeleton className="h-9 w-9 rounded-lg" />
+                <div className="flex gap-3 items-start w-full">
+                  <Skeleton className="w-9 h-9 rounded-lg" />
                   <div className="flex-1 space-y-2">
-                    <Skeleton className="h-4 w-3/4" />
-                    <Skeleton className="h-3 w-1/2" />
-                    <Skeleton className="h-3 w-full" />
+                    <Skeleton className="w-3/4 h-4" />
+                    <Skeleton className="w-1/2 h-3" />
+                    <Skeleton className="w-full h-3" />
                   </div>
                 </div>
               </div>
             ))}
           </div>
         ) : !data || data.items.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50/60 py-8 text-center text-sm text-slate-500">
+          <div className="py-8 text-sm text-center rounded-xl border border-dashed border-slate-200 bg-slate-50/60 text-slate-500">
             {tA("listing.noMatching")}
           </div>
         ) : (

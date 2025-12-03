@@ -450,6 +450,17 @@
     "whatsapp": "WhatsApp",
     "call": "Call"
   },
+  "ResumeInsight": {
+    "title": "Get your resume checked by AI in seconds",
+    "subtitle": "Drop a single PDF below. We’ll score it instantly on the right.",
+    "loginRequired": "Please sign in to access the AI resume analyzer.",
+    "dropHint": "Drag & drop your PDF here, or click to browse",
+    "dropNote": "PDF only • Max 10MB",
+    "analyzing": "AI is analyzing your resume, estimating salary and generating tailored suggestions...",
+    "existingResumeTitle": "You already have a resume saved to your profile.",
+    "existingResumeSubtitle": "You can analyze that resume now, or drop a new PDF below.",
+    "analyzeExisting": "Analyze my saved resume"
+  },
   "Form": {
     "back": "Back",
     "next": "Next",

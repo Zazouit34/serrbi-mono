@@ -10,6 +10,7 @@ import {
   type ResumeScore,
 } from "@/app/utils/pdf/score-calculator";
 import { useAuthRedirect } from "@/lib/auth-client";
+import { trpc } from "@/app/_trpc/client";
 
 type ResumeInsightProps = {
   requireLogin?: boolean;
@@ -99,6 +100,10 @@ export function ResumeInsight({
 
   const [scoreData, setScoreData] = useState<ResumeScore | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
+  const { data: userData } = trpc.auth.userData.useQuery(undefined, {
+    refetchOnWindowFocus: false,
+  });
+  const existingResumeUrl = userData?.user?.resumeUrl as string | undefined;
 
   // When a file is selected, actually parse and score like resume-listing-form
   useEffect(() => {
@@ -178,6 +183,47 @@ export function ResumeInsight({
               </p>
             </div>
 
+            {existingResumeUrl && !file && (
+              <div className="p-3 mt-5 text-sm rounded-xl border border-white/15 bg-black/30 text-white/80">
+                <p className="font-medium">
+                  {tr(
+                    "ResumeInsight.existingResumeTitle",
+                    "You already have a resume saved to your profile."
+                  )}
+                </p>
+                <p className="mt-1 text-xs text-white/60">
+                  {tr(
+                    "ResumeInsight.existingResumeSubtitle",
+                    "You can analyze that resume now, or drop a new PDF below."
+                  )}
+                </p>
+                <button
+                  type="button"
+                  className="mt-3 inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-full bg-white text-black hover:bg-white/90"
+                  onClick={async () => {
+                    try {
+                      const res = await fetch(existingResumeUrl);
+                      if (!res.ok) return;
+                      const blob = await res.blob();
+                      const pdfFile = new File(
+                        [blob],
+                        "resume.pdf",
+                        { type: blob.type || "application/pdf" }
+                      );
+                      setFile(pdfFile);
+                    } catch (e) {
+                      console.error("Failed to load existing resume for analysis", e);
+                    }
+                  }}
+                >
+                  {tr(
+                    "ResumeInsight.analyzeExisting",
+                    "Analyze my saved resume"
+                  )}
+                </button>
+              </div>
+            )}
+
             <div className="mt-6">
               <div
                 ref={dropRef}
@@ -249,14 +295,15 @@ export function ResumeInsight({
               </div>
             ) : (
               <div className="flex flex-col gap-2 p-4 w-full max-w-md rounded-2xl border border-white/10 bg-black/20">
-              <ResumeScoreCard
-                score={(scoreData as unknown as ResumeScore)?.score ?? 72}
-                breakdown={(scoreData as unknown as ResumeScore)?.breakdown ?? defaultBreakdown(72)}
-                llm={(scoreData as unknown as ResumeScore)?.llm}
+                <ResumeScoreCard
+                  score={(scoreData as unknown as ResumeScore)?.score ?? 72}
+                  breakdown={(scoreData as unknown as ResumeScore)?.breakdown ?? defaultBreakdown(72)}
+                  llm={(scoreData as unknown as ResumeScore)?.llm}
                   loading={false}
-                darkMode
-              />
-            </div>
+                  darkMode
+                  size="large"
+                />
+              </div>
             )}
           </div>
         </div>
@@ -268,6 +315,7 @@ export function ResumeInsight({
               llm={scoreData.llm}
               loading={false}
               darkMode
+              size="large"
             />
           </div>
         )}

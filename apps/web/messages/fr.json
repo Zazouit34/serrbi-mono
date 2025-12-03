@@ -452,6 +452,17 @@
     "whatsapp": "WhatsApp",
     "call": "Appeler"
   },
+  "ResumeInsight": {
+    "title": "Faites analyser votre CV par l’IA en quelques secondes",
+    "subtitle": "Déposez un seul PDF ci‑dessous. Nous le noterons instantanément sur la droite.",
+    "loginRequired": "Veuillez vous connecter pour accéder à l’analyseur de CV par IA.",
+    "dropHint": "Glissez‑déposez votre PDF ici, ou cliquez pour parcourir",
+    "dropNote": "PDF uniquement • 10 Mo max",
+    "analyzing": "L’IA analyse votre CV, estime le salaire et prépare des suggestions personnalisées...",
+    "existingResumeTitle": "Vous avez déjà un CV enregistré dans votre profil.",
+    "existingResumeSubtitle": "Vous pouvez analyser ce CV maintenant ou déposer un nouveau PDF ci‑dessous.",
+    "analyzeExisting": "Analyser mon CV enregistré"
+  },
   "Form": {
     "back": "Retour",
     "next": "Suivant",

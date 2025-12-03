@@ -26,7 +26,7 @@ type Props = {
   llm?: LLMResumeAnalysis | null;
 };
 
-type PropsWithTheme = Props & { darkMode?: boolean };
+type PropsWithTheme = Props & { darkMode?: boolean; size?: "default" | "large" };
 export function ResumeScoreCard({
   score,
   breakdown,
@@ -84,24 +84,26 @@ export function ResumeScoreCard({
   );
 
   const hasLLM = !!llm;
+  const isLarge = (arguments[0] as PropsWithTheme)?.size === "large";
 
   return (
     <div
       className={cn(
-        "flex flex-col gap-5 items-stretch p-5 mx-auto w-full max-w-2xl rounded-2xl md:flex-row",
+        "flex flex-col gap-5 items-stretch p-5 mx-auto w-full rounded-2xl md:flex-row",
+        isLarge ? "max-w-3xl" : "max-w-2xl",
         darkMode ? "bg-transparent shadow-none" : "bg-white shadow-sm"
       )}
     >
       {/* Left: radial overall score */}
       <div className="flex justify-center items-center w-full md:justify-start md:w-auto">
         <RadialBarChart
-          width={200}
-          height={200}
+          width={isLarge ? 260 : 200}
+          height={isLarge ? 260 : 200}
           data={data}
           startAngle={90}
           endAngle={-270}
-          innerRadius={75}
-          outerRadius={95}
+          innerRadius={isLarge ? 90 : 75}
+          outerRadius={isLarge ? 115 : 95}
         >
           <PolarAngleAxis type="number" domain={[0, 100]} tick={false} angleAxisId={0} />
           <RadialBar
@@ -118,26 +120,41 @@ export function ResumeScoreCard({
                 if (!v || !("cx" in v)) return null;
                 return (
                   <g>
-                    {!darkMode && <circle cx={v.cx} cy={v.cy} r={60} fill="white" />}
+                    {!darkMode && (
+                      <circle
+                        cx={v.cx}
+                        cy={v.cy}
+                        r={isLarge ? 72 : 60}
+                        fill="white"
+                      />
+                    )}
                     <text x={v.cx} y={v.cy} textAnchor="middle" dominantBaseline="middle">
                       <tspan
                         x={v.cx}
                         y={v.cy}
                         className={
                           darkMode
-                            ? "text-3xl font-bold md:text-4xl fill-lime-300"
-                            : "text-3xl font-bold md:text-4xl fill-emerald-600"
+                            ? isLarge
+                              ? "text-4xl font-bold md:text-5xl fill-lime-300"
+                              : "text-3xl font-bold md:text-4xl fill-lime-300"
+                            : isLarge
+                              ? "text-4xl font-bold md:text-5xl fill-emerald-600"
+                              : "text-3xl font-bold md:text-4xl fill-emerald-600"
                         }
                       >
                         {displayValue}%
                       </tspan>
                       <tspan
                         x={v.cx}
-                        y={v.cy + 22}
+                        y={v.cy + (isLarge ? 26 : 22)}
                         className={
                           darkMode
-                            ? "text-xs font-medium md:text-sm fill-white/70"
-                            : "text-xs font-medium md:text-sm fill-gray-500"
+                            ? isLarge
+                              ? "text-sm font-medium md:text-base fill-white/70"
+                              : "text-xs font-medium md:text-sm fill-white/70"
+                            : isLarge
+                              ? "text-sm font-medium md:text-base fill-gray-500"
+                              : "text-xs font-medium md:text-sm fill-gray-500"
                         }
                       >
                         {t("overallScore")}
