@@ -327,7 +327,7 @@ export const authRouter = router({
       keywords: [] as string[],
       roles: [] as string[],
     };
-  }),
+    }),
 
   //auto apply stats
   getAutoApplyStats: protectedProcedure.query(async ({ ctx }) => {

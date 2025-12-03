@@ -86,7 +86,7 @@ export const serviceRouter = router({
       const pageSize = input?.pageSize ?? 16;
       const serviceCategory = input?.serviceCategory;
       const type = input?.type;
-      const search = input?.search;
+      const search = input?.search?.trim() || "";
       const city = input?.city;
       const stateAbbreviation = input?.stateAbbreviation;
       const priceMin = input?.priceMin;
@@ -94,6 +94,145 @@ export const serviceRouter = router({
       // priceType removed
       const db = ctx.prisma as any;
 
+      // When a search term is provided, use unaccent() for accent-insensitive matching.
+      if (search) {
+        let whereSql = `WHERE "status" = 'published'`;
+        const params: any[] = [];
+        let idx = 1;
+
+        if (serviceCategory) {
+          whereSql += ` AND "serviceCategory" = $${idx}`;
+          params.push(serviceCategory);
+          idx += 1;
+        }
+        if (type) {
+          whereSql += ` AND "type" ILIKE $${idx}`;
+          params.push(`%${type}%`);
+          idx += 1;
+        }
+        if (city) {
+          whereSql += ` AND "city" ILIKE $${idx}`;
+          params.push(`%${city}%`);
+          idx += 1;
+        }
+        if (stateAbbreviation) {
+          whereSql += ` AND "stateAbbreviation" = $${idx}`;
+          params.push(stateAbbreviation);
+          idx += 1;
+        }
+        if (priceMin || priceMax) {
+          if (priceMin) {
+            whereSql += ` AND "price" >= $${idx}`;
+            params.push(priceMin);
+            idx += 1;
+          }
+          if (priceMax) {
+            whereSql += ` AND "price" <= $${idx}`;
+            params.push(priceMax);
+            idx += 1;
+          }
+        }
+
+        whereSql += ` AND (
+          unaccent(lower("title")) LIKE unaccent(lower($${idx}))
+          OR unaccent(lower("description")) LIKE unaccent(lower($${idx}))
+          OR unaccent(lower("displayName")) LIKE unaccent(lower($${idx}))
+          OR unaccent(lower("type")) LIKE unaccent(lower($${idx}))
+          OR unaccent(lower("city")) LIKE unaccent(lower($${idx}))
+        )`;
+        params.push(`%${search}%`);
+        idx += 1;
+
+        const limitIdx = idx;
+        const offsetIdx = idx + 1;
+
+        const baseSelect = `
+          SELECT
+            "id",
+            "title",
+            "displayName",
+            "displayImage",
+            "images",
+            "description",
+            "serviceCategory",
+            "type",
+            "price",
+            "stateAbbreviation",
+            "city",
+            "address",
+            "latitude",
+            "longitude",
+            "phoneNumber",
+            "email",
+            "website",
+            "openingHours",
+            "averageRating",
+            "numberOfReviews",
+            "userId",
+            "createdAt"
+          FROM "Service"
+        `;
+
+        const itemsSql = `
+          ${baseSelect}
+          ${whereSql}
+          ORDER BY "createdAt" DESC, "id" DESC
+          LIMIT $${limitIdx} OFFSET $${offsetIdx}
+        `;
+
+        const countSql = `
+          SELECT COUNT(*)::int AS "count"
+          FROM "Service"
+          ${whereSql}
+        `;
+
+        const limit = pageSize;
+        const offset = (page - 1) * pageSize;
+
+        const [rawItems, countRowsRaw] = await Promise.all([
+          db.$queryRawUnsafe(itemsSql, ...params, limit, offset),
+          db.$queryRawUnsafe(countSql, ...params),
+        ]);
+
+        const countRows = countRowsRaw as { count: number }[];
+        const total = countRows[0]?.count ?? 0;
+
+        // We don't have joined user info in the raw query; re-fetch minimal user info.
+        const userIds = Array.from(
+          new Set((rawItems as any[]).map((s) => s.userId).filter(Boolean)),
+        );
+        const usersById: Record<string, { name: string | null; image: string | null }> =
+          userIds.length === 0
+            ? {}
+            : (
+                await db.user.findMany({
+                  where: { id: { in: userIds } },
+                  select: { id: true, name: true, image: true },
+                })
+              ).reduce(
+                (acc: any, u: any) => ({
+                  ...acc,
+                  [u.id]: { name: u.name ?? null, image: u.image ?? null },
+                }),
+                {},
+              );
+
+        const items = (rawItems as any[]).map((s) => ({
+          ...s,
+          images: s.images ? JSON.parse(s.images) : [],
+          openingHours: s.openingHours ? JSON.parse(s.openingHours) : null,
+          user: s.userId ? usersById[s.userId] ?? { name: null, image: null } : null,
+        }));
+
+        return {
+          items,
+          total,
+          page,
+          pageSize,
+        };
+      }
+
+      // Default path (no search term): keep existing Prisma query builder.
       const where: any = {};
       // default to published
       where.status = "published";
@@ -101,19 +240,10 @@ export const serviceRouter = router({
       if (type) where.type = { contains: type, mode: "insensitive" };
       if (city) where.city = { contains: city, mode: "insensitive" };
       if (stateAbbreviation) where.stateAbbreviation = stateAbbreviation;
-      // if (priceType) where.priceType = priceType; // removed
       if (priceMin || priceMax) {
         where.price = {};
         if (priceMin) where.price.gte = priceMin;
         if (priceMax) where.price.lte = priceMax;
-      }
-      if (search) {
-        where.OR = [
-          { title: { contains: search, mode: "insensitive" } },
-          { description: { contains: search, mode: "insensitive" } },
-          { displayName: { contains: search, mode: "insensitive" } },
-          { type: { contains: search, mode: "insensitive" } },
-        ];
       }
 
       const [items, total] = await Promise.all([
@@ -123,30 +253,29 @@ export const serviceRouter = router({
           skip: (page - 1) * pageSize,
           take: pageSize,
           select: {
-          id: true,
-          title: true,
-          displayName: true,
-          displayImage: true,
-          images: true,
-          description: true,
-          serviceCategory: true,
-          type: true,
-          price: true,
-            // priceType removed
-          stateAbbreviation: true,
-          city: true,
-          address: true,
-          latitude: true,
-          longitude: true,
-          phoneNumber: true,
-          email: true,
-          website: true,
-          openingHours: true,
-          averageRating: true,
-          numberOfReviews: true,
-          user: { select: { name: true, image: true } },
-          createdAt: true,
-        },
+            id: true,
+            title: true,
+            displayName: true,
+            displayImage: true,
+            images: true,
+            description: true,
+            serviceCategory: true,
+            type: true,
+            price: true,
+            stateAbbreviation: true,
+            city: true,
+            address: true,
+            latitude: true,
+            longitude: true,
+            phoneNumber: true,
+            email: true,
+            website: true,
+            openingHours: true,
+            averageRating: true,
+            numberOfReviews: true,
+            user: { select: { name: true, image: true } },
+            createdAt: true,
+          },
         }),
         db.service.count({ where }),
       ]);

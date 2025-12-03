@@ -104,6 +104,126 @@ export const jobRouter = router({
       const city = input?.city;
       const countryIso2 = (input as any)?.countryIso2 as string | undefined;
 
+      // When a search term is provided, use PostgreSQL unaccent() for
+      // accent-insensitive matching (e.g. "Developpeur" → "Développeur").
+      if (search) {
+        // Determine tenant for Morocco filtering
+        let tenant: string | null = null;
+        try {
+          const hdrs = await headers();
+          const host = hdrs.get("host") || "";
+          tenant = getTenantFromHost(host);
+        } catch {
+          tenant = null;
+        }
+
+        let whereSql = `WHERE 1=1`;
+        const params: any[] = [];
+        let idx = 1;
+
+        if (locationRequirement) {
+          whereSql += ` AND "locationRequirement" = $${idx}`;
+          params.push(locationRequirement);
+          idx += 1;
+        }
+        if (category) {
+          whereSql += ` AND "category" = $${idx}`;
+          params.push(category);
+          idx += 1;
+        }
+        if (experienceLevel) {
+          whereSql += ` AND "experienceLevel" = $${idx}`;
+          params.push(experienceLevel);
+          idx += 1;
+        }
+        if (type) {
+          whereSql += ` AND "type" = $${idx}`;
+          params.push(type);
+          idx += 1;
+        }
+        if (city) {
+          whereSql += ` AND "city" ILIKE $${idx}`;
+          params.push(`%${city}%`);
+          idx += 1;
+        }
+        if (countryIso2) {
+          whereSql += ` AND "countryIso2" = $${idx}`;
+          params.push(countryIso2);
+          idx += 1;
+        }
+
+        // Exclude Morocco for secondary domain (mirror previous behavior)
+        if (tenant === "secondary") {
+          const maCodes = Object.keys(maStates as Record<string, string>);
+          whereSql += ` AND NOT ("countryIso2" = 'MA' OR "stateAbbreviation" = ANY($${idx}))`;
+          params.push(maCodes);
+          idx += 1;
+        }
+
+        // Accent-insensitive search across key text fields
+        whereSql += ` AND (
+          unaccent(lower("title")) LIKE unaccent(lower($${idx}))
+          OR unaccent(lower("description")) LIKE unaccent(lower($${idx}))
+          OR unaccent(lower("companyName")) LIKE unaccent(lower($${idx}))
+          OR unaccent(lower("city")) LIKE unaccent(lower($${idx}))
+        )`;
+        params.push(`%${search}%`);
+        idx += 1;
+
+        const limitIdx = idx;
+        const offsetIdx = idx + 1;
+
+        const baseSelect = `
+          SELECT
+            "id",
+            "title",
+            "companyName",
+            "companyImage",
+            "description",
+            "category",
+            "applicationUrl",
+            "applicationEmail",
+            "wage",
+            "countryIso2",
+            "stateAbbreviation",
+            "tags",
+            "city",
+            "type",
+            "experienceLevel",
+            "locationRequirement",
+            "status",
+            "createdAt"
+          FROM "Job"
+        `;
+
+        const itemsSql = `
+          ${baseSelect}
+          ${whereSql}
+          ORDER BY "createdAt" DESC, "id" DESC
+          LIMIT $${limitIdx} OFFSET $${offsetIdx}
+        `;
+
+        const countSql = `
+          SELECT COUNT(*)::int AS "count"
+          FROM "Job"
+          ${whereSql}
+        `;
+
+        const limit = pageSize;
+        const offset = (page - 1) * pageSize;
+
+        const [items, countRowsRaw] = await Promise.all([
+          (db as any).$queryRawUnsafe(itemsSql, ...params, limit, offset),
+          (db as any).$queryRawUnsafe(countSql, ...params),
+        ]);
+
+        const countRows = countRowsRaw as { count: number }[];
+
+        const total = countRows[0]?.count ?? 0;
+        return { items, total, page, pageSize };
+      }
+
+      // Default path (no search term): keep existing Prisma query builder.
       const where: any = {};
 
       if (locationRequirement) {
@@ -124,15 +244,6 @@ export const jobRouter = router({
       }
       if (countryIso2) {
         where.countryIso2 = countryIso2;
-      }
-
-      if (search) {
-        where.OR = [
-          { title: { contains: search, mode: "insensitive" } },
-          { description: { contains: search, mode: "insensitive" } },
-          { companyName: { contains: search, mode: "insensitive" } },
-          { city: { contains: search, mode: "insensitive" } },
-        ];
       }
 
       // Exclude Morocco for secondary domain (mirror previous behavior)
