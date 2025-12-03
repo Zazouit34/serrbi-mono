@@ -116,7 +116,7 @@ export function HeroSearchBar() {
   ];
 
   return (
-    <div className="-mx-4 w-screen max-w-none sm:mx-0 md:max-w-3xl md:mx-auto">
+    <div className="-mx-4 w-screen max-w-none sm:mx-0 md:max-w-5xl lg:max-w-6xl md:mx-auto">
       {/* Tabs Header - outside AI border */}
       <div className="px-4 pt-3 pb-2 md:px-6 md:pt-4">
         {!isSecondary && (
@@ -219,37 +219,70 @@ export function HeroSearchBar() {
               {!isSearching &&
                 jobsQuery.data &&
                 jobsQuery.data.items.length > 0 && (
-                  <div className="flex overflow-x-auto gap-3 pb-1 mt-2">
-                    {jobsQuery.data.items.map((job: any) => (
-                      <div
-                        key={job.id}
-                        className="min-w-[260px] max-w-[280px] flex-shrink-0"
-                      >
-                        <JobCard
-                          job={{
-                            id: job.id,
-                            title: job.title,
-                            companyName: job.companyName ?? null,
-                            companyImage: job.companyImage ?? null,
-                            wage: job.wage ?? null,
-                            stateAbbreviation: job.stateAbbreviation ?? null,
-                            city: job.city ?? null,
-                            type: job.type,
-                            experienceLevel: job.experienceLevel,
-                            locationRequirement: job.locationRequirement,
-                            category: job.category,
-                            user: null,
-                            createdAt: job.createdAt,
-                            description: job.description,
-                            status: job.status,
-                          }}
-                          featured={false}
-                          compact
-                          className="h-full"
-                        />
-                      </div>
-                    ))}
-                  </div>
+                  <>
+                    {/* Mobile: horizontal scroll */}
+                    <div className="flex overflow-x-auto gap-3 pb-2 mt-2 md:hidden">
+                      {jobsQuery.data.items.map((job: any) => (
+                        <div
+                          key={job.id}
+                          className="min-w-[260px] max-w-[280px] flex-shrink-0"
+                        >
+                          <JobCard
+                            job={{
+                              id: job.id,
+                              title: job.title,
+                              companyName: job.companyName ?? null,
+                              companyImage: job.companyImage ?? null,
+                              wage: job.wage ?? null,
+                              stateAbbreviation: job.stateAbbreviation ?? null,
+                              city: job.city ?? null,
+                              type: job.type,
+                              experienceLevel: job.experienceLevel,
+                              locationRequirement: job.locationRequirement,
+                              category: job.category,
+                              user: null,
+                              createdAt: job.createdAt,
+                              description: job.description,
+                              status: job.status,
+                            }}
+                            featured={false}
+                            compact
+                            className="h-full"
+                          />
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Desktop: 3 cards side by side, no scroll */}
+                    <div className="hidden gap-3 mt-3 md:grid md:grid-cols-3">
+                      {jobsQuery.data.items.map((job: any) => (
+                        <div key={job.id} className="h-full">
+                          <JobCard
+                            job={{
+                              id: job.id,
+                              title: job.title,
+                              companyName: job.companyName ?? null,
+                              companyImage: job.companyImage ?? null,
+                              wage: job.wage ?? null,
+                              stateAbbreviation: job.stateAbbreviation ?? null,
+                              city: job.city ?? null,
+                              type: job.type,
+                              experienceLevel: job.experienceLevel,
+                              locationRequirement: job.locationRequirement,
+                              category: job.category,
+                              user: null,
+                              createdAt: job.createdAt,
+                              description: job.description,
+                              status: job.status,
+                            }}
+                            featured={false}
+                            compact
+                            className="h-full"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </>
                 )}
             </div>
           )}
@@ -286,16 +319,36 @@ export function HeroSearchBar() {
               {!isSearching &&
                 servicesQuery.data &&
                 servicesQuery.data.items.length > 0 && (
-                  <div className="flex overflow-x-auto gap-3 pb-1 mt-2">
-                    {servicesQuery.data.items.map((service: any) => (
-                      <div
-                        key={service.id}
-                        className="min-w-[260px] max-w-[280px] flex-shrink-0"
-                      >
-                        <ServiceCard service={service} compact className="h-full" />
-                      </div>
-                    ))}
-                  </div>
+                  <>
+                    {/* Mobile: horizontal scroll */}
+                    <div className="flex overflow-x-auto gap-3 pb-2 mt-2 md:hidden">
+                      {servicesQuery.data.items.map((service: any) => (
+                        <div
+                          key={service.id}
+                          className="min-w-[260px] max-w-[280px] flex-shrink-0"
+                        >
+                          <ServiceCard
+                            service={service}
+                            compact
+                            className="h-full"
+                          />
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Desktop: 3 cards side by side */}
+                    <div className="hidden gap-3 mt-3 md:grid md:grid-cols-3">
+                      {servicesQuery.data.items.map((service: any) => (
+                        <div key={service.id} className="h-full">
+                          <ServiceCard
+                            service={service}
+                            compact
+                            className="h-full"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </>
                 )}
             </div>
           )}
@@ -332,16 +385,28 @@ export function HeroSearchBar() {
               {!isSearching &&
                 tasksQuery.data &&
                 tasksQuery.data.items.length > 0 && (
-                  <div className="flex overflow-x-auto gap-3 pb-1 mt-2">
-                    {tasksQuery.data.items.map((task: any) => (
-                      <div
-                        key={task.id}
-                        className="min-w-[260px] max-w-[280px] flex-shrink-0"
-                      >
-                        <TaskCard task={task} compact className="h-full" />
-                      </div>
-                    ))}
-                  </div>
+                  <>
+                    {/* Mobile: horizontal scroll */}
+                    <div className="flex overflow-x-auto gap-3 pb-2 mt-2 md:hidden">
+                      {tasksQuery.data.items.map((task: any) => (
+                        <div
+                          key={task.id}
+                          className="min-w-[260px] max-w-[280px] flex-shrink-0"
+                        >
+                          <TaskCard task={task} compact className="h-full" />
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Desktop: 3 cards side by side */}
+                    <div className="hidden gap-3 mt-3 md:grid md:grid-cols-3">
+                      {tasksQuery.data.items.map((task: any) => (
+                        <div key={task.id} className="h-full">
+                          <TaskCard task={task} compact className="h-full" />
+                        </div>
+                      ))}
+                    </div>
+                  </>
                 )}
             </div>
           )}

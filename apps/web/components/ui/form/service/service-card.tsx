@@ -99,7 +99,7 @@ export function ServiceCard({
 
   // If there is no phone, just render the card (contact will be inactive anyway)
   return (
-    <div className={cn(compact ? "w-full" : "w-full", className)}>
+    <div className={cn("w-full", className)}>
       {/* Entire card is clickable if you want; clicking outside closes the contact expanded state (handled above) */}
       <div onClick={() => contactOpen && setContactOpen(false)}>
         {/* Image Section with carousel */}
@@ -107,7 +107,7 @@ export function ServiceCard({
           ref={containerRef}
           className={cn(
             "overflow-hidden relative w-full rounded-xl shadow-md aspect-square",
-            compact && "aspect-[4/3]",
+            compact && "aspect-[4/3]"
           )}
         >
           {!imageLoaded && (
@@ -266,12 +266,12 @@ export function ServiceCard({
         </div>
 
         {/* Bottom Row - Service Title (80%) + Rating (20%) */}
-        <div className={cn("pt-4 -mt-2", compact && "pt-3")}>
+        <div className={cn("pt-4 -mt-2", compact && "pt-2")}>
           <div className="flex gap-3 items-start">
             <h3
               className={cn(
                 "text-base font-semibold text-gray-900 line-clamp-2",
-                compact && "text-sm",
+                compact && "text-xs",
               )}
               style={{ flex: "0 1 80%" }}
             >

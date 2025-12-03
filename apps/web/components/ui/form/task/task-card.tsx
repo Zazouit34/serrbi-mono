@@ -49,7 +49,7 @@ export function TaskCard({ task, className, compact }: { task: any; className?: 
           ref={containerRef}
           className={cn(
             "overflow-hidden relative w-full rounded-xl shadow-md aspect-square",
-            compact && "aspect-[4/3]",
+            compact && "aspect-[4/3]"
           )}
         >
           {/* Center text instead of image */}
@@ -57,7 +57,9 @@ export function TaskCard({ task, className, compact }: { task: any; className?: 
             className="flex justify-center items-center w-full h-full text-center"
             style={{ background: task.bgStyle || "linear-gradient(to right, #ddd, #ccc)" }}
           >
-            <span className="px-4 text-xl font-bold text-white line-clamp-4">{task.description}</span>
+            <span className={cn("px-4 font-bold text-white line-clamp-4 text-xl", compact && "text-sm")}>
+              {task.description}
+            </span>
           </div>
 
           {/* Category - top left */}
@@ -147,12 +149,22 @@ export function TaskCard({ task, className, compact }: { task: any; className?: 
         </div>
 
         {/* Bottom row: name left, location right */}
-        <div className={cn("pt-4 -mt-2", compact && "pt-3")}>
+        <div className={cn("pt-4 -mt-2", compact && "pt-2")}>
           <div className="flex items-start justify-between">
-            <h3 className={cn("text-base font-semibold text-gray-900 line-clamp-2", compact && "text-sm")}>
+            <h3
+              className={cn(
+                "text-base font-semibold text-gray-900 line-clamp-2",
+                compact && "text-xs"
+              )}
+            >
               {task.displayName || task.user?.name || "Task Owner"}
             </h3>
-            <span className={cn("text-sm font-semibold text-gray-500", compact && "text-xs")}>
+            <span
+              className={cn(
+                "text-sm font-semibold text-gray-500",
+                compact && "text-[11px]"
+              )}
+            >
               {formatLocation(task.city)}
             </span>
           </div>

@@ -83,7 +83,7 @@ export function JobCard({
         <CardContent
           className={cn(
             "p-4 space-y-6 md:p-6",
-            compact && "p-3 space-y-3 md:p-3"
+            compact && "p-2 space-y-2 md:p-3"
           )}
         >
           {/* Top Row: Avatar + Category + Type */}
