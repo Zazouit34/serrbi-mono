@@ -97,11 +97,19 @@ export async function POST(req: NextRequest) {
     // Determine S3 folder structure
     let key: string;
     if (fileType === "resume") {
+      // Resumes go under: resumes/{userId}/{uuid}.{ext}
       key = `resumes/${session.user.id}/${uniqueFilename}`;
+    } else if (category === "jobs") {
+      // Job logos go under: company_logos/{uuid}.{ext}
+      key = `company_logos/${uniqueFilename}`;
+    } else if (category === "services") {
+      // Service images go under: services/images/{uuid}.{ext}
+      key = `services/images/${uniqueFilename}`;
     } else if (category) {
-      // category would be "jobs" or "services"
+      // Fallback: {category}/{folder}/{uuid}.{ext}
       key = `${category}/${config.folder}/${uniqueFilename}`;
     } else {
+      // Generic fallback: {folder}/{uuid}.{ext}
       key = `${config.folder}/${uniqueFilename}`;
     }
 

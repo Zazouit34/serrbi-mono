@@ -67,13 +67,140 @@ export const taskRouter = router({
       const pageSize = input?.pageSize ?? 12;
       const category = input?.category;
       const status = input?.status;
-      const search = input?.search;
+      const search = input?.search?.trim() || "";
       const city = input?.city;
       const stateAbbreviation = input?.stateAbbreviation;
       const budgetMin = input?.budgetMin;
       const budgetMax = input?.budgetMax;
       const db = ctx.prisma as any;
 
+      // When a search term is provided, use unaccent() for accent-insensitive matching.
+      if (search) {
+        let whereSql = `WHERE 1=1`;
+        const params: any[] = [];
+        let idx = 1;
+
+        if (category) {
+          whereSql += ` AND "category" = $${idx}`;
+          params.push(category);
+          idx += 1;
+        }
+
+        // if no explicit status filter, show only Published
+        const effectiveStatus = status ?? "Published";
+        whereSql += ` AND "status" = $${idx}`;
+        params.push(effectiveStatus);
+        idx += 1;
+
+        if (city) {
+          whereSql += ` AND "city" ILIKE $${idx}`;
+          params.push(`%${city}%`);
+          idx += 1;
+        }
+        if (stateAbbreviation) {
+          whereSql += ` AND "stateAbbreviation" = $${idx}`;
+          params.push(stateAbbreviation);
+          idx += 1;
+        }
+        if (budgetMin || budgetMax) {
+          if (budgetMin) {
+            whereSql += ` AND "budget" >= $${idx}`;
+            params.push(budgetMin);
+            idx += 1;
+          }
+          if (budgetMax) {
+            whereSql += ` AND "budget" <= $${idx}`;
+            params.push(budgetMax);
+            idx += 1;
+          }
+        }
+
+        whereSql += ` AND (
+          unaccent(lower("title")) LIKE unaccent(lower($${idx}))
+          OR unaccent(lower("description")) LIKE unaccent(lower($${idx}))
+          OR unaccent(lower("displayName")) LIKE unaccent(lower($${idx}))
+          OR unaccent(lower("city")) LIKE unaccent(lower($${idx}))
+        )`;
+        params.push(`%${search}%`);
+        idx += 1;
+
+        const limitIdx = idx;
+        const offsetIdx = idx + 1;
+
+        const baseSelect = `
+          SELECT
+            "id",
+            "title",
+            "description",
+            "bgStyle",
+            "category",
+            "status",
+            "budget",
+            "stateAbbreviation",
+            "city",
+            "address",
+            "latitude",
+            "longitude",
+            "phoneNumber",
+            "email",
+            "displayName",
+            "displayImage",
+            "userId",
+            "createdAt"
+          FROM "Task"
+        `;
+
+        const itemsSql = `
+          ${baseSelect}
+          ${whereSql}
+          ORDER BY "createdAt" DESC, "id" DESC
+          LIMIT $${limitIdx} OFFSET $${offsetIdx}
+        `;
+
+        const countSql = `
+          SELECT COUNT(*)::int AS "count"
+          FROM "Task"
+          ${whereSql}
+        `;
+
+        const limit = pageSize;
+        const offset = (page - 1) * pageSize;
+
+        const [rawItems, countRows] = await Promise.all([
+          db.$queryRawUnsafe(itemsSql, ...params, limit, offset),
+          db.$queryRawUnsafe(countSql, ...params),
+        ]);
+
+        const total = countRows[0]?.count ?? 0;
+
+        const userIds = Array.from(
+          new Set((rawItems as any[]).map((t) => t.userId).filter(Boolean)),
+        );
+        const usersById: Record<string, { name: string | null; image: string | null }> =
+          userIds.length === 0
+            ? {}
+            : (
+                await db.user.findMany({
+                  where: { id: { in: userIds } },
+                  select: { id: true, name: true, image: true },
+                })
+              ).reduce(
+                (acc: any, u: any) => ({
+                  ...acc,
+                  [u.id]: { name: u.name ?? null, image: u.image ?? null },
+                }),
+                {},
+              );
+
+        const items = (rawItems as any[]).map((t) => ({
+          ...t,
+          user: t.userId ? usersById[t.userId] ?? { name: null, image: null } : null,
+        }));
+
+        return { items, total, page, pageSize };
+      }
+
+      // Default path (no search term): keep existing Prisma query builder.
       const where: any = {};
       if (category) where.category = category;
       // if no explicit status filter, show only Published
@@ -87,13 +214,6 @@ export const taskRouter = router({
         if (budgetMin) where.budget.gte = budgetMin;
         if (budgetMax) where.budget.lte = budgetMax;
       }
-      if (search) {
-        where.OR = [
-          { title: { contains: search, mode: "insensitive" } },
-          { description: { contains: search, mode: "insensitive" } },
-          { displayName: { contains: search, mode: "insensitive" } },
-        ];
-      }
 
       const [items, total] = await Promise.all([
         db.task.findMany({
@@ -102,10 +222,22 @@ export const taskRouter = router({
           skip: (page - 1) * pageSize,
           take: pageSize,
           select: {
-            id: true, title: true, description: true, bgStyle: true, category: true, status: true,
-            budget: true, stateAbbreviation: true, city: true,
-            address: true, latitude: true, longitude: true,
-            phoneNumber: true, email: true, displayName: true, displayImage: true,
+            id: true,
+            title: true,
+            description: true,
+            bgStyle: true,
+            category: true,
+            status: true,
+            budget: true,
+            stateAbbreviation: true,
+            city: true,
+            address: true,
+            latitude: true,
+            longitude: true,
+            phoneNumber: true,
+            email: true,
+            displayName: true,
+            displayImage: true,
             user: { select: { name: true, image: true } },
             createdAt: true,
           },

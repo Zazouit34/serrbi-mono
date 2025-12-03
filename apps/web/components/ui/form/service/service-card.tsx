@@ -14,6 +14,7 @@ import { Skeleton } from "@workspace/ui/components/skeleton";
 export function ServiceCard({
   service,
   className,
+  compact,
 }: {
   service: {
     id: string;
@@ -30,6 +31,7 @@ export function ServiceCard({
     numberOfReviews: number;
   };
   className?: string;
+  compact?: boolean;
 }) {
   const t = useTranslations();
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -103,7 +105,10 @@ export function ServiceCard({
         {/* Image Section with carousel */}
         <div
           ref={containerRef}
-          className="overflow-hidden relative w-full rounded-xl shadow-md aspect-square"
+          className={cn(
+            "overflow-hidden relative w-full rounded-xl shadow-md aspect-square",
+            compact && "aspect-[4/3]"
+          )}
         >
           {!imageLoaded && (
             <div className="absolute inset-0 z-0">
@@ -182,94 +187,102 @@ export function ServiceCard({
           )}
 
           {/* Expandable Overlay (price + contact button collapsed; price + whatsapp/call when expanded) */}
-          <div
-            ref={overlayRef}
-            style={{
-              maxHeight: contactOpen ? 140 : 52,
-              transition: "max-height 280ms ease",
-            }}
-            className={cn(
-              "overflow-hidden absolute right-0 bottom-0 left-0 z-10 px-3 py-2 rounded-t-md backdrop-blur-md bg-black/30"
-            )}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Top row inside overlay: price (left) + contact button (right when collapsed) */}
-            <div className="flex justify-between items-center">
-              <div className="text-sm font-semibold leading-tight text-white">
-                {formatPrice(service.price)}
-              </div>
-
-              {/* Collapsed contact button (visible when contactOpen === false) */}
-              {!contactOpen && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setContactOpen(true);
-                  }}
-                  className="bg-white/95 text-gray-900 text-xs font-medium px-2.5 py-1 rounded-md shadow-sm hover:bg-white transition focus:outline-none"
-                  aria-expanded="false"
-                >
-                  {t("Common.contact")}
-                </button>
-              )}
-            </div>
-
-            {/* Expanded area - collapses in layout when closed */}
+          {!compact && (
             <div
+              ref={overlayRef}
+              style={{
+                maxHeight: contactOpen ? 140 : 52,
+                transition: "max-height 280ms ease",
+              }}
               className={cn(
-                "transition-[opacity,max-height,margin] duration-300 overflow-hidden",
-                contactOpen
-                  ? "mt-2 max-h-40 opacity-100 pointer-events-auto"
-                  : "mt-0 max-h-0 opacity-0 pointer-events-none"
+                "overflow-hidden absolute right-0 bottom-0 left-0 z-10 px-3 py-2 rounded-t-md backdrop-blur-md bg-black/30",
               )}
-              aria-hidden={!contactOpen}
+              onClick={(e) => e.stopPropagation()}
             >
-              <div className="grid grid-cols-2 gap-2 items-center">
-                {/* WhatsApp */}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (service.phoneNumber) {
-                      window.open(`https://wa.me/${service.phoneNumber}`, "_blank");
-                    }
-                  }}
-                  className="flex items-center justify-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-md transition"
-                  style={{ backgroundColor: "#25D366", color: "white" }}
-                >
-                  <FontAwesomeIcon icon={faWhatsapp} className="size-3.5" />
-                  <span className="truncate">{t("Common.whatsapp")}</span>
-                </button>
+              {/* Top row inside overlay: price (left) + contact button (right when collapsed) */}
+              <div className="flex justify-between items-center">
+                <div className="text-sm font-semibold leading-tight text-white">
+                  {formatPrice(service.price)}
+                </div>
 
-                {/* Call */}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (service.phoneNumber) {
-                      window.location.href = `tel:${service.phoneNumber}`;
-                    }
-                  }}
-                  className="flex items-center justify-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-md bg-white/95 text-gray-900 transition"
-                >
-                  <Phone className="size-3.5" />
-                  <span className="truncate">{t("Common.call")}</span>
-                </button>
+                {/* Collapsed contact button (visible when contactOpen === false) */}
+                {!contactOpen && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setContactOpen(true);
+                    }}
+                    className="bg-white/95 text-gray-900 text-xs font-medium px-2.5 py-1 rounded-md shadow-sm hover:bg-white transition focus:outline-none"
+                    aria-expanded="false"
+                  >
+                    {t("Common.contact")}
+                  </button>
+                )}
+              </div>
+
+              {/* Expanded area - collapses in layout when closed */}
+              <div
+                className={cn(
+                  "transition-[opacity,max-height,margin] duration-300 overflow-hidden",
+                  contactOpen
+                    ? "mt-2 max-h-40 opacity-100 pointer-events-auto"
+                    : "mt-0 max-h-0 opacity-0 pointer-events-none",
+                )}
+                aria-hidden={!contactOpen}
+              >
+                <div className="grid grid-cols-2 gap-2 items-center">
+                  {/* WhatsApp */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (service.phoneNumber) {
+                        window.open(`https://wa.me/${service.phoneNumber}`, "_blank");
+                      }
+                    }}
+                    className="flex items-center justify-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-md transition"
+                    style={{ backgroundColor: "#25D366", color: "white" }}
+                  >
+                    <FontAwesomeIcon icon={faWhatsapp} className="size-3.5" />
+                    <span className="truncate">{t("Common.whatsapp")}</span>
+                  </button>
+
+                  {/* Call */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (service.phoneNumber) {
+                        window.location.href = `tel:${service.phoneNumber}`;
+                      }
+                    }}
+                    className="flex items-center justify-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-md bg-white/95 text-gray-900 transition"
+                  >
+                    <Phone className="size-3.5" />
+                    <span className="truncate">{t("Common.call")}</span>
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Bottom Row - Service Title (80%) + Rating (20%) */}
-        <div className="pt-4 -mt-2">
+        <div className={cn("pt-4 -mt-2", compact && "pt-2")}>
           <div className="flex gap-3 items-start">
             <h3
-              className="text-base font-semibold text-gray-900 line-clamp-2"
+              className={cn(
+                "text-base font-semibold text-gray-900 line-clamp-2",
+                compact && "text-xs",
+              )}
               style={{ flex: "0 1 80%" }}
             >
               {service.title}
             </h3>
 
             <div
-              className="flex gap-1 justify-end items-center text-sm font-semibold"
+              className={cn(
+                "flex gap-1 justify-end items-center text-sm font-semibold",
+                compact && "text-xs",
+              )}
               style={{ flex: "0 0 20%" }}
             >
               <Star className="text-gray-400 size-3 fill-gray-400" />

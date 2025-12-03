@@ -28,12 +28,9 @@ export function PricingShowcase() {
 
   return (
     <section className="mx-auto w-full my-18">
-      <div className="flex justify-between items-end mb-6">
-        <div>
+      <div className="flex flex-col items-start mb-6">   
           <h2 className="text-2xl font-semibold md:text-3xl">{t("title")}</h2>
           <p className="mt-1 max-w-xl text-sm text-muted-foreground">{t("subtitle")}</p>
-        </div>
-        <Button variant="outline" onClick={() => router.push("/subscription")}>{t("viewAll")}</Button>
       </div>
 
       {error && (
@@ -73,9 +70,22 @@ function PlanPreview({ plan, onClick }: { plan: any; onClick: () => void }) {
   if (plan.monthlyApplyLimit) {
     features.push(`${plan.monthlyApplyLimit} ${t("features.applicationsPerMonth")}`);
   }
-  if (plan.jobBoardAccess) features.push(t("features.jobBoardAccess"));
   if (plan.resumeAtsScoreAccess) features.push(t("features.resumeAtsScore"));
   if (plan.smartMatchAccess) features.push(t("features.smartMatch"));
+  const isFree =
+    (plan.displayName || plan.name || "").toString().toUpperCase() === "FREE";
+  // Add AI tools individually
+  if (isFree) {
+    features.push(`1 ${t("features.aiResumeAnalyzer")}`);
+    features.push(`1 ${t("features.careerSwitch")}`);
+    features.push(`1 ${t("features.aiRoadmap")}`);
+    features.push(`1 ${t("features.atsInsight")}`);
+  } else {
+    features.push(t("features.aiResumeAnalyzer"));
+    features.push(t("features.careerSwitch"));
+    features.push(t("features.aiRoadmap"));
+    features.push(t("features.atsInsight"));
+  }
   
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLDivElement>) {

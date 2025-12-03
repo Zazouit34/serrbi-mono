@@ -258,7 +258,7 @@ export function JobListingForm() {
                                   </Button>
                                 </PopoverTrigger>
                                 <PopoverContent align="center" sideOffset={12} className="rounded-3xl p-6 w-[700px] max-w-[90vw] bg-white shadow-lg border border-gray-100">
-                                  <div className="flex flex-wrap justify-center gap-3">
+                                  <div className="flex flex-wrap gap-3 justify-center">
                                     {jobCategoryValues.map((c) => {
                                       const CatIcon = (jobCategoryIcons as any)[c];
                                       const isSelected = field.value === c;
@@ -267,7 +267,7 @@ export function JobListingForm() {
                                           key={c}
                                           variant="outline"
                                           size="lg"
-                                          className={`flex items-center gap-3 px-6 py-3 rounded-full text-base font-medium transition-colors border ${isSelected ? "border-gray-400 bg-gray-100 text-gray-900" : "border-gray-200 text-gray-700 hover:bg-gray-50"}`}
+                                          className={`flex items-center gap-3 px-6 py-3 rounded-full text-base font-medium transition-colors border ${isSelected ? "text-gray-900 bg-gray-100 border-gray-400" : "text-gray-700 border-gray-200 hover:bg-gray-50"}`}
                                           onClick={() => {
                                             field.onChange(c);
                                             setOpen(false);
@@ -306,7 +306,7 @@ export function JobListingForm() {
                                   </Button>
                                 </PopoverTrigger>
                                 <PopoverContent align="center" sideOffset={12} className="rounded-3xl p-6 w-[700px] max-w-[90vw] bg-white shadow-lg border border-gray-100">
-                                  <div className="flex flex-wrap justify-center gap-3">
+                                  <div className="flex flex-wrap gap-3 justify-center">
                                     {jobListingTypeValues.map((t) => {
                                       const isSelected = field.value === t;
                                       return (
@@ -314,7 +314,7 @@ export function JobListingForm() {
                                           key={t}
                                           variant="outline"
                                           size="lg"
-                                          className={`flex items-center gap-3 px-6 py-3 rounded-full text-base font-medium transition-colors border ${isSelected ? "border-gray-400 bg-gray-100 text-gray-900" : "border-gray-200 text-gray-700 hover:bg-gray-50"}`}
+                                          className={`flex items-center gap-3 px-6 py-3 rounded-full text-base font-medium transition-colors border ${isSelected ? "text-gray-900 bg-gray-100 border-gray-400" : "text-gray-700 border-gray-200 hover:bg-gray-50"}`}
                                           onClick={() => {
                                             field.onChange(t);
                                             setOpen(false);
@@ -366,7 +366,7 @@ export function JobListingForm() {
                                           key={c.iso2}
                                           variant="outline"
                                           size="lg"
-                                          className={`flex items-center gap-3 px-6 py-3 rounded-full text-base font-medium transition-colors border ${isSelected ? "border-gray-400 bg-gray-100 text-gray-900" : "border-gray-200 text-gray-700 hover:bg-gray-50"}`}
+                                          className={`flex items-center gap-3 px-6 py-3 rounded-full text-base font-medium transition-colors border ${isSelected ? "text-gray-900 bg-gray-100 border-gray-400" : "text-gray-700 border-gray-200 hover:bg-gray-50"}`}
                                           onClick={() => {
                                             field.onChange(c.iso2);
                                             setOpen(false);
@@ -391,12 +391,13 @@ export function JobListingForm() {
                       name="companyImage"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Company Logo</FormLabel>
+                          <FormLabel>{tForm("companyLogo")}</FormLabel>
                           <FormControl>
                             <UppyImageUploader
                               category="jobs"
                               onUploadSuccess={(url) => field.onChange(url)}
-                              note="Upload a logo up to 5 MB"
+                              onUploadError={(msg) => setError(msg)}
+                              note={tForm("uploadLogoNote")}
                             />
                           </FormControl>
                           <FormMessage />
@@ -416,7 +417,7 @@ export function JobListingForm() {
                         name="wage"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Wage (Annual)</FormLabel>
+                            <FormLabel>{tForm("wageMonthly")}</FormLabel>
                             <FormControl>
                             <Input
                                 type="number"
@@ -450,7 +451,7 @@ export function JobListingForm() {
                                   </Button>
                                 </PopoverTrigger>
                                 <PopoverContent align="center" sideOffset={12} className="rounded-3xl p-6 w-[700px] max-w-[90vw] bg-white shadow-lg border border-gray-100">
-                                  <div className="flex flex-wrap justify-center gap-3">
+                                  <div className="flex flex-wrap gap-3 justify-center">
                                     {experienceLevelValues.map((lvl) => {
                                       const isSelected = field.value === lvl;
                                       return (
@@ -458,7 +459,7 @@ export function JobListingForm() {
                                           key={lvl}
                                           variant="outline"
                                           size="lg"
-                                          className={`flex items-center gap-3 px-6 py-3 rounded-full text-base font-medium transition-colors border ${isSelected ? "border-gray-400 bg-gray-100 text-gray-900" : "border-gray-200 text-gray-700 hover:bg-gray-50"}`}
+                                          className={`flex items-center gap-3 px-6 py-3 rounded-full text-base font-medium transition-colors border ${isSelected ? "text-gray-900 bg-gray-100 border-gray-400" : "text-gray-700 border-gray-200 hover:bg-gray-50"}`}
                                           onClick={() => {
                                             field.onChange(lvl);
                                             setOpen(false);
@@ -500,7 +501,7 @@ export function JobListingForm() {
                                   </Button>
                                 </PopoverTrigger>
                                 <PopoverContent align="center" sideOffset={12} className="rounded-3xl p-6 w-[700px] max-w-[90vw] bg-white shadow-lg border border-gray-100">
-                                  <div className="flex flex-wrap justify-center gap-3">
+                                  <div className="flex flex-wrap gap-3 justify-center">
                                     {locationRequirementValues.map((loc) => {
                                       const isSelected = field.value === loc;
                                       return (
@@ -508,13 +509,60 @@ export function JobListingForm() {
                                           key={loc}
                                           variant="outline"
                                           size="lg"
-                                          className={`flex items-center gap-3 px-6 py-3 rounded-full text-base font-medium transition-colors border ${isSelected ? "border-gray-400 bg-gray-100 text-gray-900" : "border-gray-200 text-gray-700 hover:bg-gray-50"}`}
+                                          className={`flex items-center gap-3 px-6 py-3 rounded-full text-base font-medium transition-colors border ${isSelected ? "text-gray-900 bg-gray-100 border-gray-400" : "text-gray-700 border-gray-200 hover:bg-gray-50"}`}
                                           onClick={() => {
                                             field.onChange(loc);
                                             setOpen(false);
                                           }}
                                         >
                                           {tAll.has?.("Enums.LocationRequirement." + loc) ? tAll("Enums.LocationRequirement." + loc) : formatLocationRequirement(loc as any)}
+                                          {isSelected && <Check className="w-4 h-4 text-black" />}
+                                        </Button>
+                                      );
+                                    })}
+                                  </div>
+                                </PopoverContent>
+                              </Popover>
+                              <FormMessage />
+                            </FormItem>
+                          );
+                        }}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="stateAbbreviation"
+                        render={({ field }) => {
+                          const [open, setOpen] = useState(false);
+                          const stateName = field.value ? (states as any)[field.value] : undefined;
+                          return (
+                            <FormItem>
+                              <FormLabel>{tForm("state")}</FormLabel>
+                              <Popover open={open} onOpenChange={setOpen}>
+                                <PopoverTrigger asChild>
+                                  <Button type="button" variant="outline" className="justify-between w-full h-11 rounded-full">
+                                    {stateName ? (
+                                      <span className="font-medium text-black">{stateName}</span>
+                                    ) : (
+                                      <span className="text-gray-500">{tForm("selectState")}</span>
+                                    )}
+                                  </Button>
+                                </PopoverTrigger>
+                                <PopoverContent align="center" sideOffset={12} className="rounded-3xl p-6 w-[700px] max-w-[90vw] bg-white shadow-lg border border-gray-100">
+                                  <div className="flex flex-wrap justify-center gap-3 max-h-[320px] overflow-auto">
+                                    {Object.entries(states as Record<string, string>).map(([abbr, name]) => {
+                                      const isSelected = field.value === abbr;
+                                      return (
+                                        <Button
+                                          key={abbr}
+                                          variant="outline"
+                                          size="lg"
+                                          className={`flex items-center gap-3 px-6 py-3 rounded-full text-base font-medium transition-colors border ${isSelected ? "text-gray-900 bg-gray-100 border-gray-400" : "text-gray-700 border-gray-200 hover:bg-gray-50"}`}
+                                          onClick={() => {
+                                            field.onChange(abbr);
+                                            setOpen(false);
+                                          }}
+                                        >
+                                          {name}
                                           {isSelected && <Check className="w-4 h-4 text-black" />}
                                         </Button>
                                       );
@@ -556,60 +604,13 @@ export function JobListingForm() {
                                           key={name}
                                           variant="outline"
                                           size="lg"
-                                          className={`flex items-center gap-3 px-6 py-3 rounded-full text-base font-medium transition-colors border ${isSelected ? "border-gray-400 bg-gray-100 text-gray-900" : "border-gray-200 text-gray-700 hover:bg-gray-50"}`}
+                                          className={`flex items-center gap-3 px-6 py-3 rounded-full text-base font-medium transition-colors border ${isSelected ? "text-gray-900 bg-gray-100 border-gray-400" : "text-gray-700 border-gray-200 hover:bg-gray-50"}`}
                                           onClick={() => {
                                             field.onChange(name);
                                             setOpen(false);
                                           }}
                                         >
                                           {label}
-                                          {isSelected && <Check className="w-4 h-4 text-black" />}
-                                        </Button>
-                                      );
-                                    })}
-                                  </div>
-                                </PopoverContent>
-                              </Popover>
-                              <FormMessage />
-                            </FormItem>
-                          );
-                        }}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="stateAbbreviation"
-                        render={({ field }) => {
-                          const [open, setOpen] = useState(false);
-                          const stateName = field.value ? (states as any)[field.value] : undefined;
-                          return (
-                            <FormItem>
-                              <FormLabel>{tForm("state")}</FormLabel>
-                              <Popover open={open} onOpenChange={setOpen}>
-                                <PopoverTrigger asChild>
-                                  <Button type="button" variant="outline" className="justify-between w-full h-11 rounded-full">
-                                    {stateName ? (
-                                      <span className="font-medium text-black">{stateName}</span>
-                                    ) : (
-                                      <span className="text-gray-500">{tForm("selectState")}</span>
-                                    )}
-                                  </Button>
-                                </PopoverTrigger>
-                                <PopoverContent align="center" sideOffset={12} className="rounded-3xl p-6 w-[700px] max-w-[90vw] bg-white shadow-lg border border-gray-100">
-                                  <div className="flex flex-wrap justify-center gap-3 max-h-[320px] overflow-auto">
-                                    {Object.entries(states as Record<string, string>).map(([abbr, name]) => {
-                                      const isSelected = field.value === abbr;
-                                      return (
-                                        <Button
-                                          key={abbr}
-                                          variant="outline"
-                                          size="lg"
-                                          className={`flex items-center gap-3 px-6 py-3 rounded-full text-base font-medium transition-colors border ${isSelected ? "border-gray-400 bg-gray-100 text-gray-900" : "border-gray-200 text-gray-700 hover:bg-gray-50"}`}
-                                          onClick={() => {
-                                            field.onChange(abbr);
-                                            setOpen(false);
-                                          }}
-                                        >
-                                          {name}
                                           {isSelected && <Check className="w-4 h-4 text-black" />}
                                         </Button>
                                       );
@@ -634,7 +635,7 @@ export function JobListingForm() {
                       name="description"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Description</FormLabel>
+                          <FormLabel>{tForm("description")}</FormLabel>
                           <FormControl>
                             <div className="min-h-[200px]">
                               <MarkdownEditor
@@ -671,7 +672,7 @@ export function JobListingForm() {
                         };
                         return (
                           <FormItem>
-                            <FormLabel>Tags</FormLabel>
+                            <FormLabel>{tForm("tags")}</FormLabel>
                             <Tags value={tagInput} setValue={setTagInput}>
                               <TagsTrigger>
                                 {(field.value ?? []).map((k: string) => (
@@ -720,7 +721,7 @@ export function JobListingForm() {
                       name="applicationEmail"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Application Email</FormLabel>
+                          <FormLabel>{tForm("applicationEmailLabel")}</FormLabel>
                           <FormControl>
                             <Input
                               type="email"
@@ -736,7 +737,7 @@ export function JobListingForm() {
                       name="applicationUrl"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Application URL</FormLabel>
+                          <FormLabel>{tForm("applicationUrlLabel")}</FormLabel>
                           <FormControl>
                             <Input
                               type="url"

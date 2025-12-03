@@ -85,26 +85,67 @@
     "title": "Get your resume checked by AI in seconds",
     "subtitle": "Drop a single PDF below. We’ll score it instantly on the right.",
     "dropHint": "Drag & drop your PDF here, or click to browse",
-    "dropNote": "PDF only • Max 10MB"
+    "dropNote": "PDF only • Max 10MB",
+    "analyzing": "AI is analyzing your resume, estimating salary and generating tailored suggestions...",
+    "loginRequired": "Please sign in to access the AI resume analyzer."
   },
   "HowItWorks": {
     "title": "How It Works",
     "subtitle": "Let AI handle the hard work — from analyzing your resume to applying for jobs that fit your goals.",
     "steps": {
       "1": {
-        "title": "Upload Your Resume",
-        "description": "Get instant feedback and an AI-powered score to see how strong your CV is before applying.",
-        "action": "Upload Resume"
+        "title": "Start with a stronger resume",
+        "description": "Upload your CV to get an AI score, missing skills, and suggestions before you start applying.",
+        "action": "Open Resume Analyzer"
       },
       "2": {
-        "title": "Set Your Preferences",
-        "description": "Select roles, categories, and keywords you’re interested in. Serrbi will tailor your job discovery experience.",
-        "action": "Discover Jobs"
+        "title": "Design your next career move",
+        "description": "Use AI to map realistic career paths, required skills, and salary ranges that fit you.",
+        "action": "Explore Career Paths"
       },
       "3": {
-        "title": "Enable AI Serrbi",
-        "description": "Sit back while AI Serrbi automatically sends personalized applications every month with your attached resume.",
+        "title": "Let Serrbi apply while you grow",
+        "description": "Turn on AI auto‑apply so Serrbi sends targeted applications while you focus on learning and planning.",
         "action": "AI Serrbi"
+      }
+    }
+  },
+  "AiAutoApplySection": {
+    "badge": "AI auto‑apply",
+    "title": "AI auto‑apply that gives you your time back",
+    "subtitle": "Serrbi sends repetitive applications for you so you can use that time to actually grow your career.",
+    "equation": {
+      "label": "Example:",
+      "left": "15 min",
+      "middle": "15 applications / day",
+      "right": "225 min ≈ 3 hours back"
+    },
+    "cards": {
+      "time": {
+        "title": "Save hours, every week",
+        "body": "Auto‑Apply fills and sends the repetitive applications in the background."
+      },
+      "matching": {
+        "title": "Smart, AI‑matched jobs",
+        "body": "Serrbi targets roles that match your profile instead of spamming every listing."
+      },
+      "control": {
+        "title": "You keep full control",
+        "body": "Toggle auto‑apply or send standout roles yourself in one click."
+      }
+    },
+    "useTime": {
+      "cv": {
+        "title": "Polish your resume",
+        "body": "Use the AI resume analyzer to tighten your CV and profile."
+      },
+      "skills": {
+        "title": "Learn new skills",
+        "body": "Invest freed‑up time into courses and projects that grow you."
+      },
+      "plan": {
+        "title": "Plan your next move",
+        "body": "Use Serrbi career tools to map your path and prepare interviews."
       }
     }
   },
@@ -242,7 +283,11 @@
       "resumeAtsScore": "Resume ATS score",
       "smartMatch": "Smart Match AI",
       "autoApplyPerMonth": "AI Serrbi usage per month",
-      "unlimitedApplications": "Unlimited manual applications"
+      "unlimitedApplications": "Unlimited manual applications",
+      "aiResumeAnalyzer": "AI Resume Analyzer",
+      "careerSwitch": "Career Switch",
+      "aiRoadmap": "AI Roadmap",
+      "atsInsight": "ATS Insight"
     },
     "choosePlan": "Choose plan",
     "errors": { "loadPlansFailed": "Failed to load plans. Please try again." }
@@ -255,6 +300,22 @@
     },
     "placeholder": "Search by role, skills...",
     "search": "Search",
+    "searching": "Searching...",
+    "askAiTitle": "Ask AI",
+    "jobsHint": "AI-enhanced search highlights the 3 closest job matches for your query.",
+    "servicesHint": "AI-enhanced search highlights the 3 closest services for your request.",
+    "tasksHint": "AI-enhanced search highlights the 3 closest tasks for your request.",
+    "searchingHint": {
+      "jobs": "Letting our AI search recent roles that match your query...",
+      "services": "Letting our AI search recommended services near you...",
+      "tasks": "Letting our AI search relevant tasks matching your query..."
+    },
+    "searchError": "We couldn't fetch results. Please try again.",
+    "noResults": {
+      "jobs": "No matching jobs found yet. Try different keywords or broaden your request.",
+      "services": "No services found. Try a different query.",
+      "tasks": "No tasks found. Try a different query."
+    },
     "browseJobs": "Browse Jobs"
   },
   "FAQ": {
@@ -433,6 +494,10 @@
     "serviceCategory": "Service Category",
     "serviceType": "Service Type",
     "taskCategory": "Task Category",
+    "companyLogo": "Company Logo",
+    "wageMonthly": "Wage (Monthly)",
+    "applicationEmailLabel": "Application Email",
+    "applicationUrlLabel": "Application URL",
     "placeholders": {
       "jobTitle": "Software Engineer",
       "companyName": "Company Name",
@@ -464,6 +529,7 @@
     "favorites": "Favorites",
     "plans": "Plans",
     "autoApply": "AI Serrbi",
+    "billing": "Billing",
     "logout": "Log out",
     "loginCta": "Log in / Sign up"
   },
@@ -559,7 +625,11 @@
       "resumeAtsScore": "Resume ATS score",
       "smartMatch": "Smart Match AI",
       "autoApplyPerMonth": "AI Serrbi usage per month",
-      "unlimitedApplications": "Unlimited manual applications"
+      "unlimitedApplications": "Unlimited manual applications",
+      "aiResumeAnalyzer": "AI Resume Analyzer",
+      "careerSwitch": "Career Switch",
+      "aiRoadmap": "AI Roadmap",
+      "atsInsight": "ATS Insight"
     },
     "toasts": {
       "subscribedFree": "Subscribed to Free plan",
@@ -706,6 +776,11 @@
       "recent": "Recent AI Serrbi activity",
       "unknownJob": "Unknown Job"
     },
+    "listing": {
+      "title": "Jobs AI Serrbi can apply to",
+      "subtitle": "These roles are selected using your category, tags and roles.",
+      "resumeHint": "Matched to your resume and preferences"
+    },
     "save": "Save preferences",
     "roles": {
       "title": "Roles",
@@ -801,21 +876,33 @@
       "sanitation": "Sanitation",
       "disinfection": "Disinfection",
       "mechanic": "Mechanic"
+    },
+    "card": {
+      "applied": "Applied",
+      "apply": "Apply",
+      "applying": "Applying…"
+    },
+    "listing": {
+      "title": "Auto Apply To Jobs",
+      "subtitle": "Serrbi is applying for you in the background.",
+      "updating": "Updating…",
+      "jobsInQueue": "{count} jobs in queue",
+      "noMatching": "No matching jobs yet for your auto-apply preferences."
     }
   },
   "ResumeForm": {
     "headingTitle": "Upload Resume",
-    "headingSubtitle": "Upload your PDF resume to attach it to your profile and instantly analyze its quality score.",
+    "headingSubtitle": "Upload your PDF resume to attach it to your profile so it’s ready for quick applications.",
     "name": "Name",
     "email": "Email",
     "resumeLabel": "Resume (PDF)",
     "note": "Upload your resume (PDF, max 2 MB)",
-    "analyzing": "Analyzing resume...",
     "uploadToProfile": "Upload to Profile",
     "uploadSuccess": "Resume uploaded successfully.",
-    "analysisFailed": "Failed to analyze resume. Please try again.",
     "selectFileFirst": "Please select a PDF resume first.",
-    "saveFailed": "Failed to save resume"
+    "saveFailed": "Failed to save resume",
+    "analyzerCta": "Want AI feedback?",
+    "analyzerLink": "Open the Resume Analyzer"
   },
   "ResumeUploader": {
     "dragDrop": "Drag & drop your PDF here, or",
@@ -829,7 +916,98 @@
     "structure": "Resume Structure",
     "measurable": "Measurable Results",
     "keywords": "Keyword Usage",
-    "issuesCount": "{count} Issues"
+    "issuesCount": "{count} Issues",
+    "skillGaps": "Skill gaps",
+    "suggestedRoles": "Suggested roles",
+    "salaryRange": "Estimated salary (€/month)",
+    "improvements": "Recommendations",
+    "noInsights": "AI insights will appear here after analyzing your resume."
+  },
+  "CareerSwitchPage": {
+    "badge": "Career guidance",
+    "title": "Plan your next career chapter",
+    "subtitle": "Share your background with Serrbi AI to discover curated transition paths, realistic salaries, and step-by-step plans."
+  },
+  "CareerSwitch": {
+    "form": {
+      "title": "Tell us about your background",
+      "subtitle": "Two required fields are enough to start. Add more detail for sharper paths.",
+      "currentRole": "Current role *",
+      "currentSkills": "Key skills",
+      "interests": "Interests & passions *",
+      "targetIndustry": "Target industry",
+      "timeframe": "Transition timeframe",
+      "budget": "Learning budget",
+      "placeholders": {
+        "currentRole": "e.g., Software Engineer",
+        "currentSkills": "React, leadership, data analysis",
+        "interests": "e.g., Data, design, sustainability",
+        "targetIndustry": "Select an industry",
+        "timeframe": "Select a timeframe",
+        "budget": "Select a budget"
+      },
+      "options": {
+        "industries": {
+          "tech": "Technology",
+          "finance": "Finance",
+          "healthcare": "Healthcare",
+          "ecommerce": "E-commerce",
+          "consulting": "Consulting",
+          "startup": "Startup"
+        },
+        "timeframes": {
+          "3-6": "3-6 months",
+          "6-12": "6-12 months",
+          "1-2": "1-2 years",
+          "flexible": "Flexible"
+        },
+        "budgets": {
+          "0-25k": "€0 - €25k",
+          "25-50k": "€25k - €50k",
+          "50-100k": "€50k - €100k",
+          "100k+": "€100k+"
+        }
+      },
+      "submit": "Find career paths",
+      "analyzing": "Analyzing…"
+    },
+    "results": {
+      "empty": "Fill out the form to generate AI-backed transitions tailored to your skills.",
+      "rank": "Recommendation #{index}",
+      "salaryGrowth": "{growth}% potential salary lift",
+      "currentSalary": "Estimated current salary (€/month)",
+      "targetSalary": "Target salary (€/month)",
+      "skills": "Skills to focus on",
+      "stepsTitle": "Step-by-step plan"
+    },
+    "difficulty": {
+      "Easy": "Easy",
+      "Moderate": "Moderate",
+      "Challenging": "Challenging"
+    },
+    "errors": {
+      "generic": "Unable to generate career paths. Please try again.",
+      "empty": "AI could not return any transitions. Adjust your inputs."
+    },
+    "toasts": {
+      "missing": {
+        "title": "Add required fields",
+        "description": "Please enter your current role and interests to continue."
+      },
+      "success": {
+        "title": "Career paths generated",
+        "description": "AI analyzed your profile and suggested new directions."
+      },
+      "failure": {
+        "title": "Generation failed",
+        "description": "AI could not generate suggestions. Try again."
+      }
+    }
+  },
+  "ResumeAnalyzerPage": {
+    "badge": "Resume analyzer",
+    "title": "AI resume analyzer",
+    "subtitle": "Upload your PDF, get a score, and receive salary estimates and improvement tips tailored for you."
   },
   "Cities": {
     "Casablanca": "Casablanca",

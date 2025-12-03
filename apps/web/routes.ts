@@ -22,7 +22,9 @@ export const privateRoutes = [
     "/jobs/resume-listing/new",
     "/services/service-listing/new",
     "/account/billing",
-    "/account/auto-apply"
+    "/account/auto-apply",
+    "/career-switch",
+    "/resume-analyzer"
 ]
 
 /**

@@ -216,6 +216,17 @@ export const jobListQuerySchema = z.object({
 })
 export type JobListQueryValues = z.infer<typeof jobListQuerySchema>
 
+// Auto-apply job list/query schema (pagination + prefs overrides)
+export const autoApplyJobListQuerySchema = z.object({
+  page: z.number().min(1).default(1),
+  pageSize: z.number().min(1).max(50).default(10),
+  enabled: z.boolean().default(true),
+  category: z.enum(jobCategoryValues).nullable().optional(),
+  keywords: z.array(z.string()).optional(),
+  roles: z.array(z.string()).optional(),
+})
+export type AutoApplyJobListQueryValues = z.infer<typeof autoApplyJobListQuerySchema>
+
 //get job by id by alidation schema 
 export const jobGetByIdSchema = z.object({ id: z.string().uuid() })
 export type JobGetByIdValues = z.infer<typeof jobGetByIdSchema>
@@ -244,6 +255,12 @@ export const jobApplicationCreateSchema = z.object({
   resumeUrl: z.string().url().optional(),
 })
 export type JobApplicationCreateValues = z.infer<typeof jobApplicationCreateSchema>
+
+// Apply for auto-apply job schema (server-side, no CV upload – uses logged-in user)
+export const jobApplyForAutoJobSchema = z.object({
+  jobId: z.string().uuid(),
+})
+export type JobApplyForAutoJobValues = z.infer<typeof jobApplyForAutoJobSchema>
 
 // Service schemas
 export const serviceListingFormSchema = z
@@ -423,6 +440,12 @@ export const resumeUpdateSchema = z.object({
   resumeUrl: z.string().url(),
 });
 export type ResumeUpdateValues = z.infer<typeof resumeUpdateSchema>;
+
+// Resume embedding update schema (extracted text from uploaded PDF)
+export const resumeEmbeddingUpdateSchema = z.object({
+  resumeText: z.string().min(20, "Resume text too short to embed"),
+});
+export type ResumeEmbeddingUpdateValues = z.infer<typeof resumeEmbeddingUpdateSchema>;
 
 
 //Job bulk Import Schema

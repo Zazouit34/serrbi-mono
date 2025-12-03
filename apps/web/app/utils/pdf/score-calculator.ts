@@ -1,7 +1,16 @@
+export type LLMResumeAnalysis = {
+  overallScore: number; // 0–100
+  skillGaps: string[];
+  suggestedRoles: string[];
+  salaryRange: { min: number; max: number }; // monthly salary in EUR
+  improvements: string[];
+};
+
 export type ResumeScore = {
   score: number; // 0–100
   breakdown: { category: string; score: number; max: number; missing?: string[] }[];
   suggestions: string[];
+  llm?: LLMResumeAnalysis;
 };
 
 const re = {
@@ -64,7 +73,7 @@ function scoreRecency(text: string, max: number) {
   return recent ? max : Math.round(max * 0.3);
 }
 
-export function scoreResume(textInput: string): ResumeScore {
+function scoreResumeHeuristic(textInput: string): ResumeScore {
   const text = textInput || "";
   const words = text.trim().split(/\s+/).filter(Boolean).length;
 
@@ -205,5 +214,84 @@ export function scoreResume(textInput: string): ResumeScore {
     score: Math.round(score),
     breakdown,
     suggestions,
+  };
+}
+
+async function callLLMForResume(textInput: string): Promise<LLMResumeAnalysis | null> {
+  const response = await fetch("/api/ai/analyze", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      action: "resumeAnalysis",
+      payload: { text: textInput },
+    }),
+  });
+
+  if (!response.ok) {
+    // eslint-disable-next-line no-console
+    console.error(
+      "LLM resume analysis failed:",
+      response.status,
+      await response.text().catch(() => "")
+    );
+    return null;
+  }
+
+  const parsed = (await response.json()) as {
+    overallScore: number;
+    skillGaps: string[];
+    suggestedRoles: string[];
+    salaryRange: { min: number; max: number };
+    improvements: string[];
+  };
+
+  if (
+    typeof parsed?.overallScore !== "number" ||
+    !Array.isArray(parsed.skillGaps) ||
+    !Array.isArray(parsed.suggestedRoles) ||
+    typeof parsed.salaryRange?.min !== "number" ||
+    typeof parsed.salaryRange?.max !== "number" ||
+    !Array.isArray(parsed.improvements)
+  ) {
+    // eslint-disable-next-line no-console
+    console.error("LLM resume analysis returned invalid shape:", parsed);
+    return null;
+  }
+
+  const overallScore = Math.min(100, Math.max(0, Math.round(parsed.overallScore)));
+
+  return {
+    overallScore,
+    skillGaps: parsed.skillGaps.map(String),
+    suggestedRoles: parsed.suggestedRoles.map(String),
+    salaryRange: {
+      min: parsed.salaryRange.min,
+      max: parsed.salaryRange.max,
+    },
+    improvements: parsed.improvements.map(String),
+  };
+}
+
+export async function scoreResume(textInput: string): Promise<ResumeScore> {
+  // For now, we want to rely **only** on the LLM.
+  // We still reuse the heuristic breakdown just for the category bars UI,
+  // but the final score + suggestions come 100% from the model.
+  const base = scoreResumeHeuristic(textInput);
+
+  const llm = await callLLMForResume(textInput);
+
+  if (!llm) {
+    // If the LLM is not available, surface an error instead of silently
+    // falling back to the old heuristic so it's obvious during testing.
+    throw new Error("LLM resume analysis is not available (missing API key or request failed).");
+  }
+
+  return {
+    ...base,
+    score: llm.overallScore,
+    suggestions: Array.from(new Set<string>(llm.improvements)),
+    llm,
   };
 }

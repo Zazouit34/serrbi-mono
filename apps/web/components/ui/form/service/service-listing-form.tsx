@@ -257,7 +257,7 @@ export function ServiceListingForm() {
                                   </Button>
                                 </PopoverTrigger>
                                 <PopoverContent align="center" sideOffset={12} className="rounded-3xl p-6 w-[700px] max-w-[90vw] bg-white shadow-lg border border-gray-100">
-                                  <div className="flex flex-wrap justify-center gap-3">
+                                  <div className="flex flex-wrap gap-3 justify-center">
                                     {serviceCategoryValues.map((category) => {
                                       const CatIcon = (categoryIcons as any)[category];
                                       const isSelected = field.value === category;
@@ -266,7 +266,7 @@ export function ServiceListingForm() {
                                           key={category}
                                           variant="outline"
                                           size="lg"
-                                          className={`flex items-center gap-3 px-6 py-3 rounded-full text-base font-medium transition-colors border ${isSelected ? "border-gray-400 bg-gray-100 text-gray-900" : "border-gray-200 text-gray-700 hover:bg-gray-50"}`}
+                                          className={`flex items-center gap-3 px-6 py-3 rounded-full text-base font-medium transition-colors border ${isSelected ? "text-gray-900 bg-gray-100 border-gray-400" : "text-gray-700 border-gray-200 hover:bg-gray-50"}`}
                                           onClick={() => {
                                             field.onChange(category);
                                             setOpen(false);
@@ -366,7 +366,7 @@ export function ServiceListingForm() {
                                           key={name}
                                           variant="outline"
                                           size="lg"
-                                          className={`flex items-center gap-3 px-6 py-3 rounded-full text-base font-medium transition-colors border ${isSelected ? "border-gray-400 bg-gray-100 text-gray-900" : "border-gray-200 text-gray-700 hover:bg-gray-50"}`}
+                                          className={`flex items-center gap-3 px-6 py-3 rounded-full text-base font-medium transition-colors border ${isSelected ? "text-gray-900 bg-gray-100 border-gray-400" : "text-gray-700 border-gray-200 hover:bg-gray-50"}`}
                                           onClick={() => {
                                             field.onChange(name);
                                             setOpen(false);
@@ -414,7 +414,7 @@ export function ServiceListingForm() {
                                           key={abbr}
                                           variant="outline"
                                           size="lg"
-                                          className={`flex items-center gap-3 px-6 py-3 rounded-full text-base font-medium transition-colors border ${isSelected ? "border-gray-400 bg-gray-100 text-gray-900" : "border-gray-200 text-gray-700 hover:bg-gray-50"}`}
+                                          className={`flex items-center gap-3 px-6 py-3 rounded-full text-base font-medium transition-colors border ${isSelected ? "text-gray-900 bg-gray-100 border-gray-400" : "text-gray-700 border-gray-200 hover:bg-gray-50"}`}
                                           onClick={() => {
                                             field.onChange(abbr);
                                             setOpen(false);

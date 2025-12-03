@@ -4,8 +4,8 @@ import { ShowcaseSwitcher } from "@/components/ui/showcase-switcher";
 import { PricingShowcase } from "@/components/ui/pricing-showcase";
 import { FAQ } from "@/components/ui/faq";
 import { SiteFooter } from "@/components/ui/site-footer";
-import { ResumeInsight } from "@/components/ui/resume-insight";
 import { CarouselMain } from "@/components/ui/carousel-main";
+import AiAutoApplySection from "@/components/ui/ai-autoapply-section";
 
 
 export default async function Page() {
@@ -13,7 +13,7 @@ export default async function Page() {
     <main className="flex relative flex-col mx-auto">
       <Hero />
       <ShowcaseSwitcher />
-      <ResumeInsight />
+      <AiAutoApplySection />
       <HowItWorks />
       <PricingShowcase />
       <CarouselMain />

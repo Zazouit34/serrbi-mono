@@ -8,8 +8,9 @@ import {
   PolarAngleAxis,
   Label,
 } from "recharts";
-import { cn } from "@workspace/ui/lib/utils"; 
+import { cn } from "@workspace/ui/lib/utils";
 import { useTranslations } from "next-intl";
+import type { LLMResumeAnalysis } from "@/app/utils/pdf/score-calculator";
 
 type BreakdownItem = {
   category: string;
@@ -22,10 +23,17 @@ type Props = {
   score: number; // 0–100
   breakdown: BreakdownItem[];
   loading?: boolean;
+  llm?: LLMResumeAnalysis | null;
 };
 
 type PropsWithTheme = Props & { darkMode?: boolean };
-export function ResumeScoreCard({ score, breakdown, loading, darkMode }: PropsWithTheme) {
+export function ResumeScoreCard({
+  score,
+  breakdown,
+  loading,
+  darkMode,
+  llm,
+}: PropsWithTheme) {
   const t = useTranslations("ResumeScore");
   const [displayValue, setDisplayValue] = useState(0);
   const target = Math.max(0, Math.min(100, Math.round(score || 0)));
@@ -75,44 +83,25 @@ export function ResumeScoreCard({ score, breakdown, loading, darkMode }: PropsWi
     [displayValue]
   );
 
-  // Group breakdown into 3 high-level bars
-  const grouped = useMemo(() => {
-    const structure = breakdown.filter((b) =>
-      ["Contact Info", "Experience", "Education", "Skills", "Summary"].includes(b.category)
-    );
-    const measurable = breakdown.filter((b) =>
-      ["Impact / Metrics", "Projects / Certifications", "Recency"].includes(b.category)
-    );
-    const keywords = breakdown.filter((b) =>
-      ["Action Verbs", "Professional Links", "Bullets / Formatting"].includes(b.category)
-    );
-
-    const avg = (items: BreakdownItem[]) =>
-      items.length
-        ? Math.round(
-            (items.reduce((a, b) => a + (b.score / b.max) * 100, 0) / items.length)
-          )
-        : 0;
-
-    return [
-      { name: t("structure"), value: avg(structure), color: "#991b1b" },
-      { name: t("measurable"), value: avg(measurable), color: "#4f46e5" },
-      { name: t("keywords"), value: avg(keywords), color: "#ca8a04" },
-    ];
-  }, [breakdown]);
+  const hasLLM = !!llm;
 
   return (
-    <div className={"flex flex-col sm:flex-row items-center justify-center rounded-2xl p-6 w-full max-w-2xl mx-auto " + (darkMode ? "bg-transparent shadow-none" : "bg-white shadow-sm") }>
-      {/* Left radial score */}
-      <div className="w-[220px] h-[220px] flex-shrink-0">
+    <div
+      className={cn(
+        "flex flex-col gap-5 items-stretch p-5 mx-auto w-full max-w-2xl rounded-2xl md:flex-row",
+        darkMode ? "bg-transparent shadow-none" : "bg-white shadow-sm"
+      )}
+    >
+      {/* Left: radial overall score */}
+      <div className="flex justify-center items-center w-full md:justify-start md:w-auto">
         <RadialBarChart
-          width={220}
-          height={220}
+          width={200}
+          height={200}
           data={data}
           startAngle={90}
           endAngle={-270}
-          innerRadius={80}
-          outerRadius={100}
+          innerRadius={75}
+          outerRadius={95}
         >
           <PolarAngleAxis type="number" domain={[0, 100]} tick={false} angleAxisId={0} />
           <RadialBar
@@ -131,10 +120,26 @@ export function ResumeScoreCard({ score, breakdown, loading, darkMode }: PropsWi
                   <g>
                     {!darkMode && <circle cx={v.cx} cy={v.cy} r={60} fill="white" />}
                     <text x={v.cx} y={v.cy} textAnchor="middle" dominantBaseline="middle">
-                      <tspan x={v.cx} y={v.cy} className={darkMode ? "text-3xl font-bold fill-lime-300" : "text-3xl font-bold fill-emerald-600"}>
+                      <tspan
+                        x={v.cx}
+                        y={v.cy}
+                        className={
+                          darkMode
+                            ? "text-3xl font-bold md:text-4xl fill-lime-300"
+                            : "text-3xl font-bold md:text-4xl fill-emerald-600"
+                        }
+                      >
                         {displayValue}%
                       </tspan>
-                      <tspan x={v.cx} y={v.cy + 22} className={darkMode ? "fill-white/70 text-sm font-medium" : "fill-gray-500 text-sm font-medium"}>
+                      <tspan
+                        x={v.cx}
+                        y={v.cy + 22}
+                        className={
+                          darkMode
+                            ? "text-xs font-medium md:text-sm fill-white/70"
+                            : "text-xs font-medium md:text-sm fill-gray-500"
+                        }
+                      >
                         {t("overallScore")}
                       </tspan>
                     </text>
@@ -146,25 +151,139 @@ export function ResumeScoreCard({ score, breakdown, loading, darkMode }: PropsWi
         </RadialBarChart>
       </div>
 
-      {/* Right progress bars */}
-      <div className="flex flex-col justify-center flex-1 w-full mt-6 sm:mt-0 sm:ml-8 space-y-4">
-        {grouped.map((item, idx) => (
-          <div key={idx} className="w-full">
-            <div className="flex justify-between text-sm mb-1">
-              <span className={darkMode ? "font-medium text-white" : "font-medium text-gray-700"}>{item.name}</span>
-              <span className={darkMode ? "text-white/60" : "text-gray-500"}>{t("issuesCount", { count: 100 - item.value })}</span>
+      {/* Right: LLM-driven insights in a 2x2 style layout */}
+      <div className="flex-1">
+          {hasLLM ? (
+          <div className="grid grid-cols-1 gap-3 text-xs sm:text-sm sm:grid-cols-2">
+              {/* Suggested roles */}
+              {llm?.suggestedRoles?.length ? (
+              <div className="sm:col-span-1">
+                <p
+                  className={cn(
+                    "mb-1.5 font-semibold",
+                    darkMode ? "text-white" : "text-gray-900"
+                  )}
+                >
+                    {t("suggestedRoles")}
+                  </p>
+                <p
+                  className={cn(
+                    "flex flex-wrap gap-1.5",
+                    darkMode ? "text-white/80" : "text-gray-700"
+                  )}
+                >
+                    {llm.suggestedRoles.map((role, idx) => (
+                      <span
+                        key={`${role}-${idx}`}
+                        className={cn(
+                          "inline-flex items-center rounded-full border px-2 py-0.5 text-[11px]",
+                        darkMode
+                          ? "border-white/15 bg-black/40 text-white/80"
+                          : "border-gray-200 bg-white text-gray-700"
+                        )}
+                      >
+                        {role}
+                      </span>
+                    ))}
+                  </p>
+                </div>
+              ) : null}
+
+            {/* Salary range */}
+            {llm?.salaryRange &&
+              Number.isFinite(llm.salaryRange.min) &&
+              Number.isFinite(llm.salaryRange.max) && (
+                <div className="sm:col-span-1">
+                  <p
+                    className={cn(
+                      "mb-1.5 font-semibold",
+                      darkMode ? "text-white" : "text-gray-900"
+                    )}
+                  >
+                    {t("salaryRange")}
+                  </p>
+                  <p
+                    className={cn(
+                      "text-xs font-medium sm:text-sm",
+                      darkMode ? "text-lime-300" : "text-emerald-700"
+                    )}
+                  >
+                    €{Math.round(llm.salaryRange.min).toLocaleString()} – €
+                    {Math.round(llm.salaryRange.max).toLocaleString()}
+                  </p>
+                </div>
+              )}
+
+            {/* Skill gaps / missing keywords */}
+              {llm?.skillGaps?.length ? (
+              <div className="sm:col-span-2">
+                <p
+                  className={cn(
+                    "mb-1.5 font-semibold",
+                    darkMode ? "text-white" : "text-gray-900"
+                  )}
+                >
+                    {t("skillGaps")}
+                  </p>
+                <ul
+                  className={cn(
+                    "list-disc pl-4 space-y-0.5",
+                    darkMode ? "text-white/80" : "text-gray-700"
+                  )}
+                >
+                    {llm.skillGaps.map((gap, idx) => (
+                    <li
+                      key={`${gap}-${idx}`}
+                      className="text-[11px] sm:text-xs leading-snug"
+                    >
+                        {gap}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+
+              {/* Improvements */}
+              {llm?.improvements?.length ? (
+              <div className="sm:col-span-2">
+                <p
+                  className={cn(
+                    "mb-1.5 font-semibold",
+                    darkMode ? "text-white" : "text-gray-900"
+                  )}
+                >
+                    {t("improvements")}
+                  </p>
+                <ul
+                  className={cn(
+                    "list-disc pl-4 space-y-0.5 max-h-32 overflow-y-auto pr-1",
+                    darkMode ? "text-white/80" : "text-gray-700"
+                  )}
+                >
+                    {llm.improvements.map((imp, idx) => (
+                    <li
+                      key={`${imp}-${idx}`}
+                      className="text-[11px] sm:text-xs leading-snug"
+                    >
+                        {imp}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
             </div>
-            <div className={"h-2 rounded-full overflow-hidden " + (darkMode ? "bg-white/10" : "bg-gray-200") }>
-              <div
-                className={cn("h-2 rounded-full transition-all duration-700")}
-                style={{
-                  width: `${item.value}%`,
-                  backgroundColor: item.color,
-                }}
-              />
+          ) : (
+          <div className="flex items-center justify-center min-h-[100px]">
+            <p
+              className={cn(
+                "text-[11px] sm:text-xs",
+                darkMode ? "text-white/60" : "text-gray-500"
+              )}
+            >
+                {t("noInsights")}
+              </p>
             </div>
-          </div>
-        ))}
+          )}
       </div>
     </div>
   );

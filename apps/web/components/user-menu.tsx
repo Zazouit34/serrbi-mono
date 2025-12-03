@@ -1,5 +1,5 @@
 "use client";
-import { User, LogOut, LogIn, Heart, Wallet, Zap } from "lucide-react";
+import { User, LogOut, LogIn, Heart, Wallet, Zap, FileCog } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { buttonVariants } from "@workspace/ui/components/button";
 import { cn } from "@workspace/ui/lib/utils";
@@ -62,7 +62,8 @@ export function UserMenu() {
               href="/subscription"
               className="flex items-center w-full cursor-pointer"
             >
-              <Wallet className="mr-2 size-4" />
+              <Zap className="mr-2 size-4" />
+              
               {t("plans")}
             </Link>
           </DropdownMenuItem>
@@ -71,8 +72,18 @@ export function UserMenu() {
               href="/account/auto-apply"
               className="flex items-center w-full cursor-pointer"
             >
-              <Zap className="mr-2 size-4" />
+              <FileCog className="mr-2 size-4" />
+              
               {t("autoApply")}
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link
+              href="/account/billing"
+              className="flex items-center w-full cursor-pointer"
+            >
+              <Wallet className="mr-2 size-4" />
+              {t("billing")}
             </Link>
           </DropdownMenuItem>
         

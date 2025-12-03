@@ -17,18 +17,14 @@ import {
   FormMessage,
 } from "@workspace/ui/components/form";
 import { useRouter } from "next/navigation";
-import { parsePDF } from "@/app/utils/pdf/prase-pdf";
-import {
-  scoreResume,
-  type ResumeScore,
-} from "@/app/utils/pdf/score-calculator";
-import { ResumeScoreCard } from "@/components/ui/pdf/resume-score-card";
 import {
   UppyPDFUploader,
   type UppyPDFUploaderHandle,
 } from "@/components/ui/uppy-pdf-uploader";
 import { Trash2 } from "lucide-react";
 import { useTranslations } from "next-intl";
+import Link from "next/link";
+import { parsePDF } from "@/app/utils/pdf/prase-pdf";
 
 const resumeSchema = z.object({
   resumeUrl: z.string().url("Invalid URL").optional(),
@@ -43,8 +39,6 @@ export default function ResumeListingForm() {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | undefined>();
   const [success, setSuccess] = useState<string | undefined>();
-  const [resumeScore, setResumeScore] = useState<ResumeScore | null>(null);
-  const [analyzing, setAnalyzing] = useState(false);
   const uploaderRef = useRef<UppyPDFUploaderHandle | null>(null);
   const router = useRouter();
 
@@ -56,31 +50,17 @@ export default function ResumeListingForm() {
     onSuccess: () => setSuccess(tResume("uploadSuccess")),
     onError: (e) => setError(e.message || tResume("saveFailed")),
   });
+  const setResumeEmbedding = trpc.auth.updateResumeEmbedding.useMutation();
 
   const clearResume = trpc.auth.clearResume.useMutation({
     onSuccess: async () => {
       setSuccess(undefined);
       setError(undefined);
-      setResumeScore(null);
       form.setValue("resumeUrl", "");
       await refetchUser();
     },
     onError: (e) => setError(e.message || tResume("saveFailed")),
   });
-
-  const analyzeFile = async (file: File) => {
-    try {
-      setAnalyzing(true);
-      const text = await parsePDF(file);
-      const score = scoreResume(text);
-      setResumeScore(score);
-    } catch (err) {
-      console.error("Resume analysis failed:", err);
-      setError(tResume("analysisFailed"));
-    } finally {
-      setAnalyzing(false);
-    }
-  };
 
   const handleUploadToProfile = async () => {
     setError("");
@@ -100,6 +80,11 @@ export default function ResumeListingForm() {
 
       try {
         await setResumeUrl.mutateAsync({ resumeUrl: url });
+        // Parse PDF on client and update resume embedding
+        const text = await parsePDF(file);
+        if (text) {
+          await setResumeEmbedding.mutateAsync({ resumeText: text });
+        }
         router.push("/jobs/resume-listing/new");
       } catch (e: any) {
         setError(e?.message || tResume("saveFailed"));
@@ -162,9 +147,10 @@ export default function ResumeListingForm() {
                     <UppyPDFUploader
                       ref={uploaderRef}
                       note={tResume("note")}
-                      onFileSelect={analyzeFile}
                       onUploadError={(err) => setError(err)}
-                      onUploadSuccess={(url) => form.setValue("resumeUrl", url)}
+                      onUploadSuccess={(url) => {
+                        form.setValue("resumeUrl", url);
+                      }}
                     />
                   )}
                 </FormControl>
@@ -173,28 +159,26 @@ export default function ResumeListingForm() {
             )}
           />
 
-          {analyzing && (
-            <p className="text-sm text-gray-500 animate-pulse">{tResume("analyzing")}</p>
-          )}
-          {resumeScore && !analyzing && (
-            <div className="mt-4">
-              <ResumeScoreCard
-                score={resumeScore.score}
-                breakdown={resumeScore.breakdown}
-              />
-            </div>
-          )}
-
           {error && <p className="text-sm text-red-600">{error}</p>}
           {success && <p className="text-sm text-green-600">{success}</p>}
 
           <Button
             onClick={handleUploadToProfile}
-            disabled={isPending || analyzing || !resumeScore}
+            disabled={isPending}
             className="w-full text-white bg-black hover:bg-black/90"
           >
             {tResume("uploadToProfile")}
           </Button>
+
+          <p className="text-xs text-center text-muted-foreground">
+            {tResume("analyzerCta")}{" "}
+            <Link
+              href="/resume-analyzer"
+              className="font-semibold text-black hover:underline"
+            >
+              {tResume("analyzerLink")}
+            </Link>
+          </p>
         </div>
       </Form>
     </div>

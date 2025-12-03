@@ -20,6 +20,7 @@ export function JobCard({
   job,
   featured,
   className,
+  compact,
 }: {
   job: {
     id: string;
@@ -40,6 +41,7 @@ export function JobCard({
   };
   featured?: boolean;
   className?: string;
+  compact?: boolean;
 }) {
   const t = useTranslations("JobCard");
   const tAll = useTranslations();
@@ -59,10 +61,12 @@ export function JobCard({
   const wageMax = wageMin != null ? wageMin + 200 : null;
 
   return (
-    <div className="flex justify-center sm:block">
+    <div className={cn(compact ? "block" : "flex justify-center sm:block")}>
       <Card
         className={cn(
           "overflow-hidden w-full sm:max-w-none rounded-3xl shadow-md hover:shadow-lg transition-all !py-0 cursor-pointer",
+          compact &&
+            "rounded-2xl shadow-sm hover:shadow-md !py-0",
           featured && "border-primary/50 bg-primary/5",
           className
         )}
@@ -76,52 +80,117 @@ export function JobCard({
           }
         }}
       >
-        <CardContent className="p-4 space-y-6 md:p-6">
+        <CardContent
+          className={cn(
+            "p-4 space-y-6 md:p-6",
+            compact && "p-2 space-y-2 md:p-3"
+          )}
+        >
           {/* Top Row: Avatar + Category + Type */}
           <div className="flex justify-between items-start">
-            <Avatar className="bg-gray-100 rounded-2xl shadow-sm size-12 sm:size-16">
+            <Avatar
+              className={cn(
+                "bg-gray-100 rounded-2xl shadow-sm size-12 sm:size-16",
+                compact && "size-8 rounded-xl shadow"
+              )}
+            >
               <AvatarImage
                 src={job.companyImage || undefined}
                 alt={job.companyName ?? "Company"}
               />
-              <AvatarFallback className="bg-gray-200 text-gray-600 font-semibold">
+              <AvatarFallback
+                className={cn(
+                  "bg-gray-200 text-gray-600 font-semibold",
+                  compact && "text-[10px]"
+                )}
+              >
                 {job.companyName?.slice(0, 2).toUpperCase() ?? "CO"}
               </AvatarFallback>
             </Avatar>
 
-            <div className="flex flex-col gap-2 items-end">
-              {job.category && (
-                <CategoryBadge category={job.category} type="job" />
+            <div
+              className={cn(
+                "flex flex-col gap-2 items-end",
+                compact && "gap-1"
               )}
-              <span className="px-2 py-0.5 rounded-md border text-foreground/70 text-xs md:text-sm">
+            >
+              {job.category && (
+                <CategoryBadge
+                  category={job.category}
+                  type="job"
+                  className={cn(compact && "text-[10px] px-1.5 py-0.5")}
+                />
+              )}
+              <span
+                className={cn(
+                  "px-2 py-0.5 rounded-md border text-foreground/70 text-xs md:text-sm",
+                  compact && "text-[10px] px-1.5 py-0.5"
+                )}
+              >
                 {tAll(`Enums.LocationRequirement.${job.locationRequirement}`)}
               </span>
             </div>
           </div>
 
           {/* Company + Days ago + Favorite */}
-          <div className="flex justify-between items-center min-h-[1.5rem] md:min-h-[2rem]">
-            <div className="flex gap-2 items-center flex-1 min-w-0">
-              <span className="text-sm font-semibold text-gray-800 md:text-lg truncate">
+          <div
+            className={cn(
+              "flex justify-between items-center min-h-[1.5rem] md:min-h-[2rem]",
+              compact && "min-h-[1.25rem]"
+            )}
+          >
+            <div className="flex flex-1 gap-2 items-center min-w-0">
+              <span
+                className={cn(
+                  "text-sm font-semibold text-gray-800 md:text-lg truncate",
+                  compact && "text-xs md:text-sm"
+                )}
+              >
                 {job.companyName ?? t("unknownCompany")}
               </span>
-              <span className="flex gap-1 items-center text-xs text-gray-400 md:text-sm whitespace-nowrap">
-                <ClockIcon className="size-3" />
+              <span
+                className={cn(
+                  "flex gap-1 items-center text-xs text-gray-400 md:text-sm whitespace-nowrap",
+                  compact && "text-[10px]"
+                )}
+              >
+                <ClockIcon className={cn("size-3", compact && "size-2.5")} />
                 {daysAgo !== null
                   ? daysAgo === 0
                     ? t("today")
-                    : t(daysAgo === 1 ? "daysAgo_one" : "daysAgo_other", { count: daysAgo })
+                    : t(
+                        daysAgo === 1 ? "daysAgo_one" : "daysAgo_other",
+                        { count: daysAgo }
+                      )
                   : ""}
               </span>
             </div>
-            <div onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
-              <FavoriteButton jobId={job.id} color={[239, 68, 68]} />
-            </div>
+            {!compact && (
+              <div
+                onClick={(e) => e.stopPropagation()}
+                onKeyDown={(e) => e.stopPropagation()}
+              >
+                <FavoriteButton
+                  jobId={job.id}
+                  color={[239, 68, 68]}
+                />
+              </div>
+            )}
           </div>
 
           {/* Job Title */}
-          <div className="min-h-[2.5rem] md:min-h-[3.75rem]">
-            <h2 className="text-base font-bold leading-tight text-gray-900 md:text-2xl line-clamp-2">
+          <div
+            className={cn(
+              "min-h-[2.5rem] md:min-h-[3.75rem]",
+              compact && "min-h-[1.75rem]"
+            )}
+          >
+            <h2
+              className={cn(
+                "text-base font-bold leading-tight text-gray-900 md:text-2xl line-clamp-2",
+                compact && "text-left text-sm md:text-base line-clamp-2"
+              )}
+            >
               {job.title}
             </h2>
           </div>
@@ -131,30 +200,34 @@ export function JobCard({
             city={job.city}
             stateAbbreviation={job.stateAbbreviation}
             experienceLevel={job.experienceLevel}
+            compact={compact}
           />
 
-          {/* Wage + Apply button */}
-          <div className="flex justify-between items-center pt-3 border-t">
-            {wageMin != null && wageMax != null && (
-              <div className="flex gap-1 items-baseline md:gap-2">
-                <span className="text-sm font-semibold md:text-base text-emerald-600">
-                  {wageMin.toLocaleString()} - {wageMax.toLocaleString()} {tAll("Currency.MAD")}
-                </span>
-              </div>
-            )}
+          {/* Wage + Apply button (hidden in compact mode) */}
+          {!compact && (
+            <div className="flex justify-between items-center pt-3 border-t">
+              {wageMin != null && wageMax != null && (
+                <div className="flex gap-1 items-baseline md:gap-2">
+                  <span className="text-sm font-semibold text-emerald-600 md:text-base">
+                    {wageMin.toLocaleString()} - {wageMax.toLocaleString()}{" "}
+                    {tAll("Currency.MAD")}
+                  </span>
+                </div>
+              )}
 
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={(e) => {
-                e.stopPropagation();
-                router.push(href);
-              }}
-            >
-              {t("apply")}
-              <ArrowRight className="ml-1 md:ml-2 size-3 md:size-4" />
-            </Button>
-          </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  router.push(href);
+                }}
+              >
+                {t("apply")}
+                <ArrowRight className="ml-1 md:ml-2 size-3 md:size-4" />
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

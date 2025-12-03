@@ -18,6 +18,8 @@ model User {
   phone             String?
   image             String?
   resumeUrl         String?
+  // Dense embedding vector for the latest uploaded resume / cv
+  resumeEmbedding   Float[]            @default([])
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
   accounts          Account[]
@@ -113,6 +115,8 @@ model Job {
   createdAt           DateTime            @default(now())
   updatedAt           DateTime            @updatedAt
   tags                String[]            @default([])  //skill tags
+  // Dense embedding vector for semantic search (DashScope text-embedding-v4)
+  embedding           Float[]             @default([])
   favorites           Favorite?
   moderator           User?               @relation("JobModerator", fields: [moderatedBy], references: [id])
   user                User                @relation(fields: [userId], references: [id])

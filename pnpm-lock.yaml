@@ -334,6 +334,9 @@ importers:
       '@prisma/client':
         specifier: ^6.14.0
         version: 6.15.0(prisma@6.15.0(typescript@5.7.3))(typescript@5.7.3)
+      '@vigillabs/timescale-db-core':
+        specifier: ^0.0.22
+        version: 0.0.22
     devDependencies:
       prisma:
         specifier: ^6.14.0
@@ -3567,6 +3570,15 @@ packages:
     resolution: {integrity: sha512-Yy19y6O2GJq8f7CHf7L0nxL8bf4PZCPaVOCgJrusOeFHY1LvHgYXnmnXg6N5iwAnbgbZCDjo60SiM6IPJi9C5g==}
     peerDependencies:
       react: '>= 16.8.0'
+
+  '@vigillabs/timescale-db-core@0.0.22':
+    resolution: {integrity: sha512-V8Er0frECCJO+F+VVZgxB0ACu9be1qZnr7SOy7H81IhC3T3Gy44RkadSFa7q5ZzX5vOqs/hZl3g/TUbkMmIpqw==}
+
+  '@vigillabs/timescale-db-schemas@0.0.22':
+    resolution: {integrity: sha512-CzSnns/DyQ2BOKIXyUc5R3G/ZCHfYgmcwdbSkFdDFb/pJQNfLlrHu5Z5ZxbZkNfWJE9AxNoeMOhYttPO6puKKA==}
+
+  '@vigillabs/timescale-db-utils@0.0.22':
+    resolution: {integrity: sha512-Y3N6Rpc6gkuxcfx0MO34I9/of2iSZDvIe+QQBpjY0rVGlASy7471OH1JXFU1ufEHCx9/o0/Iw9b2q8qHYF+5XQ==}
 
   acorn-import-attributes@1.9.5:
     resolution: {integrity: sha512-n02Vykv5uA3eHGM/Z2dQrcD56kL8TyDb2p1+0P83PClMnC/nc+anbQRhIOWnSq4Ke/KvDPrY3C9hDtC/A3eHnQ==}
@@ -11041,6 +11053,24 @@ snapshots:
     dependencies:
       '@use-gesture/core': 10.3.1
       react: 19.1.1
+
+  '@vigillabs/timescale-db-core@0.0.22':
+    dependencies:
+      '@vigillabs/timescale-db-schemas': 0.0.22
+      '@vigillabs/timescale-db-utils': 0.0.22
+    transitivePeerDependencies:
+      - supports-color
+
+  '@vigillabs/timescale-db-schemas@0.0.22':
+    dependencies:
+      zod: 3.25.76
+
+  '@vigillabs/timescale-db-utils@0.0.22':
+    dependencies:
+      '@vigillabs/timescale-db-schemas': 0.0.22
+      debug: 4.4.1
+    transitivePeerDependencies:
+      - supports-color
 
   acorn-import-attributes@1.9.5(acorn@8.15.0):
     dependencies:

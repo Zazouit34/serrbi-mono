@@ -9,7 +9,7 @@ import { cn } from "@workspace/ui/lib/utils";
 import { FavoriteButton } from "@/components/ui/favorite-button";
 import { useTranslations } from "next-intl";
 
-export function TaskCard({ task, className }: any) {
+export function TaskCard({ task, className, compact }: { task: any; className?: string; compact?: boolean }) {
   const t = useTranslations();
   const [contactOpen, setContactOpen] = useState(false);
   const overlayRef = useRef<HTMLDivElement | null>(null);
@@ -45,13 +45,21 @@ export function TaskCard({ task, className }: any) {
     <div className={cn("w-full cursor-pointer", className)}>
       <div onClick={() => contactOpen && setContactOpen(false)}>
         {/* Card visual */}
-        <div ref={containerRef} className="overflow-hidden relative w-full rounded-xl shadow-md aspect-square">
+        <div
+          ref={containerRef}
+          className={cn(
+            "overflow-hidden relative w-full rounded-xl shadow-md aspect-square",
+            compact && "aspect-[4/3]"
+          )}
+        >
           {/* Center text instead of image */}
           <div
             className="flex justify-center items-center w-full h-full text-center"
             style={{ background: task.bgStyle || "linear-gradient(to right, #ddd, #ccc)" }}
           >
-            <span className="px-4 text-xl font-bold text-white line-clamp-4">{task.description}</span>
+            <span className={cn("px-4 font-bold text-white line-clamp-4 text-xl", compact && "text-sm")}>
+              {task.description}
+            </span>
           </div>
 
           {/* Category - top left */}
@@ -74,77 +82,89 @@ export function TaskCard({ task, className }: any) {
           </div>
 
           {/* Bottom Expandable Overlay (like service-card) */}
-          <div
-            ref={overlayRef}
-            style={{ maxHeight: contactOpen ? 140 : 52, transition: "max-height 280ms ease" }}
-            className={cn(
-              "absolute right-0 bottom-0 left-0 z-10 px-3 py-2 rounded-t-md backdrop-blur-md bg-black/30 overflow-hidden"
-            )}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between">
-              <div className="text-sm font-semibold text-white leading-tight">
-                {formatBudget(task.budget)}
-              </div>
-
-              {!contactOpen && task.phoneNumber && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setContactOpen(true);
-                  }}
-                  className="bg-white/95 text-gray-900 text-xs font-medium px-2.5 py-1 rounded-md shadow-sm hover:bg-white transition"
-                >
-                  {t("Common.contact")}
-                </button>
-              )}
-            </div>
-
+          {!compact && (
             <div
+              ref={overlayRef}
+              style={{ maxHeight: contactOpen ? 140 : 52, transition: "max-height 280ms ease" }}
               className={cn(
-                "transition-[opacity,max-height,margin] duration-300 overflow-hidden",
-                contactOpen ? "mt-2 max-h-40 opacity-100 pointer-events-auto" : "mt-0 max-h-0 opacity-0 pointer-events-none"
+                "absolute right-0 bottom-0 left-0 z-10 px-3 py-2 rounded-t-md backdrop-blur-md bg-black/30 overflow-hidden",
               )}
+              onClick={(e) => e.stopPropagation()}
             >
-              <div className="grid grid-cols-2 gap-2 items-center">
-                {/* WhatsApp */}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (task.phoneNumber) {
-                      window.open(`https://wa.me/${task.phoneNumber}`, "_blank");
-                    }
-                  }}
-                  className="flex items-center justify-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-md"
-                  style={{ backgroundColor: "#25D366", color: "white" }}
-                >
-                  <FontAwesomeIcon icon={faWhatsapp} className="size-3.5" />
-                  <span className="truncate">{t("Common.whatsapp")}</span>
-                </button>
+              <div className="flex items-center justify-between">
+                <div className="text-sm font-semibold text-white leading-tight">
+                  {formatBudget(task.budget)}
+                </div>
 
-                {/* Call */}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (task.phoneNumber) window.location.href = `tel:${task.phoneNumber}`;
-                  }}
-                  className="flex items-center justify-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-md bg-white/95 text-gray-900"
-                >
-                  <Phone className="size-3.5" />
-                  <span className="truncate">{t("Common.call")}</span>
-                </button>
+                {!contactOpen && task.phoneNumber && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setContactOpen(true);
+                    }}
+                    className="bg-white/95 text-gray-900 text-xs font-medium px-2.5 py-1 rounded-md shadow-sm hover:bg-white transition"
+                  >
+                    {t("Common.contact")}
+                  </button>
+                )}
+              </div>
+
+              <div
+                className={cn(
+                  "transition-[opacity,max-height,margin] duration-300 overflow-hidden",
+                  contactOpen ? "mt-2 max-h-40 opacity-100 pointer-events-auto" : "mt-0 max-h-0 opacity-0 pointer-events-none",
+                )}
+              >
+                <div className="grid grid-cols-2 gap-2 items-center">
+                  {/* WhatsApp */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (task.phoneNumber) {
+                        window.open(`https://wa.me/${task.phoneNumber}`, "_blank");
+                      }
+                    }}
+                    className="flex items-center justify-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-md"
+                    style={{ backgroundColor: "#25D366", color: "white" }}
+                  >
+                    <FontAwesomeIcon icon={faWhatsapp} className="size-3.5" />
+                    <span className="truncate">{t("Common.whatsapp")}</span>
+                  </button>
+
+                  {/* Call */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (task.phoneNumber) window.location.href = `tel:${task.phoneNumber}`;
+                    }}
+                    className="flex items-center justify-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-md bg-white/95 text-gray-900"
+                  >
+                    <Phone className="size-3.5" />
+                    <span className="truncate">{t("Common.call")}</span>
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Bottom row: name left, location right */}
-        <div className="pt-4 -mt-2">
+        <div className={cn("pt-4 -mt-2", compact && "pt-2")}>
           <div className="flex items-start justify-between">
-            <h3 className="text-base font-semibold text-gray-900 line-clamp-2">
+            <h3
+              className={cn(
+                "text-base font-semibold text-gray-900 line-clamp-2",
+                compact && "text-xs"
+              )}
+            >
               {task.displayName || task.user?.name || "Task Owner"}
             </h3>
-            <span className="text-sm font-semibold text-gray-500">
+            <span
+              className={cn(
+                "text-sm font-semibold text-gray-500",
+                compact && "text-[11px]"
+              )}
+            >
               {formatLocation(task.city)}
             </span>
           </div>

@@ -197,13 +197,24 @@ export default function SubscriptionPageClient() {
         `${plan.autoApplyMonthlyLimit} ${tPricing("features.autoApplyPerMonth")}`
       );
     }
-    // Job board access
-    if (plan.jobBoardAccess) features.push(tPricing("features.jobBoardAccess"));
     // Resume ATS score
     if (plan.resumeAtsScoreAccess)
       features.push(tPricing("features.resumeAtsScore"));
     // Smart Match AI
     if (plan.smartMatchAccess) features.push(tPricing("features.smartMatch"));
+    const isFreePlan = (plan.name || "").toUpperCase() === "FREE";
+    // Add AI tools individually
+    if (isFreePlan) {
+      features.push(`1 ${tPricing("features.aiResumeAnalyzer")}`);
+      features.push(`1 ${tPricing("features.careerSwitch")}`);
+      features.push(`1 ${tPricing("features.aiRoadmap")}`);
+      features.push(`1 ${tPricing("features.atsInsight")}`);
+    } else {
+      features.push(tPricing("features.aiResumeAnalyzer"));
+      features.push(tPricing("features.careerSwitch"));
+      features.push(tPricing("features.aiRoadmap"));
+      features.push(tPricing("features.atsInsight"));
+    }
     
 
     const isCurrent = subscription?.planId === plan.id;

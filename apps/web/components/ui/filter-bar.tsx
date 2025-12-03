@@ -25,7 +25,7 @@ import {
   PopoverTrigger,
 } from "@workspace/ui/components/popover";
 import { useTranslations } from "next-intl";
-import { normalizeText } from "@/lib/normalize-text";
+
 
 export type FilterOption = {
   label: string;
@@ -248,9 +248,9 @@ export function FilterBar({
                                 return (
                                   <div className="flex gap-2 items-center">
                                     {IconComponent && (
-                                      <IconComponent className="w-4 h-4 text-red-600" />
+                                      <IconComponent className="w-4 h-4 text-black" />
                                     )}
-                                    <span className="font-medium text-red-700">
+                                    <span className="font-medium text-black">
                                       {selectedOption?.label}
                                     </span>
                                   </div>
@@ -298,7 +298,7 @@ export function FilterBar({
                                   >
                                     {IconComponent && (
                                       <IconComponent
-                                        className={`w-3 h-3 ${isSelected ? "text-red-600" : "text-gray-500"}`}
+                                        className={`w-3 h-3 ${isSelected ? "text-black" : "text-gray-500"}`}
                                       />
                                     )}
                                     <span>{option.labelKey ? t(option.labelKey) : option.label}</span>
