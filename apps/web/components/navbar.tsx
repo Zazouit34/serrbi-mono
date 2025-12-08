@@ -7,7 +7,7 @@ import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { cn } from "@workspace/ui/lib/utils";
-import { Globe2, CircleCheckIcon, CircleIcon, Wallet, Zap, Menu } from "lucide-react";
+import { Globe2, CircleCheckIcon, CircleIcon, Wallet, Zap, Menu, TrendingUp, FileText } from "lucide-react";
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -35,8 +35,11 @@ const DEFAULT_LINKS = [
 ];
 
 const LINKS = [
+  { href:"/career-switch", key: "careerSwitch", icon: TrendingUp },
+  { href:"/resume-analyzer", key: "resumeAnalyzer", icon: FileText },
   { href:"/subscription", key: "plans", icon: Wallet },
   { href:"/account/auto-apply", key: "autoApply", icon: Zap },
+
 ]
 
 const DEFAULT_LANGUAGES: Array<{ code: string; label: string }> = [

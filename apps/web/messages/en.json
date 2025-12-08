@@ -9,7 +9,9 @@
     "services": "Services",
     "tasks": "Tasks",
     "plans": "Plans",
-    "autoApply": "AI Serrbi"
+    "autoApply": "AI Serrbi",
+    "careerSwitch": "Career Switch",
+    "resumeAnalyzer": "Resume Analyzer"
   },
   "Blog": {
     "title": "Blog",
@@ -544,6 +546,8 @@
   },
   "UserMenu": {
     "myAccount": "My Account",
+    "careerSwitch": "Career Switch AI",
+    "resumeAnalyzer": "Resume Analyzer",
     "favorites": "Favorites",
     "plans": "Plans",
     "autoApply": "AI Serrbi",

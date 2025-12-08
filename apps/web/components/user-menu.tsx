@@ -1,5 +1,5 @@
 "use client";
-import { User, LogOut, LogIn, Heart, Wallet, Zap, FileCog } from "lucide-react";
+import { User, LogOut, LogIn, Heart, Wallet, Zap, FileCog, FileText, TrendingUp } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { buttonVariants } from "@workspace/ui/components/button";
 import { cn } from "@workspace/ui/lib/utils";
@@ -50,6 +50,34 @@ export function UserMenu() {
         <DropdownMenuGroup>
           <DropdownMenuItem asChild>
             <Link
+              href="/resume-analyzer"
+              className="flex items-center w-full cursor-pointer"
+            >
+              <FileText className="mr-2 size-4" />
+              {t("resumeAnalyzer")}
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link
+              href="/career-switch"
+              className="flex items-center w-full cursor-pointer"
+            >
+              <TrendingUp className="mr-2 size-4" />
+              {t("careerSwitch")}
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link
+              href="/account/auto-apply"
+              className="flex items-center w-full cursor-pointer"
+            >
+              <FileCog className="mr-2 size-4" />
+              
+              {t("autoApply")}
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link
               href="/favorites"
               className="flex items-center w-full cursor-pointer"
             >
@@ -67,16 +95,7 @@ export function UserMenu() {
               {t("plans")}
             </Link>
           </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link
-              href="/account/auto-apply"
-              className="flex items-center w-full cursor-pointer"
-            >
-              <FileCog className="mr-2 size-4" />
-              
-              {t("autoApply")}
-            </Link>
-          </DropdownMenuItem>
+        
           <DropdownMenuItem asChild>
             <Link
               href="/account/billing"

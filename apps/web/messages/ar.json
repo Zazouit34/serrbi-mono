@@ -9,7 +9,9 @@
     "services": "الخدمات",
     "tasks": "المهام",
     "plans": "الباقات",
-    "autoApply": "AI Serrbi"
+    "autoApply": "AI Serrbi",
+    "careerSwitch": "توجيه مهني",
+    "resumeAnalyzer": "محلل السيرة الذاتية"
   },
   "Blog": {
     "title": "مدونة",
@@ -543,6 +545,8 @@
   },
   "UserMenu": {
     "myAccount": "حسابي",
+    "careerSwitch": "توجيه مهني",
+    "resumeAnalyzer": "محلل السيرة الذاتية",
     "favorites": "المفضلة",
     "plans": "الخطط",
     "autoApply": "AI S",
