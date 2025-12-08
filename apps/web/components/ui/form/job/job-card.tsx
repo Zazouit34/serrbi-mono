@@ -65,10 +65,9 @@ export function JobCard({
       <Card
         className={cn(
           "overflow-hidden w-full sm:max-w-none rounded-3xl shadow-md hover:shadow-lg transition-all !py-0 cursor-pointer",
-          compact &&
-            "rounded-2xl shadow-sm hover:shadow-md !py-0",
+          compact && "rounded-2xl shadow-sm hover:shadow-md !py-0",
           featured && "border-primary/50 bg-primary/5",
-          className
+          className,
         )}
         role="link"
         tabIndex={0}
@@ -83,7 +82,7 @@ export function JobCard({
         <CardContent
           className={cn(
             "p-4 space-y-6 md:p-6",
-            compact && "p-2 space-y-2 md:p-3"
+            compact && "p-2 md:p-3 space-y-2 flex flex-col",
           )}
         >
           {/* Top Row: Avatar + Category + Type */}
@@ -196,12 +195,14 @@ export function JobCard({
           </div>
 
           {/* Location + Experience */}
-          <JobListingInfo
-            city={job.city}
-            stateAbbreviation={job.stateAbbreviation}
-            experienceLevel={job.experienceLevel}
-            compact={compact}
-          />
+          <div className={cn(compact && "mt-auto")}>
+            <JobListingInfo
+              city={job.city}
+              stateAbbreviation={job.stateAbbreviation}
+              experienceLevel={job.experienceLevel}
+              compact={compact}
+            />
+          </div>
 
           {/* Wage + Apply button (hidden in compact mode) */}
           {!compact && (

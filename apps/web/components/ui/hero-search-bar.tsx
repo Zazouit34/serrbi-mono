@@ -236,7 +236,7 @@ export function HeroSearchBar() {
                             }}
                             featured={false}
                             compact
-                            className="h-[190px] md:h-full"
+                            className="h-[200px] md:h-full"
                           />
                         </div>
                       ))}
