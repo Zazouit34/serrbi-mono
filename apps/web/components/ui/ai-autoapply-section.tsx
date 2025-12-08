@@ -54,7 +54,7 @@ export function AiAutoApplySection(_: AiAutoApplySectionProps) {
                 asChild
                 className="bg-black text-white hover:bg-black/80 rounded-full px-6 h-10 text-sm font-semibold"
               >
-                <a href="/jobs/auto-apply">
+                <a href="/account/auto-apply">
                   {tr("AiAutoApplySection.cta", "Start AI auto‑apply")}
                 </a>
               </Button>
