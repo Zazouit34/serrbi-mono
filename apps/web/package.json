@@ -50,7 +50,7 @@
     "liquid-glass-react": "^1.1.1",
     "lucide-react": "^0.543.0",
     "motion": "^12.23.12",
-    "next": "^15.5.0",
+    "next": "15.5.7",
     "next-auth": "5.0.0-beta.29",
     "next-intl": "^4.3.12",
     "next-mdx-remote": "^5.0.0",

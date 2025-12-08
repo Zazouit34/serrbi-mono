@@ -23,7 +23,7 @@ const JOBS: JobExample[] = [
     role: "ML Engineer",
     team: "Machine Learning",
     timeAgo: "Just now",
-    tags: ["PyTorch", "MLOps"],
+    tags: ["PyTorch", "MLOps", "AI"],
     status: "applying",
     logoUrl: "/images/logo-hero.png",
   },
