@@ -214,7 +214,7 @@ export function HeroSearchBar() {
                       {jobsQuery.data.items.map((job: any) => (
                         <div
                           key={job.id}
-                          className="min-w-[260px] max-w-[280px] flex-shrink-0 h-[260px] md:h-auto"
+                          className="min-w-[260px] max-w-[280px] flex-shrink-0"
                         >
                           <JobCard
                             job={{
@@ -236,7 +236,7 @@ export function HeroSearchBar() {
                             }}
                             featured={false}
                             compact
-                            className="h-full"
+                            className="h-[260px] md:h-full"
                           />
                         </div>
                       ))}
