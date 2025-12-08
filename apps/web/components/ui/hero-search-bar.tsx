@@ -236,7 +236,7 @@ export function HeroSearchBar() {
                             }}
                             featured={false}
                             compact
-                            className="h-[260px] md:h-full"
+                            className="h-[190px] md:h-full"
                           />
                         </div>
                       ))}
@@ -394,7 +394,7 @@ export function HeroSearchBar() {
 
       {/* Company Icons Footer */}
       <div className="px-6 pb-4">
-        <div className="flex gap-8 justify-center items-center pt-2">
+        <div className="flex gap-8 justify-center items-center pt-4">
           {companyIcons.map(({ icon: Icon, name }) => (
             <div key={name} className="flex justify-center items-center">
               <Icon
