@@ -190,17 +190,6 @@ export function HeroSearchBar() {
           {/* Jobs results */}
           {activeTab === "jobs" && (
             <div className="mt-1 space-y-2 text-xs">
-              <p className="flex gap-2 items-center text-[11px] text-gray-600 uppercase tracking-wide">
-                <Sparkles className="text-violet-500 size-4" />
-                <span>{t("jobsHint")}</span>
-              </p>
-
-              {isSearching && (
-                <p className="text-gray-600">
-                  {t("searchingHint.jobs")}
-                </p>
-              )}
-
               {!isSearching && hasSearched && jobsQuery.error && (
                 <p className="text-red-600">
                   {t("searchError")}
@@ -225,7 +214,7 @@ export function HeroSearchBar() {
                       {jobsQuery.data.items.map((job: any) => (
                         <div
                           key={job.id}
-                          className="min-w-[260px] max-w-[280px] flex-shrink-0"
+                          className="min-w-[260px] max-w-[280px] flex-shrink-0 h-[260px] md:h-auto"
                         >
                           <JobCard
                             job={{
@@ -290,17 +279,6 @@ export function HeroSearchBar() {
           {/* Services results */}
           {activeTab === "services" && (
             <div className="mt-1 space-y-2 text-xs">
-              <p className="flex gap-2 items-center text-[11px] text-gray-600 uppercase tracking-wide">
-                <Sparkles className="text-violet-500 size-4" />
-                <span>{t("servicesHint")}</span>
-              </p>
-
-              {isSearching && (
-                <p className="text-gray-600">
-                  {t("searchingHint.services")}
-                </p>
-              )}
-
               {!isSearching && hasSearched && servicesQuery.error && (
                 <p className="text-red-600">
                   {t("searchError")}
@@ -327,11 +305,17 @@ export function HeroSearchBar() {
                           key={service.id}
                           className="min-w-[260px] max-w-[280px] flex-shrink-0"
                         >
-                          <ServiceCard
-                            service={service}
-                            compact
-                            className="h-full"
-                          />
+                          <Link
+                            href={`/services?serviceCategory=${encodeURIComponent(
+                              service.serviceCategory ?? "",
+                            )}`}
+                          >
+                            <ServiceCard
+                              service={service}
+                              compact
+                              className="h-full"
+                            />
+                          </Link>
                         </div>
                       ))}
                     </div>
@@ -340,11 +324,17 @@ export function HeroSearchBar() {
                     <div className="hidden gap-3 mt-3 md:grid md:grid-cols-3">
                       {servicesQuery.data.items.map((service: any) => (
                         <div key={service.id} className="h-full">
-                          <ServiceCard
-                            service={service}
-                            compact
-                            className="h-full"
-                          />
+                          <Link
+                            href={`/services?serviceCategory=${encodeURIComponent(
+                              service.serviceCategory ?? "",
+                            )}`}
+                          >
+                            <ServiceCard
+                              service={service}
+                              compact
+                              className="h-full"
+                            />
+                          </Link>
                         </div>
                       ))}
                     </div>
@@ -356,17 +346,6 @@ export function HeroSearchBar() {
           {/* Tasks results */}
           {activeTab === "tasks" && (
             <div className="mt-1 space-y-2 text-xs">
-              <p className="flex gap-2 items-center text-[11px] text-gray-600 uppercase tracking-wide">
-                <Sparkles className="text-violet-500 size-4" />
-                <span>{t("tasksHint")}</span>
-              </p>
-
-              {isSearching && (
-                <p className="text-gray-600">
-                  {t("searchingHint.tasks")}
-                </p>
-              )}
-
               {!isSearching && hasSearched && tasksQuery.error && (
                 <p className="text-red-600">
                   {t("searchError")}
