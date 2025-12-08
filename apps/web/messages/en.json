@@ -943,7 +943,26 @@
     "suggestedRoles": "Suggested roles",
     "salaryRange": "Estimated salary (€/month)",
     "improvements": "Recommendations",
-    "noInsights": "AI insights will appear here after analyzing your resume."
+    "noInsights": "AI insights will appear here after analyzing your resume.",
+    "title": "Your Resume Score",
+    "subtitle": "This score is calculated based on structure, skills, keywords, and how well your resume passes ATS checks.",
+    "overallLabel": "Your resume score",
+    "status": {
+      "strong": "Strong",
+      "goodStart": "Good start",
+      "needsWork": "Needs work"
+    },
+    "atsTitle": "ATS Score - {score}/100",
+    "atsIntro": "We scan your resume like an employer’s Applicant Tracking System. Here’s how it performs today:",
+    "atsBullet": {
+      "formatting": "Clear formatting that is easily readable by most ATS.",
+      "keywords": "Good use of role‑relevant keywords across experience and skills.",
+      "skillsWarning": "Some sections could be stronger (skills, metrics, or links). See the checklist below."
+    },
+    "salaryTitle": "Estimated monthly salary range",
+    "salarySubtitle": "Based on similar profiles, roles, and skills in your target market.",
+    "checklistTitle": "Resume improvement checklist",
+    "checklistIntro": "Focus on the items below to move your score closer to 100."
   },
   "CareerSwitchPage": {
     "badge": "Career guidance",

@@ -23,7 +23,13 @@ export function JobListingInfo({
   const locationLabel = translatedCity || ""
 
   return (
-    <div className={cn("flex items-center gap-6 text-sm", compact && "gap-4 text-xs", className)}>
+    <div
+      className={cn(
+        "flex items-center gap-6 text-sm",
+        compact && "gap-4 text-xs pt-3",
+        className,
+      )}
+    >
       {/* Location */}
       {locationLabel && (
         <div className="flex items-center gap-2">

@@ -948,7 +948,26 @@
     "suggestedRoles": "Rôles suggérés",
     "salaryRange": "Salaire estimé (€/mois)",
     "improvements": "Recommandations",
-    "noInsights": "Les analyses IA apparaîtront ici après l’analyse de votre CV."
+    "noInsights": "Les analyses IA apparaîtront ici après l’analyse de votre CV.",
+    "title": "Score de votre CV",
+    "subtitle": "Ce score est calculé à partir de la structure, des compétences, des mots‑clés et de la compatibilité ATS de votre CV.",
+    "overallLabel": "Score de votre CV",
+    "status": {
+      "strong": "Solide",
+      "goodStart": "Bon début",
+      "needsWork": "À améliorer"
+    },
+    "atsTitle": "Score ATS – {score}/100",
+    "atsIntro": "Nous analysons votre CV comme le ferait un système de suivi des candidatures (ATS). Voici son niveau actuel :",
+    "atsBullet": {
+      "formatting": "Mise en forme claire et facilement lisible par la plupart des ATS.",
+      "keywords": "Bon usage des mots‑clés pertinents pour le poste.",
+      "skillsWarning": "Certaines sections pourraient être renforcées (compétences, indicateurs ou liens). Consultez la liste ci‑dessous."
+    },
+    "salaryTitle": "Fourchette de salaire mensuel estimée",
+    "salarySubtitle": "Basée sur des profils, des postes et des compétences similaires sur votre marché.",
+    "checklistTitle": "Checklist d’amélioration du CV",
+    "checklistIntro": "Concentrez‑vous sur les points ci‑dessous pour rapprocher votre score de 100."
   },
   "CareerSwitchPage": {
     "badge": "Coaching carrière",
