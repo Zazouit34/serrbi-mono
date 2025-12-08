@@ -15,8 +15,8 @@ export function AiAutoApplySection(_: AiAutoApplySectionProps) {
     (tAll as any).has?.(key) ? (tAll as any)(key) : fallback;
 
   return (
-    <section className="mx-auto mt-10 w-full">
-      <div className="relative mx-auto max-w-5xl overflow-hidden rounded-[40px] bg-orange-500 p-6 sm:p-10 md:p-16">
+    <section className="mx-auto mt-10">
+      <div className="relative mx-auto overflow-hidden rounded-[40px] bg-orange-500 p-6 sm:p-10 md:p-16">
         {/* Orange circles decoration */}
         <div className="pointer-events-none absolute inset-0 hidden h-full w-full overflow-hidden md:block">
           <div className="absolute right-[-45%] top-1/2 h-[800px] w-[800px] -translate-y-1/2 aspect-square">
