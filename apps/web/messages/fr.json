@@ -294,6 +294,13 @@
       "loadPlansFailed": "Échec du chargement des plans. Réessayez."
     }
   },
+  "AiAutoApplySection": {
+    "badge": "Auto‑candidature IA",
+    "title": "Laissez Serrbi postuler à votre place pendant que vous faites avancer votre carrière",
+    "subtitle": "Notre auto‑candidature IA repère les offres les plus pertinentes et envoie des candidatures de qualité pour vous, afin que vous utilisiez ce temps pour améliorer votre CV, apprendre de nouvelles compétences ou préparer vos entretiens.",
+    "cta": "Activer l’auto‑candidature IA",
+    "imageAlt": "Illustration du tableau de bord d’auto‑candidature IA de Serrbi"
+  },
   "HeroSearchBar": {
     "tabs": {
       "jobs": "Parcourir les emplois",

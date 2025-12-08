@@ -292,6 +292,13 @@
     "choosePlan": "Choose plan",
     "errors": { "loadPlansFailed": "Failed to load plans. Please try again." }
   },
+  "AiAutoApplySection": {
+    "badge": "AI auto-apply",
+    "title": "Let Serrbi apply for you while you focus on your career",
+    "subtitle": "Our AI auto-apply scans the best matching roles and submits high‑quality applications for you, so you can use those hours to improve your resume, learn new skills, or prepare interviews.",
+    "cta": "Start AI auto‑apply",
+    "imageAlt": "Illustration of Serrbi’s AI auto‑apply dashboard"
+  },
   "HeroSearchBar": {
     "tabs": {
       "jobs": "Browse jobs",
