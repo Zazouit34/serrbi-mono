@@ -277,7 +277,7 @@ export function ResumeInsight({
               <div className="absolute right-[-20%] top-1/2 h-[120%] w-[120%] -translate-y-1/2 rounded-full bg-[radial-gradient(closest-side,#3b82f611,#00000000)]" />
             </div>
             {analyzing && !scoreData ? (
-              <div className="flex flex-col gap-6 justify-center items-center w-full max-w-md">
+              <div className="flex flex-col gap-6 justify-center items-center w-full">
                 <p className="text-lg font-medium text-center animate-pulse text-slate-700">
                   {tr(
                     "ResumeInsight.analyzing",
@@ -294,7 +294,7 @@ export function ResumeInsight({
                 </div>
               </div>
             ) : (
-              <div className="flex flex-col gap-2 p-4 w-full max-w-md rounded-2xl border border-slate-200 bg-white shadow-sm">
+              <div className="flex flex-col gap-2 p-4 w-full rounded-2xl border border-slate-200 bg-white shadow-sm">
                 <ResumeScoreCard
                   score={(scoreData as unknown as ResumeScore)?.score ?? 72}
                   breakdown={(scoreData as unknown as ResumeScore)?.breakdown ?? defaultBreakdown(72)}
