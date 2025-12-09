@@ -10,12 +10,13 @@ import {
 } from "@workspace/ui/lib/validation-schemas";
 
 import { TRPCError } from "@trpc/server";
+import { z } from "zod";
 import type { PrismaClient } from "@workspace/db";
-import { inngest } from "@/functions/inngest/client";
 import { applyAndNotify } from "@/server/services/job-application";
 import { headers } from "next/headers";
 import { getTenantFromHost } from "@/lib/domain";
 import maStates from "@workspace/ui/lib/states.json" assert { type: "json" };
+import { embedText, embedBatch } from "@/lib/embedding";
 
 
 export const jobRouter = router({
@@ -26,6 +27,16 @@ export const jobRouter = router({
       const user = (ctx as any).user;
 
       try {
+        // Compute an embedding for this job so it participates in semantic auto-apply ranking.
+        let jobEmbedding: number[] = [];
+        try {
+          jobEmbedding = await embedText(
+            `${input.title ?? ""} ${input.description ?? ""} ${(input.tags || []).join(" ")}`,
+          );
+        } catch (err) {
+          console.error("Failed to compute job embedding", err);
+        }
+
         const job = await db.job.create({
           data: {
             userId: user.id,
@@ -45,6 +56,7 @@ export const jobRouter = router({
             applicationEmail: input.applicationEmail || "",
             applicationUrl: input.applicationUrl || null,
             status: "draft", // Default status
+            embedding: jobEmbedding,
           },
           select: {
             id: true,
@@ -66,15 +78,6 @@ export const jobRouter = router({
             createdAt: true,
           },
         });
-        // Emit background event for auto-apply (non-blocking)
-        try {
-          await inngest.send({
-            name: "job/created",
-            data: { jobId: job.id },
-          });
-        } catch (err) {
-          console.error("Failed to send job/created event", err);
-        }
 
         return {
           success: true,
@@ -306,7 +309,7 @@ export const jobRouter = router({
       };
 
       const page = input?.page ?? 1;
-      const pageSize = input?.pageSize ?? 8;
+      const pageSize = input?.pageSize ?? 10;
       const enabled = input?.enabled ?? true;
 
       if (!enabled) {
@@ -341,104 +344,41 @@ export const jobRouter = router({
         return { items: [], total: 0, page, pageSize };
       }
 
-      // Determine if we have extra filters beyond category
-      const hasKeywordFilters = !!(effectiveKeywords && effectiveKeywords.length);
-      const hasRoleFilters = !!(effectiveRoles && effectiveRoles.length);
-
+      const MAX_ITEMS = 20;
       const skip = (page - 1) * pageSize;
 
-      // When extra filters are present, fetch all matching-category jobs and paginate after scoring/filtering.
-      // Otherwise, rely on DB pagination for performance.
-      let jobs:
-        | {
-            id: string;
-            title: string | null;
-            companyName: string | null;
-            companyImage: string | null;
-            description: string | null;
-            category: any;
-            applicationUrl: string | null;
-            applicationEmail: string | null;
-            wage: number | null;
-            countryIso2: string | null;
-            stateAbbreviation: string | null;
-            tags: string[] | null;
-            city: string | null;
-            type: any;
-            experienceLevel: any;
-            locationRequirement: any;
-            status: any;
-            createdAt: Date;
-          }[];
-      let total: number;
+      // Always fetch the freshest jobs in the selected category (up to MAX_ITEMS)
+      // and rank them in memory using embeddings + keywords/roles.
+      const jobs = await db.job.findMany({
+        where: {
+          category: effectiveCategory as any,
+        },
+        orderBy: { createdAt: "desc" },
+        take: MAX_ITEMS,
+        select: {
+          id: true,
+          title: true,
+          companyName: true,
+          companyImage: true,
+          description: true,
+          category: true,
+          applicationUrl: true,
+          applicationEmail: true,
+          wage: true,
+          countryIso2: true,
+          stateAbbreviation: true,
+          tags: true,
+          city: true,
+          type: true,
+          experienceLevel: true,
+          locationRequirement: true,
+          status: true,
+          createdAt: true,
+          embedding: true,
+        },
+      });
 
-      if (hasKeywordFilters || hasRoleFilters) {
-        jobs = await db.job.findMany({
-          where: {
-            category: effectiveCategory as any,
-          },
-          orderBy: { createdAt: "desc" },
-          select: {
-            id: true,
-            title: true,
-            companyName: true,
-            companyImage: true,
-            description: true,
-            category: true,
-            applicationUrl: true,
-            applicationEmail: true,
-            wage: true,
-            countryIso2: true,
-            stateAbbreviation: true,
-            tags: true,
-            city: true,
-            type: true,
-            experienceLevel: true,
-            locationRequirement: true,
-            status: true,
-            createdAt: true,
-          },
-        });
-        total = jobs.length;
-      } else {
-        const [pageJobs, catTotal] = await Promise.all([
-          db.job.findMany({
-            where: {
-              category: effectiveCategory as any,
-            },
-            orderBy: { createdAt: "desc" },
-            skip,
-            take: pageSize,
-            select: {
-              id: true,
-              title: true,
-              companyName: true,
-              companyImage: true,
-              description: true,
-              category: true,
-              applicationUrl: true,
-              applicationEmail: true,
-              wage: true,
-              countryIso2: true,
-              stateAbbreviation: true,
-              tags: true,
-              city: true,
-              type: true,
-              experienceLevel: true,
-              locationRequirement: true,
-              status: true,
-              createdAt: true,
-            },
-          }),
-          db.job.count({
-            where: {
-              category: effectiveCategory as any,
-            },
-          }),
-        ]);
-        jobs = pageJobs;
-        total = catTotal;
-      }
+      const total = Math.min(jobs.length, MAX_ITEMS);
 
       // Pre-fetch existing applications for this user to mark alreadyApplied
       const jobIds = jobs.map((j) => j.id);
@@ -627,6 +567,65 @@ export const jobRouter = router({
 
       return result;
     }),
+
+  applyForAutoJobs: protectedProcedure
+    .input(
+      z.object({
+        jobIds: z.array(z.string().min(1)).min(1).max(10),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const db = ctx.prisma as PrismaClient;
+      const user = ctx.user as { id: string; email: string };
+
+      const uniqueJobIds = Array.from(new Set(input.jobIds));
+      if (uniqueJobIds.length === 0) {
+        return { applied: [], skipped: [] as { id: string; reason: string }[] };
+      }
+
+      // Fetch existing applications to avoid duplicates
+      const existingApps =
+        uniqueJobIds.length === 0
+          ? []
+          : await db.jobApplication.findMany({
+              where: {
+                jobId: { in: uniqueJobIds },
+                email: user.email,
+              },
+              select: { jobId: true },
+            });
+      const alreadyAppliedSet = new Set(existingApps.map((a) => a.jobId));
+
+      const applied: string[] = [];
+      const skipped: { id: string; reason: string }[] = [];
+
+      for (const jobId of uniqueJobIds) {
+        if (alreadyAppliedSet.has(jobId)) {
+          skipped.push({ id: jobId, reason: "already-applied" });
+          continue;
+        }
+
+        try {
+          const result = await applyAndNotify({
+            db,
+            jobId,
+            userId: user.id,
+            source: "auto",
+          });
+          if ((result as any)?.success !== false) {
+            applied.push(jobId);
+          } else {
+            skipped.push({ id: jobId, reason: "failed" });
+          }
+        } catch (err) {
+          console.error("Bulk auto-apply failed for job", jobId, err);
+          skipped.push({ id: jobId, reason: "error" });
+        }
+      }
+
+      return { applied, skipped };
+    }),
+
     //Bulk Import Jobs
 bulkCreate: adminProcedure
 .input(jobImportSchema)
@@ -668,16 +667,20 @@ bulkCreate: adminProcedure
     status: "published" as const,
   }));
 
-  await db.job.createMany({ data });
-  // Background event for import (non-blocking)
+  // Compute embeddings for imported jobs so they participate in semantic ranking.
   try {
-    await inngest.send({
-      name: "jobs/imported",
-      data: { importedAt: new Date().toISOString() },
+    const texts = input.rows.map(
+      (r) => `${r.title ?? ""} ${r.description ?? ""} ${((r as any).tags ?? []).join(" ")}`,
+    );
+    const embeddings = await embedBatch(texts);
+    embeddings.forEach((vec, idx) => {
+      (data[idx] as any).embedding = vec;
     });
   } catch (err) {
-    console.error("Failed to send jobs/imported event", err);
+    console.error("Failed to compute embeddings for imported jobs", err);
   }
+
+  await db.job.createMany({ data });
   return { success: true, count: data.length };
 }),
 });

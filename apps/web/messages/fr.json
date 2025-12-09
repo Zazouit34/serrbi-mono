@@ -803,11 +803,7 @@
       "recent": "Activité récente AI Serrbi",
       "unknownJob": "Emploi inconnu"
     },
-    "listing": {
-      "title": "Emplois où AI Serrbi peut postuler",
-      "subtitle": "Ces offres sont filtrées selon votre catégorie, vos tags et vos rôles.",
-      "resumeHint": "Correspondant à votre CV et à vos préférences"
-    },
+    
     "save": "Enregistrer les préférences",
     "roles": {
       "title": "Rôles",
@@ -910,11 +906,19 @@
       "applying": "Candidature en cours…"
     },
     "listing": {
-      "title": "Candidature automatique aux emplois",
-      "subtitle": "Serrbi postule pour vous en arrière-plan.",
+      "title": "Meilleures offres pour votre profil",
+      "subtitle": "Ces emplois sont sélectionnés selon votre catégorie, vos tags, vos rôles et votre CV.",
       "updating": "Mise à jour…",
       "jobsInQueue": "{count} emplois en file",
-      "noMatching": "Aucun emploi correspondant pour le moment à vos préférences AI Serrbi."
+      "noMatching": "Aucun emploi correspondant pour le moment à vos préférences AI Serrbi.",
+      "resumeHint": "Correspondant à votre CV et à vos préférences",
+      "bestMatches": "Affichage des {count} meilleures offres classées pour vous.",
+      "refresh": "Actualiser les suggestions",
+      "applyPage": "Postuler à tous les emplois de cette page",
+      "bulkApplying": "Candidatures en cours…",
+      "bulkAppliedSuccess": "Candidature envoyée pour {applied} offres. {skipped} ignorées.",
+      "bulkAppliedNone": "Aucune nouvelle candidature envoyée. {skipped} offres ignorées.",
+      "bulkAppliedError": "Une erreur est survenue lors de l’envoi des candidatures."
     }
   },
   "ResumeForm": {

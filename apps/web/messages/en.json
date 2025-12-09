@@ -798,11 +798,7 @@
       "recent": "Recent AI Serrbi activity",
       "unknownJob": "Unknown Job"
     },
-    "listing": {
-      "title": "Jobs AI Serrbi can apply to",
-      "subtitle": "These roles are selected using your category, tags and roles.",
-      "resumeHint": "Matched to your resume and preferences"
-    },
+    
     "save": "Save preferences",
     "roles": {
       "title": "Roles",
@@ -905,11 +901,19 @@
       "applying": "Applying…"
     },
     "listing": {
-      "title": "Auto Apply To Jobs",
-      "subtitle": "Serrbi is applying for you in the background.",
+      "title": "Best matches for your profile",
+      "subtitle": "These jobs are selected using your category, tags, roles and resume.",
       "updating": "Updating…",
       "jobsInQueue": "{count} jobs in queue",
-      "noMatching": "No matching jobs yet for your auto-apply preferences."
+      "noMatching": "No matching jobs yet for your auto-apply preferences.",
+      "resumeHint": "Matched to your resume and preferences",
+      "bestMatches": "Showing top {count} jobs ranked for you.",
+      "refresh": "Refresh suggestions",
+      "applyPage": "Apply to all on this page",
+      "bulkApplying": "Applying…",
+      "bulkAppliedSuccess": "Applied to {applied} jobs. Skipped {skipped}.",
+      "bulkAppliedNone": "No new jobs were applied. Skipped {skipped}.",
+      "bulkAppliedError": "Something went wrong while applying to jobs."
     }
   },
   "ResumeForm": {

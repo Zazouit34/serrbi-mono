@@ -9,26 +9,10 @@ import { Label } from "@workspace/ui/components/label";
 import { Button } from "@workspace/ui/components/button";
 import { toast } from "sonner";
 import { Loader2, Check } from "lucide-react";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@workspace/ui/components/popover";
 
 import { jobCategoryValues } from "@workspace/ui/lib/job-enum";
 import { jobCategoryIcons } from "@/components/ui/config/job-filters-config";
-import { formatJobCategory } from "@workspace/ui/lib/formatter";
-import {
-  Tags,
-  TagsTrigger,
-  TagsValue,
-  TagsContent,
-  TagsInput,
-  TagsList,
-  TagsEmpty,
-  TagsGroup,
-  TagsItem,
-} from "@workspace/ui/components/ui/shadcn-io/tags";
+
 import { Progress } from "@workspace/ui/components/progress";
 
 import keywordsByCategory from "@workspace/ui/data/auto-apply-keyword.json";

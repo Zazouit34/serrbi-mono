@@ -272,7 +272,7 @@ export function ResumeInsight({
           </div>
 
           {/* Right: mock / live global score */}
-          <div className="flex relative justify-center items-center p-6 sm:p-10 bg-gradient-to-br from-white to-slate-50">
+          <div className="flex relative justify-center items-center p-3 sm:p-10 bg-gradient-to-br from-white to-slate-50">
             <div className="absolute inset-0 pointer-events-none" aria-hidden>
               <div className="absolute right-[-20%] top-1/2 h-[120%] w-[120%] -translate-y-1/2 rounded-full bg-[radial-gradient(closest-side,#3b82f611,#00000000)]" />
             </div>

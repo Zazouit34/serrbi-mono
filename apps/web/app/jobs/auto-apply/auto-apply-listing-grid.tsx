@@ -17,6 +17,8 @@ import {
 } from "@workspace/ui/components/pagination";
 import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui/components/card";
 import { Badge } from "@workspace/ui/components/badge";
+import { Button } from "@workspace/ui/components/button";
+import { toast } from "sonner";
 
 type JobCategory = import("@workspace/ui/lib/job-enum").JobCategoryValue;
 
@@ -47,19 +49,20 @@ export function AutoApplyListingGrid({
 
   const queryInput = {
     page,
-    pageSize: 8,
+    pageSize: 10,
     enabled,
     category,
     keywords,
     roles,
   };
 
-  const { data, isLoading, isFetching } = trpc.job.getAutoApplyJobs.useQuery(queryInput, {
+  const { data, isLoading, isFetching, refetch } = trpc.job.getAutoApplyJobs.useQuery(queryInput, {
     enabled: enabled && !!category,
     placeholderData: (prev) => prev,
   });
 
   const applyMutation = trpc.job.applyForAutoJob.useMutation();
+  const bulkApplyMutation = trpc.job.applyForAutoJobs.useMutation();
 
   const totalPages = data ? Math.ceil(data.total / data.pageSize) : 0;
   const totalQueue = data?.total ?? 0;
@@ -205,6 +208,69 @@ export function AutoApplyListingGrid({
       </CardHeader>
 
       <CardContent className="pt-1 space-y-4">
+        {data && data.items.length > 0 && (
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-xs text-slate-500">
+              {tA("listing.bestMatches", {
+                count: data.total,
+              })}
+            </p>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={isFetching || bulkApplyMutation.isPending}
+                onClick={() => refetch()}
+                className="h-7 px-3 text-[11px]"
+              >
+                {tA("listing.refresh")}
+              </Button>
+              <Button
+                size="sm"
+                disabled={bulkApplyMutation.isPending || !data.items.some((j: any) => !j.alreadyApplied)}
+                onClick={async () => {
+                  if (!data) return;
+                  const jobIds = data.items
+                    .filter((j: any) => !j.alreadyApplied)
+                    .map((j: any) => j.id);
+
+                  if (!jobIds.length) return;
+
+                  try {
+                    const res = await bulkApplyMutation.mutateAsync({ jobIds });
+                    const appliedCount = res.applied.length;
+                    const skippedCount = res.skipped.length;
+                    if (appliedCount) {
+                      toast.success(
+                        tA("listing.bulkAppliedSuccess", {
+                          applied: appliedCount,
+                          skipped: skippedCount,
+                        }),
+                      );
+                    } else {
+                      toast.info(
+                        tA("listing.bulkAppliedNone", {
+                          skipped: skippedCount,
+                        }),
+                      );
+                    }
+                    await refetch();
+                  } catch (err: any) {
+                    toast.error(
+                      err?.message || tA("listing.bulkAppliedError"),
+                    );
+                  }
+                }}
+                className="h-7 px-3 text-[11px]"
+              >
+                {bulkApplyMutation.isPending
+                  ? tA("listing.bulkApplying")
+                  : tA("listing.applyPage")}
+              </Button>
+            </div>
+          </div>
+        )}
+
         {isLoading ? (
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             {Array.from({ length: 4 }).map((_, i) => (
