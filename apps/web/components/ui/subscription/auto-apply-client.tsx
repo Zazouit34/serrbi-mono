@@ -4,16 +4,24 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations, useMessages } from "next-intl";
 import { trpc } from "@/app/_trpc/client";
-import { Switch } from "@workspace/ui/components/switch";
 import { Label } from "@workspace/ui/components/label";
 import { Button } from "@workspace/ui/components/button";
+import { Input } from "@workspace/ui/components/input";
+import { Progress } from "@workspace/ui/components/progress";
+import { Badge } from "@workspace/ui/components/badge";
 import { toast } from "sonner";
-import { Loader2, Check } from "lucide-react";
+import {
+  Loader2,
+  Check,
+  Pause,
+  Play,
+  ShieldCheck,
+  Clock,
+  Sparkles,
+} from "lucide-react";
 
 import { jobCategoryValues } from "@workspace/ui/lib/job-enum";
 import { jobCategoryIcons } from "@/components/ui/config/job-filters-config";
-
-import { Progress } from "@workspace/ui/components/progress";
 
 import keywordsByCategory from "@workspace/ui/data/auto-apply-keyword.json";
 import rolesByCategory from "@workspace/ui/data/auto-apply-roles.json";
@@ -27,39 +35,29 @@ export default function AutoApplySettingsPage() {
   const tAll = useTranslations();
   const messages = useMessages() as any;
 
-  // ✅ Always call hooks — no conditions here
   const { data: subscription, isLoading: subLoading } =
     trpc.auth.getUserSubscriptionStatus.useQuery();
 
   const { data, refetch } = trpc.auth.getAutoApplyPrefs.useQuery(undefined, {
-    enabled: !!subscription?.eligible, // only runs when eligible
+    enabled: !!subscription?.eligible,
   });
   const mutation = trpc.auth.updateAutoApplyPrefs.useMutation();
 
   const { data: stats, refetch: refetchStats } =
     trpc.auth.getAutoApplyStats.useQuery(undefined, {
-      enabled: !!subscription?.eligible, // only runs when eligible
+      enabled: !!subscription?.eligible,
     });
 
-  // Real usage stats (cap and used) aligned with subscription usage
   const { data: usage } = trpc.subscription.getUsageStats.useQuery(undefined, {
     enabled: !!subscription?.eligible,
   });
 
-  // ✅ Hooks always consistent
   const [enabled, setEnabled] = useState(false);
   const [category, setCategory] = useState<JobCategory | null>(null);
   const [keywords, setKeywords] = useState<string[]>([]);
-  const [tagInput, setTagInput] = useState("");
   const [roles, setRoles] = useState<string[]>([]);
-
-  // Tag handlers
-  const addTag = (t: string) => {
-    if (!t) return;
-    if (!keywords.includes(t)) setKeywords([...keywords, t]);
-    setTagInput("");
-  };
-  const removeTag = (t: string) => setKeywords(keywords.filter((k) => k !== t));
+  const [customTag, setCustomTag] = useState("");
+  const [prefsOpen, setPrefsOpen] = useState(false);
 
   useEffect(() => {
     if (data) {
@@ -78,23 +76,47 @@ export default function AutoApplySettingsPage() {
     return category ? ((rolesByCategory as any)[category] ?? []) : [];
   }, [category]);
 
-  const save = async () => {
+  const appliedCount = usage?.autoAppliedUsed ?? stats?.appliedCount ?? 0;
+  const cap = usage?.autoApplyLimit ?? null;
+  const pct = cap ? Math.min((appliedCount / cap) * 100, 100) : 0;
+  const lastApplied = stats?.recent?.[0]?.createdAt
+    ? new Date(stats.recent[0].createdAt)
+    : null;
+
+  const handleToggle = async (nextEnabled: boolean) => {
+    setEnabled(nextEnabled);
+    try {
+      await mutation.mutateAsync({ enabled: nextEnabled, category, keywords, roles });
+      toast.success(nextEnabled ? tA("hero.resumed") : tA("hero.paused"));
+      refetch();
+      refetchStats();
+    } catch (e: any) {
+      setEnabled(!nextEnabled);
+      toast.error(e?.message || tA("toasts.saveFailed"));
+    }
+  };
+
+  const savePrefs = async () => {
     try {
       await mutation.mutateAsync({ enabled, category, keywords, roles });
       toast.success(tA("toasts.saved"));
       refetch();
       refetchStats();
+      setPrefsOpen(false);
     } catch (e: any) {
       toast.error(e?.message || tA("toasts.saveFailed"));
     }
   };
 
-  // Progress bar — use real plan cap and usage when available
-  const appliedCount = usage?.autoAppliedUsed ?? stats?.appliedCount ?? 0;
-  const cap = usage?.autoApplyLimit ?? null;
-  const pct = cap ? Math.min((appliedCount / cap) * 100, 100) : 0;
+  const addKeyword = (value: string) => {
+    const next = value.trim();
+    if (!next) return;
+    if (!keywords.includes(next)) {
+      setKeywords((prev) => [...prev, next]);
+    }
+    setCustomTag("");
+  };
 
-  // 🌀 While checking subscription
   if (subLoading) {
     return (
       <div className="flex h-[60vh] items-center justify-center">
@@ -103,7 +125,6 @@ export default function AutoApplySettingsPage() {
     );
   }
 
-  // 🚫 Not eligible — safe to conditionally render *after* hooks
   if (!subscription?.eligible) {
     return (
       <div className="flex flex-col items-center justify-center h-[70vh] text-center space-y-4">
@@ -119,218 +140,297 @@ export default function AutoApplySettingsPage() {
     );
   }
 
-  // ✅ Eligible user — show normal UI
+  const statusLabel = enabled ? tA("hero.active") : tA("hero.paused");
+  const statusTone = enabled ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700";
+
   return (
-    <div className="space-y-6 max-w-4xl">
-      {/* 🔘 Auto-apply toggle */}
-      <div className="flex justify-between items-center p-4 rounded-xl border shadow-sm backdrop-blur-sm bg-white/70">
-        <div>
-          <Label
-            htmlFor="auto-apply"
-            className="text-base font-medium text-black"
-          >
-            {tA("toggle.title")}
-          </Label>
-          <p className="text-sm text-muted-foreground">{tA("toggle.subtitle")}</p>
-        </div>
-        <Switch
-          id="auto-apply"
-          checked={enabled}
-          onCheckedChange={(v: boolean) => setEnabled(v)}
-        />
-      </div>
-
-      <hr className="my-6 border-t border-gray-200" />
-
-      {/* 🧩 Job Categories */}
-      <div className="space-y-3">
-        <Label className="text-base font-medium text-black">{tA("category.title")}</Label>
-        <div className="flex flex-wrap gap-2">
-          {jobCategoryValues.map((c) => {
-            const Icon = jobCategoryIcons[c as keyof typeof jobCategoryIcons];
-            const selected = category === c;
-            return (
-              <button
-                key={c}
-                disabled={!enabled}
-                onClick={() => setCategory(c)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-sm transition ${
-                  selected
-                    ? "border-black bg-white/80 text-black shadow-sm"
-                    : "border-gray-200 text-gray-700 hover:bg-gray-50"
-                } ${!enabled ? "opacity-50 cursor-not-allowed" : ""}`}
-              >
-                {Icon && <Icon className="w-3.5 h-3.5 text-black" />}
-                {tAll(`Enums.JobCategory.${c}`)}
-                {selected && <Check className="w-3 h-3 text-black" />}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-      <hr className="my-6 border-t border-gray-200" />
-      {/* 🧑‍💻 Roles */}
-      <div className="space-y-3">
-        <Label className="text-base font-medium text-black">{tA("roles.title")}</Label>
-        {category ? (
-          <div className="flex flex-wrap gap-2">
-            {roleSuggestions.map((r) => {
-              const selected = roles.includes(r);
-              const slug = r
-                .toLowerCase()
-                .replace(/[^a-z0-9]+/g, "-")
-                .replace(/(^-|-$)/g, "");
-              return (
-                <button
-                  key={r}
-                  disabled={!enabled}
-                  onClick={() =>
-                    setRoles((prev) =>
-                      selected ? prev.filter((x) => x !== r) : [...prev, r]
-                    )
-                  }
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-sm transition ${
-                    selected
-                      ? "border-black bg-white/80 text-black shadow-sm"
-                      : "border-gray-200 text-gray-700 hover:bg-gray-50"
-                  } ${!enabled ? "opacity-50 cursor-not-allowed" : ""}`}
-                >
-                  {selected && <Check className="w-3 h-3 text-black" />}
-                  {(() => {
-                    const has = messages?.AutoApply?.roles && slug in messages.AutoApply.roles;
-                    return has ? tA(`roles.${slug}`) : r;
-                  })()}
-                </button>
-              );
-            })}
-          </div>
-        ) : (
-          <p className="text-sm text-muted-foreground">{tA("roles.emptyHint")}</p>
-        )}
-      </div>
-
-      <hr className="my-6 border-t border-gray-200" />
-
-      {/* 🏷️ Tags (keywords) */}
-      <div className="space-y-3">
-        <Label className="text-base font-medium text-black">{tA("keywords.title")}</Label>
-        {category ? (
-          <div className="flex flex-wrap gap-2">
-            {suggestions.map((tag) => {
-              const selected = keywords.includes(tag);
-              const slug = tag
-                .toLowerCase()
-                .replace(/[^a-z0-9]+/g, "-")
-                .replace(/(^-|-$)/g, "");
-              return (
-                <button
-                  key={tag}
-                  disabled={!enabled}
-                  onClick={() =>
-                    setKeywords((prev) =>
-                      selected ? prev.filter((k) => k !== tag) : [...prev, tag]
-                    )
-                  }
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-sm transition ${
-                    selected
-                      ? "border-black bg-white/80 text-black shadow-sm"
-                      : "border-gray-200 text-gray-700 hover:bg-gray-50"
-                  } ${!enabled ? "opacity-50 cursor-not-allowed" : ""}`}
-                >
-                  {selected && <Check className="w-3 h-3 text-black" />}
-                  {(() => {
-                    const has = messages?.AutoApply?.keywords && slug in messages.AutoApply.keywords;
-                    return has ? tA(`keywords.${slug}`) : tag;
-                  })()}
-                </button>
-              );
-            })}
-          </div>
-        ) : (
-          <p className="text-sm text-muted-foreground">{tA("keywords.emptyHint")}</p>
-        )}
-      </div>
-
-      <hr className="my-6 border-t border-gray-200" />
-
-      {/* 📊 Auto-apply stats */}
-      <div className="space-y-3">
-        <Label className="text-base font-medium text-black">{tA("stats.title")}</Label>
-
-        <div className="p-4 space-y-4 rounded-xl border shadow-sm backdrop-blur-sm bg-white/70">
-          {/* Top summary row */}
-          <div className="flex justify-between items-center">
-            <div>
-              <div className="text-sm text-muted-foreground">{tA("stats.autoApplied")}</div>
-              <div className="text-2xl font-semibold text-black">
-                {appliedCount}
-              </div>
-            </div>
-            <div className="flex flex-col items-end">
-              <Progress value={pct} className="w-40 h-2" />
-              <span className="mt-1 text-xs text-muted-foreground">
-                {cap != null
-                  ? tA("stats.progress", { used: appliedCount, cap })
-                  : tAll("Billing.unlimited")}
+    <div className="max-w-5xl mx-auto space-y-8">
+      {/* Status hero */}
+      <div className="rounded-3xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white shadow-[0_24px_60px_rgba(0,0,0,0.28)] p-6 md:p-8">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Badge className={`${statusTone} border-transparent px-3 py-1 text-[12px]`}>
+                <span className="inline-flex h-2 w-2 rounded-full bg-current opacity-80" />
+                <span className="ml-2">{statusLabel}</span>
+              </Badge>
+              <span className="text-xs text-slate-300 flex items-center gap-1">
+                <ShieldCheck className="h-4 w-4" />
+                {tA("hero.reassurance")}
               </span>
             </div>
+            <h1 className="text-3xl md:text-4xl font-semibold leading-tight">
+              {tA("hero.title")}
+            </h1>
+            <p className="text-slate-300 max-w-2xl">
+              {tA("hero.subtitle")}
+            </p>
           </div>
 
-          {/* Divider */}
-          {stats?.recent && stats.recent.length > 0 && (
-            <>
-              <hr className="border-t border-gray-200" />
-              <div className="space-y-2">
-                <div className="text-sm font-medium text-muted-foreground">{tA("stats.recent")}</div>
-                <ul className="space-y-2">
-                  {stats.recent.slice(0, 5).map((app) => (
-                    <li
-                      key={app.id}
-                      className="flex justify-between items-center p-2 rounded-lg border transition-colors hover:bg-gray-50"
-                    >
-                      <div className="text-sm">
-                        <span className="font-medium text-black">
-                          {app.job?.title || tA("stats.unknownJob")}
-                        </span>
-                        {app.job?.companyName && (
-                          <span className="text-muted-foreground">
-                            {" "}
-                            — {app.job.companyName}
-                          </span>
-                        )}
-                      </div>
-                        <div className="text-xs text-muted-foreground">
-                          {new Date(app.createdAt).toLocaleDateString(undefined, {
-                            month: "short", 
-                            day: "numeric",
-                          })}
-                        </div>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </>
-          )}
+          <div className="flex flex-wrap items-center gap-3">
+            <Button
+              onClick={() => handleToggle(!enabled)}
+              variant="secondary"
+              className="bg-white text-slate-900 hover:bg-white/90"
+              disabled={mutation.isPending}
+            >
+              {enabled ? (
+                <>
+                  <Pause className="h-4 w-4 mr-2" />
+                  {tA("hero.pause")}
+                </>
+              ) : (
+                <>
+                  <Play className="h-4 w-4 mr-2" />
+                  {tA("hero.resume")}
+                </>
+              )}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setPrefsOpen((v) => !v)}
+              className="border-white/40 text-white hover:bg-white/10"
+            >
+              {tA("hero.editPrefs")}
+            </Button>
+          </div>
+        </div>
+
+        <div className="mt-6 grid gap-4 sm:grid-cols-3">
+          <div className="rounded-2xl bg-white/5 border border-white/10 p-4">
+            <div className="text-sm text-slate-200">{tA("stats.autoApplied")}</div>
+            <div className="text-2xl font-semibold mt-1">{appliedCount}</div>
+            <p className="text-xs text-slate-300 mt-1">
+              {cap != null ? tA("stats.progress", { used: appliedCount, cap }) : tAll("Billing.unlimited")}
+            </p>
+          </div>
+          <div className="rounded-2xl bg-white/5 border border-white/10 p-4">
+            <div className="text-sm text-slate-200 flex items-center gap-1">
+              <Clock className="h-4 w-4" />
+              {tA("activity.lastAppliedLabel")}
+            </div>
+            <div className="text-lg font-semibold mt-1">
+              {lastApplied
+                ? lastApplied.toLocaleDateString(undefined, { month: "short", day: "numeric" })
+                : tA("activity.noApplications")}
+            </div>
+            <p className="text-xs text-slate-300 mt-1">{tA("activity.scanHint")}</p>
+          </div>
+          <div className="rounded-2xl bg-white/5 border border-white/10 p-4">
+            <div className="text-sm text-slate-200 flex items-center gap-1">
+              <Sparkles className="h-4 w-4" />
+              {tA("hero.queue")}
+            </div>
+            <div className="text-lg font-semibold mt-1">
+              {tA("listing.jobsInQueue", { count: Math.max(0, usage?.autoApplyLimit ?? 0) })}
+            </div>
+            <p className="text-xs text-slate-300 mt-1">{tA("hero.queueHint")}</p>
+          </div>
         </div>
       </div>
 
-      {/* 💾 Save */}
-      <Button
-        onClick={save}
-        disabled={mutation.isPending}
-        className="bg-black hover:bg-black/80"
-      >
-        {tA("save")}
-      </Button>
+      {/* Best matches elevated to top */}
+      <div className="rounded-3xl bg-white shadow-[0_18px_40px_rgba(15,23,42,0.08)] border border-slate-100 p-4 md:p-6">
+        <AutoApplyListingGrid enabled={enabled} category={category} keywords={keywords} roles={roles} />
+      </div>
 
-      {/* 🎯 Live auto-apply matches */}
-      <div className="pt-4">
-        <AutoApplyListingGrid
-          enabled={enabled}
-          category={category}
-          keywords={keywords}
-          roles={roles}
-        />
+      {/* Activity panel */}
+      <div className="rounded-3xl bg-white shadow-[0_18px_40px_rgba(15,23,42,0.06)] border border-slate-100 p-5 space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-xs uppercase tracking-wide text-slate-500">{tA("activity.title")}</p>
+            <h3 className="text-xl font-semibold text-slate-900">{tA("activity.subtitle")}</h3>
+          </div>
+          <div className="flex items-center gap-2 text-xs text-slate-500">
+            <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+            {tA("activity.alive")}
+          </div>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-3">
+          <div className="rounded-2xl bg-slate-50 border border-slate-100 p-4">
+            <p className="text-sm text-slate-500">{tA("activity.appliedThisMonth")}</p>
+            <p className="text-2xl font-semibold text-slate-900 mt-1">{appliedCount}</p>
+            <Progress value={pct} className="mt-2 h-2" />
+            <p className="text-xs text-slate-500 mt-1">
+              {cap != null ? tA("stats.progress", { used: appliedCount, cap }) : tAll("Billing.unlimited")}
+            </p>
+          </div>
+          <div className="rounded-2xl bg-slate-50 border border-slate-100 p-4">
+            <p className="text-sm text-slate-500 flex items-center gap-1">
+              <Clock className="h-4 w-4" />
+              {tA("activity.lastAppliedLabel")}
+            </p>
+            <p className="text-lg font-semibold text-slate-900 mt-1">
+              {lastApplied
+                ? lastApplied.toLocaleString(undefined, { month: "short", day: "numeric" })
+                : tA("activity.noApplications")}
+            </p>
+            <p className="text-xs text-slate-500 mt-1">{tA("activity.scanSoon")}</p>
+          </div>
+          <div className="rounded-2xl bg-slate-50 border border-slate-100 p-4">
+            <p className="text-sm text-slate-500">{tA("activity.statusTitle")}</p>
+            <p className="text-lg font-semibold text-slate-900 mt-1">
+              {enabled ? tA("activity.statusActive") : tA("activity.statusPaused")}
+            </p>
+            <p className="text-xs text-slate-500 mt-1">{tA("activity.statusCopy")}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Preferences as secondary control */}
+      <div className="rounded-3xl border border-dashed border-slate-200 bg-white/60 p-5 shadow-sm">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-xs uppercase tracking-wide text-slate-500">{tA("prefs.title")}</p>
+            <h3 className="text-lg font-semibold text-slate-900">{tA("prefs.subtitle")}</h3>
+            <p className="text-sm text-slate-500">{tA("prefs.hint")}</p>
+          </div>
+          <Button variant="ghost" onClick={() => setPrefsOpen((v) => !v)}>
+            {prefsOpen ? tA("prefs.hide") : tA("prefs.edit")}
+          </Button>
+        </div>
+
+        {prefsOpen && (
+          <div className="mt-4 space-y-5">
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-slate-900">{tA("category.title")}</Label>
+              <div className="flex flex-wrap gap-2">
+                {jobCategoryValues.map((c) => {
+                  const Icon = jobCategoryIcons[c as keyof typeof jobCategoryIcons];
+                  const selected = category === c;
+                  return (
+                    <button
+                      key={c}
+                      onClick={() => setCategory(c)}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-sm transition ${
+                        selected
+                          ? "border-slate-900 bg-slate-900 text-white shadow-sm"
+                          : "border-slate-200 text-slate-700 hover:bg-slate-50"
+                      }`}
+                    >
+                      {Icon && <Icon className="w-3.5 h-3.5" />}
+                      {tAll(`Enums.JobCategory.${c}`)}
+                      {selected && <Check className="w-3 h-3" />}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-slate-900">{tA("roles.title")}</Label>
+              {category ? (
+                <div className="flex flex-wrap gap-2">
+                  {roleSuggestions.map((r) => {
+                    const selected = roles.includes(r);
+                    const slug = r
+                      .toLowerCase()
+                      .replace(/[^a-z0-9]+/g, "-")
+                      .replace(/(^-|-$)/g, "");
+                    const label =
+                      messages?.AutoApply?.roles && slug in messages.AutoApply.roles
+                        ? tA(`roles.${slug}`)
+                        : r;
+                    return (
+                      <button
+                        key={r}
+                        onClick={() =>
+                          setRoles((prev) => (selected ? prev.filter((x) => x !== r) : [...prev, r]))
+                        }
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-sm transition ${
+                          selected
+                            ? "border-slate-900 bg-slate-900 text-white shadow-sm"
+                            : "border-slate-200 text-slate-700 hover:bg-slate-50"
+                        }`}
+                      >
+                        {selected && <Check className="w-3 h-3" />}
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">{tA("roles.emptyHint")}</p>
+              )}
+            </div>
+
+            <div className="space-y-3">
+              <Label className="text-sm font-medium text-slate-900">{tA("keywords.title")}</Label>
+              <div className="flex flex-wrap gap-2">
+                {keywords.map((tag) => (
+                  <Badge
+                    key={tag}
+                    variant="outline"
+                    className="border-slate-200 bg-slate-50 text-slate-700"
+                  >
+                    {tag}
+                    <button
+                      className="ml-2 text-slate-500"
+                      onClick={() => setKeywords((prev) => prev.filter((k) => k !== tag))}
+                    >
+                      ×
+                    </button>
+                  </Badge>
+                ))}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Input
+                  value={customTag}
+                  onChange={(e) => setCustomTag(e.target.value)}
+                  placeholder={tA("keywords.placeholder")}
+                  className="w-full sm:w-80"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      addKeyword(customTag);
+                    }
+                  }}
+                />
+                <Button variant="secondary" onClick={() => addKeyword(customTag)}>
+                  {tA("keywords.add")}
+                </Button>
+              </div>
+              {category && (
+                <div className="flex flex-wrap gap-2">
+                  {suggestions.map((tag) => {
+                    const selected = keywords.includes(tag);
+                    const slug = tag
+                      .toLowerCase()
+                      .replace(/[^a-z0-9]+/g, "-")
+                      .replace(/(^-|-$)/g, "");
+                    const label =
+                      messages?.AutoApply?.keywords && slug in messages.AutoApply.keywords
+                        ? tA(`keywords.${slug}`)
+                        : tag;
+                    return (
+                      <button
+                        key={tag}
+                        onClick={() =>
+                          setKeywords((prev) => (selected ? prev.filter((k) => k !== tag) : [...prev, tag]))
+                        }
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-sm transition ${
+                          selected
+                            ? "border-slate-900 bg-slate-900 text-white shadow-sm"
+                            : "border-slate-200 text-slate-700 hover:bg-slate-50"
+                        }`}
+                      >
+                        {selected && <Check className="w-3 h-3" />}
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end">
+              <Button onClick={savePrefs} disabled={mutation.isPending} className="bg-slate-900 text-white">
+                {tA("save")}
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

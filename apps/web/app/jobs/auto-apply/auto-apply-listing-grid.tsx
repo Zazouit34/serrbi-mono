@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Mail } from "lucide-react";
+import { Mail, Sparkles, Info, Shield } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { trpc } from "@/app/_trpc/client";
 import { AutoApplyCard } from "@/components/ui/form/job/auto-apply-card";
@@ -68,6 +68,64 @@ export function AutoApplyListingGrid({
   const totalQueue = data?.total ?? 0;
   const usedResumeEmbedding =
     data && "usedResumeEmbedding" in data ? (data as any).usedResumeEmbedding : false;
+
+  const formatTimeAgo = (createdAt?: Date | string | null): string => {
+    if (!createdAt) return "";
+    const date = typeof createdAt === "string" ? new Date(createdAt) : createdAt;
+    const diffMs = Date.now() - date.getTime();
+    const diffMinutes = Math.floor(diffMs / (1000 * 60));
+    if (diffMinutes < 1) return tA("listing.time.justNow");
+    if (diffMinutes < 60) return tA("listing.time.minutes", { count: diffMinutes });
+    const diffHours = Math.floor(diffMinutes / 60);
+    if (diffHours < 24) return tA("listing.time.hours", { count: diffHours });
+    const diffDays = Math.floor(diffHours / 24);
+    return tA("listing.time.days", { count: diffDays });
+  };
+
+  const buildMatch = (job: any) => {
+    const text = `${job.title ?? ""} ${job.description ?? ""}`.toLowerCase();
+    const kwMatches = (keywords || []).filter((kw) => text.includes(kw.toLowerCase()));
+    const roleMatches = (roles || []).filter((r) => text.includes(r.toLowerCase()));
+    const recencyHours = job.createdAt ? (Date.now() - new Date(job.createdAt).getTime()) / (1000 * 60 * 60) : 999;
+
+    let score = 0;
+    score += usedResumeEmbedding ? 2 : 0;
+    score += Math.min(kwMatches.length, 2);
+    score += Math.min(roleMatches.length, 2);
+    if (recencyHours <= 72) score += 1;
+
+    let level: "very-strong" | "strong" | "potential" = "potential";
+    if (score >= 4) level = "very-strong";
+    else if (score >= 2) level = "strong";
+
+    const levelLabel =
+      level === "very-strong"
+        ? tA("listing.matchLevels.veryStrong")
+        : level === "strong"
+          ? tA("listing.matchLevels.strong")
+          : tA("listing.matchLevels.potential");
+
+    const reasons: string[] = [];
+    if (usedResumeEmbedding) reasons.push(tA("listing.reasons.resume"));
+    if (kwMatches.length) {
+      const keyword = kwMatches[0] ?? "";
+      reasons.push(tA("listing.reasons.keyword", { keyword }));
+    }
+    if (roleMatches.length) {
+      const role = roleMatches[0] ?? "";
+      reasons.push(tA("listing.reasons.role", { role }));
+    }
+    if (recencyHours <= 72) reasons.push(tA("listing.reasons.recency", { time: formatTimeAgo(job.createdAt) }));
+    if (job.city) reasons.push(tA("listing.reasons.location", { location: job.city }));
+    if (!job.city && job.type) reasons.push(tA("listing.reasons.type", { type: job.type }));
+
+    return {
+      level,
+      levelLabel,
+      reasons: reasons.slice(0, 4),
+      postedAgo: formatTimeAgo(job.createdAt),
+    };
+  };
 
   const renderPaginationItems = () => {
     const items = [];
@@ -181,21 +239,22 @@ export function AutoApplyListingGrid({
   }
 
   return (
-    <Card className="rounded-2xl border border-slate-100 shadow-[0_16px_40px_rgba(15,23,42,0.08)] bg-white">
-      <CardHeader className="flex flex-row gap-3 justify-between items-center pb-3">
-        <div className="flex gap-3 items-center">
-          <div className="flex justify-center items-center w-10 h-10 bg-violet-600 rounded-2xl">
-            <Mail className="w-5 h-5 text-white" />
+    <Card className="rounded-3xl border border-slate-100 shadow-none bg-white">
+      <CardHeader className="flex flex-row gap-3 justify-between items-center pb-2">
+        <div className="flex gap-3 items-start">
+          <div className="flex justify-center items-center w-10 h-10 bg-slate-900 text-white rounded-2xl shadow-sm">
+            <Sparkles className="w-5 h-5" />
           </div>
-          <div>
-            <CardTitle className="text-base font-semibold tracking-tight md:text-lg">
+          <div className="space-y-1">
+            <CardTitle className="text-lg font-semibold tracking-tight md:text-xl">
               {tA("listing.title")}
             </CardTitle>
-            <p className="text-[11px] text-slate-500">
+            <p className="text-sm text-slate-500 max-w-xl">
               {tA("listing.subtitle")}
             </p>
             {usedResumeEmbedding && (
-              <p className="mt-1 text-[11px] text-emerald-700">
+              <p className="text-[12px] text-emerald-700 flex items-center gap-1">
+                <Shield className="h-4 w-4" />
                 {tA("listing.resumeHint")}
               </p>
             )}
@@ -296,17 +355,23 @@ export function AutoApplyListingGrid({
         ) : (
           <>
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-              {data.items.map((job: any) => (
-                <AutoApplyCard
-                  key={job.id}
-                  job={job}
-                  alreadyApplied={job.alreadyApplied}
-                  onApply={async () => {
-                    const res = await applyMutation.mutateAsync({ jobId: job.id });
-                    return { message: res.message };
-                  }}
-                />
-              ))}
+              {data.items.map((job: any) => {
+                const match = buildMatch(job);
+                return (
+                  <AutoApplyCard
+                    key={job.id}
+                    job={job}
+                    alreadyApplied={job.alreadyApplied}
+                    confidence={{ level: match.level, label: match.levelLabel }}
+                    reasons={match.reasons}
+                    postedAgo={match.postedAgo}
+                    onApply={async () => {
+                      const res = await applyMutation.mutateAsync({ jobId: job.id });
+                      return { message: res.message };
+                    }}
+                  />
+                );
+              })}
             </div>
 
             {totalPages > 1 && (

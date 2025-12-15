@@ -829,9 +829,86 @@
       "mechanic": "Mechanic",
       "diagnostic-technician": "Diagnostic Technician"
     },
+    "card": {
+      "applied": "Applied",
+      "apply": "Apply",
+      "applying": "Applying…"
+    },
+    "hero": {
+      "title": "AI Auto-Apply",
+      "subtitle": "Your AI is already scanning and applying to the highest-confidence roles for you.",
+      "active": "Active",
+      "paused": "Paused",
+      "pause": "Pause AI",
+      "resume": "Resume AI",
+      "editPrefs": "Edit preferences",
+      "reassurance": "Applying only to high-confidence jobs that match your profile.",
+      "queue": "Jobs in focus",
+      "queueHint": "Top matches refresh as new roles appear.",
+      "resumed": "AI resumed",
+      "pausedToast": "AI paused"
+    },
+    "prefs": {
+      "title": "Preferences",
+      "subtitle": "Tune only when needed.",
+      "hint": "We’ll keep learning from your recent applications.",
+      "edit": "Edit",
+      "hide": "Hide"
+    },
+    "activity": {
+      "title": "AI activity",
+      "subtitle": "Quietly working in the background.",
+      "alive": "Scanning daily",
+      "appliedThisMonth": "Applications sent this month",
+      "lastAppliedLabel": "Last application",
+      "noApplications": "Not yet applied",
+      "scanHint": "Next scan is queued automatically.",
+      "scanSoon": "Next scan in a few hours.",
+      "statusTitle": "Status",
+      "statusActive": "Running",
+      "statusPaused": "Paused",
+      "statusCopy": "You can pause anytime."
+    },
+    "listing": {
+      "title": "Handpicked for you",
+      "subtitle": "Based on your experience, preferences, and resume signals.",
+      "updating": "Updating…",
+      "jobsInQueue": "{count} jobs in queue",
+      "noMatching": "No matching jobs yet for your auto-apply preferences.",
+      "resumeHint": "Matched to your resume and preferences",
+      "bestMatches": "Showing top {count} jobs ranked for you.",
+      "refresh": "Refresh suggestions",
+      "applyPage": "Apply to all on this page",
+      "bulkApplying": "Applying…",
+      "bulkAppliedSuccess": "Applied to {applied} jobs. Skipped {skipped}.",
+      "bulkAppliedNone": "No new jobs were applied. Skipped {skipped}.",
+      "bulkAppliedError": "Something went wrong while applying to jobs.",
+      "whyThisJob": "Why this job?",
+      "matchLevels": {
+        "veryStrong": "Very strong match",
+        "strong": "Strong match",
+        "potential": "Potential match"
+      },
+      "reasons": {
+        "resume": "Semantic match to your resume",
+        "keyword": "Matches your {keyword} experience",
+        "role": "Aligns with your {role} background",
+        "recency": "Freshly posted ({time})",
+        "location": "Location fits: {location}",
+        "type": "Similar type: {type}"
+      },
+      "time": {
+        "justNow": "Just now",
+        "minutes": "{count}m",
+        "hours": "{count}h",
+        "days": "{count}d"
+      }
+    },
     "keywords": {
       "title": "Tags (keywords)",
       "emptyHint": "Select a job category to view relevant tags.",
+      "placeholder": "Add a custom tag",
+      "add": "Add tag",
       "react": "React",
       "nextjs": "Next.js",
       "typescript": "TypeScript",
@@ -894,26 +971,6 @@
       "sanitation": "Sanitation",
       "disinfection": "Disinfection",
       "mechanic": "Mechanic"
-    },
-    "card": {
-      "applied": "Applied",
-      "apply": "Apply",
-      "applying": "Applying…"
-    },
-    "listing": {
-      "title": "Best matches for your profile",
-      "subtitle": "These jobs are selected using your category, tags, roles and resume.",
-      "updating": "Updating…",
-      "jobsInQueue": "{count} jobs in queue",
-      "noMatching": "No matching jobs yet for your auto-apply preferences.",
-      "resumeHint": "Matched to your resume and preferences",
-      "bestMatches": "Showing top {count} jobs ranked for you.",
-      "refresh": "Refresh suggestions",
-      "applyPage": "Apply to all on this page",
-      "bulkApplying": "Applying…",
-      "bulkAppliedSuccess": "Applied to {applied} jobs. Skipped {skipped}.",
-      "bulkAppliedNone": "No new jobs were applied. Skipped {skipped}.",
-      "bulkAppliedError": "Something went wrong while applying to jobs."
     }
   },
   "ResumeForm": {
