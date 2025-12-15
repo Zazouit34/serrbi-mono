@@ -186,13 +186,6 @@ export default function AutoApplySettingsPage() {
                 </>
               )}
             </Button>
-            <Button
-              variant="outline"
-              onClick={() => setPrefsOpen((v) => !v)}
-              className="border-white/40 text-white hover:bg-white/10"
-            >
-              {tA("hero.editPrefs")}
-            </Button>
           </div>
         </div>
 
