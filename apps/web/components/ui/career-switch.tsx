@@ -21,7 +21,7 @@ import {
 } from "@workspace/ui/components/select";
 import { Badge } from "@workspace/ui/components/badge";
 import { toast } from "sonner";
-import { Loader2, TrendingUp, Clock } from "lucide-react";
+import { TrendingUp, Clock } from "lucide-react";
 
 type CareerPath = {
   title: string;
@@ -195,31 +195,32 @@ export function CareerSwitchPlanner() {
   };
 
   return (
-    <div className="grid gap-8 lg:grid-cols-[1.1fr_1.2fr]">
-      <Card className="border shadow-sm border-slate-200 bg-white/70">
-        <CardHeader>
-          <CardTitle>{t("form.title")}</CardTitle>
-          <CardDescription>{t("form.subtitle")}</CardDescription>
+    <div className="space-y-10">
+      <Card className="border border-slate-200 bg-gradient-to-br from-slate-50 to-white shadow-[0_60px_80px_rgba(15,23,42,0.1)]">
+        <CardHeader className="space-y-2">
+          <CardTitle className="text-2xl lg:text-3xl font-semibold">{t("form.title")}</CardTitle>
+          <CardDescription className="text-slate-500">{t("form.subtitle")}</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="currentRole">{t("form.currentRole")}</Label>
-            <Input
-              id="currentRole"
-              value={formData.currentRole}
-              onChange={(e) => handleChange("currentRole", e.target.value)}
-              placeholder={t("form.placeholders.currentRole")}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="currentSkills">{t("form.currentSkills")}</Label>
-            <Input
-              id="currentSkills"
-              value={formData.currentSkills}
-              onChange={(e) => handleChange("currentSkills", e.target.value)}
-              placeholder={t("form.placeholders.currentSkills")}
-            />
+        <CardContent className="space-y-5 px-6 py-6">
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="currentRole">{t("form.currentRole")}</Label>
+              <Input
+                id="currentRole"
+                value={formData.currentRole}
+                onChange={(e) => handleChange("currentRole", e.target.value)}
+                placeholder={t("form.placeholders.currentRole")}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="currentSkills">{t("form.currentSkills")}</Label>
+              <Input
+                id="currentSkills"
+                value={formData.currentSkills}
+                onChange={(e) => handleChange("currentSkills", e.target.value)}
+                placeholder={t("form.placeholders.currentSkills")}
+              />
+            </div>
           </div>
 
           <div className="space-y-2">
@@ -232,87 +233,105 @@ export function CareerSwitchPlanner() {
             />
           </div>
 
-          <div className="space-y-2">
-            <Label>{t("form.targetIndustry")}</Label>
-            <Select
-              value={formData.targetIndustry}
-              onValueChange={(value) => handleChange("targetIndustry", value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder={t("form.placeholders.targetIndustry")} />
-              </SelectTrigger>
-              <SelectContent>
-                {industries.map((option) => (
-                  <SelectItem key={option} value={option}>
-                    {t(`form.options.industries.${option}`)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label>{t("form.timeframe")}</Label>
-            <Select
-              value={formData.timeframe}
-              onValueChange={(value) => handleChange("timeframe", value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder={t("form.placeholders.timeframe")} />
-              </SelectTrigger>
-              <SelectContent>
-                {timeframes.map((option) => (
-                  <SelectItem key={option} value={option}>
-                    {t(`form.options.timeframes.${option}`)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label>{t("form.budget")}</Label>
-            <Select
-              value={formData.budget}
-              onValueChange={(value) => handleChange("budget", value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder={t("form.placeholders.budget")} />
-              </SelectTrigger>
-              <SelectContent>
-                {budgets.map((option) => (
-                  <SelectItem key={option} value={option}>
-                    {t(`form.options.budgets.${option}`)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="grid gap-4 md:grid-cols-3">
+            <div className="space-y-2">
+              <Label>{t("form.targetIndustry")}</Label>
+              <Select
+                value={formData.targetIndustry}
+                onValueChange={(value) => handleChange("targetIndustry", value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={t("form.placeholders.targetIndustry")} />
+                </SelectTrigger>
+                <SelectContent>
+                  {industries.map((option) => (
+                    <SelectItem key={option} value={option}>
+                      {t(`form.options.industries.${option}`)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>{t("form.timeframe")}</Label>
+              <Select
+                value={formData.timeframe}
+                onValueChange={(value) => handleChange("timeframe", value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={t("form.placeholders.timeframe")} />
+                </SelectTrigger>
+                <SelectContent>
+                  {timeframes.map((option) => (
+                    <SelectItem key={option} value={option}>
+                      {t(`form.options.timeframes.${option}`)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>{t("form.budget")}</Label>
+              <Select
+                value={formData.budget}
+                onValueChange={(value) => handleChange("budget", value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={t("form.placeholders.budget")} />
+                </SelectTrigger>
+                <SelectContent>
+                  {budgets.map((option) => (
+                    <SelectItem key={option} value={option}>
+                      {t(`form.options.budgets.${option}`)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           {error && <p className="text-sm text-red-600">{error}</p>}
 
-          <Button
-            onClick={handleGenerate}
-            disabled={isAnalyzing}
-            className="w-full text-white bg-black hover:bg-black/80"
-          >
-            {isAnalyzing ? (
-              <>
-                <Loader2 className="mr-2 w-4 h-4 animate-spin" />
-                {t("form.analyzing")}
-              </>
-            ) : (
-              t("form.submit")
-            )}
-          </Button>
-          <p className="text-sm text-slate-500">{t("advisor.formHint")}</p>
+          <div className="space-y-3">
+            <Button
+              onClick={handleGenerate}
+              disabled={isAnalyzing}
+              className="w-full bg-slate-900 text-white hover:bg-slate-950 focus-visible:ring-2 focus-visible:ring-slate-900"
+            >
+              {isAnalyzing ? (
+                <span className="flex items-center justify-center gap-3">
+                  <span className="h-5 w-5 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                  {t("form.analyzing")}
+                </span>
+              ) : (
+                t("form.submit")
+              )}
+            </Button>
+            <p className="text-sm text-slate-500">{t("advisor.formHint")}</p>
+          </div>
         </CardContent>
       </Card>
 
       <div className="space-y-6">
-        {paths.length === 0 ? (
+        {isAnalyzing ? (
+          <div className="flex flex-col items-center gap-4 rounded-3xl border border-slate-200 bg-white/70 px-6 py-8 text-center shadow-sm">
+            <span className="h-14 w-14 rounded-full border-4 border-slate-200 border-t-slate-800 animate-spin" />
+            <div>
+              <p className="text-lg font-semibold text-slate-900">{t("advisor.loadingTitle")}</p>
+              <p className="text-sm text-slate-500">{t("advisor.loadingCopy")}</p>
+            </div>
+          </div>
+        ) : advisorSummary ? (
+          <Card className="rounded-3xl border border-slate-200 bg-slate-50/80 px-6 py-5 shadow-[0_20px_60px_rgba(15,23,42,0.08)]">
+            <p className="text-xs uppercase tracking-[0.35em] text-slate-500">
+              {t("advisor.insightLabel")}
+            </p>
+            <p className="mt-2 text-lg font-semibold text-slate-900">{advisorSummary}</p>
+            <p className="text-sm text-slate-500">{t("advisor.insightCopy")}</p>
+          </Card>
+        ) : paths.length === 0 ? (
           <Card className="rounded-3xl border border-dashed border-slate-200 bg-slate-50/70">
-            <CardContent className="py-12 space-y-3 text-center text-slate-600">
+            <CardContent className="py-10 space-y-3 text-center text-slate-600">
               <p className="text-xl font-semibold text-slate-900">
                 {t("advisor.listeningTitle")}
               </p>
@@ -320,30 +339,27 @@ export function CareerSwitchPlanner() {
               <p className="text-sm">{t("advisor.listeningBody2")}</p>
             </CardContent>
           </Card>
-        ) : (
-          <div className="space-y-6">
-            {advisorSummary && (
-              <Card className="p-5 rounded-3xl border shadow-sm border-slate-200 bg-slate-50 text-slate-700">
-                <p className="text-xs uppercase tracking-[0.35em] text-slate-500">
-                  {t("advisor.insightLabel")}
-                </p>
-                <p className="mt-1 text-lg font-semibold text-slate-900">{advisorSummary}</p>
-                <p className="text-sm text-slate-500">{t("advisor.insightCopy")}</p>
-              </Card>
-            )}
-            {primaryPath && (
-              <PrimaryPathCard
-                path={primaryPath}
-                tradeoff={describeTradeoff(primaryPath)}
-                translate={t}
-              />
-            )}
+        ) : null}
+
+        {paths.length > 0 && (
+          <div className="space-y-8">
+            <div className="flex justify-center px-2">
+              <div className="w-full max-w-4xl">
+                {primaryPath && (
+                  <PrimaryPathCard
+                    path={primaryPath}
+                    tradeoff={describeTradeoff(primaryPath)}
+                    translate={t}
+                  />
+                )}
+              </div>
+            </div>
             {alternativePaths.length > 0 && (
-              <div className="space-y-4">
+              <div>
                 <p className="text-xs uppercase tracking-[0.3em] text-slate-500">
                   {t("advisor.alternativeLabel")}
                 </p>
-                <div className="space-y-4">
+                <div className="mt-4 grid gap-4 md:grid-cols-2">
                   {alternativePaths.map((path, index) => (
                     <AlternativePathCard
                       key={`${path.title}-${index}`}
@@ -375,7 +391,7 @@ type AlternativePathCardProps = PathCardProps & {
 
 function PrimaryPathCard({ path, tradeoff, translate }: PathCardProps) {
   return (
-    <Card className="rounded-3xl border border-slate-200 bg-gradient-to-b from-white to-slate-50 shadow-[0_20px_45px_rgba(15,23,42,0.12)]">
+    <Card className="rounded-3xl border border-emerald-300 bg-gradient-to-b from-white via-white to-emerald-50 shadow-[0_30px_80px_rgba(16,185,129,0.25)] ring-1 ring-emerald-100">
       <CardHeader className="space-y-3">
         <div className="flex flex-wrap gap-3 items-center">
           <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 text-[11px] px-3 py-1 rounded-full">
@@ -401,7 +417,7 @@ function PrimaryPathCard({ path, tradeoff, translate }: PathCardProps) {
 
 function AlternativePathCard({ path, tradeoff, salaryGrowth, translate }: AlternativePathCardProps) {
   return (
-    <Card className="rounded-3xl border shadow-sm border-slate-100 bg-white/90">
+    <Card className="rounded-3xl border border-slate-200 bg-white shadow-sm ring-1 ring-slate-50">
       <CardHeader className="pb-2 space-y-2">
         <div className="flex flex-wrap gap-2 justify-between items-center">
           <div>

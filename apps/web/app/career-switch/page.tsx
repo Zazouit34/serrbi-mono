@@ -7,13 +7,13 @@ export default async function CareerSwitchPage() {
   const t = await getTranslations("CareerSwitchPage");
 
   return (
-    <div className="container mx-auto flex flex-col gap-10 py-16">
-      <div className="mx-auto flex max-w-3xl flex-col items-center text-center gap-4">
-        <span className="text-xs font-semibold uppercase tracking-wide text-violet-500">
+    <div className="flex flex-col gap-10 py-16 mx-auto">
+      <div className="flex flex-col gap-4 items-center mx-auto max-w-3xl text-center">
+        <span className="text-xs font-semibold tracking-wide text-violet-500 uppercase">
           {t("badge")}
         </span>
         <h1 className="text-4xl font-bold md:text-5xl">{t("title")}</h1>
-        <p className="text-muted-foreground text-base md:text-lg">
+        <p className="text-base text-muted-foreground md:text-lg">
           {t("subtitle")}
         </p>
       </div>
