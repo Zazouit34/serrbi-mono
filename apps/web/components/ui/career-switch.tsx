@@ -296,7 +296,7 @@ export function CareerSwitchPlanner() {
             <Button
               onClick={handleGenerate}
               disabled={isAnalyzing}
-              className="w-full bg-slate-900 text-white hover:bg-slate-950 focus-visible:ring-2 focus-visible:ring-slate-900"
+              className="bg-slate-900 text-white hover:bg-slate-950 focus-visible:ring-2 focus-visible:ring-slate-900"
             >
               {isAnalyzing ? (
                 <span className="flex items-center justify-center gap-3">
