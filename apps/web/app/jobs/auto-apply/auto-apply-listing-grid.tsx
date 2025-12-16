@@ -239,8 +239,8 @@ export function AutoApplyListingGrid({
   }
 
   return (
-    <Card className="rounded-3xl border border-slate-100 shadow-none bg-white">
-      <CardHeader className="flex flex-row gap-3 justify-between items-center pb-2">
+    <Card className="w-full max-w-full rounded-3xl border border-slate-100 shadow-none bg-white">
+      <CardHeader className="flex flex-col gap-3 pb-2 md:flex-row md:items-center md:justify-between">
         <div className="flex gap-3 items-start">
           <div className="flex justify-center items-center w-10 h-10 bg-slate-900 text-white rounded-2xl shadow-sm">
             <Sparkles className="w-5 h-5" />
@@ -261,20 +261,20 @@ export function AutoApplyListingGrid({
           </div>
         </div>
 
-        <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 text-[11px] px-3 py-1 rounded-full">
+        <Badge className="self-start bg-emerald-50 text-emerald-700 border-emerald-200 text-[11px] px-3 py-1 rounded-full md:self-auto">
           {isFetching ? tA("listing.updating") : tA("listing.jobsInQueue", { count: totalQueue })}
         </Badge>
       </CardHeader>
 
-      <CardContent className="pt-1 space-y-4">
+      <CardContent className="pt-1 space-y-4 w-full">
         {data && data.items.length > 0 && (
-          <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
             <p className="text-xs text-slate-500">
               {tA("listing.bestMatches", {
                 count: data.total,
               })}
             </p>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Button
                 variant="outline"
                 size="sm"

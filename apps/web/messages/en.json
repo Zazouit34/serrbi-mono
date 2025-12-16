@@ -1082,6 +1082,20 @@
       "skills": "Skills to focus on",
       "stepsTitle": "Step-by-step plan"
     },
+    "advisor": {
+      "formHint": "Serrbi listens to your background before recommending a clear next chapter, the trade-offs, and the first steps you can take today.",
+      "listeningTitle": "Serrbi listens before advising.",
+      "listeningBody1": "Share your story so the AI advisor can weigh your experience, interests, and goals.",
+      "listeningBody2": "You’ll receive curated transition paths, salary insight, and a grounded playbook for your first move.",
+      "insightLabel": "Advisor insight",
+      "insightCopy": "Expect clarity on the trade-offs ahead, why each path is viable, and the very next actions to take.",
+      "alternativeLabel": "Alternative paths worth exploring",
+      "recommendedBadge": "Recommended",
+      "evidenceLabel": "Evidence",
+      "roadmapLabel": "Your transition roadmap",
+      "immediateMove": "Immediate move",
+      "nextStep": "Next step {index}"
+    },
     "difficulty": {
       "Easy": "Easy",
       "Moderate": "Moderate",

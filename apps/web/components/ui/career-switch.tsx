@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@workspace/ui/components/button";
 import {
@@ -55,6 +55,59 @@ const difficultyStyles: Record<
   },
 };
 
+const timelineDescriptions: Record<string, string> = {
+  "3-6": "Quick 3-6 month ramp",
+  "6-12": "Balanced 6-12 month pace",
+  "1-2": "Longer 1-2 year shift",
+  flexible: "Flexible, adaptive timeline",
+};
+
+const difficultyNotes: Record<CareerPath["difficulty"], string> = {
+  Easy: "Light learning lift",
+  Moderate: "Requires new skills with focus",
+  Challenging: "Ambitious growth, heavier lift",
+};
+
+type TranslateFn = ReturnType<typeof useTranslations>;
+
+function describeTradeoff(path: CareerPath) {
+  const timeline = timelineDescriptions[path.timeToTransition] ?? `${path.timeToTransition} month timeline`;
+  const difficulty = difficultyNotes[path.difficulty];
+  const salaryGap = path.targetSalary.min - path.currentSalary.min;
+  const salaryNote =
+    salaryGap >= 15000
+      ? "High salary upside"
+      : salaryGap >= 5000
+        ? "Steady growth"
+        : "Stable income";
+  return `${timeline} · ${difficulty} · ${salaryNote}`;
+}
+
+function buildAdvisorSummary(paths: CareerPath[], formData: FormState) {
+  if (!paths.length) return "";
+  const primaryTitle = paths[0]!.title;
+  const role = formData.currentRole ? `${formData.currentRole}` : "your current experience";
+  const interest = formData.interests ? ` and your interest in ${formData.interests}` : "";
+  const industry = formData.targetIndustry ? `, with a focus on ${formData.targetIndustry}` : "";
+  return `Based on ${role}${interest}${industry}, Serrbi recommends the ${primaryTitle} path as the most grounded next chapter.`;
+}
+
+function formatSalary(range: { min: number; max: number }) {
+  const formatter = new Intl.NumberFormat(undefined, {
+    style: "currency",
+    currency: "EUR",
+    maximumFractionDigits: 0,
+  });
+  return `${formatter.format(range.min)} - ${formatter.format(range.max)}`;
+}
+
+function formatSalaryGrowth(path: CareerPath) {
+  const growth = Math.round(
+    ((path.targetSalary.min - path.currentSalary.min) / Math.max(path.currentSalary.min, 1)) * 100,
+  );
+  return `${growth > 0 ? "+" : ""}${growth}% salary gap`;
+}
+
 type FormState = {
   currentRole: string;
   currentSkills: string;
@@ -79,18 +132,15 @@ export function CareerSwitchPlanner() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [paths, setPaths] = useState<CareerPath[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const advisorSummary = useMemo(
+    () => buildAdvisorSummary(paths, formData),
+    [paths, formData.currentRole, formData.interests, formData.targetIndustry],
+  );
+  const primaryPath = paths[0];
+  const alternativePaths = paths.slice(1);
 
   const handleChange = (field: keyof FormState, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const formatSalary = (range: { min: number; max: number }) => {
-    const formatter = new Intl.NumberFormat(undefined, {
-      style: "currency",
-      currency: "EUR",
-      maximumFractionDigits: 0,
-    });
-    return `${formatter.format(range.min)} - ${formatter.format(range.max)}`;
   };
 
   const handleGenerate = async () => {
@@ -146,7 +196,7 @@ export function CareerSwitchPlanner() {
 
   return (
     <div className="grid gap-8 lg:grid-cols-[1.1fr_1.2fr]">
-      <Card className="shadow-sm border-muted">
+      <Card className="border shadow-sm border-slate-200 bg-white/70">
         <CardHeader>
           <CardTitle>{t("form.title")}</CardTitle>
           <CardDescription>{t("form.subtitle")}</CardDescription>
@@ -244,112 +294,216 @@ export function CareerSwitchPlanner() {
           <Button
             onClick={handleGenerate}
             disabled={isAnalyzing}
-            className="w-full bg-black text-white hover:bg-black/80"
+            className="w-full text-white bg-black hover:bg-black/80"
           >
             {isAnalyzing ? (
               <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Loader2 className="mr-2 w-4 h-4 animate-spin" />
                 {t("form.analyzing")}
               </>
             ) : (
               t("form.submit")
             )}
           </Button>
+          <p className="text-sm text-slate-500">{t("advisor.formHint")}</p>
         </CardContent>
       </Card>
 
       <div className="space-y-6">
         {paths.length === 0 ? (
-          <Card className="border-dashed">
-            <CardContent className="py-16 text-center text-muted-foreground">
-              {t("results.empty")}
+          <Card className="rounded-3xl border border-dashed border-slate-200 bg-slate-50/70">
+            <CardContent className="py-12 space-y-3 text-center text-slate-600">
+              <p className="text-xl font-semibold text-slate-900">
+                {t("advisor.listeningTitle")}
+              </p>
+              <p className="text-sm">{t("advisor.listeningBody1")}</p>
+              <p className="text-sm">{t("advisor.listeningBody2")}</p>
             </CardContent>
           </Card>
         ) : (
-          paths.map((path, index) => (
-            <Card key={`${path.title}-${index}`} className="overflow-hidden shadow-sm">
-              <CardHeader className="flex flex-col gap-2">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <CardTitle className="text-2xl">{path.title}</CardTitle>
-                    <p className="text-sm text-muted-foreground">
-                      {t("results.rank", { index: index + 1 })}
-                    </p>
-                  </div>
-                  <Badge className={difficultyStyles[path.difficulty].badge}>
-                    {t(`difficulty.${path.difficulty}`)}
-                  </Badge>
+          <div className="space-y-6">
+            {advisorSummary && (
+              <Card className="p-5 rounded-3xl border shadow-sm border-slate-200 bg-slate-50 text-slate-700">
+                <p className="text-xs uppercase tracking-[0.35em] text-slate-500">
+                  {t("advisor.insightLabel")}
+                </p>
+                <p className="mt-1 text-lg font-semibold text-slate-900">{advisorSummary}</p>
+                <p className="text-sm text-slate-500">{t("advisor.insightCopy")}</p>
+              </Card>
+            )}
+            {primaryPath && (
+              <PrimaryPathCard
+                path={primaryPath}
+                tradeoff={describeTradeoff(primaryPath)}
+                translate={t}
+              />
+            )}
+            {alternativePaths.length > 0 && (
+              <div className="space-y-4">
+                <p className="text-xs uppercase tracking-[0.3em] text-slate-500">
+                  {t("advisor.alternativeLabel")}
+                </p>
+                <div className="space-y-4">
+                  {alternativePaths.map((path, index) => (
+                    <AlternativePathCard
+                      key={`${path.title}-${index}`}
+                      path={path}
+                      tradeoff={describeTradeoff(path)}
+                      salaryGrowth={formatSalaryGrowth(path)}
+                      translate={t}
+                    />
+                  ))}
                 </div>
-                <CardDescription className="flex flex-wrap items-center gap-4 text-sm">
-                  <span className="inline-flex items-center gap-1">
-                    <Clock className="h-4 w-4" />
-                    {path.timeToTransition}
-                  </span>
-                  <span className="inline-flex items-center gap-1 font-semibold">
-                    <TrendingUp className="h-4 w-4" />
-                    {t("results.salaryGrowth", {
-                      growth: Math.round(
-                        ((path.targetSalary.min - path.currentSalary.min) /
-                          Math.max(path.currentSalary.min, 1)) *
-                          100,
-                      ),
-                    })}
-                  </span>
-                </CardDescription>
-              </CardHeader>
-
-              <CardContent className="space-y-6">
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="p-4 rounded-lg bg-muted">
-                    <p className="text-xs uppercase text-muted-foreground">
-                      {t("results.currentSalary")}
-                    </p>
-                    <p className="text-lg font-semibold">
-                      {formatSalary(path.currentSalary)}
-                    </p>
-                  </div>
-                  <div className="p-4 rounded-lg bg-emerald-50">
-                    <p className="text-xs uppercase text-emerald-600">
-                      {t("results.targetSalary")}
-                    </p>
-                    <p className="text-lg font-semibold text-emerald-700">
-                      {formatSalary(path.targetSalary)}
-                    </p>
-                  </div>
-                </div>
-
-                <div>
-                  <h4 className="font-semibold mb-3">{t("results.skills")}</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {path.requiredSkills.map((skill) => (
-                      <Badge
-                        key={skill}
-                        variant="outline"
-                        className="border-primary text-primary"
-                      >
-                        {skill}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <h4 className="font-semibold mb-3">{t("results.stepsTitle")}</h4>
-                  <div className="space-y-3">
-                    {path.steps.map((step, stepIndex) => (
-                      <div key={stepIndex} className="flex items-start gap-3">
-                        <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-black/10 text-sm font-semibold text-black">
-                          {stepIndex + 1}
-                        </div>
-                        <p className="text-sm text-muted-foreground">{step}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))
+              </div>
+            )}
+          </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+type PathCardProps = {
+  path: CareerPath;
+  tradeoff: string;
+  translate: TranslateFn;
+};
+
+type AlternativePathCardProps = PathCardProps & {
+  salaryGrowth: string;
+};
+
+function PrimaryPathCard({ path, tradeoff, translate }: PathCardProps) {
+  return (
+    <Card className="rounded-3xl border border-slate-200 bg-gradient-to-b from-white to-slate-50 shadow-[0_20px_45px_rgba(15,23,42,0.12)]">
+      <CardHeader className="space-y-3">
+        <div className="flex flex-wrap gap-3 items-center">
+          <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 text-[11px] px-3 py-1 rounded-full">
+            {translate("advisor.recommendedBadge")}
+          </Badge>
+          <Badge className={difficultyStyles[path.difficulty].badge}>
+            {translate(`difficulty.${path.difficulty}`)}
+          </Badge>
+        </div>
+        <div>
+          <CardTitle className="text-3xl font-semibold text-slate-900">{path.title}</CardTitle>
+          <CardDescription className="text-sm text-slate-500">{tradeoff}</CardDescription>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <SalaryBlock path={path} translate={translate} />
+        <EvidenceBlock skills={path.requiredSkills} translate={translate} />
+        <StepsBlock steps={path.steps} translate={translate} />
+      </CardContent>
+    </Card>
+  );
+}
+
+function AlternativePathCard({ path, tradeoff, salaryGrowth, translate }: AlternativePathCardProps) {
+  return (
+    <Card className="rounded-3xl border shadow-sm border-slate-100 bg-white/90">
+      <CardHeader className="pb-2 space-y-2">
+        <div className="flex flex-wrap gap-2 justify-between items-center">
+          <div>
+            <CardTitle className="text-2xl font-semibold text-slate-900">{path.title}</CardTitle>
+            <p className="text-sm text-slate-500">{tradeoff}</p>
+          </div>
+          <Badge className={difficultyStyles[path.difficulty].badge}>
+            {translate(`difficulty.${path.difficulty}`)}
+          </Badge>
+        </div>
+        <CardDescription className="flex flex-wrap gap-3 text-xs text-slate-500">
+          <span className="inline-flex gap-1 items-center">
+            <Clock className="w-4 h-4" />
+            {path.timeToTransition}
+          </span>
+          <span className="inline-flex gap-1 items-center">
+            <TrendingUp className="w-4 h-4" />
+            {salaryGrowth}
+          </span>
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="pt-0 space-y-6">
+        <SalaryBlock path={path} translate={translate} />
+        <EvidenceBlock skills={path.requiredSkills} translate={translate} />
+        <StepsBlock steps={path.steps} translate={translate} />
+      </CardContent>
+    </Card>
+  );
+}
+
+function SalaryBlock({ path, translate }: { path: CareerPath; translate: TranslateFn }) {
+  return (
+    <div className="grid gap-4 md:grid-cols-2">
+      <div className="p-4 rounded-2xl bg-slate-50">
+        <p className="text-xs uppercase tracking-[0.3em] text-slate-500">
+          {translate("results.currentSalary")}
+        </p>
+        <p className="mt-1 text-lg font-semibold text-slate-900">
+          {formatSalary(path.currentSalary)}
+        </p>
+      </div>
+      <div className="p-4 rounded-2xl bg-emerald-50/40">
+        <p className="text-xs text-emerald-700 uppercase tracking-[0.3em]">
+          {translate("results.targetSalary")}
+        </p>
+        <p className="mt-1 text-lg font-semibold text-emerald-900">
+          {formatSalary(path.targetSalary)}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function EvidenceBlock({ skills, translate }: { skills: string[]; translate: TranslateFn }) {
+  const evidence = skills.slice(0, 5);
+  return (
+    <div className="space-y-2">
+      <p className="text-xs uppercase tracking-[0.3em] text-slate-500">
+        {translate("advisor.evidenceLabel")}
+      </p>
+      <div className="flex flex-wrap gap-2 text-sm text-slate-600">
+        {evidence.map((skill) => (
+          <span
+            key={skill}
+            className="px-3 py-1 rounded-full bg-slate-100 text-slate-700"
+          >
+            {skill}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function StepsBlock({ steps, translate }: { steps: string[]; translate: TranslateFn }) {
+  return (
+    <div className="space-y-4">
+      <p className="text-xs uppercase tracking-[0.3em] text-slate-500">
+        {translate("advisor.roadmapLabel")}
+      </p>
+      <div className="space-y-3">
+        {steps.map((step, index) => (
+          <div key={`${step}-${index}`} className="flex gap-3 items-start">
+            <div
+              className={`flex h-10 w-10 items-center justify-center rounded-2xl text-sm font-semibold ${
+                index === 0
+                  ? "bg-slate-900 text-white"
+                  : "bg-slate-100 text-slate-700"
+              }`}
+            >
+              {index + 1}
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-slate-900">
+                {index === 0
+                  ? translate("advisor.immediateMove")
+                  : translate("advisor.nextStep", { index: index + 1 })}
+              </p>
+              <p className="text-sm text-slate-600">{step}</p>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );

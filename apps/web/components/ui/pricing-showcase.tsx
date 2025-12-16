@@ -21,6 +21,43 @@ const PLAN_SUBTEXT: Record<PlanKey, string> = {
   premium: "planSubtext.premium",
 };
 
+type TranslateFn = (key: string, params?: Record<string, any>) => string;
+
+function buildPlanFeatures(plan: any, t: TranslateFn) {
+  const features: string[] = [];
+  const planName = (plan.displayName || plan.name || "").toString().toUpperCase();
+  const isFreePlan = planName === "FREE";
+
+  if (isFreePlan) {
+    features.push(t("features.unlimitedApplications"));
+  }
+
+  if (plan.autoApplyAccess && plan.autoApplyMonthlyLimit) {
+    features.push(`${plan.autoApplyMonthlyLimit} ${t("features.autoApplyPerMonth")}`);
+  }
+
+  if (plan.resumeAtsScoreAccess) {
+    features.push(t("features.resumeAtsScore"));
+  }
+
+  if (plan.smartMatchAccess) {
+    features.push(t("features.smartMatch"));
+  }
+
+  const aiFeatures = [
+    "features.aiResumeAnalyzer",
+    "features.careerSwitch",
+    "features.aiRoadmap",
+    "features.atsInsight",
+  ];
+
+  aiFeatures.forEach((featureKey) => {
+    features.push(isFreePlan ? `1 ${t(featureKey)}` : t(featureKey));
+  });
+
+  return features;
+}
+
 export function PricingShowcase() {
   const router = useRouter();
   const { data: plans, isLoading, error } = trpc.subscription.getPlans.useQuery();
@@ -63,31 +100,7 @@ function PlanPreview({ plan, onClick }: { plan: any; onClick: () => void }) {
   const subtext = t(PLAN_SUBTEXT[planKey]);
   const badgeLabel = planKey === "premium" ? t("badges.bestPlan") : planKey === "basic" ? t("badges.mostValue") : t("badges.getStarted");
 
-  const features: string[] = [];
-  if (plan.autoApplyAccess && plan.autoApplyMonthlyLimit) {
-    features.push(`${plan.autoApplyMonthlyLimit} ${t("features.autoApplyPerMonth")}`);
-  }
-  if (plan.monthlyApplyLimit) {
-    features.push(`${plan.monthlyApplyLimit} ${t("features.applicationsPerMonth")}`);
-  }
-  if (plan.resumeAtsScoreAccess) features.push(t("features.resumeAtsScore"));
-  if (plan.smartMatchAccess) features.push(t("features.smartMatch"));
-  const isFree =
-    (plan.displayName || plan.name || "").toString().toUpperCase() === "FREE";
-  // Add AI tools individually
-  if (isFree) {
-    features.push(`1 ${t("features.aiResumeAnalyzer")}`);
-    features.push(`1 ${t("features.careerSwitch")}`);
-    features.push(`1 ${t("features.aiRoadmap")}`);
-    features.push(`1 ${t("features.atsInsight")}`);
-  } else {
-    features.push(t("features.aiResumeAnalyzer"));
-    features.push(t("features.careerSwitch"));
-    features.push(t("features.aiRoadmap"));
-    features.push(t("features.atsInsight"));
-  }
-  
-
+  const features = buildPlanFeatures(plan, t);
   function handleKeyDown(e: React.KeyboardEvent<HTMLDivElement>) {
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
@@ -121,8 +134,8 @@ function PlanPreview({ plan, onClick }: { plan: any; onClick: () => void }) {
         <div className="mt-2 w-full border-t border-gray-200" />
 
         <ul className="space-y-2">
-          {features.slice(0, 4).map((feature: string, idx: number) => (
-            <li key={idx} className="flex gap-2 items-center text-sm text-foreground/80">
+          {features.map((feature: string, idx: number) => (
+            <li key={`${feature}-${idx}`} className="flex gap-2 items-center text-sm text-foreground/80">
               <span className="inline-flex h-4 w-4 items-center justify-center rounded-[4px] bg-black"><Check size={10} strokeWidth={3} className="text-white" /></span>
               {feature}
             </li>

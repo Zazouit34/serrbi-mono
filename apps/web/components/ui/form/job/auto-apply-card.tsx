@@ -97,9 +97,9 @@ export function AutoApplyCard({
   const firstLetter = job.companyName?.trim()?.[0] ?? job.title?.trim()?.[0] ?? "S";
 
   return (
-    <Card className="rounded-2xl border border-slate-100 bg-white shadow-[0_12px_28px_rgba(15,23,42,0.07)]">
-      <CardContent className="flex flex-col gap-3 px-4 py-4">
-        <div className="flex justify-between gap-3">
+    <Card className="w-full rounded-2xl border border-slate-100 bg-white shadow-[0_12px_28px_rgba(15,23,42,0.07)]">
+      <CardContent className="flex flex-col gap-3 px-4 py-4 w-full">
+        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
           <div className="flex items-start gap-3">
             <Avatar className="h-10 w-10 rounded-xl">
               <AvatarImage src={job.companyImage || undefined} alt={job.companyName || job.title} />
@@ -141,7 +141,7 @@ export function AutoApplyCard({
             </div>
           </div>
 
-          <div className="flex flex-col items-end justify-between h-full gap-2">
+          <div className="flex flex-col items-start justify-between gap-2 md:items-end">
             <div className="flex items-center gap-1 text-[11px] text-slate-400">
               <Mail className="h-3 w-3" />
               {postedAgo || timeAgo}
@@ -167,7 +167,7 @@ export function AutoApplyCard({
             ) : (
               <Button
                 size="sm"
-                className="mt-1 h-8 px-3 text-[12px] rounded-full bg-slate-900 text-white hover:bg-slate-900/90"
+                className="mt-1 h-8 px-3 text-[12px] rounded-full bg-slate-900 text-white hover:bg-slate-900/90 w-full md:w-auto"
                 onClick={handleApply}
                 disabled={status === "applying"}
               >

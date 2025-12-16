@@ -146,7 +146,7 @@ export function ResumeInsight({
   if (requireLogin && authStatus !== "authenticated") {
     return (
       <section className="mx-auto mt-10 w-full">
-        <div className="rounded-3xl border border-slate-200 bg-slate-50 p-10 text-center text-slate-700">
+        <div className="p-10 text-center rounded-3xl border border-slate-200 bg-slate-50 text-slate-700">
           {tr(
             "ResumeInsight.loginRequired",
             "Please sign in to access the AI resume analyzer.",
@@ -158,11 +158,11 @@ export function ResumeInsight({
 
   return (
     <section className="mx-auto mt-10 w-full">
-      <div className="relative overflow-hidden rounded-3xl bg-white text-slate-900 border border-slate-200 shadow-sm">
+      <div className="overflow-hidden relative bg-white rounded-3xl border shadow-sm text-slate-900 border-slate-200">
         {!scoreData ? (
           <div className="grid grid-cols-1 md:grid-cols-2">
             {/* Left: heading + dropzone */}
-            <div className="relative p-6 sm:p-10 bg-gradient-to-br from-slate-50 to-white">
+            <div className="relative p-6 bg-gradient-to-br to-white sm:p-10 from-slate-50">
             {/* Diagonal stripes background */}
             <div
               className="absolute inset-0 opacity-[0.03] pointer-events-none"
@@ -184,7 +184,7 @@ export function ResumeInsight({
             </div>
 
             {existingResumeUrl && !file && (
-              <div className="p-3 mt-5 text-sm rounded-xl border border-slate-200 bg-blue-50 text-slate-700">
+              <div className="p-3 mt-5 text-sm bg-blue-50 rounded-xl border border-slate-200 text-slate-700">
                 <p className="font-medium text-slate-900">
                   {tr(
                     "ResumeInsight.existingResumeTitle",
@@ -272,7 +272,7 @@ export function ResumeInsight({
           </div>
 
           {/* Right: mock / live global score */}
-          <div className="flex relative justify-center items-center p-3 sm:p-10 bg-gradient-to-br from-white to-slate-50">
+          <div className="flex relative justify-center items-center p-4 bg-gradient-to-br from-white sm:p-2 to-slate-50">
             <div className="absolute inset-0 pointer-events-none" aria-hidden>
               <div className="absolute right-[-20%] top-1/2 h-[120%] w-[120%] -translate-y-1/2 rounded-full bg-[radial-gradient(closest-side,#3b82f611,#00000000)]" />
             </div>
@@ -287,14 +287,14 @@ export function ResumeInsight({
                 <div className="w-full max-w-xs">
                   <div className="overflow-hidden relative w-full h-2 rounded-full bg-slate-200">
                     <div
-                      className="absolute top-0 left-0 h-full rounded-full bg-gradient-to-r from-blue-500 to-blue-400 animate-pulse"
+                      className="absolute top-0 left-0 h-full bg-gradient-to-r from-blue-500 to-blue-400 rounded-full animate-pulse"
                       style={{ width: `${progress}%` }}
                     />
                   </div>
                 </div>
               </div>
             ) : (
-              <div className="flex flex-col gap-2 p-4 w-full rounded-2xl border border-slate-200 bg-white shadow-sm">
+              <div className="flex flex-col gap-2 p-4 w-full bg-white rounded-2xl border shadow-sm border-slate-200">
                 <ResumeScoreCard
                   score={(scoreData as unknown as ResumeScore)?.score ?? 72}
                   breakdown={(scoreData as unknown as ResumeScore)?.breakdown ?? defaultBreakdown(72)}
@@ -308,7 +308,7 @@ export function ResumeInsight({
           </div>
         </div>
         ) : (
-          <div className="p-6 sm:p-10 bg-gradient-to-br from-slate-50 to-white">
+          <div className="p-6 bg-gradient-to-br to-white sm:p-10 from-slate-50">
             <ResumeScoreCard
               score={scoreData.score}
               breakdown={scoreData.breakdown as any}

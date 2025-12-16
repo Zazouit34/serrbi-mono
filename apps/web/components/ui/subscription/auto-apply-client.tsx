@@ -223,7 +223,7 @@ export default function AutoApplySettingsPage() {
       </div>
 
       {/* Best matches elevated to top */}
-      <div className="rounded-3xl bg-white shadow-[0_18px_40px_rgba(15,23,42,0.08)] border border-slate-100 p-4 md:p-6">
+      <div className="w-full md:rounded-3xl md:bg-white md:shadow-[0_18px_40px_rgba(15,23,42,0.08)] md:border md:border-slate-100 md:p-6">
         <AutoApplyListingGrid enabled={enabled} category={category} keywords={keywords} roles={roles} />
       </div>
 

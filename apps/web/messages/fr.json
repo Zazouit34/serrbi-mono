@@ -1087,6 +1087,20 @@
       "skills": "Compétences à renforcer",
       "stepsTitle": "Plan étape par étape"
     },
+    "advisor": {
+      "formHint": "Serrbi écoute votre parcours avant de recommander votre prochaine étape, les compromis à anticiper et les premières actions possibles.",
+      "listeningTitle": "Serrbi écoute avant de conseiller.",
+      "listeningBody1": "Parlez-nous de votre parcours pour que l’IA prenne en compte votre expérience, vos intérêts et vos objectifs.",
+      "listeningBody2": "Vous recevrez des parcours sur mesure, des repères salariaux et un plan d’action concret pour démarrer.",
+      "insightLabel": "Analyse du conseiller",
+      "insightCopy": "Attendez-vous à une vue claire des compromis, à la justification de chaque piste et aux actions à prioriser.",
+      "alternativeLabel": "Autres pistes à considérer",
+      "recommendedBadge": "Recommandée",
+      "evidenceLabel": "Éléments probants",
+      "roadmapLabel": "Votre feuille de route",
+      "immediateMove": "Action immédiate",
+      "nextStep": "Étape suivante {index}"
+    },
     "difficulty": {
       "Easy": "Facile",
       "Moderate": "Modérée",
