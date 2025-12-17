@@ -1,15 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@workspace/ui/components/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@workspace/ui/components/card";
 import { Input } from "@workspace/ui/components/input";
 import { Label } from "@workspace/ui/components/label";
 import {
@@ -19,9 +12,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@workspace/ui/components/select";
-import { Badge } from "@workspace/ui/components/badge";
 import { toast } from "sonner";
-import { TrendingUp, Clock } from "lucide-react";
+import { ChevronDown, Sparkles } from "lucide-react";
 
 type CareerPath = {
   title: string;
@@ -36,24 +28,6 @@ type CareerPath = {
 const industries = ["tech", "finance", "healthcare", "ecommerce", "consulting", "startup"] as const;
 const timeframes = ["3-6", "6-12", "1-2", "flexible"] as const;
 const budgets = ["0-25k", "25-50k", "50-100k", "100k+"] as const;
-
-const difficultyStyles: Record<
-  CareerPath["difficulty"],
-  { badge: string; text: string }
-> = {
-  Easy: {
-    badge: "bg-emerald-100 text-emerald-900",
-    text: "text-emerald-600",
-  },
-  Moderate: {
-    badge: "bg-amber-100 text-amber-900",
-    text: "text-amber-600",
-  },
-  Challenging: {
-    badge: "bg-rose-100 text-rose-900",
-    text: "text-rose-600",
-  },
-};
 
 const timelineDescriptions: Record<string, string> = {
   "3-6": "Quick 3-6 month ramp",
@@ -131,13 +105,23 @@ export function CareerSwitchPlanner() {
   const [formData, setFormData] = useState<FormState>(initialForm);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [paths, setPaths] = useState<CareerPath[]>([]);
+  const [roadmapVisible, setRoadmapVisible] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const advisorSummary = useMemo(
     () => buildAdvisorSummary(paths, formData),
     [paths, formData.currentRole, formData.interests, formData.targetIndustry],
   );
   const primaryPath = paths[0];
-  const alternativePaths = paths.slice(1);
+
+  useEffect(() => {
+    if (!paths.length) {
+      setRoadmapVisible(false);
+      return;
+    }
+    setRoadmapVisible(false);
+    const timer = setTimeout(() => setRoadmapVisible(true), 200);
+    return () => clearTimeout(timer);
+  }, [paths.length]);
 
   const handleChange = (field: keyof FormState, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -196,12 +180,15 @@ export function CareerSwitchPlanner() {
 
   return (
     <div className="space-y-10">
-      <Card className="border border-slate-200 bg-gradient-to-br from-slate-50 to-white shadow-[0_60px_80px_rgba(15,23,42,0.1)]">
-        <CardHeader className="space-y-2">
-          <CardTitle className="text-2xl lg:text-3xl font-semibold">{t("form.title")}</CardTitle>
-          <CardDescription className="text-slate-500">{t("form.subtitle")}</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-5 px-6 py-6">
+      <section className="space-y-5">
+        <div className="space-y-1 max-w-3xl">
+          <p className="text-xs uppercase tracking-[0.4em] text-slate-500">
+            {t("form.introTitle")}
+          </p>
+          <h2 className="text-3xl font-semibold text-slate-900">{t("form.title")}</h2>
+          <p className="text-sm text-slate-500">{t("form.introSubtitle")}</p>
+        </div>
+        <div className="space-y-5 rounded-3xl border border-slate-200 bg-white/80 p-5 lg:p-6">
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="currentRole">{t("form.currentRole")}</Label>
@@ -222,7 +209,6 @@ export function CareerSwitchPlanner() {
               />
             </div>
           </div>
-
           <div className="space-y-2">
             <Label htmlFor="interests">{t("form.interests")}</Label>
             <Input
@@ -232,7 +218,6 @@ export function CareerSwitchPlanner() {
               placeholder={t("form.placeholders.interests")}
             />
           </div>
-
           <div className="grid gap-4 md:grid-cols-3">
             <div className="space-y-2">
               <Label>{t("form.targetIndustry")}</Label>
@@ -289,14 +274,12 @@ export function CareerSwitchPlanner() {
               </Select>
             </div>
           </div>
-
           {error && <p className="text-sm text-red-600">{error}</p>}
-
-          <div className="space-y-3">
+          <div className="space-y-2">
             <Button
               onClick={handleGenerate}
               disabled={isAnalyzing}
-              className="bg-slate-900 text-white hover:bg-slate-950 focus-visible:ring-2 focus-visible:ring-slate-900"
+              className="w-full bg-gradient-to-r from-purple-600 to-fuchsia-500 text-white hover:from-purple-700 hover:to-fuchsia-600 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-purple-500"
             >
               {isAnalyzing ? (
                 <span className="flex items-center justify-center gap-3">
@@ -304,73 +287,56 @@ export function CareerSwitchPlanner() {
                   {t("form.analyzing")}
                 </span>
               ) : (
-                t("form.submit")
+                <span className="flex items-center justify-center gap-2">
+                  <Sparkles className="h-5 w-5" />
+                  {t("form.submit")}
+                </span>
               )}
             </Button>
-            <p className="text-sm text-slate-500">{t("advisor.formHint")}</p>
+            <p className="text-xs uppercase tracking-[0.4em] text-slate-500">
+              {t("form.currentSnapshotLabel")}
+            </p>
+            <p className="text-xs text-slate-500">{t("advisor.formHint")}</p>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </section>
+
+      {isAnalyzing ? (
+        <div className="flex items-center gap-4 rounded-2xl border border-purple-200 bg-purple-50/80 px-4 py-3 text-purple-900">
+          <span className="h-10 w-10 animate-spin rounded-full border-4 border-purple-200 border-t-transparent" />
+          <div>
+            <p className="font-semibold">{t("advisor.loadingTitle")}</p>
+            <p className="text-sm text-purple-700">{t("advisor.loadingCopy")}</p>
+          </div>
+        </div>
+      ) : advisorSummary ? (
+        <div className="rounded-2xl border border-slate-200 bg-white/80 px-5 py-4 text-sm text-slate-700">
+          <p className="text-xs uppercase tracking-[0.3em] text-slate-500">
+            {t("advisor.insightLabel")}
+          </p>
+          <p className="mt-2 text-lg font-semibold text-slate-900">{advisorSummary}</p>
+          <p className="text-sm text-slate-500">{t("advisor.insightCopy")}</p>
+        </div>
+      ) : null}
 
       <div className="space-y-6">
-        {isAnalyzing ? (
-          <div className="flex flex-col items-center gap-4 rounded-3xl border border-slate-200 bg-white/70 px-6 py-8 text-center shadow-sm">
-            <span className="h-14 w-14 rounded-full border-4 border-slate-200 border-t-slate-800 animate-spin" />
-            <div>
-              <p className="text-lg font-semibold text-slate-900">{t("advisor.loadingTitle")}</p>
-              <p className="text-sm text-slate-500">{t("advisor.loadingCopy")}</p>
-            </div>
+        {paths.length === 0 ? (
+          <div className="rounded-3xl border border-dashed border-slate-200 bg-slate-50/70 p-10 text-center text-slate-600">
+            <p className="text-xl font-semibold text-slate-900">{t("advisor.listeningTitle")}</p>
+            <p className="text-sm">{t("advisor.listeningBody1")}</p>
+            <p className="text-sm">{t("advisor.listeningBody2")}</p>
           </div>
-        ) : advisorSummary ? (
-          <Card className="rounded-3xl border border-slate-200 bg-slate-50/80 px-6 py-5 shadow-[0_20px_60px_rgba(15,23,42,0.08)]">
-            <p className="text-xs uppercase tracking-[0.35em] text-slate-500">
-              {t("advisor.insightLabel")}
-            </p>
-            <p className="mt-2 text-lg font-semibold text-slate-900">{advisorSummary}</p>
-            <p className="text-sm text-slate-500">{t("advisor.insightCopy")}</p>
-          </Card>
-        ) : paths.length === 0 ? (
-          <Card className="rounded-3xl border border-dashed border-slate-200 bg-slate-50/70">
-            <CardContent className="py-10 space-y-3 text-center text-slate-600">
-              <p className="text-xl font-semibold text-slate-900">
-                {t("advisor.listeningTitle")}
-              </p>
-              <p className="text-sm">{t("advisor.listeningBody1")}</p>
-              <p className="text-sm">{t("advisor.listeningBody2")}</p>
-            </CardContent>
-          </Card>
-        ) : null}
-
-        {paths.length > 0 && (
-          <div className="space-y-8">
-            <div className="flex justify-center px-2">
-              <div className="w-full max-w-4xl">
-                {primaryPath && (
-                  <PrimaryPathCard
-                    path={primaryPath}
-                    tradeoff={describeTradeoff(primaryPath)}
-                    translate={t}
-                  />
-                )}
-              </div>
-            </div>
-            {alternativePaths.length > 0 && (
-              <div>
-                <p className="text-xs uppercase tracking-[0.3em] text-slate-500">
-                  {t("advisor.alternativeLabel")}
-                </p>
-                <div className="mt-4 grid gap-4 md:grid-cols-2">
-                  {alternativePaths.map((path, index) => (
-                    <AlternativePathCard
-                      key={`${path.title}-${index}`}
-                      path={path}
-                      tradeoff={describeTradeoff(path)}
-                      salaryGrowth={formatSalaryGrowth(path)}
-                      translate={t}
-                    />
-                  ))}
-                </div>
-              </div>
+        ) : (
+          <div className="grid gap-6 lg:grid-cols-[1fr_auto_1fr]">
+            <CurrentCareerSnapshot formData={formData} translate={t} />
+            <ComparisonArrow label={t("comparison.arrowLabel")} />
+            {primaryPath && (
+              <SuggestedCareerSnapshot
+                path={primaryPath}
+                translate={t}
+                tradeoff={describeTradeoff(primaryPath)}
+                roadmapVisible={roadmapVisible}
+              />
             )}
           </div>
         )}
@@ -379,93 +345,155 @@ export function CareerSwitchPlanner() {
   );
 }
 
-type PathCardProps = {
-  path: CareerPath;
-  tradeoff: string;
+type CurrentCareerSnapshotProps = {
+  formData: FormState;
   translate: TranslateFn;
 };
 
-type AlternativePathCardProps = PathCardProps & {
-  salaryGrowth: string;
-};
+function CurrentCareerSnapshot({ formData, translate }: CurrentCareerSnapshotProps) {
+  const skills = formData.currentSkills
+    ? formData.currentSkills
+        .split(/[,\n]+/)
+        .map((skill) => skill.trim())
+        .filter(Boolean)
+    : [];
 
-function PrimaryPathCard({ path, tradeoff, translate }: PathCardProps) {
   return (
-    <Card className="rounded-3xl border border-emerald-300 bg-gradient-to-b from-white via-white to-emerald-50 shadow-[0_30px_80px_rgba(16,185,129,0.25)] ring-1 ring-emerald-100">
-      <CardHeader className="space-y-3">
-        <div className="flex flex-wrap gap-3 items-center">
-          <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 text-[11px] px-3 py-1 rounded-full">
-            {translate("advisor.recommendedBadge")}
-          </Badge>
-          <Badge className={difficultyStyles[path.difficulty].badge}>
-            {translate(`difficulty.${path.difficulty}`)}
-          </Badge>
+    <div className="rounded-3xl border border-slate-200 bg-white/80 p-6 text-slate-900">
+      <div className="flex items-center justify-between">
+        <p className="text-xs uppercase tracking-[0.4em] text-slate-500">{translate("comparison.currentTitle")}</p>
+        <span className="text-xs text-slate-400">{translate("form.currentSnapshotLabel")}</span>
+      </div>
+      <div className="mt-3">
+        <h3 className="text-2xl font-semibold">
+          {formData.currentRole || translate("comparison.currentPlaceholder")}
+        </h3>
+        <p className="mt-1 text-sm text-slate-500">
+          {formData.interests || translate("comparison.aboutPlaceholder")}
+        </p>
+      </div>
+      <div className="mt-5 space-y-4 text-sm text-slate-600">
+        <div>
+          <p className="text-xs uppercase tracking-[0.35em] text-slate-400">{translate("comparison.skillsLabel")}</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {skills.length ? (
+              skills.map((skill) => (
+                <span
+                  key={skill}
+                  className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700"
+                >
+                  {skill}
+                </span>
+              ))
+            ) : (
+              <span className="text-slate-400">{translate("comparison.skillsPlaceholder")}</span>
+            )}
+          </div>
         </div>
         <div>
-          <CardTitle className="text-3xl font-semibold text-slate-900">{path.title}</CardTitle>
-          <CardDescription className="text-sm text-slate-500">{tradeoff}</CardDescription>
+          <p className="text-xs uppercase tracking-[0.35em] text-slate-400">{translate("comparison.salaryLabel")}</p>
+          <p className="text-lg font-semibold text-slate-900">
+            {formData.budget || translate("comparison.salaryPlaceholder")}
+          </p>
         </div>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <SalaryBlock path={path} translate={translate} />
-        <EvidenceBlock skills={path.requiredSkills} translate={translate} />
-        <StepsBlock steps={path.steps} translate={translate} />
-      </CardContent>
-    </Card>
+        <div>
+          <p className="text-xs uppercase tracking-[0.35em] text-slate-400">{translate("comparison.timeframeLabel")}</p>
+          <p className="font-semibold text-slate-900">
+            {formData.timeframe || translate("comparison.timeframePlaceholder")}
+          </p>
+        </div>
+      </div>
+    </div>
   );
 }
 
-function AlternativePathCard({ path, tradeoff, salaryGrowth, translate }: AlternativePathCardProps) {
+type SuggestedCareerSnapshotProps = {
+  path: CareerPath;
+  translate: TranslateFn;
+  tradeoff: string;
+  roadmapVisible: boolean;
+};
+
+function SuggestedCareerSnapshot({ path, tradeoff, translate, roadmapVisible }: SuggestedCareerSnapshotProps) {
   return (
-    <Card className="rounded-3xl border border-slate-200 bg-white shadow-sm ring-1 ring-slate-50">
-      <CardHeader className="pb-2 space-y-2">
-        <div className="flex flex-wrap gap-2 justify-between items-center">
-          <div>
-            <CardTitle className="text-2xl font-semibold text-slate-900">{path.title}</CardTitle>
-            <p className="text-sm text-slate-500">{tradeoff}</p>
-          </div>
-          <Badge className={difficultyStyles[path.difficulty].badge}>
-            {translate(`difficulty.${path.difficulty}`)}
-          </Badge>
+    <div className="relative flex flex-col gap-6 rounded-3xl border border-emerald-200 bg-gradient-to-br from-white via-white to-emerald-50/80 p-6 text-slate-900 shadow-[0_10px_30px_rgba(16,185,129,0.15)]">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className="text-xs uppercase tracking-[0.35em] text-emerald-500">{translate("comparison.suggestedTitle")}</p>
+          <h3 className="text-2xl font-semibold">{path.title}</h3>
+          <p className="text-sm text-slate-700">{tradeoff}</p>
         </div>
-        <CardDescription className="flex flex-wrap gap-3 text-xs text-slate-500">
-          <span className="inline-flex gap-1 items-center">
-            <Clock className="w-4 h-4" />
-            {path.timeToTransition}
-          </span>
-          <span className="inline-flex gap-1 items-center">
-            <TrendingUp className="w-4 h-4" />
-            {salaryGrowth}
-          </span>
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="pt-0 space-y-6">
+        <span className="rounded-full border border-emerald-200 bg-white/80 px-3 py-1 text-xs font-semibold text-emerald-700">
+          {translate("comparison.seeRoadmap")}
+        </span>
+      </div>
+      <div className="space-y-5">
         <SalaryBlock path={path} translate={translate} />
         <EvidenceBlock skills={path.requiredSkills} translate={translate} />
-        <StepsBlock steps={path.steps} translate={translate} />
-      </CardContent>
-    </Card>
+        <RoadmapTimeline steps={path.steps} translate={translate} visible={roadmapVisible} />
+      </div>
+    </div>
+  );
+}
+
+type RoadmapTimelineProps = {
+  steps: string[];
+  translate: TranslateFn;
+  visible: boolean;
+};
+
+function RoadmapTimeline({ steps, translate, visible }: RoadmapTimelineProps) {
+  return (
+    <div
+      className={`rounded-3xl border border-white/20 bg-slate-900/90 p-5 text-white transition-all duration-500 ${
+        visible ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-3"
+      }`}
+    >
+      <p className="text-xs uppercase tracking-[0.4em] text-slate-300">{translate("advisor.roadmapLabel")}</p>
+      <div className="mt-4 space-y-4">
+        {steps.map((step, index) => (
+          <div key={`roadmap-${index}`} className="flex items-start gap-3">
+            <span className="mt-1 h-3 w-3 rounded-full bg-emerald-400" />
+            <div>
+              <p className="text-sm font-semibold text-white">
+                {index === 0
+                  ? translate("advisor.immediateMove")
+                  : translate("advisor.nextStep", { index: index + 1 })}
+              </p>
+              <p className="text-sm text-slate-300">{step}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+type ComparisonArrowProps = {
+  label: string;
+};
+
+function ComparisonArrow({ label }: ComparisonArrowProps) {
+  return (
+    <div className="flex flex-col items-center gap-2 text-[11px] uppercase tracking-[0.6em] text-slate-400">
+      {[0, 1, 2].map((index) => (
+        <ChevronDown key={index} className="h-5 w-5 text-emerald-500" />
+      ))}
+      <p className="mt-1 text-[11px] text-slate-500">{label}</p>
+    </div>
   );
 }
 
 function SalaryBlock({ path, translate }: { path: CareerPath; translate: TranslateFn }) {
   return (
-    <div className="grid gap-4 md:grid-cols-2">
-      <div className="p-4 rounded-2xl bg-slate-50">
-        <p className="text-xs uppercase tracking-[0.3em] text-slate-500">
-          {translate("results.currentSalary")}
-        </p>
-        <p className="mt-1 text-lg font-semibold text-slate-900">
-          {formatSalary(path.currentSalary)}
-        </p>
+    <div className="grid gap-4 md:grid-cols-2 text-sm text-slate-700">
+      <div className="rounded-2xl bg-slate-50 p-4">
+        <p className="text-xs uppercase tracking-[0.3em] text-slate-500">{translate("results.currentSalary")}</p>
+        <p className="mt-1 text-lg font-semibold text-slate-900">{formatSalary(path.currentSalary)}</p>
       </div>
-      <div className="p-4 rounded-2xl bg-emerald-50/40">
-        <p className="text-xs text-emerald-700 uppercase tracking-[0.3em]">
-          {translate("results.targetSalary")}
-        </p>
-        <p className="mt-1 text-lg font-semibold text-emerald-900">
-          {formatSalary(path.targetSalary)}
-        </p>
+      <div className="rounded-2xl bg-emerald-50/60 p-4">
+        <p className="text-xs uppercase tracking-[0.3em] text-emerald-700">{translate("results.targetSalary")}</p>
+        <p className="mt-1 text-lg font-semibold text-emerald-900">{formatSalary(path.targetSalary)}</p>
       </div>
     </div>
   );
@@ -474,51 +502,13 @@ function SalaryBlock({ path, translate }: { path: CareerPath; translate: Transla
 function EvidenceBlock({ skills, translate }: { skills: string[]; translate: TranslateFn }) {
   const evidence = skills.slice(0, 5);
   return (
-    <div className="space-y-2">
-      <p className="text-xs uppercase tracking-[0.3em] text-slate-500">
-        {translate("advisor.evidenceLabel")}
-      </p>
-      <div className="flex flex-wrap gap-2 text-sm text-slate-600">
+    <div className="space-y-2 text-sm text-slate-600">
+      <p className="text-xs uppercase tracking-[0.3em] text-slate-500">{translate("advisor.evidenceLabel")}</p>
+      <div className="flex flex-wrap gap-2">
         {evidence.map((skill) => (
-          <span
-            key={skill}
-            className="px-3 py-1 rounded-full bg-slate-100 text-slate-700"
-          >
+          <span key={skill} className="rounded-full bg-white/80 px-3 py-1 text-xs font-semibold text-slate-700">
             {skill}
           </span>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function StepsBlock({ steps, translate }: { steps: string[]; translate: TranslateFn }) {
-  return (
-    <div className="space-y-4">
-      <p className="text-xs uppercase tracking-[0.3em] text-slate-500">
-        {translate("advisor.roadmapLabel")}
-      </p>
-      <div className="space-y-3">
-        {steps.map((step, index) => (
-          <div key={`${step}-${index}`} className="flex gap-3 items-start">
-            <div
-              className={`flex h-10 w-10 items-center justify-center rounded-2xl text-sm font-semibold ${
-                index === 0
-                  ? "bg-slate-900 text-white"
-                  : "bg-slate-100 text-slate-700"
-              }`}
-            >
-              {index + 1}
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-slate-900">
-                {index === 0
-                  ? translate("advisor.immediateMove")
-                  : translate("advisor.nextStep", { index: index + 1 })}
-              </p>
-              <p className="text-sm text-slate-600">{step}</p>
-            </div>
-          </div>
         ))}
       </div>
     </div>

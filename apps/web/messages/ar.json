@@ -1033,6 +1033,8 @@
     "form": {
       "title": "أخبرنا عن خبرتك",
       "subtitle": "حقلان إلزاميان يكفيان للبدء. أضف المزيد للحصول على نتائج أدق.",
+      "introTitle": "لمحة عن مسارك الحالي",
+      "introSubtitle": "حقول بسيطة مستوحاة من السيرة الذاتية للمقارنة بين موقعك الحالي واقتراح الذكاء الاصطناعي.",
       "currentRole": "الوظيفة الحالية *",
       "currentSkills": "المهارات الأساسية",
       "interests": "الاهتمامات والشغف *",
@@ -1070,7 +1072,8 @@
         }
       },
       "submit": "توليد المسارات",
-      "analyzing": "جارٍ التحليل…"
+      "analyzing": "جارٍ التحليل…",
+      "currentSnapshotLabel": "هذا هو فصلك المهني الحالي"
     },
     "results": {
       "empty": "املأ النموذج للحصول على مسارات انتقال مدعومة بالذكاء الاصطناعي.",
@@ -1096,6 +1099,20 @@
       "roadmapLabel": "خارطة الطريق الخاصة بك",
       "immediateMove": "خطوة فورية",
       "nextStep": "الخطوة التالية {index}"
+    },
+    "comparison": {
+      "arrowLabel": "مقارنة الذكاء الاصطناعي",
+      "currentTitle": "المسار الحالي",
+      "currentPlaceholder": "صف وظيفتك الحالية",
+      "aboutPlaceholder": "اخبرنا بما تبنيته حالياً",
+      "skillsLabel": "المهارات",
+      "skillsPlaceholder": "أضف مهاراتك الأساسية",
+      "salaryLabel": "توقعات الراتب",
+      "salaryPlaceholder": "اختر نطاق الميزانية",
+      "timeframeLabel": "الإطار الزمني",
+      "timeframePlaceholder": "اختر الجدول المناسب",
+      "suggestedTitle": "المسار المقترح من الذكاء الاصطناعي",
+      "seeRoadmap": "عرض خارطة الطريق"
     },
     "difficulty": {
       "Easy": "سهل",

@@ -1039,6 +1039,8 @@
     "form": {
       "title": "Parlez-nous de votre profil",
       "subtitle": "Deux champs obligatoires suffisent pour démarrer. Ajoutez des détails pour un résultat plus précis.",
+      "introTitle": "Instantané de votre carrière actuelle",
+      "introSubtitle": "Des champs inspirés du CV pour comparer votre rôle actuel à la suggestion IA.",
       "currentRole": "Poste actuel *",
       "currentSkills": "Compétences clés",
       "interests": "Centres d’intérêt *",
@@ -1076,7 +1078,8 @@
         }
       },
       "submit": "Générer des parcours",
-      "analyzing": "Analyse en cours…"
+      "analyzing": "Analyse en cours…",
+      "currentSnapshotLabel": "Voici votre chapitre actuel"
     },
     "results": {
       "empty": "Remplissez le formulaire pour générer des transitions personnalisées.",
@@ -1102,6 +1105,20 @@
       "roadmapLabel": "Votre feuille de route",
       "immediateMove": "Action immédiate",
       "nextStep": "Étape suivante {index}"
+    },
+    "comparison": {
+      "arrowLabel": "Comparaison IA",
+      "currentTitle": "Carrière actuelle",
+      "currentPlaceholder": "Décrivez votre poste actuel",
+      "aboutPlaceholder": "Parlez de ce que vous construisez aujourd’hui",
+      "skillsLabel": "Compétences",
+      "skillsPlaceholder": "Ajoutez vos compétences clés",
+      "salaryLabel": "Attentes salariales",
+      "salaryPlaceholder": "Choisissez une fourchette de budget",
+      "timeframeLabel": "Échéance",
+      "timeframePlaceholder": "Choisissez un tempo",
+      "suggestedTitle": "Parcours recommandé par l’IA",
+      "seeRoadmap": "Voir la feuille de route"
     },
     "difficulty": {
       "Easy": "Facile",
