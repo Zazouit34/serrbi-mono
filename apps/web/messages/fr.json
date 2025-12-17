@@ -1108,8 +1108,8 @@
     },
     "comparison": {
       "arrowLabel": "Comparaison IA",
-      "currentTitle": "Carrière actuelle",
       "currentPlaceholder": "Décrivez votre poste actuel",
+      "aboutLabel": "À propos",
       "aboutPlaceholder": "Parlez de ce que vous construisez aujourd’hui",
       "skillsLabel": "Compétences",
       "skillsPlaceholder": "Ajoutez vos compétences clés",
@@ -1117,8 +1117,15 @@
       "salaryPlaceholder": "Choisissez une fourchette de budget",
       "timeframeLabel": "Échéance",
       "timeframePlaceholder": "Choisissez un tempo",
-      "suggestedTitle": "Parcours recommandé par l’IA",
-      "seeRoadmap": "Voir la feuille de route"
+      "industryLabel": "Secteur",
+      "industryPlaceholder": "Sélectionnez un secteur",
+      "budgetLabel": "Budget formation",
+      "workExperience": "Expériences",
+      "workPlaceholder": "L’IA décrira ici votre expérience actuelle",
+      "recommendedLabel": "Recommandé",
+      "seeRoadmap": "Voir la feuille de route",
+      "hideRoadmap": "Masquer la feuille de route",
+      "waiting": "L’IA prépare votre prochaine étape"
     },
     "difficulty": {
       "Easy": "Facile",
@@ -1127,7 +1134,8 @@
     },
     "errors": {
       "generic": "Impossible de générer des parcours. Réessayez.",
-      "empty": "L’IA n’a pas pu proposer de transitions. Ajustez vos informations."
+      "empty": "L’IA n’a pas pu proposer de transitions. Ajustez vos informations.",
+      "invalidResponse": "L’IA a renvoyé une réponse inattendue. Réessayez."
     },
     "toasts": {
       "missing": {

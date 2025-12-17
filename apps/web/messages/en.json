@@ -1103,17 +1103,24 @@
     },
     "comparison": {
       "arrowLabel": "AI comparison",
-      "currentTitle": "Current career",
       "currentPlaceholder": "Share your current title",
       "aboutPlaceholder": "Describe what you’re building today",
+      "aboutLabel": "About",
       "skillsLabel": "Skills",
       "skillsPlaceholder": "Add your standout skills",
       "salaryLabel": "Salary expectation",
       "salaryPlaceholder": "Select a budget range",
       "timeframeLabel": "Timeframe",
       "timeframePlaceholder": "Select a timeline",
-      "suggestedTitle": "AI recommended path",
-      "seeRoadmap": "See road map"
+      "industryLabel": "Industry",
+      "industryPlaceholder": "Pick an industry to anchor your story",
+      "budgetLabel": "Learning budget",
+      "workExperience": "Work experience",
+      "workPlaceholder": "AI will capture your detailed experience here",
+      "recommendedLabel": "Recommended",
+      "seeRoadmap": "See road map",
+      "hideRoadmap": "Hide road map",
+      "waiting": "AI is preparing your next chapter"
     },
     "difficulty": {
       "Easy": "Easy",
@@ -1122,7 +1129,8 @@
     },
     "errors": {
       "generic": "Unable to generate career paths. Please try again.",
-      "empty": "AI could not return any transitions. Adjust your inputs."
+      "empty": "AI could not return any transitions. Adjust your inputs.",
+      "invalidResponse": "AI returned an unexpected response. Please try again."
     },
     "toasts": {
       "missing": {

@@ -18,6 +18,34 @@ interface CareerSwitchPayload {
   budget?: string;
 }
 
+interface Snapshot {
+  title: string;
+  about: string;
+  workExperience: Array<{
+    role: string;
+    company: string;
+    period: string;
+    location: string;
+  }>;
+  salary: { min: number; max: number };
+  skills: string[];
+  industry: string;
+  timeframe: string;
+  budget: string;
+}
+
+interface RoadmapStep {
+  title: string;
+  description: string;
+}
+
+interface CareerSwitchResult {
+  insight?: string;
+  currentSnapshot: Snapshot;
+  recommendedSnapshot: Snapshot;
+  roadmap: RoadmapStep[];
+}
+
 interface AnalyzeRequestBody {
   action: AnalyzeAction;
   payload: ResumePayload | CareerSwitchPayload;
@@ -110,33 +138,64 @@ Resume text:
 `.trim();
 }
 
+function formatList(list?: string) {
+  return list
+    ? list
+        .split(/[,\n]/)
+        .map((item) => item.trim())
+        .filter(Boolean)
+        .join(", ")
+    : "";
+}
+
 function buildCareerSwitchPrompt(payload: CareerSwitchPayload): string {
+  const skillsSummary = formatList(payload.currentSkills) || "a diverse set of foundational skills";
   return `
-You are an expert career coach. Based on the user's details below, suggest three ideal career transition paths.
-Return JSON with this shape:
+You are an expert bilingual career strategist.
+Based on the information below, generate a current CV snapshot + an AI recommended CV snapshot and an actionable road map for the transition.
+Respond ONLY in JSON with this shape:
 {
-  "paths": [
-    {
-      "title": string,
-      "currentSalary": { "min": number, "max": number },
-      "targetSalary": { "min": number, "max": number },
-      "timeToTransition": string,
-      "requiredSkills": string[],
-      "steps": string[],
-      "difficulty": "Easy" | "Moderate" | "Challenging"
-    }
+  "insight": string,
+  "currentSnapshot": {
+    "title": string,
+    "about": string,
+    "workExperience": [
+      { "role": string, "company": string, "period": string, "location": string }
+    ],
+    "salary": { "min": number, "max": number },
+    "skills": string[],
+    "industry": string,
+    "timeframe": string,
+    "budget": string
+  },
+  "recommendedSnapshot": {
+    "title": string,
+    "about": string,
+    "workExperience": [
+      { "role": string, "company": string, "period": string, "location": string }
+    ],
+    "salary": { "min": number, "max": number },
+    "skills": string[],
+    "industry": string,
+    "timeframe": string,
+    "budget": string
+  },
+  "roadmap": [
+    { "title": string, "description": string }
   ]
 }
 
-All salaries must be in EURO per month and realistic for Morocco, France, Belgium, or Germany based on the context.
+Adjust the language so it matches the user's preference (English, French, or Arabic) inferred from their current role or interests.
 
 User Profile:
-- Current Role: ${payload.currentRole}
-- Skills: ${payload.currentSkills || "N/A"}
+- Current role: ${payload.currentRole}
 - Interests: ${payload.interests}
-- Target Industry: ${payload.targetIndustry || "N/A"}
-- Transition Timeframe: ${payload.timeframe || "N/A"}
-- Learning Budget: ${payload.budget || "N/A"}
+- Key skills: ${skillsSummary}
+- Target industry: ${payload.targetIndustry || "TBD"}
+- Transition timeframe: ${payload.timeframe || "TBD"}
+- Learning budget: ${payload.budget || "TBD"}
+
+Make the current snapshot describe the user's present chapter, referencing the provided role, interests, and skills. The recommended snapshot should read like a clear next chapter (title, salary, skills, industry, timeframe, budget). Ensure roadmap steps describe the path from the current snapshot to the recommended snapshot with connected bullet points. Keep salaries in EURO per month and realistic for Morocco, France, Belgium, or Germany.
 `.trim();
 }
 
@@ -175,7 +234,7 @@ export async function POST(req: Request) {
     }
 
     const result = await callOpenRouter(prompt);
-    return NextResponse.json(result, { status: 200 });
+    return NextResponse.json(result as CareerSwitchResult, { status: 200 });
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Unknown AI error occurred";

@@ -1102,8 +1102,8 @@
     },
     "comparison": {
       "arrowLabel": "مقارنة الذكاء الاصطناعي",
-      "currentTitle": "المسار الحالي",
       "currentPlaceholder": "صف وظيفتك الحالية",
+      "aboutLabel": "حول",
       "aboutPlaceholder": "اخبرنا بما تبنيته حالياً",
       "skillsLabel": "المهارات",
       "skillsPlaceholder": "أضف مهاراتك الأساسية",
@@ -1111,8 +1111,15 @@
       "salaryPlaceholder": "اختر نطاق الميزانية",
       "timeframeLabel": "الإطار الزمني",
       "timeframePlaceholder": "اختر الجدول المناسب",
-      "suggestedTitle": "المسار المقترح من الذكاء الاصطناعي",
-      "seeRoadmap": "عرض خارطة الطريق"
+      "industryLabel": "القطاع",
+      "industryPlaceholder": "اختر قطاعًا",
+      "budgetLabel": "ميزانية التعلّم",
+      "workExperience": "الخبرات",
+      "workPlaceholder": "سيصف الذكاء الاصطناعي خبرتك الحالية هنا",
+      "recommendedLabel": "موصى به",
+      "seeRoadmap": "عرض خارطة الطريق",
+      "hideRoadmap": "إخفاء خارطة الطريق",
+      "waiting": "الذكاء الاصطناعي يُحضّر مسارك التالي"
     },
     "difficulty": {
       "Easy": "سهل",
@@ -1121,7 +1128,8 @@
     },
     "errors": {
       "generic": "تعذر توليد المسارات. حاول مرة أخرى.",
-      "empty": "لم يتمكن الذكاء الاصطناعي من اقتراح مسارات. عدّل البيانات وأعد المحاولة."
+      "empty": "لم يتمكن الذكاء الاصطناعي من اقتراح مسارات. عدّل البيانات وأعد المحاولة.",
+      "invalidResponse": "أعاد الذكاء الاصطناعي استجابة غير متوقعة. حاول مرة أخرى."
     },
     "toasts": {
       "missing": {
