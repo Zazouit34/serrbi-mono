@@ -13,7 +13,7 @@ import {
   SelectValue,
 } from "@workspace/ui/components/select";
 import { toast } from "sonner";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight, ArrowDown, Sparkles } from "lucide-react";
 
 type FormState = {
   currentRole: string;
@@ -173,10 +173,12 @@ function SnapshotBlock({ snapshot, translate }: { snapshot: Snapshot; translate:
 
 function ComparisonArrow({ label }: { label: string }) {
   return (
-    <div className="flex flex-col items-center justify-center gap-1 text-[10px] uppercase tracking-[0.5em] text-purple-500">
-      <ArrowRight className="h-6 w-6 text-purple-500" />
-      <ArrowRight className="h-6 w-6 text-purple-500" />
-      <span className="text-[11px] text-purple-400">{label}</span>
+    <div className="flex flex-col items-center justify-center gap-1 text-[10px] uppercase tracking-[0.5em]">
+      <ArrowRight className="hidden lg:block h-6 w-6 bg-gradient-to-r from-purple-600 to-fuchsia-500 text-transparent bg-clip-text" style={{ WebkitTextFillColor: 'transparent', WebkitBackgroundClip: 'text' }} />
+      <ArrowRight className="hidden lg:block h-6 w-6 bg-gradient-to-r from-purple-600 to-fuchsia-500 text-transparent bg-clip-text" style={{ WebkitTextFillColor: 'transparent', WebkitBackgroundClip: 'text' }} />
+      <ArrowDown className="lg:hidden h-6 w-6 bg-gradient-to-b from-purple-600 to-fuchsia-500 text-transparent bg-clip-text" style={{ WebkitTextFillColor: 'transparent', WebkitBackgroundClip: 'text' }} />
+      <ArrowDown className="lg:hidden h-6 w-6 bg-gradient-to-b from-purple-600 to-fuchsia-500 text-transparent bg-clip-text" style={{ WebkitTextFillColor: 'transparent', WebkitBackgroundClip: 'text' }} />
+      <span className="text-[11px] bg-gradient-to-r from-purple-600 to-fuchsia-500 text-transparent bg-clip-text" style={{ WebkitTextFillColor: 'transparent', WebkitBackgroundClip: 'text' }}>{label}</span>
     </div>
   );
 }
@@ -382,13 +384,17 @@ export function CareerSwitchPlanner() {
                 </span>
               )}
             </Button>
-            <p className="text-xs uppercase tracking-[0.4em] text-slate-500">{t("form.currentSnapshotLabel")}</p>
-            <p className="text-xs text-slate-500">{t("advisor.formHint")}</p>
+            {!analysis && (
+              <>
+                <p className="text-xs uppercase tracking-[0.4em] text-slate-500">{t("form.currentSnapshotLabel")}</p>
+                <p className="text-xs text-slate-500">{t("advisor.formHint")}</p>
+              </>
+            )}
           </div>
         </div>
       </section>
 
-      {insightCopy && (
+      {insightCopy && analysis && (
         <div className="text-sm text-slate-700">
           <p className="text-xs uppercase tracking-[0.4em] text-slate-500">{t("advisor.insightLabel")}</p>
           <p className="mt-2 text-lg font-semibold text-slate-900">{insightCopy}</p>
@@ -396,43 +402,45 @@ export function CareerSwitchPlanner() {
         </div>
       )}
 
-      <div className="space-y-6">
-        <div className="grid gap-6 lg:grid-cols-[1fr_auto_1fr]">
-          <div className="space-y-4 text-slate-900">
-            <SnapshotBlock snapshot={currentSnapshot} translate={t} />
-          </div>
-          <ComparisonArrow label={t("comparison.arrowLabel")} />
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs uppercase tracking-[0.4em] text-slate-500">{t("comparison.recommendedLabel")}</p>
-                <h3 className="text-2xl font-semibold text-slate-900">{recommendedSnapshot?.title ?? "—"}</h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowRoadmap((prev) => !prev)}
-                disabled={!roadmapReady}
-                className={`text-xs font-semibold uppercase tracking-[0.4em] ${
-                  roadmapReady ? "text-purple-500" : "text-slate-400"
-                }`}
-              >
-                {showRoadmap ? t("comparison.hideRoadmap") : t("comparison.seeRoadmap")}
-              </button>
+      {analysis && (
+        <div className="space-y-6">
+          <div className="grid gap-6 lg:grid-cols-[1fr_auto_1fr]">
+            <div className="space-y-4 text-slate-900">
+              <SnapshotBlock snapshot={currentSnapshot} translate={t} />
             </div>
-            {showRoadmap ? (
-              <RoadmapPanel
-                steps={analysis?.roadmap ?? []}
-                visible={showRoadmap}
-                label={t("advisor.roadmapLabel")}
-              />
-            ) : recommendedSnapshot ? (
-              <SnapshotBlock snapshot={recommendedSnapshot} translate={t} />
-            ) : (
-              <p className="text-sm text-slate-500">{t("comparison.waiting")}</p>
-            )}
+            <ComparisonArrow label={t("comparison.arrowLabel")} />
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.4em] text-slate-500">{t("comparison.recommendedLabel")}</p>
+                  <h3 className="text-2xl font-semibold text-slate-900">{recommendedSnapshot?.title ?? "—"}</h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowRoadmap((prev) => !prev)}
+                  disabled={!roadmapReady}
+                  className={`text-xs font-semibold uppercase tracking-[0.4em] ${
+                    roadmapReady ? "text-purple-500" : "text-slate-400"
+                  }`}
+                >
+                  {showRoadmap ? t("comparison.hideRoadmap") : t("comparison.seeRoadmap")}
+                </button>
+              </div>
+              {showRoadmap ? (
+                <RoadmapPanel
+                  steps={analysis?.roadmap ?? []}
+                  visible={showRoadmap}
+                  label={t("advisor.roadmapLabel")}
+                />
+              ) : recommendedSnapshot ? (
+                <SnapshotBlock snapshot={recommendedSnapshot} translate={t} />
+              ) : (
+                <p className="text-sm text-slate-500">{t("comparison.waiting")}</p>
+              )}
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
