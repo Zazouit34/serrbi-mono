@@ -425,8 +425,8 @@ export function CareerSwitchPlanner() {
       </div>
 
       <div className="relative mx-auto flex min-h-[80vh] max-w-4xl flex-col justify-center gap-10">
-        <div className="flex justify-between items-center">
-          <div className="flex gap-2 items-center">
+        <div className="flex w-full flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-2">
             {steps.map((_, index) => (
               <span
                 key={_.id}
@@ -436,7 +436,7 @@ export function CareerSwitchPlanner() {
               />
             ))}
           </div>
-          <div className="flex gap-3 items-center">
+          <div className="flex w-full flex-wrap items-center gap-3 sm:w-auto sm:justify-end">
             {stepIndex > 0 && (
               <button
                 type="button"
@@ -459,7 +459,7 @@ export function CareerSwitchPlanner() {
                 type="button"
                 onClick={goNext}
                 disabled={isAnalyzing}
-                className="text-white bg-gradient-to-r from-purple-500 to-fuchsia-500 shadow-lg shadow-purple-500/25 hover:from-purple-600 hover:to-fuchsia-600"
+                className="w-full text-white bg-gradient-to-r from-purple-500 to-fuchsia-500 shadow-lg shadow-purple-500/25 hover:from-purple-600 hover:to-fuchsia-600 sm:w-auto"
               >
                 {t("nav.finalCta")}
               </Button>
