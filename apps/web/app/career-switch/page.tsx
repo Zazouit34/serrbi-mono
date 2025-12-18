@@ -1,8 +1,11 @@
 import Image from "next/image";
+import Link from "next/link";
+import { Sparkles } from "lucide-react";
 
 import { CareerSwitchPlanner } from "@/components/ui/career-switch";
 import { requireUser } from "@/lib/auth-server";
 import { getTranslations } from "next-intl/server";
+import { Button } from "@workspace/ui/components/button";
 
 export default async function CareerSwitchPage() {
   await requireUser("/career-switch");
@@ -16,7 +19,7 @@ export default async function CareerSwitchPage() {
           alt={t("title")}
           fill
           priority
-          className="object-contain absolute inset-0 w-full h-full"
+          className="object-contain absolute inset-0 w-[120%] h-[120%] left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
           sizes="100vw"
         />
 
@@ -27,6 +30,16 @@ export default async function CareerSwitchPage() {
           <p className="text-base leading-relaxed md:text-lg md:leading-relaxed lg:max-w-3xl">
             {t("subtitle")}
           </p>
+          <Button
+            asChild
+            size="lg"
+            className="font-semibold text-white bg-gradient-to-r from-pink-400 to-purple-400 hover:from-pink-500 hover:to-purple-500"
+          >
+            <Link href="#career-planner">
+              <Sparkles className="mr-2 w-5 h-5" />
+              {t("start")}
+            </Link>
+          </Button>
         </div>
       </section>
 
