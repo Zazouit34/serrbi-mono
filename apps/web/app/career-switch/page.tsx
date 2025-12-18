@@ -19,7 +19,7 @@ export default async function CareerSwitchPage() {
           alt={t("title")}
           fill
           priority
-          className="object-contain absolute inset-0 w-[120%] h-[120%] left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+          className="object-contain absolute inset-0 w-[120%] h-[120%]"
           sizes="100vw"
         />
 
