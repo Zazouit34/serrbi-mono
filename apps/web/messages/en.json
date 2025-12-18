@@ -1148,6 +1148,74 @@
       }
     }
   },
+  "CareerSwitchFlow": {
+    "labels": {
+      "progress": "Career switch guide",
+      "skip": "Skip"
+    },
+    "nav": {
+      "next": "Next →",
+      "back": "← Back",
+      "finalCta": "See my recommended path"
+    },
+    "loading": {
+      "title": "Creating your career recommendation…",
+      "copy": "This usually takes a few seconds."
+    },
+    "errors": {
+      "required": "Let’s start with your role and what you enjoy."
+    },
+    "steps": {
+      "currentRole": {
+        "title": "What do you do today?",
+        "placeholder": "e.g. Frontend developer working with React"
+      },
+      "currentSkills": {
+        "title": "What are you strongest at?",
+        "placeholder": "e.g. React, JavaScript, UI design, APIs",
+        "helper": "Press Enter to turn entries into soft tags."
+      },
+      "interests": {
+        "title": "What kind of work do you enjoy?",
+        "placeholder": "e.g. building products, solving problems, working with people"
+      },
+      "targetIndustry": {
+        "title": "Any direction you’re curious about?",
+        "subtitle": "Optional — helps refine your recommendation",
+        "options": {
+          "product": "Product building",
+          "leadership": "People leadership",
+          "research": "Research and strategy",
+          "design": "Design and storytelling",
+          "business": "Business / growth",
+          "open": "I’m open"
+        }
+      },
+      "timeframe": {
+        "title": "How quickly do you want to transition?",
+        "options": {
+          "3-6": "3–6 months",
+          "6-12": "6–12 months",
+          "1-2": "1–2 years",
+          "flexible": "Flexible"
+        }
+      },
+      "budget": {
+        "title": "How much can you invest in learning?",
+        "subtitle": "Courses, certifications, or focused training",
+        "options": {
+          "minimal": "Minimal (mostly self-learning)",
+          "some": "Some investment",
+          "significant": "Significant investment",
+          "not-sure": "Not sure yet"
+        }
+      }
+    },
+    "results": {
+      "title": "Your recommendation",
+      "roadmapLabel": "Suggested path"
+    }
+  },
   "ResumeAnalyzerPage": {
     "badge": "Resume analyzer",
     "title": "AI resume analyzer",

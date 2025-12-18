@@ -1,19 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@workspace/ui/components/button";
-import { Input } from "@workspace/ui/components/input";
-import { Label } from "@workspace/ui/components/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@workspace/ui/components/select";
 import { toast } from "sonner";
-import { ArrowRight, ArrowDown, Sparkles } from "lucide-react";
 
 type FormState = {
   currentRole: string;
@@ -22,19 +12,6 @@ type FormState = {
   targetIndustry: string;
   timeframe: string;
   budget: string;
-};
-
-const industries = ["tech", "finance", "healthcare", "ecommerce", "consulting", "startup"] as const;
-const timeframes = ["3-6", "6-12", "1-2", "flexible"] as const;
-const budgets = ["0-25k", "25-50k", "50-100k", "100k+"] as const;
-
-const initialForm: FormState = {
-  currentRole: "",
-  currentSkills: "",
-  interests: "",
-  targetIndustry: "",
-  timeframe: "",
-  budget: "",
 };
 
 type WorkExperience = {
@@ -67,187 +44,231 @@ type CareerAnalysis = {
   roadmap: RoadmapStep[];
 };
 
-type TranslateFn = ReturnType<typeof useTranslations>;
+const initialForm: FormState = {
+  currentRole: "",
+  currentSkills: "",
+  interests: "",
+  targetIndustry: "",
+  timeframe: "",
+  budget: "",
+};
 
-function formatSalary(range: { min: number; max: number }) {
-  const formatter = new Intl.NumberFormat(undefined, {
-    style: "currency",
-    currency: "EUR",
-    maximumFractionDigits: 0,
-  });
-  return `${formatter.format(range.min)} - ${formatter.format(range.max)}`;
-}
+type StepId = "currentRole" | "currentSkills" | "interests" | "targetIndustry" | "timeframe" | "budget";
+type Step = {
+  id: StepId;
+  title: string;
+  subtitle?: string;
+  placeholder?: string;
+  optional?: boolean;
+};
 
-function parseSkills(skills: string) {
-  return skills
-    .split(/[\n,]+/)
-    .map((skill) => skill.trim())
-    .filter(Boolean);
-}
-
-function buildSnapshotFromForm(formData: FormState, translate: TranslateFn): Snapshot {
-  const skills = parseSkills(formData.currentSkills);
-  return {
-    title: formData.currentRole || translate("comparison.currentPlaceholder"),
-    about: formData.interests || translate("comparison.aboutPlaceholder"),
-    workExperience: [],
-    salary: { min: 0, max: 0 },
-    skills,
-    industry: formData.targetIndustry || translate("comparison.industryPlaceholder"),
-    timeframe: formData.timeframe || translate("comparison.timeframePlaceholder"),
-    budget: formData.budget || translate("comparison.salaryPlaceholder"),
-  };
+function buildAdvisorMessage(analysis: CareerAnalysis | null) {
+  if (!analysis?.recommendedSnapshot) return "";
+  const recommended = analysis.recommendedSnapshot;
+  const skillsCopy = recommended.skills.slice(0, 3).join(", ") || "new skills";
+  const currentIndustry = analysis.currentSnapshot.industry?.toLowerCase?.() || "your background";
+  const nextIndustry = recommended.industry?.toLowerCase?.() || "what's next";
+  return `${recommended.title} extends your ${currentIndustry} toward ${nextIndustry} with ${skillsCopy}.`;
 }
 
 function flattenSkills(skills: string[]) {
   return skills.length ? skills : ["—"];
 }
 
-function buildAdvisorMessage(analysis: CareerAnalysis | null) {
-  if (!analysis?.recommendedSnapshot) return "";
-  const recommended = analysis.recommendedSnapshot;
-  const skillsCopy = recommended.skills.slice(0, 3).join(", ") || "new skills";
-  const currentIndustry = analysis.currentSnapshot.industry.toLowerCase();
-  const nextIndustry = recommended.industry.toLowerCase();
-  return `${recommended.title} extends your ${currentIndustry} background toward ${nextIndustry} with ${skillsCopy}.`;
-}
-
-function SnapshotSection({ title, description }: { title: string; description: string }) {
-  return (
-    <div>
-      <p className="text-xs font-semibold uppercase tracking-[0.4em] text-slate-500">{title}</p>
-      <p className="mt-2 text-sm text-slate-500">{description}</p>
-    </div>
-  );
-}
-
-function SnapshotBlock({ snapshot, translate }: { snapshot: Snapshot; translate: TranslateFn }) {
-  return (
-    <div className="space-y-6 text-slate-900">
-      <div>
-        <p className="text-xs uppercase tracking-[0.3em] text-slate-400">{translate("comparison.aboutLabel")}</p>
-        <h3 className="text-2xl font-semibold text-slate-900">{snapshot.title}</h3>
-        <p className="mt-1 text-sm text-slate-500">{snapshot.about}</p>
-      </div>
-      <div>
-        <p className="text-xs uppercase tracking-[0.3em] text-slate-400">{translate("comparison.workExperience")}</p>
-        <div className="mt-2 space-y-3 text-sm text-slate-500">
-          {snapshot.workExperience.length ? (
-            snapshot.workExperience.map((experience) => (
-              <div key={`${experience.role}-${experience.company}`}>
-                <p className="text-sm font-semibold text-slate-900">{experience.role}</p>
-                <p>
-                  {experience.company} · {experience.period}
-                </p>
-                <p className="text-xs text-slate-400">{experience.location}</p>
-              </div>
-            ))
-          ) : (
-            <p className="text-xs text-slate-400">{translate("comparison.workPlaceholder")}</p>
-          )}
-        </div>
-      </div>
-      <SnapshotSection
-        title={translate("comparison.salaryLabel")}
-        description={snapshot.salary.min && snapshot.salary.max ? formatSalary(snapshot.salary) : translate("comparison.salaryPlaceholder")}
-      />
-      <div>
-        <p className="text-xs uppercase tracking-[0.3em] text-slate-400">{translate("comparison.skillsLabel")}</p>
-        <div className="mt-2 flex flex-wrap gap-2">
-          {flattenSkills(snapshot.skills).map((skill, index) => (
-            <span
-              key={`${skill}-${index}`}
-              className="rounded-full bg-purple-50 px-3 py-1 text-xs font-semibold text-purple-700"
-            >
-              {skill}
-            </span>
-          ))}
-        </div>
-      </div>
-      <SnapshotSection title={translate("comparison.industryLabel")} description={snapshot.industry} />
-      <SnapshotSection title={translate("comparison.timeframeLabel")} description={snapshot.timeframe} />
-      <SnapshotSection title={translate("comparison.budgetLabel")} description={snapshot.budget} />
-    </div>
-  );
-}
-
-function ComparisonArrow({ label }: { label: string }) {
-  return (
-    <div className="flex flex-col items-center justify-center gap-1 text-[10px] uppercase tracking-[0.5em]">
-      <ArrowRight className="hidden lg:block h-6 w-6 bg-gradient-to-r from-purple-600 to-fuchsia-500 text-transparent bg-clip-text" style={{ WebkitTextFillColor: 'transparent', WebkitBackgroundClip: 'text' }} />
-      <ArrowRight className="hidden lg:block h-6 w-6 bg-gradient-to-r from-purple-600 to-fuchsia-500 text-transparent bg-clip-text" style={{ WebkitTextFillColor: 'transparent', WebkitBackgroundClip: 'text' }} />
-      <ArrowDown className="lg:hidden h-6 w-6 bg-gradient-to-b from-purple-600 to-fuchsia-500 text-transparent bg-clip-text" style={{ WebkitTextFillColor: 'transparent', WebkitBackgroundClip: 'text' }} />
-      <ArrowDown className="lg:hidden h-6 w-6 bg-gradient-to-b from-purple-600 to-fuchsia-500 text-transparent bg-clip-text" style={{ WebkitTextFillColor: 'transparent', WebkitBackgroundClip: 'text' }} />
-      <span className="text-[11px] bg-gradient-to-r from-purple-600 to-fuchsia-500 text-transparent bg-clip-text" style={{ WebkitTextFillColor: 'transparent', WebkitBackgroundClip: 'text' }}>{label}</span>
-    </div>
-  );
-}
-
-function RoadmapPanel({ steps, visible, label }: { steps: RoadmapStep[]; visible: boolean; label: string }) {
-  return (
-    <div
-      className={`space-y-6 rounded-3xl bg-white/80 p-6 transition duration-500 ease-out ${
-        visible ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-2"
-      }`}
-    >
-      <h3 className="text-xs uppercase tracking-[0.4em] text-slate-500">{label}</h3>
-      <div className="space-y-5">
-        {steps.map((step, index) => (
-          <div key={step.title} className="relative pl-8">
-            <span className="absolute left-3 top-0 h-full w-px bg-purple-100" />
-            <span className="absolute left-1 top-1 h-3 w-3 rounded-full bg-purple-600" />
-            <p className="text-sm font-semibold text-slate-900">{step.title}</p>
-            <p className="text-sm text-slate-500">{step.description}</p>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 export function CareerSwitchPlanner() {
-  const t = useTranslations("CareerSwitch");
+  const t = useTranslations("CareerSwitchFlow");
   const [formData, setFormData] = useState<FormState>(initialForm);
   const [analysis, setAnalysis] = useState<CareerAnalysis | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [showRoadmap, setShowRoadmap] = useState(false);
+  const [stepIndex, setStepIndex] = useState(0);
+  const [strengthInput, setStrengthInput] = useState("");
+  const [strengthTags, setStrengthTags] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const inputRefs = useRef<(HTMLInputElement | HTMLTextAreaElement | null)[]>([]);
+  const [showStepContent, setShowStepContent] = useState(true);
+
+  const directionOptions = useMemo(
+    () => [
+      { value: "product", label: t("steps.targetIndustry.options.product") },
+      { value: "leadership", label: t("steps.targetIndustry.options.leadership") },
+      { value: "research", label: t("steps.targetIndustry.options.research") },
+      { value: "design", label: t("steps.targetIndustry.options.design") },
+      { value: "business", label: t("steps.targetIndustry.options.business") },
+      { value: "open", label: t("steps.targetIndustry.options.open") },
+    ],
+    [t],
+  );
+
+  const timeframeOptions = useMemo(
+    () => [
+      { value: "3-6", label: t("steps.timeframe.options.3-6") },
+      { value: "6-12", label: t("steps.timeframe.options.6-12") },
+      { value: "1-2", label: t("steps.timeframe.options.1-2") },
+      { value: "flexible", label: t("steps.timeframe.options.flexible") },
+    ],
+    [t],
+  );
+
+  const budgetOptions = useMemo(
+    () => [
+      { value: "minimal", label: t("steps.budget.options.minimal") },
+      { value: "some", label: t("steps.budget.options.some") },
+      { value: "significant", label: t("steps.budget.options.significant") },
+      { value: "not-sure", label: t("steps.budget.options.not-sure") },
+    ],
+    [t],
+  );
+
+  const steps = useMemo<Step[]>(
+    () => [
+      {
+        id: "currentRole",
+        title: t("steps.currentRole.title"),
+        placeholder: t("steps.currentRole.placeholder"),
+      },
+      {
+        id: "currentSkills",
+        title: t("steps.currentSkills.title"),
+        placeholder: t("steps.currentSkills.placeholder"),
+      },
+      {
+        id: "interests",
+        title: t("steps.interests.title"),
+        placeholder: t("steps.interests.placeholder"),
+      },
+      {
+        id: "targetIndustry",
+        title: t("steps.targetIndustry.title"),
+        subtitle: t("steps.targetIndustry.subtitle"),
+        optional: true,
+      },
+      {
+        id: "timeframe",
+        title: t("steps.timeframe.title"),
+      },
+      {
+        id: "budget",
+        title: t("steps.budget.title"),
+        subtitle: t("steps.budget.subtitle"),
+      },
+    ],
+    [t],
+  );
 
   const advisorSummary = useMemo(() => buildAdvisorMessage(analysis), [analysis]);
-  const currentSnapshot = analysis?.currentSnapshot ?? buildSnapshotFromForm(formData, t);
-  const recommendedSnapshot = analysis?.recommendedSnapshot;
-  const roadmapReady = Boolean(analysis?.roadmap?.length);
-  const insightCopy = analysis?.insight || advisorSummary;
+  const currentStep = (steps[stepIndex] ?? steps[steps.length - 1]) as Step;
+  const isLastStep = stepIndex === steps.length - 1;
 
-  const handleChange = (field: keyof FormState, value: string) => {
+  useEffect(() => {
+    if (!showStepContent) return;
+    inputRefs.current[stepIndex]?.focus({ preventScroll: true });
+  }, [stepIndex, showStepContent]);
+
+  useEffect(() => {
+    setFormData((prev) => ({ ...prev, currentSkills: strengthTags.join(", ") }));
+  }, [strengthTags]);
+
+  const focusFirstField = () => {
+    requestAnimationFrame(() => {
+      inputRefs.current[0]?.focus({ preventScroll: true });
+    });
+  };
+
+  useEffect(() => {
+    focusFirstField();
+  }, []);
+
+  const addStrengthFromInput = () => {
+    const cleaned = strengthInput.trim();
+    if (!cleaned) return;
+    setStrengthTags((prev) => Array.from(new Set([...prev, cleaned])));
+    setStrengthInput("");
+  };
+
+  const removeStrength = (tag: string) => {
+    setStrengthTags((prev) => prev.filter((item) => item !== tag));
+  };
+
+  const handleStrengthKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "Enter" || event.key === ",") {
+      event.preventDefault();
+      addStrengthFromInput();
+    }
+    if (event.key === "Backspace" && !strengthInput && strengthTags.length) {
+      event.preventDefault();
+      setStrengthTags((prev) => prev.slice(0, -1));
+    }
+  };
+
+  const handleFieldChange = (field: keyof FormState, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
+  const clampStep = (next: number) => Math.min(Math.max(next, 0), steps.length - 1);
+  const transitionDelay = 180;
+
+  const changeStep = (direction: 1 | -1) => {
+    setShowStepContent(false);
+    setTimeout(() => {
+      setStepIndex((prev) => clampStep(prev + direction));
+      requestAnimationFrame(() => setShowStepContent(true));
+    }, transitionDelay);
+  };
+
+  const goNext = () => {
+    if (isLastStep) {
+      void handleGenerate();
+      return;
+    }
+    changeStep(1);
+  };
+
+  const goBack = () => {
+    if (stepIndex === 0) return;
+    changeStep(-1);
+  };
+
   const handleGenerate = async () => {
+    setError(null);
+    setAnalysis(null);
+
+    const pendingSkills = strengthInput.trim();
+    let skillsForSend = strengthTags;
+    if (pendingSkills) {
+      const merged = Array.from(new Set([...strengthTags, pendingSkills]));
+      skillsForSend = merged;
+      setStrengthTags(merged);
+      setStrengthInput("");
+    }
+
     if (!formData.currentRole.trim() || !formData.interests.trim()) {
-      toast.error(t("toasts.missing.title"), {
-        description: t("toasts.missing.description"),
-      });
+      setStepIndex(0);
+      toast.error(t("errors.required"));
       return;
     }
 
     setIsAnalyzing(true);
-    setError(null);
 
     try {
       const response = await fetch("/api/ai/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "careerSwitch", payload: formData }),
+        body: JSON.stringify({
+          action: "careerSwitch",
+          payload: {
+            ...formData,
+            currentSkills: skillsForSend.join(", "),
+          },
+        }),
       });
 
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data?.error || t("errors.generic"));
+        throw new Error(data?.error || "Something went wrong. Please try again.");
       }
 
       if (!data.currentSnapshot || !data.recommendedSnapshot) {
-        throw new Error(t("errors.invalidResponse"));
+        throw new Error("The response was incomplete. Please try again.");
       }
 
       const nextAnalysis: CareerAnalysis = {
@@ -258,189 +279,249 @@ export function CareerSwitchPlanner() {
       };
 
       setAnalysis(nextAnalysis);
-      setShowRoadmap(false);
-      toast.success(t("toasts.success.title"), {
-        description: t("toasts.success.description"),
-      });
+      toast.success("Path generated");
     } catch (err) {
-      const message = err instanceof Error ? err.message : t("errors.generic");
+      const message = err instanceof Error ? err.message : "Something went wrong. Please try again.";
       setError(message);
-      toast.error(t("toasts.failure.title"), {
-        description: message,
-      });
+      toast.error(message);
     } finally {
       setIsAnalyzing(false);
     }
   };
 
-  return (
-    <div className="space-y-10">
-      <section className="space-y-3">
-        <p className="text-xs uppercase tracking-[0.4em] text-slate-500">{t("form.introTitle")}</p>
-        <h2 className="text-3xl font-semibold text-slate-900">{t("form.title")}</h2>
-        <p className="text-sm text-slate-500">{t("form.introSubtitle")}</p>
-        <div className="space-y-3 rounded-2xl bg-white/80 p-4">
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="currentRole">{t("form.currentRole")}</Label>
-              <Input
-                id="currentRole"
-                value={formData.currentRole}
-                onChange={(event) => handleChange("currentRole", event.target.value)}
-                placeholder={t("form.placeholders.currentRole")}
-              />
+  const renderInput = (step: Step) => {
+    switch (step.id) {
+      case "currentRole":
+        return (
+          <input
+            ref={(node) => {
+              inputRefs.current[0] = node;
+            }}
+            value={formData.currentRole}
+            onChange={(event) => handleFieldChange("currentRole", event.target.value)}
+            placeholder={step.placeholder}
+            className="pb-3 w-full text-2xl font-medium text-white bg-transparent border-b transition placeholder:text-white/50 focus:outline-none border-white/10 focus:border-white/40"
+          />
+        );
+      case "currentSkills":
+        return (
+          <div className="space-y-4">
+            <div className="flex flex-wrap gap-2">
+              {strengthTags.map((tag) => (
+                <button
+                  key={tag}
+                  type="button"
+                  onClick={() => removeStrength(tag)}
+                  className="px-4 py-2 text-sm font-medium rounded-full transition bg-white/10 text-white/90 hover:bg-white/20"
+                >
+                  {tag}
+                </button>
+              ))}
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="currentSkills">{t("form.currentSkills")}</Label>
-              <Input
-                id="currentSkills"
-                value={formData.currentSkills}
-                onChange={(event) => handleChange("currentSkills", event.target.value)}
-                placeholder={t("form.placeholders.currentSkills")}
-              />
-            </div>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="interests">{t("form.interests")}</Label>
-            <Input
-              id="interests"
-              value={formData.interests}
-              onChange={(event) => handleChange("interests", event.target.value)}
-              placeholder={t("form.placeholders.interests")}
+            <input
+              ref={(node) => {
+                inputRefs.current[1] = node;
+              }}
+              value={strengthInput}
+              onChange={(event) => setStrengthInput(event.target.value)}
+              onBlur={addStrengthFromInput}
+              onKeyDown={handleStrengthKeyDown}
+              placeholder={step.placeholder}
+              className="pb-3 w-full text-2xl font-medium text-white bg-transparent border-b transition placeholder:text-white/50 focus:outline-none border-white/10 focus:border-white/40"
             />
+            <p className="text-sm text-white/60">{t("steps.currentSkills.helper")}</p>
           </div>
-          <div className="grid gap-4 md:grid-cols-3">
-            <div className="space-y-2">
-              <Label>{t("form.targetIndustry")}</Label>
-              <Select
-                value={formData.targetIndustry}
-                onValueChange={(value) => handleChange("targetIndustry", value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={t("form.placeholders.targetIndustry")} />
-                </SelectTrigger>
-                <SelectContent>
-                  {industries.map((option) => (
-                    <SelectItem key={option} value={option}>
-                      {t(`form.options.industries.${option}`)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>{t("form.timeframe")}</Label>
-              <Select
-                value={formData.timeframe}
-                onValueChange={(value) => handleChange("timeframe", value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={t("form.placeholders.timeframe")} />
-                </SelectTrigger>
-                <SelectContent>
-                  {timeframes.map((option) => (
-                    <SelectItem key={option} value={option}>
-                      {t(`form.options.timeframes.${option}`)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>{t("form.budget")}</Label>
-              <Select
-                value={formData.budget}
-                onValueChange={(value) => handleChange("budget", value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={t("form.placeholders.budget")} />
-                </SelectTrigger>
-                <SelectContent>
-                  {budgets.map((option) => (
-                    <SelectItem key={option} value={option}>
-                      {t(`form.options.budgets.${option}`)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          {error && <p className="text-sm text-red-600">{error}</p>}
-          <div className="space-y-2">
-            <Button
-              onClick={handleGenerate}
-              disabled={isAnalyzing}
-              className="bg-gradient-to-r from-purple-600 to-fuchsia-500 text-white hover:from-purple-700 hover:to-fuchsia-600 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-purple-500"
+        );
+      case "interests":
+        return (
+          <textarea
+            ref={(node) => {
+              inputRefs.current[2] = node;
+            }}
+            value={formData.interests}
+            onChange={(event) => handleFieldChange("interests", event.target.value)}
+            placeholder={step.placeholder}
+            rows={3}
+            className="pb-3 w-full text-2xl font-medium text-white bg-transparent border-b transition resize-none placeholder:text-white/50 focus:outline-none border-white/10 focus:border-white/40"
+          />
+        );
+      case "targetIndustry":
+        return (
+          <div className="flex flex-wrap gap-3">
+            {directionOptions.map((option) => {
+              const isActive = formData.targetIndustry === option.value;
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => handleFieldChange("targetIndustry", option.value)}
+                  className={`rounded-full px-5 py-2 text-sm transition ${
+                    isActive ? "bg-white text-slate-900" : "bg-white/10 text-white/80 hover:bg-white/20"
+                  }`}
+                >
+                  {option.label}
+                </button>
+              );
+            })}
+            <button
+              type="button"
+              onClick={() => handleFieldChange("targetIndustry", "")}
+              className="text-sm underline text-white/60 underline-offset-4"
             >
-              {isAnalyzing ? (
-                <span className="flex items-center justify-center gap-3">
-                  <span className="h-5 w-5 rounded-full border-2 border-white border-t-transparent animate-spin" />
-                  {t("form.analyzing")}
-                </span>
-              ) : (
-                <span className="flex items-center justify-center gap-2">
-                  <Sparkles className="h-5 w-5" />
-                  {t("form.submit")}
-                </span>
-              )}
-            </Button>
-            {!analysis && (
-              <>
-                <p className="text-xs uppercase tracking-[0.4em] text-slate-500">{t("form.currentSnapshotLabel")}</p>
-                <p className="text-xs text-slate-500">{t("advisor.formHint")}</p>
-              </>
+              {t("labels.skip")}
+            </button>
+          </div>
+        );
+      case "timeframe":
+        return (
+          <div className="flex flex-wrap gap-3">
+            {timeframeOptions.map((option) => {
+              const isActive = formData.timeframe === option.value;
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => handleFieldChange("timeframe", option.value)}
+                  className={`rounded-full px-5 py-3 text-base transition ${
+                    isActive ? "bg-white text-slate-900" : "bg-white/10 text-white/80 hover:bg-white/20"
+                  }`}
+                >
+                  {option.label}
+                </button>
+              );
+            })}
+          </div>
+        );
+      case "budget":
+        return (
+          <div className="flex flex-wrap gap-3">
+            {budgetOptions.map((option) => {
+              const isActive = formData.budget === option.value;
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => handleFieldChange("budget", option.value)}
+                  className={`rounded-full px-5 py-3 text-base transition ${
+                    isActive ? "bg-white text-slate-900" : "bg-white/10 text-white/80 hover:bg-white/20"
+                  }`}
+                >
+                  {option.label}
+                </button>
+              );
+            })}
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <div className="isolate overflow-hidden relative px-6 py-12 min-h-screen text-white bg-gradient-to-b rounded-3xl shadow-2xl from-slate-950 via-slate-900 to-slate-950">
+      <div className="absolute inset-0 opacity-60 pointer-events-none">
+        <div className="absolute -left-16 top-10 h-72 w-72 rounded-full bg-purple-500/20 blur-[120px]" />
+        <div className="absolute -right-16 bottom-0 h-80 w-80 rounded-full bg-fuchsia-500/20 blur-[120px]" />
+      </div>
+
+      <div className="relative mx-auto flex min-h-[80vh] max-w-4xl flex-col justify-center gap-10">
+        <div className="flex justify-between items-center">
+          <div className="flex gap-2 items-center">
+            {steps.map((_, index) => (
+              <span
+                key={_.id}
+                className={`h-1 rounded-full transition-all duration-300 ${
+                  index <= stepIndex ? "w-10 bg-white" : "w-7 bg-white/25"
+                }`}
+              />
+            ))}
+          </div>
+          <div className="flex gap-3 items-center">
+            {stepIndex > 0 && (
+              <button
+                type="button"
+                onClick={goBack}
+                className="text-sm font-medium text-white/70 underline-offset-4 hover:text-white"
+              >
+                {t("nav.back")}
+              </button>
+            )}
+            {!isLastStep ? (
+              <button
+                type="button"
+                onClick={goNext}
+                className="text-sm font-semibold text-white underline-offset-4 hover:text-white"
+              >
+                {t("nav.next")}
+              </button>
+            ) : (
+              <Button
+                type="button"
+                onClick={goNext}
+                disabled={isAnalyzing}
+                className="text-white bg-gradient-to-r from-purple-500 to-fuchsia-500 shadow-lg shadow-purple-500/25 hover:from-purple-600 hover:to-fuchsia-600"
+              >
+                {t("nav.finalCta")}
+              </Button>
             )}
           </div>
         </div>
-      </section>
 
-      {insightCopy && analysis && (
-        <div className="text-sm text-slate-700">
-          <p className="text-xs uppercase tracking-[0.4em] text-slate-500">{t("advisor.insightLabel")}</p>
-          <p className="mt-2 text-lg font-semibold text-slate-900">{insightCopy}</p>
-          <p className="text-sm text-slate-500">{t("advisor.insightCopy")}</p>
+        <div
+          className={`transition-all duration-300 ease-out ${
+            showStepContent && !isAnalyzing ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3 pointer-events-none"
+          }`}
+          key={currentStep.id}
+        >
+          <p className="text-sm uppercase tracking-[0.4em] text-white/50">{t("labels.progress")}</p>
+          <h2 className="mt-4 text-4xl font-semibold leading-tight text-white">{currentStep.title}</h2>
+          {currentStep.subtitle && <p className="mt-2 text-lg text-white/60">{currentStep.subtitle}</p>}
+          <div className="mt-10">{renderInput(currentStep)}</div>
         </div>
-      )}
 
-      {analysis && (
-        <div className="space-y-6">
-          <div className="grid gap-6 lg:grid-cols-[1fr_auto_1fr]">
-            <div className="space-y-4 text-slate-900">
-              <SnapshotBlock snapshot={currentSnapshot} translate={t} />
-            </div>
-            <ComparisonArrow label={t("comparison.arrowLabel")} />
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.4em] text-slate-500">{t("comparison.recommendedLabel")}</p>
-                  <h3 className="text-2xl font-semibold text-slate-900">{recommendedSnapshot?.title ?? "—"}</h3>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setShowRoadmap((prev) => !prev)}
-                  disabled={!roadmapReady}
-                  className={`text-xs font-semibold uppercase tracking-[0.4em] ${
-                    roadmapReady ? "text-purple-500" : "text-slate-400"
-                  }`}
-                >
-                  {showRoadmap ? t("comparison.hideRoadmap") : t("comparison.seeRoadmap")}
-                </button>
-              </div>
-              {showRoadmap ? (
-                <RoadmapPanel
-                  steps={analysis?.roadmap ?? []}
-                  visible={showRoadmap}
-                  label={t("advisor.roadmapLabel")}
-                />
-              ) : recommendedSnapshot ? (
-                <SnapshotBlock snapshot={recommendedSnapshot} translate={t} />
-              ) : (
-                <p className="text-sm text-slate-500">{t("comparison.waiting")}</p>
-              )}
-            </div>
+        {isAnalyzing && (
+          <div className="space-y-3 text-center transition-all duration-300 ease-out">
+            <p className="text-lg font-semibold text-white">{t("loading.title")}</p>
+            <p className="text-base text-white/70">{t("loading.copy")}</p>
           </div>
-        </div>
-      )}
+        )}
+
+        {error && (
+          <div className="text-sm text-center text-red-300">
+            {error}
+          </div>
+        )}
+
+        {analysis && !isAnalyzing && (
+          <div className="p-8 space-y-6 rounded-3xl backdrop-blur bg-white/5">
+            <p className="text-sm uppercase tracking-[0.3em] text-white/60">{t("results.title")}</p>
+            <div className="space-y-3">
+              <h3 className="text-3xl font-semibold text-white">{analysis.recommendedSnapshot.title}</h3>
+              <p className="text-base text-white/70">{advisorSummary || analysis.insight}</p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {flattenSkills(analysis.recommendedSnapshot.skills).map((skill, idx) => (
+                <span key={`${skill}-${idx}`} className="px-3 py-1 text-sm rounded-full bg-white/10 text-white/80">
+                  {skill}
+                </span>
+              ))}
+            </div>
+            {analysis.roadmap?.length ? (
+              <div className="space-y-2">
+                <p className="text-sm uppercase tracking-[0.2em] text-white/50">{t("results.roadmapLabel")}</p>
+                <div className="space-y-4">
+                  {analysis.roadmap.map((step) => (
+                    <div key={step.title} className="p-4 rounded-2xl bg-white/5">
+                      <p className="text-base font-semibold text-white">{step.title}</p>
+                      <p className="text-sm text-white/70">{step.description}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

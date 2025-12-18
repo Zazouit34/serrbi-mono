@@ -1153,6 +1153,74 @@
       }
     }
   },
+  "CareerSwitchFlow": {
+    "labels": {
+      "progress": "Parcours de transition",
+      "skip": "Passer"
+    },
+    "nav": {
+      "next": "Suivant →",
+      "back": "← Retour",
+      "finalCta": "Voir ma recommandation"
+    },
+    "loading": {
+      "title": "Création de votre recommandation de carrière…",
+      "copy": "Cela prend en général quelques secondes."
+    },
+    "errors": {
+      "required": "Commence par ton poste actuel et ce que tu aimes."
+    },
+    "steps": {
+      "currentRole": {
+        "title": "Que fais-tu aujourd’hui ?",
+        "placeholder": "ex. Développeur front travaillant sur React"
+      },
+      "currentSkills": {
+        "title": "Tes plus grandes forces ?",
+        "placeholder": "ex. React, JavaScript, design UI, APIs",
+        "helper": "Appuie sur Entrée pour transformer en tags souples."
+      },
+      "interests": {
+        "title": "Quel travail te plaît vraiment ?",
+        "placeholder": "ex. construire des produits, résoudre des problèmes, travailler avec des gens"
+      },
+      "targetIndustry": {
+        "title": "Une direction qui t’intrigue ?",
+        "subtitle": "Optionnel — aide à affiner ta recommandation",
+        "options": {
+          "product": "Construction produit",
+          "leadership": "Leadership d’équipe",
+          "research": "Recherche et stratégie",
+          "design": "Design et narration",
+          "business": "Business / croissance",
+          "open": "Je suis ouvert(e)"
+        }
+      },
+      "timeframe": {
+        "title": "À quel rythme veux-tu basculer ?",
+        "options": {
+          "3-6": "3–6 mois",
+          "6-12": "6–12 mois",
+          "1-2": "1–2 ans",
+          "flexible": "Flexible"
+        }
+      },
+      "budget": {
+        "title": "Combien peux-tu investir dans l’apprentissage ?",
+        "subtitle": "Cours, certifications ou formations ciblées",
+        "options": {
+          "minimal": "Minimal (surtout auto-apprentissage)",
+          "some": "Un peu d’investissement",
+          "significant": "Investissement important",
+          "not-sure": "Je ne sais pas encore"
+        }
+      }
+    },
+    "results": {
+      "title": "Ta recommandation",
+      "roadmapLabel": "Parcours suggéré"
+    }
+  },
   "ResumeAnalyzerPage": {
     "badge": "Analyseur de CV",
     "title": "Analyseur de CV IA",
