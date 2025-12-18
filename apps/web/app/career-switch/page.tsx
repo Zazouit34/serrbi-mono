@@ -10,8 +10,8 @@ export default async function CareerSwitchPage() {
   const t = await getTranslations("CareerSwitchPage");
 
   return (
-    <div className="flex overflow-hidden fixed inset-0 z-0 flex-col w-screen max-w-none">
-      <section className="flex isolate overflow-hidden relative justify-center items-center w-full h-full">
+    <div className="relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] -mt-4 -mb-20 flex min-h-screen w-screen max-w-none flex-col overflow-hidden md:-mt-10 md:-mb-4">
+      <section className="flex isolate overflow-hidden relative flex-1 justify-center items-center">
         <Image
           src="/images/career-switch.jpg"
           alt={t("title")}
@@ -24,7 +24,7 @@ export default async function CareerSwitchPage() {
           <h1 className="text-4xl font-semibold leading-tight md:text-5xl md:leading-tight lg:text-6xl">
             {t("title")}
           </h1>
-          <p className="text-base leading-relaxed text-gray-500 md:text-lg md:leading-relaxed lg:max-w-3xl">
+          <p className="text-base font-bold leading-relaxed text-gray-500 md:text-lg md:leading-relaxed lg:max-w-3xl">
             {t("subtitle")}
           </p>
           <button className="flex gap-2 items-center px-8 py-4 mt-4 text-base font-semibold text-white bg-gradient-to-r from-orange-400 to-pink-400 rounded-full shadow-lg transition-all duration-300 hover:from-pink-600 hover:via-orange-600 hover:to-red-600 hover:shadow-xl">
