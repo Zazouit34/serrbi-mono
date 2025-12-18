@@ -19,7 +19,6 @@ export default async function CareerSwitchPage() {
           className="object-contain absolute inset-0 w-full h-full"
           sizes="100vw"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/65 to-slate-950/35" />
 
         <div className="flex relative flex-col gap-6 items-center px-6 py-24 mx-auto max-w-5xl text-center md:gap-7 md:py-28 lg:py-32">
           <h1 className="text-4xl font-semibold leading-tight md:text-5xl md:leading-tight lg:text-6xl">
