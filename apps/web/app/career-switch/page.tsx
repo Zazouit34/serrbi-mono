@@ -13,7 +13,7 @@ export default async function CareerSwitchPage() {
     <div className="relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] -mt-4 -mb-20 flex min-h-screen w-screen max-w-none flex-col md:-mt-10 md:-mb-4">
       <section className="flex isolate overflow-hidden relative flex-1 justify-center items-center">
         <Image
-          src="/images/career-switch.jpg"
+          src="/images/career-switch.png"
           alt={t("title")}
           fill
           priority
