@@ -10,13 +10,13 @@ export default async function CareerSwitchPage() {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <section className="flex isolate overflow-hidden relative flex-1 justify-center items-center text-white bg-slate-950">
+      <section className="flex isolate overflow-hidden relative flex-1 justify-center items-center">
         <Image
           src="/images/career-switch.png"
           alt={t("title")}
           fill
           priority
-          className="object-cover absolute inset-0 w-full h-full"
+          className="object-contain absolute inset-0 w-full h-full"
           sizes="100vw"
         />
 
