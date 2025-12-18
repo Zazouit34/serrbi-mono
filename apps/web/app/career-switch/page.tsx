@@ -24,10 +24,10 @@ export default async function CareerSwitchPage() {
           <h1 className="text-4xl font-semibold leading-tight md:text-5xl md:leading-tight lg:text-6xl">
             {t("title")}
           </h1>
-          <p className="text-base leading-relaxed text-slate-100/90 md:text-lg md:leading-relaxed lg:max-w-3xl">
+          <p className="text-base leading-relaxed md:text-lg md:leading-relaxed lg:max-w-3xl">
             {t("subtitle")}
           </p>
-          <button className="flex gap-2 items-center px-8 py-4 mt-4 text-base font-semibold text-white bg-gradient-to-r from-pink-500 via-orange-500 to-red-500 rounded-full shadow-lg transition-all duration-300 hover:from-pink-600 hover:via-orange-600 hover:to-red-600 hover:shadow-xl">
+          <button className="flex gap-2 items-center px-8 py-4 mt-4 text-base font-semibold text-white bg-gradient-to-r from-orange-400 to-pink-400 rounded-full shadow-lg transition-all duration-300 hover:from-pink-600 hover:via-orange-600 hover:to-red-600 hover:shadow-xl">
             <Sparkles className="w-5 h-5" />
             {t("start")}
           </button>
