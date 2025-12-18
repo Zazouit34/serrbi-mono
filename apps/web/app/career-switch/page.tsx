@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Sparkles } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 
 import { CareerSwitchPlanner } from "@/components/ui/career-switch";
 import { requireUser } from "@/lib/auth-server";
@@ -30,16 +30,13 @@ export default async function CareerSwitchPage() {
           <p className="text-base leading-relaxed md:text-lg md:leading-relaxed lg:max-w-3xl">
             {t("subtitle")}
           </p>
-          <Button
-            asChild
-            size="lg"
-            className="font-semibold text-white bg-gradient-to-r from-pink-400 to-purple-400 hover:from-pink-500 hover:to-purple-500"
+          <Link 
+            href="#career-planner"
+            className="inline-flex items-center font-bold text-gray-900 underline dark:text-gray-100"
           >
-            <Link href="#career-planner">
-              <Sparkles className="mr-2 w-5 h-5" />
-              {t("start")}
-            </Link>
-          </Button>
+            {t("start")}
+            <ArrowRight className="ml-2 w-5 h-5" />
+          </Link>
         </div>
       </section>
 
