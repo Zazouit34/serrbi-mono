@@ -1028,7 +1028,8 @@
   "CareerSwitchPage": {
     "badge": "Career guidance",
     "title": "Design your next career move",
-    "subtitle": "Tell Serrbi a bit about where you are — we’ll recommend a realistic path forward, with clear steps and salary expectations."
+    "subtitle": "Tell Serrbi a bit about where you are — we’ll recommend a realistic path forward, with clear steps and salary expectations.",
+    "start": "Start"
   },
   "CareerSwitch": {
     "form": {

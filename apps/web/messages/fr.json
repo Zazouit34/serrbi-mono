@@ -1033,7 +1033,8 @@
   "CareerSwitchPage": {
     "badge": "Coaching carrière",
     "title": "Définissez votre prochain mouvement de carrière",
-    "subtitle": "Parlez un peu à Serrbi de votre situation — nous recommanderons une trajectoire réaliste avec des étapes claires et des attentes salariales."
+    "subtitle": "Parlez un peu à Serrbi de votre situation — nous recommanderons une trajectoire réaliste avec des étapes claires et des attentes salariales.",
+    "start": "Commencer"
   },
   "CareerSwitch": {
     "form": {
