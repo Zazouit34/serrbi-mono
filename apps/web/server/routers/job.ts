@@ -647,31 +647,37 @@ bulkCreate: adminProcedure
     }
   }
 
-  const data = input.rows.map((r) => ({
-    userId: ownerId!,
-    title: r.title,
-    companyName: r.companyName,
-    companyImage: r.companyImage ?? null,
-    description: r.description,
-    category: r.category,
-    locationRequirement: r.locationRequirement,
-    experienceLevel: r.experienceLevel,
-    type: r.type,
-    tags: [],
-    wage: r.wage ?? null,
-    countryIso2: (r as any).countryIso2 ?? null,
-    stateAbbreviation: r.stateAbbreviation ?? null,
-    city: r.city ?? null,
-    applicationEmail: r.applicationEmail ?? "",
-    applicationUrl: r.applicationUrl ?? null,
-    status: "published" as const,
-  }));
+  const data = input.rows.map((r) => {
+    const row = r as any;
+    const description = r.description || row.description_rewritten || r.description || "";
+    return {
+      userId: ownerId!,
+      title: r.title,
+      companyName: r.companyName,
+      companyImage: r.companyImage ?? row.companyLogoS3 ?? null,
+      description,
+      category: r.category,
+      locationRequirement: r.locationRequirement,
+      experienceLevel: r.experienceLevel,
+      type: r.type,
+      tags: [],
+      wage: r.wage ?? null,
+      countryIso2: row.countryIso2 ?? null,
+      stateAbbreviation: r.stateAbbreviation ?? row.stateAbbr ?? null,
+      city: r.city ?? null,
+      applicationEmail: r.applicationEmail ?? row.applicationEmail_extracted ?? "",
+      applicationUrl: r.applicationUrl ?? null,
+      status: "published" as const,
+    };
+  });
 
   // Compute embeddings for imported jobs so they participate in semantic ranking.
   try {
-    const texts = input.rows.map(
-      (r) => `${r.title ?? ""} ${r.description ?? ""} ${((r as any).tags ?? []).join(" ")}`,
-    );
+    const texts = input.rows.map((r) => {
+      const row = r as any;
+      const description = r.description || row.description_rewritten || "";
+      return `${r.title ?? ""} ${description} ${(row.tags ?? []).join(" ")}`;
+    });
     const embeddings = await embedBatch(texts);
     embeddings.forEach((vec, idx) => {
       (data[idx] as any).embedding = vec;

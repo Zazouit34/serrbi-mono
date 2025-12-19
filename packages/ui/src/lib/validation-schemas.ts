@@ -452,9 +452,27 @@ export type ResumeEmbeddingUpdateValues = z.infer<typeof resumeEmbeddingUpdateSc
 export const jobImportRowSchema = z.object({
   title: z.string().min(1),
   companyName: z.string().min(1),
-  companyImage: z.string().url().optional().nullable(),
+  companyImage: z.preprocess((val) => {
+    if (val === undefined || val === null) return null;
+    if (typeof val !== "string") return null;
+    const trimmed = val.trim();
+    if (!trimmed) return null;
+    try {
+      new URL(trimmed);
+      return trimmed;
+    } catch {
+      return null;
+    }
+  }, z.union([z.string().url(), z.null()]).optional()),
   description: z.string().min(1),
-  category: z.enum(jobCategoryValues),
+  category: z.preprocess((val) => {
+    if (typeof val === "string") {
+      const normalized = val.trim();
+      const matched = jobCategoryValues.find((c) => c.toLowerCase() === normalized.toLowerCase());
+      return matched ?? "Other";
+    }
+    return val;
+  }, z.enum(jobCategoryValues)),
   type: z.enum(jobListingTypeValues),
   locationRequirement: z.enum(locationRequirementValues),
   experienceLevel: z.enum(experienceLevelValues),
@@ -473,7 +491,14 @@ export const jobImportRowSchema = z.object({
     }, z.string().length(2))
     .optional()
     .nullable(),
-  stateAbbreviation: z.string().length(3).optional().nullable(),
+  stateAbbreviation: z.preprocess((val) => {
+    if (typeof val === "string") {
+      const v = val.trim().toUpperCase();
+      if (v === "") return undefined;
+      return v;
+    }
+    return val;
+  }, z.union([z.string().length(2), z.string().length(3)]).optional().nullable()),
   city: z.string().optional().nullable(),
   applicationEmail: z.union([z.string().email(), emptyToUndefined]).optional().nullable(),
   applicationUrl: z.union([z.string().url(), emptyToUndefined]).optional().nullable(),
