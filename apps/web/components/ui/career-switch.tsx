@@ -35,6 +35,16 @@ type Snapshot = {
 type RoadmapStep = {
   title: string;
   description: string;
+  timeline?: string;
+  focus?: string;
+  skills?: string[];
+  resources?: string[];
+  deliverables?: string[];
+  metrics?: string[];
+  salaryImpact?: string;
+  risk?: string;
+  outcome?: string;
+  effort?: string;
 };
 
 type CareerAnalysis = {
@@ -300,7 +310,7 @@ export function CareerSwitchPlanner() {
             value={formData.currentRole}
             onChange={(event) => handleFieldChange("currentRole", event.target.value)}
             placeholder={step.placeholder}
-            className="pb-3 w-full text-2xl font-medium text-white bg-transparent border-b transition placeholder:text-white/50 focus:outline-none border-white/10 focus:border-white/40"
+            className="pb-3 w-full text-lg sm:text-2xl font-medium text-white bg-transparent border-b transition placeholder:text-white/50 focus:outline-none border-white/10 focus:border-white/40"
           />
         );
       case "currentSkills":
@@ -327,9 +337,9 @@ export function CareerSwitchPlanner() {
               onBlur={addStrengthFromInput}
               onKeyDown={handleStrengthKeyDown}
               placeholder={step.placeholder}
-              className="pb-3 w-full text-2xl font-medium text-white bg-transparent border-b transition placeholder:text-white/50 focus:outline-none border-white/10 focus:border-white/40"
+              className="pb-3 w-full text-lg sm:text-2xl font-medium text-white bg-transparent border-b transition placeholder:text-white/50 focus:outline-none border-white/10 focus:border-white/40"
             />
-            <p className="text-sm text-white/60">{t("steps.currentSkills.helper")}</p>
+            <p className="text-xs sm:text-sm text-white/60">{t("steps.currentSkills.helper")}</p>
           </div>
         );
       case "interests":
@@ -342,7 +352,7 @@ export function CareerSwitchPlanner() {
             onChange={(event) => handleFieldChange("interests", event.target.value)}
             placeholder={step.placeholder}
             rows={3}
-            className="pb-3 w-full text-2xl font-medium text-white bg-transparent border-b transition resize-none placeholder:text-white/50 focus:outline-none border-white/10 focus:border-white/40"
+            className="pb-3 w-full text-lg sm:text-2xl font-medium text-white bg-transparent border-b transition resize-none placeholder:text-white/50 focus:outline-none border-white/10 focus:border-white/40"
           />
         );
       case "targetIndustry":
@@ -418,13 +428,13 @@ export function CareerSwitchPlanner() {
   };
 
   return (
-    <div className="isolate overflow-hidden relative px-6 py-12 min-h-screen text-white bg-gradient-to-b rounded-3xl shadow-2xl from-slate-950 via-slate-900 to-slate-950">
+    <div className="isolate overflow-hidden relative w-full -mx-4 sm:mx-0 px-4 sm:px-6 py-8 sm:py-12 min-h-[calc(100vh-120px)] sm:min-h-screen text-white bg-gradient-to-b rounded-3xl shadow-2xl from-slate-950 via-slate-900 to-slate-950">
       <div className="absolute inset-0 opacity-60 pointer-events-none">
         <div className="absolute -left-16 top-10 h-72 w-72 rounded-full bg-purple-500/20 blur-[120px]" />
         <div className="absolute -right-16 bottom-0 h-80 w-80 rounded-full bg-fuchsia-500/20 blur-[120px]" />
       </div>
 
-      <div className="relative mx-auto flex min-h-[80vh] max-w-4xl flex-col justify-center gap-10">
+      <div className="relative mx-auto flex min-h-[70vh] max-w-full sm:max-w-4xl flex-col justify-center gap-6 sm:gap-10">
         <div className="flex w-full flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2">
             {steps.map((_, index) => (
@@ -473,10 +483,10 @@ export function CareerSwitchPlanner() {
           }`}
           key={currentStep.id}
         >
-          <p className="text-sm uppercase tracking-[0.4em] text-white/50">{t("labels.progress")}</p>
-          <h2 className="mt-4 text-4xl font-semibold leading-tight text-white">{currentStep.title}</h2>
-          {currentStep.subtitle && <p className="mt-2 text-lg text-white/60">{currentStep.subtitle}</p>}
-          <div className="mt-10">{renderInput(currentStep)}</div>
+          <p className="text-xs sm:text-sm uppercase tracking-[0.4em] text-white/50">{t("labels.progress")}</p>
+          <h2 className="mt-3 sm:mt-4 text-2xl sm:text-4xl font-semibold leading-tight text-white">{currentStep.title}</h2>
+          {currentStep.subtitle && <p className="mt-2 text-base sm:text-lg text-white/60">{currentStep.subtitle}</p>}
+          <div className="mt-6 sm:mt-10">{renderInput(currentStep)}</div>
         </div>
 
         {isAnalyzing && (
@@ -493,27 +503,78 @@ export function CareerSwitchPlanner() {
         )}
 
         {analysis && !isAnalyzing && (
-          <div className="p-8 space-y-6 rounded-3xl backdrop-blur bg-white/5">
-            <p className="text-sm uppercase tracking-[0.3em] text-white/60">{t("results.title")}</p>
+          <div className="p-6 sm:p-8 space-y-6 rounded-3xl backdrop-blur bg-white/5">
+            <p className="text-xs sm:text-sm uppercase tracking-[0.3em] text-white/60">{t("results.title")}</p>
             <div className="space-y-3">
-              <h3 className="text-3xl font-semibold text-white">{analysis.recommendedSnapshot.title}</h3>
-              <p className="text-base text-white/70">{advisorSummary || analysis.insight}</p>
+              <h3 className="text-2xl sm:text-3xl font-semibold text-white">{analysis.recommendedSnapshot.title}</h3>
+              <p className="text-sm sm:text-base text-white/70">{advisorSummary || analysis.insight}</p>
             </div>
             <div className="flex flex-wrap gap-2">
               {flattenSkills(analysis.recommendedSnapshot.skills).map((skill, idx) => (
-                <span key={`${skill}-${idx}`} className="px-3 py-1 text-sm rounded-full bg-white/10 text-white/80">
+                <span key={`${skill}-${idx}`} className="px-3 py-1 text-xs sm:text-sm rounded-full bg-white/10 text-white/80">
                   {skill}
                 </span>
               ))}
             </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="rounded-2xl bg-white/5 p-4">
+                <p className="text-xs uppercase tracking-[0.2em] text-white/50">Salary</p>
+                <p className="text-sm sm:text-base text-white mt-1">
+                  {analysis.recommendedSnapshot.salary.min && analysis.recommendedSnapshot.salary.max
+                    ? `${analysis.recommendedSnapshot.salary.min.toLocaleString()}€ - ${analysis.recommendedSnapshot.salary.max.toLocaleString()}€ / mo`
+                    : "—"}
+                </p>
+              </div>
+              <div className="rounded-2xl bg-white/5 p-4">
+                <p className="text-xs uppercase tracking-[0.2em] text-white/50">Timeline</p>
+                <p className="text-sm sm:text-base text-white mt-1">{analysis.recommendedSnapshot.timeframe || "—"}</p>
+              </div>
+            </div>
             {analysis.roadmap?.length ? (
               <div className="space-y-2">
-                <p className="text-sm uppercase tracking-[0.2em] text-white/50">{t("results.roadmapLabel")}</p>
+                <p className="text-xs sm:text-sm uppercase tracking-[0.2em] text-white/50">{t("results.roadmapLabel")}</p>
                 <div className="space-y-4">
                   {analysis.roadmap.map((step) => (
-                    <div key={step.title} className="p-4 rounded-2xl bg-white/5">
-                      <p className="text-base font-semibold text-white">{step.title}</p>
+                    <div key={step.title} className="p-4 rounded-2xl bg-white/5 space-y-2">
+                      <div className="flex items-start justify-between gap-3">
+                        <p className="text-base font-semibold text-white">{step.title}</p>
+                        {step.timeline && <span className="text-xs text-white/60">{step.timeline}</span>}
+                      </div>
                       <p className="text-sm text-white/70">{step.description}</p>
+                      {step.focus && <p className="text-sm text-white/80">Focus: {step.focus}</p>}
+                      {step.skills?.length ? (
+                        <div className="flex flex-wrap gap-2">
+                          {step.skills.map((skill) => (
+                            <span key={skill} className="rounded-full bg-white/10 px-2 py-1 text-xs text-white/80">
+                              {skill}
+                            </span>
+                          ))}
+                        </div>
+                      ) : null}
+                      {step.resources?.length ? (
+                        <div className="space-y-1">
+                          <p className="text-xs uppercase tracking-[0.2em] text-white/50">Resources</p>
+                          <ul className="text-sm text-white/70 list-disc list-inside space-y-1">
+                            {step.resources.map((res) => (
+                              <li key={res}>{res}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      ) : null}
+                      {step.metrics?.length ? (
+                        <div className="space-y-1">
+                          <p className="text-xs uppercase tracking-[0.2em] text-white/50">Milestones</p>
+                          <ul className="text-sm text-white/70 list-disc list-inside space-y-1">
+                            {step.metrics.map((m) => (
+                              <li key={m}>{m}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      ) : null}
+                      {step.salaryImpact && (
+                        <p className="text-sm text-white/80">Salary impact: {step.salaryImpact}</p>
+                      )}
+                      {step.risk && <p className="text-xs text-white/60">Watch out for: {step.risk}</p>}
                     </div>
                   ))}
                 </div>

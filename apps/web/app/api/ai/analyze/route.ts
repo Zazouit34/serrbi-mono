@@ -149,11 +149,12 @@ function formatList(list?: string) {
 }
 
 function buildCareerSwitchPrompt(payload: CareerSwitchPayload): string {
-  const skillsSummary = formatList(payload.currentSkills) || "a diverse set of foundational skills";
+  const skillsSummary =
+    formatList(payload.currentSkills) || "a diverse set of foundational skills";
   return `
-You are an expert bilingual career strategist.
-Based on the information below, generate a current CV snapshot + an AI recommended CV snapshot and an actionable road map for the transition.
-Respond ONLY in JSON with this shape:
+You are an expert multilingual career strategist. Produce a calm, advisor-style response.
+
+Respond ONLY in JSON with this shape (no extra keys):
 {
   "insight": string,
   "currentSnapshot": {
@@ -181,11 +182,28 @@ Respond ONLY in JSON with this shape:
     "budget": string
   },
   "roadmap": [
-    { "title": string, "description": string }
+    {
+      "title": string,
+      "description": string,
+      "timeline": string,
+      "focus": string,
+      "skills": string[],
+      "resources": string[],
+      "deliverables": string[],
+      "metrics": string[],
+      "salaryImpact": string,
+      "risk": string
+    }
   ]
 }
 
-Adjust the language so it matches the user's preference (English, French, or Arabic) inferred from their current role or interests.
+Language:
+- Detect if the user data is primarily French, Arabic, or English. Write ALL strings in that language. If mixed, choose the majority language; if unclear, default to English.
+
+Guidance:
+- Keep salary values realistic for Morocco, France, Belgium, or Germany and expressed as EURO per month.
+- Make the roadmap feel like a gold-standard career switch plan: include learning time curve, effort, milestone metrics, tangible deliverables, and expected salary impact per step.
+- Focus steps on the fastest path from current to recommended snapshot: foundational skills -> portfolio/deliverables -> networking/interviews -> final transition.
 
 User Profile:
 - Current role: ${payload.currentRole}
@@ -195,7 +213,7 @@ User Profile:
 - Transition timeframe: ${payload.timeframe || "TBD"}
 - Learning budget: ${payload.budget || "TBD"}
 
-Make the current snapshot describe the user's present chapter, referencing the provided role, interests, and skills. The recommended snapshot should read like a clear next chapter (title, salary, skills, industry, timeframe, budget). Ensure roadmap steps describe the path from the current snapshot to the recommended snapshot with connected bullet points. Keep salaries in EURO per month and realistic for Morocco, France, Belgium, or Germany.
+Make the current snapshot describe the user's present chapter. The recommended snapshot should read like the next chapter (title, salary band, top skills, industry, timeline, budget). Ensure roadmap steps are concise but rich in actions, resources, and metrics.
 `.trim();
 }
 

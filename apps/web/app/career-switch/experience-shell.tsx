@@ -35,8 +35,8 @@ export function CareerSwitchExperience({ title, subtitle, startLabel }: Props) {
   }, [started]);
 
   return (
-    <div className="flex flex-col">
-      <section className="isolate overflow-hidden relative">
+    <div className="flex flex-col w-full -mx-4 sm:mx-0">
+      <section className="isolate overflow-hidden relative px-4 sm:px-6">
         <Image
           src="/images/career-switch.png"
           alt={title}
@@ -46,11 +46,11 @@ export function CareerSwitchExperience({ title, subtitle, startLabel }: Props) {
           sizes="100vw"
         />
 
-        <div className="flex relative flex-col gap-6 items-center px-6 py-24 mx-auto max-w-5xl text-center md:gap-7 md:py-28 lg:py-32">
-          <h1 className="text-4xl font-semibold leading-tight md:text-5xl md:leading-tight lg:text-6xl">
+        <div className="flex relative flex-col gap-6 items-center py-16 sm:py-24 mx-auto max-w-5xl text-center md:gap-7 md:py-28 lg:py-32">
+          <h1 className="text-3xl font-semibold leading-tight md:text-5xl md:leading-tight lg:text-6xl">
             {title}
           </h1>
-          <p className="text-base leading-relaxed md:text-lg md:leading-relaxed lg:max-w-3xl">
+          <p className="text-sm leading-relaxed sm:text-base md:text-lg md:leading-relaxed lg:max-w-3xl px-2 sm:px-0">
             {subtitle}
           </p>
           <Button
@@ -73,7 +73,7 @@ export function CareerSwitchExperience({ title, subtitle, startLabel }: Props) {
         }`}
       >
         {started && (
-          <div className="px-6">
+          <div className="px-4 sm:px-6">
             <CareerSwitchPlanner />
           </div>
         )}
