@@ -36,7 +36,7 @@ export function CareerSwitchExperience({ title, subtitle, startLabel }: Props) {
 
   return (
     <div className="flex flex-col w-full -mx-4 sm:mx-0">
-      <section className="isolate overflow-hidden relative px-4 sm:px-6">
+      <section className="isolate overflow-hidden relative px-4 sm:px-6 min-h-[70vh] flex items-center justify-center">
         <Image
           src="/images/career-switch.png"
           alt={title}
@@ -73,7 +73,7 @@ export function CareerSwitchExperience({ title, subtitle, startLabel }: Props) {
         }`}
       >
         {started && (
-          <div className="px-4 sm:px-6">
+          <div className="relative left-1/2 w-screen -translate-x-1/2 px-4 sm:px-6">
             <CareerSwitchPlanner />
           </div>
         )}

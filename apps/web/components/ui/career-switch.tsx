@@ -428,7 +428,7 @@ export function CareerSwitchPlanner() {
   };
 
   return (
-    <div className="isolate overflow-hidden relative w-full -mx-4 sm:mx-0 px-4 sm:px-6 py-8 sm:py-12 min-h-[calc(100vh-120px)] sm:min-h-screen text-white bg-gradient-to-b rounded-3xl shadow-2xl from-slate-950 via-slate-900 to-slate-950">
+    <div className="isolate overflow-hidden relative left-1/2 w-screen -translate-x-1/2 px-4 sm:px-6 py-8 sm:py-12 min-h-[calc(100vh-120px)] sm:min-h-screen text-white bg-gradient-to-b rounded-3xl shadow-2xl from-slate-950 via-slate-900 to-slate-950">
       <div className="absolute inset-0 opacity-60 pointer-events-none">
         <div className="absolute -left-16 top-10 h-72 w-72 rounded-full bg-purple-500/20 blur-[120px]" />
         <div className="absolute -right-16 bottom-0 h-80 w-80 rounded-full bg-fuchsia-500/20 blur-[120px]" />
