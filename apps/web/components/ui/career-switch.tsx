@@ -300,7 +300,7 @@ export function CareerSwitchPlanner() {
             value={formData.currentRole}
             onChange={(event) => handleFieldChange("currentRole", event.target.value)}
             placeholder={step.placeholder}
-            className="pb-3 w-full text-2xl font-medium text-white bg-transparent border-b transition placeholder:text-white/50 focus:outline-none border-white/10 focus:border-white/40"
+            className="pb-3 w-full text-lg sm:text-2xl font-medium text-white bg-transparent border-b transition placeholder:text-white/50 focus:outline-none border-white/10 focus:border-white/40"
           />
         );
       case "currentSkills":
@@ -312,7 +312,7 @@ export function CareerSwitchPlanner() {
                   key={tag}
                   type="button"
                   onClick={() => removeStrength(tag)}
-                  className="px-4 py-2 text-sm font-medium rounded-full transition bg-white/10 text-white/90 hover:bg-white/20"
+                  className="px-3 py-1.5 text-xs sm:text-sm font-medium rounded-full transition bg-white/10 text-white/90 hover:bg-white/20"
                 >
                   {tag}
                 </button>
@@ -327,9 +327,9 @@ export function CareerSwitchPlanner() {
               onBlur={addStrengthFromInput}
               onKeyDown={handleStrengthKeyDown}
               placeholder={step.placeholder}
-              className="pb-3 w-full text-2xl font-medium text-white bg-transparent border-b transition placeholder:text-white/50 focus:outline-none border-white/10 focus:border-white/40"
+              className="pb-3 w-full text-lg sm:text-2xl font-medium text-white bg-transparent border-b transition placeholder:text-white/50 focus:outline-none border-white/10 focus:border-white/40"
             />
-            <p className="text-sm text-white/60">{t("steps.currentSkills.helper")}</p>
+            <p className="text-xs sm:text-sm text-white/60">{t("steps.currentSkills.helper")}</p>
           </div>
         );
       case "interests":
@@ -342,7 +342,7 @@ export function CareerSwitchPlanner() {
             onChange={(event) => handleFieldChange("interests", event.target.value)}
             placeholder={step.placeholder}
             rows={3}
-            className="pb-3 w-full text-2xl font-medium text-white bg-transparent border-b transition resize-none placeholder:text-white/50 focus:outline-none border-white/10 focus:border-white/40"
+            className="pb-3 w-full text-lg sm:text-2xl font-medium text-white bg-transparent border-b transition resize-none placeholder:text-white/50 focus:outline-none border-white/10 focus:border-white/40"
           />
         );
       case "targetIndustry":
@@ -355,7 +355,7 @@ export function CareerSwitchPlanner() {
                   key={option.value}
                   type="button"
                   onClick={() => handleFieldChange("targetIndustry", option.value)}
-                  className={`rounded-full px-5 py-2 text-sm transition ${
+                  className={`rounded-full px-4 py-1.5 sm:px-5 sm:py-2 text-xs sm:text-sm transition ${
                     isActive ? "bg-white text-slate-900" : "bg-white/10 text-white/80 hover:bg-white/20"
                   }`}
                 >
@@ -366,7 +366,7 @@ export function CareerSwitchPlanner() {
             <button
               type="button"
               onClick={() => handleFieldChange("targetIndustry", "")}
-              className="text-sm underline text-white/60 underline-offset-4"
+              className="text-xs sm:text-sm underline text-white/60 underline-offset-4"
             >
               {t("labels.skip")}
             </button>
@@ -382,7 +382,7 @@ export function CareerSwitchPlanner() {
                   key={option.value}
                   type="button"
                   onClick={() => handleFieldChange("timeframe", option.value)}
-                  className={`rounded-full px-5 py-3 text-base transition ${
+                  className={`rounded-full px-4 py-2 sm:px-5 sm:py-3 text-sm sm:text-base transition ${
                     isActive ? "bg-white text-slate-900" : "bg-white/10 text-white/80 hover:bg-white/20"
                   }`}
                 >
@@ -402,7 +402,7 @@ export function CareerSwitchPlanner() {
                   key={option.value}
                   type="button"
                   onClick={() => handleFieldChange("budget", option.value)}
-                  className={`rounded-full px-5 py-3 text-base transition ${
+                  className={`rounded-full px-4 py-2 sm:px-5 sm:py-3 text-sm sm:text-base transition ${
                     isActive ? "bg-white text-slate-900" : "bg-white/10 text-white/80 hover:bg-white/20"
                   }`}
                 >
@@ -418,13 +418,13 @@ export function CareerSwitchPlanner() {
   };
 
   return (
-    <div className="isolate overflow-hidden relative px-6 py-12 min-h-screen text-white bg-gradient-to-b rounded-3xl shadow-2xl from-slate-950 via-slate-900 to-slate-950">
+    <div className="isolate overflow-hidden relative px-6 py-8 sm:py-12 min-h-screen text-white bg-gradient-to-b rounded-3xl shadow-2xl from-slate-950 via-slate-900 to-slate-950">
       <div className="absolute inset-0 opacity-60 pointer-events-none">
         <div className="absolute -left-16 top-10 h-72 w-72 rounded-full bg-purple-500/20 blur-[120px]" />
         <div className="absolute -right-16 bottom-0 h-80 w-80 rounded-full bg-fuchsia-500/20 blur-[120px]" />
       </div>
 
-      <div className="relative mx-auto flex min-h-[80vh] max-w-4xl flex-col justify-center gap-10">
+      <div className="relative mx-auto flex min-h-[calc(100vh-4rem)] sm:min-h-[80vh] max-w-4xl flex-col justify-center gap-8 sm:gap-10">
         <div className="flex w-full flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2">
             {steps.map((_, index) => (
@@ -441,7 +441,7 @@ export function CareerSwitchPlanner() {
               <button
                 type="button"
                 onClick={goBack}
-                className="text-sm font-medium text-white/70 underline-offset-4 hover:text-white"
+                className="text-xs sm:text-sm font-medium text-white/70 underline-offset-4 hover:text-white"
               >
                 {t("nav.back")}
               </button>
@@ -450,7 +450,7 @@ export function CareerSwitchPlanner() {
               <button
                 type="button"
                 onClick={goNext}
-                className="text-sm font-semibold text-white underline-offset-4 hover:text-white"
+                className="text-xs sm:text-sm font-semibold text-white underline-offset-4 hover:text-white"
               >
                 {t("nav.next")}
               </button>
@@ -473,47 +473,47 @@ export function CareerSwitchPlanner() {
           }`}
           key={currentStep.id}
         >
-          <p className="text-sm uppercase tracking-[0.4em] text-white/50">{t("labels.progress")}</p>
-          <h2 className="mt-4 text-4xl font-semibold leading-tight text-white">{currentStep.title}</h2>
-          {currentStep.subtitle && <p className="mt-2 text-lg text-white/60">{currentStep.subtitle}</p>}
-          <div className="mt-10">{renderInput(currentStep)}</div>
+          <p className="text-xs sm:text-sm uppercase tracking-[0.4em] text-white/50">{t("labels.progress")}</p>
+          <h2 className="mt-4 text-2xl sm:text-4xl font-semibold leading-tight text-white">{currentStep.title}</h2>
+          {currentStep.subtitle && <p className="mt-2 text-base sm:text-lg text-white/60">{currentStep.subtitle}</p>}
+          <div className="mt-8 sm:mt-10">{renderInput(currentStep)}</div>
         </div>
 
         {isAnalyzing && (
           <div className="space-y-3 text-center transition-all duration-300 ease-out">
-            <p className="text-lg font-semibold text-white">{t("loading.title")}</p>
-            <p className="text-base text-white/70">{t("loading.copy")}</p>
+            <p className="text-base sm:text-lg font-semibold text-white">{t("loading.title")}</p>
+            <p className="text-sm sm:text-base text-white/70">{t("loading.copy")}</p>
           </div>
         )}
 
         {error && (
-          <div className="text-sm text-center text-red-300">
+          <div className="text-xs sm:text-sm text-center text-red-300">
             {error}
           </div>
         )}
 
         {analysis && !isAnalyzing && (
-          <div className="p-8 space-y-6 rounded-3xl backdrop-blur bg-white/5">
-            <p className="text-sm uppercase tracking-[0.3em] text-white/60">{t("results.title")}</p>
+          <div className="p-6 sm:p-8 space-y-6 rounded-3xl backdrop-blur bg-white/5">
+            <p className="text-xs sm:text-sm uppercase tracking-[0.3em] text-white/60">{t("results.title")}</p>
             <div className="space-y-3">
-              <h3 className="text-3xl font-semibold text-white">{analysis.recommendedSnapshot.title}</h3>
-              <p className="text-base text-white/70">{advisorSummary || analysis.insight}</p>
+              <h3 className="text-2xl sm:text-3xl font-semibold text-white">{analysis.recommendedSnapshot.title}</h3>
+              <p className="text-sm sm:text-base text-white/70">{advisorSummary || analysis.insight}</p>
             </div>
             <div className="flex flex-wrap gap-2">
               {flattenSkills(analysis.recommendedSnapshot.skills).map((skill, idx) => (
-                <span key={`${skill}-${idx}`} className="px-3 py-1 text-sm rounded-full bg-white/10 text-white/80">
+                <span key={`${skill}-${idx}`} className="px-3 py-1 text-xs sm:text-sm rounded-full bg-white/10 text-white/80">
                   {skill}
                 </span>
               ))}
             </div>
             {analysis.roadmap?.length ? (
               <div className="space-y-2">
-                <p className="text-sm uppercase tracking-[0.2em] text-white/50">{t("results.roadmapLabel")}</p>
+                <p className="text-xs sm:text-sm uppercase tracking-[0.2em] text-white/50">{t("results.roadmapLabel")}</p>
                 <div className="space-y-4">
                   {analysis.roadmap.map((step) => (
                     <div key={step.title} className="p-4 rounded-2xl bg-white/5">
-                      <p className="text-base font-semibold text-white">{step.title}</p>
-                      <p className="text-sm text-white/70">{step.description}</p>
+                      <p className="text-sm sm:text-base font-semibold text-white">{step.title}</p>
+                      <p className="text-xs sm:text-sm text-white/70">{step.description}</p>
                     </div>
                   ))}
                 </div>

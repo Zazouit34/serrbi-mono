@@ -36,7 +36,7 @@ export function CareerSwitchExperience({ title, subtitle, startLabel }: Props) {
 
   return (
     <div className="flex flex-col">
-      <section className="isolate overflow-hidden relative">
+      <section className="isolate overflow-hidden relative min-h-[100svh] md:min-h-0">
         <Image
           src="/images/career-switch.png"
           alt={title}
@@ -46,11 +46,11 @@ export function CareerSwitchExperience({ title, subtitle, startLabel }: Props) {
           sizes="100vw"
         />
 
-        <div className="flex relative flex-col gap-6 items-center px-6 py-24 mx-auto max-w-5xl text-center md:gap-7 md:py-28 lg:py-32">
-          <h1 className="text-4xl font-semibold leading-tight md:text-5xl md:leading-tight lg:text-6xl">
+        <div className="flex relative flex-col gap-4 justify-center items-center px-6 py-24 mx-auto max-w-5xl min-h-[100svh] text-center md:gap-7 md:py-28 md:min-h-0 lg:py-32">
+          <h1 className="text-xl font-semibold leading-tight md:text-5xl md:leading-tight lg:text-6xl">
             {title}
           </h1>
-          <p className="text-base leading-relaxed md:text-lg md:leading-relaxed lg:max-w-3xl">
+          <p className="text-sm leading-relaxed md:text-lg md:leading-relaxed lg:max-w-3xl">
             {subtitle}
           </p>
           <Button
