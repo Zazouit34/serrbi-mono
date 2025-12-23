@@ -73,7 +73,7 @@ export function CareerSwitchExperience({ title, subtitle, startLabel }: Props) {
         }`}
       >
         {started && (
-          <div className="relative left-1/2 w-screen -translate-x-1/2 px-4 sm:px-6">
+          <div className="px-4 sm:px-6">
             <CareerSwitchPlanner />
           </div>
         )}
