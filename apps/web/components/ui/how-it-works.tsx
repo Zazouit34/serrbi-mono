@@ -42,6 +42,7 @@ const steps: Step[] = [
 
 export function HowItWorks() {
   const t = useTranslations("HowItWorks");
+  const tNav = useTranslations("HowItWorks.nav");
   const defaultStep = steps[0]!;
   const firstKey = defaultStep.key;
   const [activeKey, setActiveKey] = useState<string>(firstKey);
@@ -79,7 +80,7 @@ export function HowItWorks() {
                     : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
                 }`}
               >
-                <div className="text-sm font-semibold">{t(`HowItWorks.nav.${labelKey}`)}</div>
+                <div className="text-sm font-semibold">{tNav(labelKey)}</div>
               </button>
             );
           })}
@@ -107,7 +108,7 @@ export function HowItWorks() {
                       : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
                   }`}
                 >
-                <div className="text-sm font-semibold">{t(`HowItWorks.nav.${labelKey}`)}</div>
+                <div className="text-sm font-semibold">{tNav(labelKey)}</div>
                 </button>
               );
             })}
