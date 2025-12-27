@@ -58,9 +58,9 @@ export function HowItWorks() {
         <p className="max-w-2xl text-muted-foreground">{t("subtitle")}</p>
       </div>
 
-      <div className="grid gap-8 lg:grid-cols-[260px,1fr]">
+      <div className="grid gap-8 md:grid-cols-[260px,1fr]">
         {/* Desktop nav (left) */}
-        <div className="hidden lg:flex flex-col gap-3">
+        <div className="hidden md:flex flex-col gap-3">
           {steps.map((step) => {
             const isActive = step.key === activeKey;
             return (
@@ -83,7 +83,7 @@ export function HowItWorks() {
         {/* Content column */}
         <div className="flex flex-col gap-4">
           {/* Mobile stacked nav */}
-          <div className="flex lg:hidden flex-col gap-3">
+          <div className="flex md:hidden flex-col gap-3">
             {steps.map((step) => {
               const isActive = step.key === activeKey;
               return (
