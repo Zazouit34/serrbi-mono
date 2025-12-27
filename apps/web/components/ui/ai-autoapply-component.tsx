@@ -77,7 +77,7 @@ export default function AutoApplyExampleResults() {
       <Card className="rounded-2xl border border-slate-100 shadow-[0_16px_40px_rgba(15,23,42,0.08)] bg-white">
         <CardHeader className="flex flex-col md:flex-row items-start md:items-center justify-between gap-2 md:gap-3 pb-3">
           <div className="flex items-center gap-2 md:gap-3 w-full md:w-auto">
-            <div className="h-8 w-8 md:h-10 md:w-10 rounded-xl md:rounded-2xl bg-violet-600 flex items-center justify-center flex-shrink-0">
+            <div className="h-8 w-8 md:h-10 md:w-10 rounded-xl md:rounded-2xl bg-slate-900 flex items-center justify-center flex-shrink-0">
               <Mail className="h-4 w-4 md:h-5 md:w-5 text-white" />
             </div>
             <div className="flex-1 min-w-0">

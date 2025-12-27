@@ -146,7 +146,7 @@ export default function AutoApplySettingsPage() {
   return (
     <div className="max-w-5xl mx-auto space-y-8">
       {/* Status hero */}
-      <div className="rounded-3xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white shadow-[0_24px_60px_rgba(0,0,0,0.28)] p-6 md:p-8">
+      <div className="rounded-3xl bg-gradient-to-br from-white via-slate-50 to-blue-50 text-slate-900 shadow-[0_18px_50px_rgba(15,23,42,0.08)] border border-slate-200 p-6 md:p-8">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div className="space-y-2">
             <div className="flex items-center gap-2">
@@ -154,15 +154,15 @@ export default function AutoApplySettingsPage() {
                 <span className="inline-flex h-2 w-2 rounded-full bg-current opacity-80" />
                 <span className="ml-2">{statusLabel}</span>
               </Badge>
-              <span className="text-xs text-slate-300 flex items-center gap-1">
+              <span className="text-xs text-slate-500 flex items-center gap-1">
                 <ShieldCheck className="h-4 w-4" />
                 {tA("hero.reassurance")}
               </span>
             </div>
-            <h1 className="text-3xl md:text-4xl font-semibold leading-tight">
+            <h1 className="text-3xl md:text-4xl font-semibold leading-tight text-slate-900">
               {tA("hero.title")}
             </h1>
-            <p className="text-slate-300 max-w-2xl">
+            <p className="text-slate-600 max-w-2xl">
               {tA("hero.subtitle")}
             </p>
           </div>
@@ -171,7 +171,7 @@ export default function AutoApplySettingsPage() {
             <Button
               onClick={() => handleToggle(!enabled)}
               variant="secondary"
-              className="bg-white text-slate-900 hover:bg-white/90"
+              className="bg-slate-900 text-white hover:bg-slate-800 border-slate-900/10"
               disabled={mutation.isPending}
             >
               {enabled ? (
@@ -190,34 +190,34 @@ export default function AutoApplySettingsPage() {
         </div>
 
         <div className="mt-6 grid gap-4 sm:grid-cols-3">
-          <div className="rounded-2xl bg-white/5 border border-white/10 p-4">
-            <div className="text-sm text-slate-200">{tA("stats.autoApplied")}</div>
-            <div className="text-2xl font-semibold mt-1">{appliedCount}</div>
-            <p className="text-xs text-slate-300 mt-1">
+          <div className="rounded-2xl bg-white border border-slate-200 p-4 shadow-sm">
+            <div className="text-sm text-slate-600">{tA("stats.autoApplied")}</div>
+            <div className="text-2xl font-semibold mt-1 text-slate-900">{appliedCount}</div>
+            <p className="text-xs text-slate-500 mt-1">
               {cap != null ? tA("stats.progress", { used: appliedCount, cap }) : tAll("Billing.unlimited")}
             </p>
           </div>
-          <div className="rounded-2xl bg-white/5 border border-white/10 p-4">
-            <div className="text-sm text-slate-200 flex items-center gap-1">
+          <div className="rounded-2xl bg-white border border-slate-200 p-4 shadow-sm">
+            <div className="text-sm text-slate-600 flex items-center gap-1">
               <Clock className="h-4 w-4" />
               {tA("activity.lastAppliedLabel")}
             </div>
-            <div className="text-lg font-semibold mt-1">
+            <div className="text-lg font-semibold mt-1 text-slate-900">
               {lastApplied
                 ? lastApplied.toLocaleDateString(undefined, { month: "short", day: "numeric" })
                 : tA("activity.noApplications")}
             </div>
-            <p className="text-xs text-slate-300 mt-1">{tA("activity.scanHint")}</p>
+            <p className="text-xs text-slate-500 mt-1">{tA("activity.scanHint")}</p>
           </div>
-          <div className="rounded-2xl bg-white/5 border border-white/10 p-4">
-            <div className="text-sm text-slate-200 flex items-center gap-1">
+          <div className="rounded-2xl bg-white border border-slate-200 p-4 shadow-sm">
+            <div className="text-sm text-slate-600 flex items-center gap-1">
               <Sparkles className="h-4 w-4" />
               {tA("hero.queue")}
             </div>
-            <div className="text-lg font-semibold mt-1">
+            <div className="text-lg font-semibold mt-1 text-slate-900">
               {tA("listing.jobsInQueue", { count: Math.max(0, usage?.autoApplyLimit ?? 0) })}
             </div>
-            <p className="text-xs text-slate-300 mt-1">{tA("hero.queueHint")}</p>
+            <p className="text-xs text-slate-500 mt-1">{tA("hero.queueHint")}</p>
           </div>
         </div>
       </div>

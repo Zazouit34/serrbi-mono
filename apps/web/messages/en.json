@@ -835,8 +835,8 @@
       "applying": "Applying…"
     },
     "hero": {
-      "title": "AI Auto-Apply",
-      "subtitle": "Your AI is already scanning and applying to the highest-confidence roles for you.",
+      "title": "Auto-apply that just runs",
+      "subtitle": "We quietly send the right applications for you—no spam, full control.",
       "active": "Active",
       "paused": "Paused",
       "pause": "Pause AI",

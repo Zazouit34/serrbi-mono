@@ -48,6 +48,16 @@ export function UserMenu() {
       <DropdownMenuContent className="w-56" align="center">
         <DropdownMenuLabel>{t("myAccount")}</DropdownMenuLabel>
         <DropdownMenuGroup>
+        <DropdownMenuItem asChild>
+            <Link
+              href="/account/auto-apply"
+              className="flex items-center w-full cursor-pointer"
+            >
+              <FileCog className="mr-2 size-4" />
+              
+              {t("autoApply")}
+            </Link>
+          </DropdownMenuItem>
           <DropdownMenuItem asChild>
             <Link
               href="/resume-analyzer"
@@ -64,16 +74,6 @@ export function UserMenu() {
             >
               <TrendingUp className="mr-2 size-4" />
               {t("careerSwitch")}
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link
-              href="/account/auto-apply"
-              className="flex items-center w-full cursor-pointer"
-            >
-              <FileCog className="mr-2 size-4" />
-              
-              {t("autoApply")}
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
