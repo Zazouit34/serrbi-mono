@@ -8,7 +8,6 @@ import { Button } from "@workspace/ui/components/button";
 type Step = {
   key: string;
   href: string;
-  label: string;
   image: string;
   bg: string;
   accent: string;
@@ -18,7 +17,6 @@ const steps: Step[] = [
   {
     key: "1",
     href: "/resume-analyzer",
-    label: "Resume Analyzer",
     image:
       "https://images.unsplash.com/photo-1584907797015-7554cd315667?ixlib=rb-4.1.0&auto=format&fit=crop&w=1600&q=80",
     bg: "from-sky-50 via-white to-sky-100",
@@ -27,7 +25,6 @@ const steps: Step[] = [
   {
     key: "2",
     href: "/career-switch",
-    label: "Career Switch",
     image:
       "https://images.unsplash.com/photo-1758874384554-a00d65bca8aa?ixlib=rb-4.1.0&auto=format&fit=crop&w=1600&q=80",
     bg: "from-emerald-50 via-white to-emerald-100",
@@ -36,7 +33,6 @@ const steps: Step[] = [
   {
     key: "3",
     href: "/account/auto-apply",
-    label: "AI Serrbi",
     image:
       "https://plus.unsplash.com/premium_photo-1682309526815-efe5d6225117?ixlib=rb-4.1.0&auto=format&fit=crop&w=1600&q=80",
     bg: "from-amber-50 via-white to-amber-100",
@@ -62,11 +58,17 @@ export function HowItWorks() {
         <p className="max-w-2xl text-muted-foreground">{t("subtitle")}</p>
       </div>
 
-      <div className="grid gap-8 md:grid-cols-[260px_1fr]">
+      <div className="grid gap-8 md:grid-cols-[260px_1fr] items-stretch">
         {/* Desktop nav (left) */}
-        <div className="hidden md:flex flex-col gap-4 self-start">
+        <div className="hidden md:flex h-full flex-col justify-between gap-4 self-stretch">
           {steps.map((step) => {
             const isActive = step.key === activeKey;
+            const labelKey =
+              step.key === "1"
+                ? "resumeAnalyzer"
+                : step.key === "2"
+                  ? "careerSwitch"
+                  : "aiSerrbi";
             return (
               <button
                 key={step.key}
@@ -77,7 +79,7 @@ export function HowItWorks() {
                     : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
                 }`}
               >
-                <div className="text-sm font-semibold">{step.label}</div>
+                <div className="text-sm font-semibold">{t(`HowItWorks.nav.${labelKey}`)}</div>
               </button>
             );
           })}
@@ -89,6 +91,12 @@ export function HowItWorks() {
           <div className="flex md:hidden flex-col gap-3">
             {steps.map((step) => {
               const isActive = step.key === activeKey;
+              const labelKey =
+                step.key === "1"
+                  ? "resumeAnalyzer"
+                  : step.key === "2"
+                    ? "careerSwitch"
+                    : "aiSerrbi";
               return (
                 <button
                   key={step.key}
@@ -99,7 +107,7 @@ export function HowItWorks() {
                       : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
                   }`}
                 >
-                <div className="text-sm font-semibold">{step.label}</div>
+                <div className="text-sm font-semibold">{t(`HowItWorks.nav.${labelKey}`)}</div>
                 </button>
               );
             })}

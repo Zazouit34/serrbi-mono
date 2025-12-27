@@ -94,6 +94,11 @@
   "HowItWorks": {
     "title": "How It Works",
     "subtitle": "Let AI handle the hard work — from analyzing your resume to applying for jobs that fit your goals.",
+    "nav": {
+      "aiSerrbi": "AI Serrbi",
+      "resumeAnalyzer": "Resume Analyzer",
+      "careerSwitch": "Career Switch"
+    },
     "steps": {
       "1": {
         "title": "Start with a stronger resume",

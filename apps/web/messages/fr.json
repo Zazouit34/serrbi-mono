@@ -94,6 +94,11 @@
   "HowItWorks": {
     "title": "Comment ça marche",
     "subtitle": "Laissez l’IA faire le travail difficile — de l’analyse de votre CV aux candidatures adaptées à vos objectifs.",
+    "nav": {
+      "aiSerrbi": "AI Serrbi",
+      "resumeAnalyzer": "Analyseur de CV",
+      "careerSwitch": "Reconversion IA"
+    },
     "steps": {
       "1": {
         "title": "Commencez avec un meilleur CV",
