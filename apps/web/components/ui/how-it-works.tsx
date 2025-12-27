@@ -8,6 +8,7 @@ import { Button } from "@workspace/ui/components/button";
 type Step = {
   key: string;
   href: string;
+  label: string;
   image: string;
   bg: string;
   accent: string;
@@ -17,6 +18,7 @@ const steps: Step[] = [
   {
     key: "1",
     href: "/resume-analyzer",
+    label: "Resume Analyzer",
     image:
       "https://images.unsplash.com/photo-1584907797015-7554cd315667?ixlib=rb-4.1.0&auto=format&fit=crop&w=1600&q=80",
     bg: "from-sky-50 via-white to-sky-100",
@@ -25,6 +27,7 @@ const steps: Step[] = [
   {
     key: "2",
     href: "/career-switch",
+    label: "Career Switch",
     image:
       "https://images.unsplash.com/photo-1758874384554-a00d65bca8aa?ixlib=rb-4.1.0&auto=format&fit=crop&w=1600&q=80",
     bg: "from-emerald-50 via-white to-emerald-100",
@@ -33,6 +36,7 @@ const steps: Step[] = [
   {
     key: "3",
     href: "/account/auto-apply",
+    label: "AI Serrbi",
     image:
       "https://plus.unsplash.com/premium_photo-1682309526815-efe5d6225117?ixlib=rb-4.1.0&auto=format&fit=crop&w=1600&q=80",
     bg: "from-amber-50 via-white to-amber-100",
@@ -60,7 +64,7 @@ export function HowItWorks() {
 
       <div className="grid gap-8 md:grid-cols-[260px_1fr]">
         {/* Desktop nav (left) */}
-        <div className="hidden md:flex flex-col gap-3">
+        <div className="hidden md:flex flex-col gap-4 self-start">
           {steps.map((step) => {
             const isActive = step.key === activeKey;
             return (
@@ -73,8 +77,7 @@ export function HowItWorks() {
                     : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
                 }`}
               >
-                <div className="text-sm font-semibold">{t(`steps.${step.key}.title`)}</div>
-                <p className="text-xs text-inherit/70">{t(`steps.${step.key}.description`)}</p>
+                <div className="text-sm font-semibold">{step.label}</div>
               </button>
             );
           })}
@@ -96,46 +99,62 @@ export function HowItWorks() {
                       : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
                   }`}
                 >
-                  <div className="text-sm font-semibold">{t(`steps.${step.key}.title`)}</div>
-                  <p className="text-xs text-inherit/70">{t(`steps.${step.key}.description`)}</p>
+                <div className="text-sm font-semibold">{step.label}</div>
                 </button>
               );
             })}
           </div>
 
           {/* Active card */}
-          <div className={`relative overflow-hidden rounded-[32px] bg-gradient-to-br ${active.bg} p-6 sm:p-10`}>
+          <div className={`relative overflow-hidden rounded-[32px] bg-gradient-to-br ${active.bg} p-6 sm:p-8 md:p-9`}>
             <div className="pointer-events-none absolute inset-0 hidden h-full w-full overflow-hidden md:block">
-              <div className="absolute right-[-35%] top-1/2 h-[640px] w-[640px] -translate-y-1/2 aspect-square opacity-40">
+              <div className="absolute right-[-35%] top-1/2 h-[560px] w-[560px] -translate-y-1/2 aspect-square opacity-30">
                 <div className="absolute inset-0 rounded-full bg-white" />
               </div>
             </div>
 
-            <div className="relative z-10 grid items-center gap-8 lg:grid-cols-[1.05fr,0.95fr]">
-              <div className="flex flex-col gap-4">
-                <span className={`inline-flex w-fit items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold ${active.accent}`}>
-                  {t(`steps.${active.key}.title`)}
-                </span>
-                <h3 className="text-3xl font-semibold text-slate-900">{t(`steps.${active.key}.title`)}</h3>
-                <p className="text-base text-slate-700">{t(`steps.${active.key}.description`)}</p>
+            <div className="relative z-10 flex flex-col gap-5 md:flex-row md:items-stretch md:min-h-[260px] lg:min-h-[280px]">
+              {/* Image (left on desktop, stacked on mobile) */}
+              <div className="relative h-48 w-full overflow-hidden rounded-2xl shadow-inner bg-white/50 md:hidden">
+                <Image
+                  src={active.image}
+                  alt={t(`steps.${active.key}.title`)}
+                  fill
+                  className="object-cover"
+                  sizes="100vw"
+                  priority
+                />
+              </div>
+              <div className="hidden md:flex md:w-[40%] md:max-w-[320px] lg:max-w-[360px]">
+                <div className="relative h-[260px] w-full overflow-hidden rounded-2xl shadow-inner bg-white/40">
+                  <Image
+                    src={active.image}
+                    alt={t(`steps.${active.key}.title`)}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 1200px) 40vw, 32vw"
+                    priority
+                  />
+                </div>
+              </div>
+
+              {/* Content */}
+              <div className="flex flex-1 flex-col justify-between gap-4 md:pl-2">
+                <div className="space-y-3">
+                  <span className={`inline-flex w-fit items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold ${active.accent}`}>
+                    {t(`steps.${active.key}.title`)}
+                  </span>
+                  <h3 className="text-2xl sm:text-3xl font-semibold text-slate-900">
+                    {t(`steps.${active.key}.title`)}
+                  </h3>
+                  <p className="text-sm sm:text-base text-slate-700">{t(`steps.${active.key}.description`)}</p>
+                </div>
                 <Button
                   asChild
                   className="bg-slate-900 text-white hover:bg-slate-800 rounded-full px-6 h-10 text-sm font-semibold w-fit"
                 >
                   <a href={active.href}>{t(`steps.${active.key}.action`)}</a>
                 </Button>
-              </div>
-
-              <div className="relative w-full overflow-hidden rounded-2xl shadow-xl">
-                <Image
-                  src={active.image}
-                  alt={t(`steps.${active.key}.title`)}
-                  width={900}
-                  height={600}
-                  className="h-full w-full object-cover"
-                  sizes="(max-width: 1024px) 100vw, 50vw"
-                  priority
-                />
               </div>
             </div>
           </div>
