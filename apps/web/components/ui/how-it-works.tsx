@@ -58,7 +58,7 @@ export function HowItWorks() {
         <p className="max-w-2xl text-muted-foreground">{t("subtitle")}</p>
       </div>
 
-      <div className="grid gap-8 md:grid-cols-[260px,1fr]">
+      <div className="grid gap-8 md:grid-cols-[260px_1fr]">
         {/* Desktop nav (left) */}
         <div className="hidden md:flex flex-col gap-3">
           {steps.map((step) => {
