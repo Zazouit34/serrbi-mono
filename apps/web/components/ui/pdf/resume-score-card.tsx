@@ -31,6 +31,7 @@ type ProgressCircleProps = {
   value: number;
   max: number;
   label: string;
+  size?: number;
 };
 
 type KeyCategory = "experience" | "skills" | "impact" | "projects";
@@ -49,6 +50,15 @@ const KEY_LABELS: Record<KeyCategory, string> = {
   projects: "Projects",
 };
 
+type KeyMetric = {
+  key: KeyCategory;
+  label: string;
+  categoryLabel: string;
+  score: number;
+  max: number;
+  percent: number;
+};
+
 function normalizeCategory(name: string) {
   return name.toLowerCase().replace(/[^a-z]/g, "");
 }
@@ -62,7 +72,62 @@ function mapToKeyCategory(name: string): KeyCategory | null {
   return null;
 }
 
-function ProgressCircle({ value, max, label }: ProgressCircleProps) {
+function deriveKeyMetrics(
+  breakdown: BreakdownItem[],
+  target: number,
+): KeyMetric[] {
+  const orderedKeys: KeyCategory[] = ["experience", "skills", "impact", "projects"];
+  const clampPct = (v: number) => Math.max(0, Math.min(100, Math.round(v)));
+  const baseline = clampPct(target || 0);
+  const globalAvg = clampPct(
+    breakdown.length
+      ? breakdown.reduce((sum, b) => {
+          const pct = b.max > 0 ? (b.score / b.max) * 100 : 0;
+          return sum + pct;
+        }, 0) / breakdown.length
+      : baseline,
+  );
+
+  const fallbackOffsets: Record<KeyCategory, number> = {
+    experience: 4,
+    skills: 0,
+    impact: -4,
+    projects: -8,
+  };
+
+  const softMatch = (b: BreakdownItem, key: KeyCategory) => {
+    const n = normalizeCategory(b.category);
+    if (key === "skills") return n.includes("keyword") || n.includes("tech") || n.includes("skill");
+    if (key === "experience") return n.includes("work") || n.includes("role") || n.includes("experience");
+    if (key === "impact") return n.includes("impact") || n.includes("metric") || n.includes("result");
+    if (key === "projects") return n.includes("project") || n.includes("portfolio") || n.includes("case");
+    return false;
+  };
+
+  return orderedKeys.map((key) => {
+    const direct = breakdown.filter((b) => mapToKeyCategory(b.category) === key);
+    const related = direct.length ? direct : breakdown.filter((b) => softMatch(b, key));
+    const source = related.length ? related : null;
+
+    const percent = source
+      ? clampPct(
+          source.reduce((sum, b) => sum + (b.max > 0 ? (b.score / b.max) * 100 : 0), 0) /
+            source.length,
+        )
+      : clampPct(globalAvg + fallbackOffsets[key]);
+
+    return {
+      key,
+      label: KEY_LABELS[key],
+      categoryLabel: source?.[0]?.category ?? KEY_LABELS[key],
+      score: clampPct(percent),
+      max: 100,
+      percent,
+    };
+  });
+}
+
+function ProgressCircle({ value, max, label, size = 260 }: ProgressCircleProps) {
   const clamped = Math.max(0, Math.min(max, value));
   const percentage = max > 0 ? (clamped / max) * 100 : 0;
   const radius = 79.5;
@@ -70,14 +135,14 @@ function ProgressCircle({ value, max, label }: ProgressCircleProps) {
   const progressOffset = circumference - (percentage / 100) * circumference;
 
   return (
-    <div className="inline-flex relative flex-col justify-center items-center">
+    <div className="inline-flex relative flex-col justify-center items-center w-full" style={{ maxWidth: size }}>
       <svg
-        width="183"
-        height="176"
+        width={size}
+        height={(size * 176) / 183}
         viewBox="0 0 183 176"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
-        className="h-auto w-full max-w-[183px]"
+        className="w-full h-auto"
       >
         <defs>
           <linearGradient
@@ -130,88 +195,77 @@ function ProgressCircle({ value, max, label }: ProgressCircleProps) {
 }
 
 type KeyArcStackProps = {
-  items: Array<{ item: BreakdownItem; key: KeyCategory }>;
+  metrics: KeyMetric[];
 };
 
-function KeyArcStack({ items }: KeyArcStackProps) {
-  const size = 260;
+function KeyArcStack({ metrics }: KeyArcStackProps) {
+  const size = 280;
   const center = size / 2;
-  const radii = [110, 94, 78, 62];
+  const radii = [120, 104, 88, 72];
+
+  const semiPath = (r: number) =>
+    `M ${center} ${center - r} A ${r} ${r} 0 0 1 ${center} ${center + r}`;
+  const semiLength = (r: number) => Math.PI * r;
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="relative mx-auto w-full max-w-sm">
-        <svg
-          viewBox={`0 0 ${size} ${size}`}
-          width={size}
-          height={size}
-          className="w-full"
-        >
-          <g transform={`rotate(-110 ${center} ${center})`}>
-            {items.map(({ item, key }, idx) => {
-              const radius = radii[idx] ?? radii[radii.length - 1] ?? 70;
-              const circumference = 2 * Math.PI * radius;
-              const arcLength = circumference * 0.82;
-              const gap = circumference - arcLength;
-              const pct = item.max > 0 ? Math.min(1, Math.max(0, item.score / item.max)) : 0;
-              const progressLength = arcLength * pct;
-              const color = KEY_COLORS[key];
-
-              return (
-                <g key={`${item.category}-${key}`}>
-                  <circle
-                    cx={center}
-                    cy={center}
-                    r={radius}
-                    fill="none"
-                    stroke="#E5E7EB"
-                    strokeWidth={14}
-                    strokeLinecap="round"
-                    strokeDasharray={`${arcLength} ${gap}`}
-                    strokeDashoffset={gap / 2}
-                    opacity={0.55}
-                  />
-                  <circle
-                    cx={center}
-                    cy={center}
-                    r={radius}
-                    fill="none"
-                    stroke={color}
-                    strokeWidth={14}
-                    strokeLinecap="round"
-                    strokeDasharray={`${progressLength} ${circumference}`}
-                    strokeDashoffset={gap / 2}
-                    style={{ transition: "stroke-dasharray 0.8s ease, stroke 0.3s ease" }}
-                  />
-                </g>
-              );
-            })}
-          </g>
-        </svg>
-      </div>
-
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        {items.map(({ item, key }) => (
+    <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:gap-10">
+      <div className="flex flex-col gap-3 w-full lg:w-1/2">
+        {metrics.map((metric, idx) => (
           <div
-            key={`${item.category}-${key}-legend`}
-            className="flex justify-between items-center px-3 py-2 text-sm rounded-xl border border-slate-200"
+            key={`${metric.key}-${metric.label}`}
+            className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white/70 px-3 py-2.5"
           >
-            <div className="flex gap-2 items-center">
+            <div className="flex gap-3 items-center">
               <span
-                className="w-3 h-3 rounded-full"
-                style={{ backgroundColor: KEY_COLORS[key] }}
-                aria-hidden
-              />
+                className="flex justify-center items-center w-8 h-8 text-xs font-semibold rounded-full border"
+                style={{ borderColor: KEY_COLORS[metric.key], color: KEY_COLORS[metric.key] }}
+              >
+                {idx + 1}
+              </span>
               <div className="flex flex-col">
-                <span className="font-semibold text-slate-900">{KEY_LABELS[key]}</span>
-                <span className="text-xs text-slate-500">{item.category}</span>
+                <span className="text-sm font-semibold text-slate-900">{metric.label}</span>
+                <span className="text-xs text-slate-500">{metric.categoryLabel}</span>
               </div>
             </div>
-            <div className="text-sm font-semibold text-right text-slate-700">
-              {item.score}/{item.max}
-            </div>
+            <span className="text-base font-semibold text-slate-900">{metric.percent}%</span>
           </div>
         ))}
+      </div>
+
+      <div className="relative w-full lg:w-1/2">
+        <svg viewBox={`0 0 ${size} ${size}`} width={size} height={size} className="w-full">
+          {metrics.map((metric, idx) => {
+            const radius = radii[idx] ?? radii[radii.length - 1] ?? 70;
+            const length = semiLength(radius);
+            const pct = Math.max(0, Math.min(1, metric.percent / 100));
+            const color = KEY_COLORS[metric.key];
+
+            return (
+              <g key={`${metric.key}-${radius}`}>
+                <path
+                  d={semiPath(radius)}
+                  fill="none"
+                  stroke="#E5E7EB"
+                  strokeWidth={14}
+                  strokeLinecap="round"
+                  strokeDasharray={`${length} ${length}`}
+                  pathLength={length}
+                  opacity={0.45}
+                />
+                <path
+                  d={semiPath(radius)}
+                  fill="none"
+                  stroke={color}
+                  strokeWidth={14}
+                  strokeLinecap="round"
+                  strokeDasharray={`${length * pct} ${length}`}
+                  pathLength={length}
+                  style={{ transition: "stroke-dasharray 0.8s ease, stroke 0.3s ease" }}
+                />
+              </g>
+            );
+          })}
+        </svg>
       </div>
     </div>
   );
@@ -280,17 +334,9 @@ export function ResumeScoreCard({
     ...(llm?.improvements ?? []),
   ].slice(0, 12);
 
-  const orderedKeys: KeyCategory[] = ["experience", "skills", "impact", "projects"];
-  const keyItems = orderedKeys
-    .map((key) => {
-      const match = breakdown.find((b) => mapToKeyCategory(b.category) === key);
-      return match ? { item: match, key } : null;
-    })
-    .filter(Boolean) as Array<{ item: BreakdownItem; key: KeyCategory }>;
+  const keyMetrics = deriveKeyMetrics(breakdown, target);
 
-  const remainingBreakdown = breakdown.filter(
-    (b) => !mapToKeyCategory(b.category),
-  );
+  const remainingBreakdown = breakdown.filter((b) => !mapToKeyCategory(b.category));
 
   const formatSalary = (value: number) =>
     `€${Math.round(value).toLocaleString()}`;
@@ -321,180 +367,186 @@ export function ResumeScoreCard({
   return (
     <div
       className={cn(
-        "mx-auto w-full max-w-4xl space-y-8 text-slate-900",
+        "mx-auto w-full max-w-5xl space-y-10 text-slate-900",
         darkMode && "text-white",
       )}
     >
-      <div className="flex flex-col gap-1">
-        <h2 className="text-xl font-semibold leading-tight">
-          {tr("ResumeScore.title", "Your Resume Score")}
-        </h2>
-        <p className="text-sm text-slate-600 dark:text-white/70">
-          {tr(
-            "ResumeScore.subtitle",
-            "A clear, human-friendly view of how your resume performs.",
-          )}
-        </p>
-      </div>
+      <div className="p-6 space-y-6 rounded-3xl border shadow-sm border-slate-200 bg-white/80">
+        <div className="flex flex-col gap-2">
+          <h2 className="text-xl font-semibold leading-tight">
+            {tr("ResumeScore.title", "Your Resume Score")}
+          </h2>
+          <p className="text-sm text-slate-600 dark:text-white/70">
+            {tr(
+              "ResumeScore.subtitle",
+              "A clear, human-friendly view of how your resume performs.",
+            )}
+          </p>
+        </div>
 
-      <div className="grid gap-10 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] items-start">
-        <div className="space-y-4">
-          <div className="flex justify-center md:justify-start">
+        <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-1 justify-center">
             <ProgressCircle
               value={displayValue}
               max={100}
+              size={320}
               label={tr("ResumeScore.overallLabel", "Your resume score")}
             />
           </div>
 
-          <div className="p-5 rounded-2xl border shadow-sm border-slate-200 bg-white/70">
-            <p className="text-xs font-semibold tracking-wide uppercase text-slate-500">
-              {tr("ResumeScore.atsTitle", "ATS Score - {score}/100").replace("{score}", String(atsScore))}
-            </p>
-            <p className="mt-2 text-sm text-slate-700">
-              {tr(
-                "ResumeScore.atsIntro",
-                "We scan your resume like an employer's Applicant Tracking System. Here's how it performs today:",
-              )}
-            </p>
+          <div className="space-y-4 w-full max-w-md">
+            <div className="p-5 rounded-2xl border shadow-sm border-slate-200 bg-white/90">
+              <p className="text-xs font-semibold tracking-wide uppercase text-slate-500">
+                {tr("ResumeScore.atsTitle", "ATS Score - {score}/100").replace("{score}", String(atsScore))}
+              </p>
+              <p className="mt-2 text-sm text-slate-700">
+                {tr(
+                  "ResumeScore.atsIntro",
+                  "We scan your resume like an employer's Applicant Tracking System. Here's how it performs today:",
+                )}
+              </p>
 
-            <ul className="mt-3 space-y-2 text-xs">
-              <li className="flex gap-2 items-start text-emerald-700">
-                <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-emerald-500" />
-                <span>
-                  {tr(
-                    "ResumeScore.atsBullet.formatting",
-                    "Clear formatting that is easily readable by most ATS.",
-                  )}
-                </span>
-              </li>
-              <li className="flex gap-2 items-start text-emerald-700">
-                <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-emerald-500" />
-                <span>
-                  {tr(
-                    "ResumeScore.atsBullet.keywords",
-                    "Good use of role‑relevant keywords across experience and skills.",
-                  )}
-                </span>
-              </li>
-              <li className="flex gap-2 items-start text-amber-700">
-                <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-500" />
-                <span>
-                  {tr(
-                    "ResumeScore.atsBullet.skillsWarning",
-                    "Some sections could be stronger (skills, metrics, or links). See the checklist below.",
-                  )}
-                </span>
-              </li>
-            </ul>
-
-            {llm?.salaryRange &&
-              Number.isFinite(llm.salaryRange.min) &&
-              Number.isFinite(llm.salaryRange.max) && (
-                <div className="mt-4 rounded-xl border border-slate-100 bg-white px-3 py-2.5">
-                  <p className="text-xs font-semibold text-slate-500">
-                    {tr("ResumeScore.salaryTitle", "Estimated monthly salary range")}
-                  </p>
-                  <p className="text-sm font-semibold text-emerald-700">
-                    {formatSalary(llm.salaryRange.min)} – {formatSalary(llm.salaryRange.max)}
-                  </p>
-                  <p className="mt-1 text-[11px] text-slate-500">
+              <ul className="mt-3 space-y-2 text-xs">
+                <li className="flex gap-2 items-start text-emerald-700">
+                  <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-emerald-500" />
+                  <span>
                     {tr(
-                      "ResumeScore.salarySubtitle",
-                      "Based on similar profiles, roles, and skills in your target market.",
+                      "ResumeScore.atsBullet.formatting",
+                      "Clear formatting that is easily readable by most ATS.",
                     )}
-                  </p>
-                </div>
+                  </span>
+                </li>
+                <li className="flex gap-2 items-start text-emerald-700">
+                  <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-emerald-500" />
+                  <span>
+                    {tr(
+                      "ResumeScore.atsBullet.keywords",
+                      "Good use of role‑relevant keywords across experience and skills.",
+                    )}
+                  </span>
+                </li>
+                <li className="flex gap-2 items-start text-amber-700">
+                  <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-500" />
+                  <span>
+                    {tr(
+                      "ResumeScore.atsBullet.skillsWarning",
+                      "Some sections could be stronger (skills, metrics, or links). See the checklist below.",
+                    )}
+                  </span>
+                </li>
+              </ul>
+
+              {llm?.salaryRange &&
+                Number.isFinite(llm.salaryRange.min) &&
+                Number.isFinite(llm.salaryRange.max) && (
+                  <div className="mt-4 rounded-xl border border-slate-100 bg-white px-3 py-2.5">
+                    <p className="text-xs font-semibold text-slate-500">
+                      {tr("ResumeScore.salaryTitle", "Estimated monthly salary range")}
+                    </p>
+                    <p className="text-sm font-semibold text-emerald-700">
+                      {formatSalary(llm.salaryRange.min)} – {formatSalary(llm.salaryRange.max)}
+                    </p>
+                    <p className="mt-1 text-[11px] text-slate-500">
+                      {tr(
+                        "ResumeScore.salarySubtitle",
+                        "Based on similar profiles, roles, and skills in your target market.",
+                      )}
+                    </p>
+                  </div>
+                )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="p-6 rounded-3xl border shadow-sm border-slate-200 bg-white/80">
+        <div className="flex justify-between items-center mb-4">
+          <div>
+            <p className="text-xs font-semibold tracking-wide uppercase text-slate-500">
+              {tr("ResumeScore.keySections", "Core sections")}
+            </p>
+            <p className="text-sm text-slate-600">
+              {tr(
+                "ResumeScore.keySectionsSubtitle",
+                "Experience, skills, impact, and projects with clear percentages.",
               )}
+            </p>
+          </div>
+          <span className="hidden text-xs text-slate-500 lg:block">
+            {tr("ResumeScore.keySectionsHint", "Progress flows from top to bottom.")}
+          </span>
+        </div>
+        <KeyArcStack metrics={keyMetrics} />
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
+        <div className="p-5 rounded-3xl border shadow-sm border-slate-200 bg-white/80">
+          <h3 className="text-sm font-semibold text-slate-800 dark:text-white">
+            {tr("ResumeScore.detailTitle", "Detailed signals")}
+          </h3>
+          <div className="grid gap-2 mt-3">
+            {remainingBreakdown.length === 0 ? (
+              <p className="text-sm text-slate-500">
+                {tr("ResumeScore.noDetails", "We surface details once your resume is analyzed.")}
+              </p>
+            ) : (
+              remainingBreakdown.map((item) => {
+                const status = getStatusForScore(item.score, item.max);
+                return (
+                  <div
+                    key={item.category}
+                    className="flex justify-between items-center px-3 py-2 text-xs rounded-xl border border-slate-200 bg-white/70"
+                  >
+                    <div className="space-y-1">
+                      <p className="font-semibold text-slate-900">{item.category}</p>
+                      <span
+                        className={cn(
+                          "inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium",
+                          status.className,
+                        )}
+                      >
+                        {status.label}
+                      </span>
+                    </div>
+                    <div className="text-sm font-semibold text-right text-slate-700">
+                      {item.score}/{item.max}
+                    </div>
+                  </div>
+                );
+              })
+            )}
           </div>
         </div>
 
-        <div className="space-y-4">
-          {keyItems.length > 0 && (
-            <div className="p-5 rounded-2xl border shadow-sm border-slate-200 bg-white/70">
-              <div className="flex justify-between items-center mb-3">
-                <div>
-                  <p className="text-xs font-semibold tracking-wide uppercase text-slate-500">
-                    {tr("ResumeScore.keySections", "Core sections")}
-                  </p>
-                  <p className="text-sm text-slate-600">
-                    {tr(
-                      "ResumeScore.keySectionsSubtitle",
-                      "Experience, skills, impact, and projects as easy-to-read arcs.",
-                    )}
-                  </p>
-                </div>
-              </div>
-              <KeyArcStack items={keyItems} />
-            </div>
-          )}
-        </div>
-      </div>
-
-      <div className="space-y-3">
-        <h3 className="text-sm font-semibold text-slate-800 dark:text-white">
-          {tr("ResumeScore.detailTitle", "Detailed signals")}
-        </h3>
-        <div className="grid gap-2">
-          {remainingBreakdown.length === 0 ? (
-            <p className="text-sm text-slate-500">
-              {tr("ResumeScore.noDetails", "We surface details once your resume is analyzed.")}
-            </p>
-          ) : (
-            remainingBreakdown.map((item) => {
-              const status = getStatusForScore(item.score, item.max);
-              return (
+        <div className="p-5 rounded-3xl border shadow-sm border-slate-200 bg-white/80">
+          <Collapsible>
+            <CollapsibleTrigger className="flex justify-between items-center px-3 py-2 w-full text-sm font-semibold text-left bg-white rounded-xl border shadow-sm border-slate-200 text-slate-800">
+              <span>{tr("ResumeScore.checklistTitle", "Resume improvement checklist")}</span>
+              <ChevronDown className="w-4 h-4 text-slate-500" />
+            </CollapsibleTrigger>
+            <CollapsibleContent className="p-3 mt-2 space-y-1 text-xs rounded-xl border border-slate-100 bg-white/70 text-slate-700">
+              <p className="mb-1 text-[11px] text-slate-500">
+                {tr(
+                  "ResumeScore.checklistIntro",
+                  "Focus on the items below to move your score closer to 100.",
+                )}
+              </p>
+              {(combinedChecklist.length
+                ? combinedChecklist
+                : [tr("ResumeScore.noInsights", "AI insights will appear here after analyzing your resume.")]
+              ).map((item, idx) => (
                 <div
-                  key={item.category}
-                  className="flex justify-between items-center px-3 py-2 text-xs rounded-xl border border-slate-200 bg-white/60"
+                  key={`${item}-${idx}`}
+                  className="flex items-start gap-2 rounded-lg border border-slate-100 bg-white px-2 py-1.5"
                 >
-                  <div className="space-y-1">
-                    <p className="font-semibold text-slate-900">{item.category}</p>
-                    <span
-                      className={cn(
-                        "inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium",
-                        status.className,
-                      )}
-                    >
-                      {status.label}
-                    </span>
-                  </div>
-                  <div className="text-sm font-semibold text-right text-slate-700">
-                    {item.score}/{item.max}
-                  </div>
+                  <AlertTriangle className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-amber-500" />
+                  <span>{item}</span>
                 </div>
-              );
-            })
-          )}
+              ))}
+            </CollapsibleContent>
+          </Collapsible>
         </div>
       </div>
-
-      <Collapsible>
-        <CollapsibleTrigger className="flex justify-between items-center px-3 py-2 w-full text-sm font-semibold text-left bg-white rounded-xl border shadow-sm border-slate-200 text-slate-800">
-          <span>{tr("ResumeScore.checklistTitle", "Resume improvement checklist")}</span>
-          <ChevronDown className="w-4 h-4 text-slate-500" />
-        </CollapsibleTrigger>
-        <CollapsibleContent className="p-3 mt-2 space-y-1 text-xs rounded-xl border border-slate-100 bg-white/70 text-slate-700">
-          <p className="mb-1 text-[11px] text-slate-500">
-            {tr(
-              "ResumeScore.checklistIntro",
-              "Focus on the items below to move your score closer to 100.",
-            )}
-          </p>
-          {(combinedChecklist.length
-            ? combinedChecklist
-            : [tr("ResumeScore.noInsights", "AI insights will appear here after analyzing your resume.")]
-          ).map((item, idx) => (
-            <div
-              key={`${item}-${idx}`}
-              className="flex items-start gap-2 rounded-lg border border-slate-100 bg-white px-2 py-1.5"
-            >
-              <AlertTriangle className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-amber-500" />
-              <span>{item}</span>
-            </div>
-          ))}
-        </CollapsibleContent>
-      </Collapsible>
     </div>
   );
 }
