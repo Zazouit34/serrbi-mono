@@ -160,10 +160,7 @@ export function ResumeInsight({
     <section className="mx-auto mt-10 w-full">
       <div className="overflow-hidden relative bg-white rounded-3xl border shadow-sm text-slate-900 border-slate-200">
         {!scoreData ? (
-          <div className="grid grid-cols-1 md:grid-cols-2">
-            {/* Left: heading + dropzone */}
-            <div className="relative p-6 bg-gradient-to-br to-white sm:p-10 from-slate-50">
-            {/* Diagonal stripes background */}
+          <div className="relative p-6 bg-gradient-to-br to-white sm:p-10 from-slate-50">
             <div
               className="absolute inset-0 opacity-[0.03] pointer-events-none"
               style={{
@@ -171,60 +168,57 @@ export function ResumeInsight({
                   "repeating-linear-gradient(135deg, #1e293b, #1e293b 2px, transparent 2px, transparent 12px)",
               }}
             />
-            <div className="max-w-xl">
-              <h2 className="text-3xl font-semibold leading-tight sm:text-4xl text-slate-900">
-                {tr("ResumeInsight.title", "Get your resume checked by AI in seconds")}
-              </h2>
-              <p className="mt-3 text-sm sm:text-base text-slate-600">
-                {tr(
-                  "ResumeInsight.subtitle",
-                  "Drop a single PDF below. We'll score it instantly on the right."
-                )}
-              </p>
-            </div>
-
-            {existingResumeUrl && !file && (
-              <div className="p-3 mt-5 text-sm bg-blue-50 rounded-xl border border-slate-200 text-slate-700">
-                <p className="font-medium text-slate-900">
+            <div className="relative max-w-3xl space-y-6">
+              <div className="max-w-xl space-y-2">
+                <h2 className="text-3xl font-semibold leading-tight sm:text-4xl text-slate-900">
+                  {tr("ResumeInsight.title", "Get your resume checked by AI in seconds")}
+                </h2>
+                <p className="text-sm sm:text-base text-slate-600">
                   {tr(
-                    "ResumeInsight.existingResumeTitle",
-                    "You already have a resume saved to your profile."
+                    "ResumeInsight.subtitle",
+                    "Drop a single PDF below. We'll score it instantly.",
                   )}
                 </p>
-                <p className="mt-1 text-xs text-slate-600">
-                  {tr(
-                    "ResumeInsight.existingResumeSubtitle",
-                    "You can analyze that resume now, or drop a new PDF below."
-                  )}
-                </p>
-                <button
-                  type="button"
-                  className="mt-3 inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-full bg-slate-900 text-white hover:bg-slate-800 transition-colors"
-                  onClick={async () => {
-                    try {
-                      const res = await fetch(existingResumeUrl);
-                      if (!res.ok) return;
-                      const blob = await res.blob();
-                      const pdfFile = new File(
-                        [blob],
-                        "resume.pdf",
-                        { type: blob.type || "application/pdf" }
-                      );
-                      setFile(pdfFile);
-                    } catch (e) {
-                      console.error("Failed to load existing resume for analysis", e);
-                    }
-                  }}
-                >
-                  {tr(
-                    "ResumeInsight.analyzeExisting",
-                    "Analyze my saved resume"
-                  )}
-                </button>
               </div>
-            )}
 
-            <div className="mt-6">
+              {existingResumeUrl && !file && (
+                <div className="p-3 text-sm bg-blue-50 rounded-xl border border-slate-200 text-slate-700">
+                  <p className="font-medium text-slate-900">
+                    {tr(
+                      "ResumeInsight.existingResumeTitle",
+                      "You already have a resume saved to your profile.",
+                    )}
+                  </p>
+                  <p className="mt-1 text-xs text-slate-600">
+                    {tr(
+                      "ResumeInsight.existingResumeSubtitle",
+                      "You can analyze that resume now, or drop a new PDF below.",
+                    )}
+                  </p>
+                  <button
+                    type="button"
+                    className="mt-3 inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-full bg-slate-900 text-white hover:bg-slate-800 transition-colors"
+                    onClick={async () => {
+                      try {
+                        const res = await fetch(existingResumeUrl);
+                        if (!res.ok) return;
+                        const blob = await res.blob();
+                        const pdfFile = new File(
+                          [blob],
+                          "resume.pdf",
+                          { type: blob.type || "application/pdf" },
+                        );
+                        setFile(pdfFile);
+                      } catch (e) {
+                        console.error("Failed to load existing resume for analysis", e);
+                      }
+                    }}
+                  >
+                    {tr("ResumeInsight.analyzeExisting", "Analyze my saved resume")}
+                  </button>
+                </div>
+              )}
+
               <div
                 ref={dropRef}
                 className="flex relative flex-col gap-3 justify-center items-center p-6 rounded-xl border border-dashed transition cursor-pointer bg-slate-50 border-slate-300 hover:bg-slate-100 hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -268,45 +262,18 @@ export function ResumeInsight({
                   </div>
                 )}
               </div>
-            </div>
-          </div>
 
-          {/* Right: mock / live global score */}
-          <div className="flex relative justify-center items-center p-4 bg-gradient-to-br from-white sm:p-2 to-slate-50">
-            <div className="absolute inset-0 pointer-events-none" aria-hidden>
-              <div className="absolute right-[-20%] top-1/2 h-[120%] w-[120%] -translate-y-1/2 rounded-full bg-[radial-gradient(closest-side,#3b82f611,#00000000)]" />
-            </div>
-            {analyzing && !scoreData ? (
-              <div className="flex flex-col gap-6 justify-center items-center w-full">
-                <p className="text-lg font-medium text-center animate-pulse text-slate-700">
+              {analyzing && !scoreData && (
+                <div className="flex items-center gap-3 text-sm text-slate-700">
+                  <div className="h-2 w-2 animate-pulse rounded-full bg-blue-500" />
                   {tr(
                     "ResumeInsight.analyzing",
-                    "AI is analyzing your resume, estimating salary and generating tailored suggestions..."
+                    "AI is analyzing your resume and preparing your insights...",
                   )}
-                </p>
-                <div className="w-full max-w-xs">
-                  <div className="overflow-hidden relative w-full h-2 rounded-full bg-slate-200">
-                    <div
-                      className="absolute top-0 left-0 h-full bg-gradient-to-r from-blue-500 to-blue-400 rounded-full animate-pulse"
-                      style={{ width: `${progress}%` }}
-                    />
-                  </div>
                 </div>
-              </div>
-            ) : (
-              <div className="flex flex-col gap-2 p-4 w-full bg-white rounded-2xl border shadow-sm border-slate-200">
-                <ResumeScoreCard
-                  score={(scoreData as unknown as ResumeScore)?.score ?? 72}
-                  breakdown={(scoreData as unknown as ResumeScore)?.breakdown ?? defaultBreakdown(72)}
-                  llm={(scoreData as unknown as ResumeScore)?.llm}
-                  loading={false}
-                  darkMode={false}
-                  size="large"
-                />
-              </div>
-            )}
+              )}
+            </div>
           </div>
-        </div>
         ) : (
           <div className="p-6 bg-gradient-to-br to-white sm:p-10 from-slate-50">
             <ResumeScoreCard
