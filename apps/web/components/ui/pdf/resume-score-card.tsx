@@ -199,9 +199,41 @@ type KeyArcStackProps = {
 };
 
 function KeyArcStack({ metrics }: KeyArcStackProps) {
-  const size = 280;
+  const size = 320;
   const center = size / 2;
-  const radii = [120, 104, 88, 72];
+  const radii = [150, 132, 114, 96];
+  const [animatedPercents, setAnimatedPercents] = useState<number[]>(
+    () => metrics.map(() => 0),
+  );
+
+  useEffect(() => {
+    let raf: number | null = null;
+    let kickoff: number | null = null;
+    const duration = 1200;
+    const startValues = metrics.map(() => 0);
+
+    const step = (startTime: number) => {
+      raf = requestAnimationFrame((now) => {
+        const elapsed = now - startTime;
+        const e = Math.min(1, elapsed / duration);
+        setAnimatedPercents(
+          metrics.map((m, idx) => {
+            const from = startValues[idx] ?? 0;
+            const to = m.percent ?? 0;
+            return Math.round(from + (to - from) * e);
+          }),
+        );
+        if (e < 1) step(startTime);
+      });
+    };
+
+    kickoff = requestAnimationFrame((t) => step(t));
+
+    return () => {
+      if (raf) cancelAnimationFrame(raf);
+      if (kickoff) cancelAnimationFrame(kickoff);
+    };
+  }, [metrics]);
 
   const semiPath = (r: number) =>
     `M ${center} ${center - r} A ${r} ${r} 0 0 1 ${center} ${center + r}`;
@@ -209,7 +241,7 @@ function KeyArcStack({ metrics }: KeyArcStackProps) {
 
   return (
     <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:gap-10">
-      <div className="flex flex-col gap-3 w-full lg:w-1/2">
+      <div className="flex flex-col gap-3 w-full lg:w-2/5">
         {metrics.map((metric, idx) => (
           <div
             key={`${metric.key}-${metric.label}`}
@@ -232,12 +264,15 @@ function KeyArcStack({ metrics }: KeyArcStackProps) {
         ))}
       </div>
 
-      <div className="relative w-full lg:w-1/2">
+      <div className="relative w-full lg:w-3/5">
         <svg viewBox={`0 0 ${size} ${size}`} width={size} height={size} className="w-full">
           {metrics.map((metric, idx) => {
             const radius = radii[idx] ?? radii[radii.length - 1] ?? 70;
             const length = semiLength(radius);
-            const pct = Math.max(0, Math.min(1, metric.percent / 100));
+            const pct = Math.max(
+              0,
+              Math.min(1, ((animatedPercents[idx] ?? metric.percent ?? 0)) / 100),
+            );
             const color = KEY_COLORS[metric.key];
 
             return (
@@ -260,7 +295,7 @@ function KeyArcStack({ metrics }: KeyArcStackProps) {
                   strokeLinecap="round"
                   strokeDasharray={`${length * pct} ${length}`}
                   pathLength={length}
-                  style={{ transition: "stroke-dasharray 0.8s ease, stroke 0.3s ease" }}
+                  style={{ transition: "stroke-dasharray 1.1s ease, stroke 0.4s ease" }}
                 />
               </g>
             );
@@ -460,21 +495,16 @@ export function ResumeScoreCard({
       </div>
 
       <div className="p-6 rounded-3xl border shadow-sm border-slate-200 bg-white/80">
-        <div className="flex justify-between items-center mb-4">
-          <div>
-            <p className="text-xs font-semibold tracking-wide uppercase text-slate-500">
-              {tr("ResumeScore.keySections", "Core sections")}
-            </p>
-            <p className="text-sm text-slate-600">
-              {tr(
-                "ResumeScore.keySectionsSubtitle",
-                "Experience, skills, impact, and projects with clear percentages.",
-              )}
-            </p>
-          </div>
-          <span className="hidden text-xs text-slate-500 lg:block">
-            {tr("ResumeScore.keySectionsHint", "Progress flows from top to bottom.")}
-          </span>
+        <div className="mb-4">
+          <p className="text-xs font-semibold tracking-wide uppercase text-slate-500">
+            {tr("ResumeScore.keySections", "Core sections")}
+          </p>
+          <p className="text-sm text-slate-600">
+            {tr(
+              "ResumeScore.keySectionsSubtitle",
+              "Experience, skills, impact, and projects with clear percentages.",
+            )}
+          </p>
         </div>
         <KeyArcStack metrics={keyMetrics} />
       </div>
