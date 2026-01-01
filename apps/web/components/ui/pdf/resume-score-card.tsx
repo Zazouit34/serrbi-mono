@@ -430,7 +430,7 @@ export function ResumeScoreCard({
           </div>
 
           <div className="space-y-4 w-full max-w-md">
-            <div className="p-5 rounded-2xl border shadow-sm border-slate-200 bg-white/90">
+           
               <p className="text-xs font-semibold tracking-wide uppercase text-slate-500">
                 {tr("ResumeScore.atsTitle", "ATS Score - {score}/100").replace("{score}", String(atsScore))}
               </p>
@@ -489,7 +489,6 @@ export function ResumeScoreCard({
                     </p>
                   </div>
                 )}
-            </div>
           </div>
         </div>
       </div>
