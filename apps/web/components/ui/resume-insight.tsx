@@ -168,8 +168,8 @@ export function ResumeInsight({
                   "repeating-linear-gradient(135deg, #1e293b, #1e293b 2px, transparent 2px, transparent 12px)",
               }}
             />
-            <div className="relative max-w-3xl mx-auto space-y-6 text-center">
-              <div className="max-w-2xl mx-auto space-y-2">
+            <div className="relative mx-auto space-y-6 max-w-3xl text-center">
+              <div className="mx-auto space-y-2 max-w-2xl">
                 <h2 className="text-3xl font-semibold leading-tight sm:text-4xl text-slate-900">
                   {tr("ResumeInsight.title", "Get your resume checked by AI in seconds")}
                 </h2>
@@ -221,7 +221,7 @@ export function ResumeInsight({
 
               <div
                 ref={dropRef}
-                className="flex relative flex-col gap-3 justify-center items-center p-6 rounded-xl border border-dashed transition cursor-pointer bg-slate-50 border-slate-300 hover:bg-slate-100 hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 max-w-xl mx-auto"
+                className="flex relative flex-col gap-3 justify-center items-center p-6 mx-auto max-w-xl rounded-xl border border-dashed transition cursor-pointer bg-slate-50 border-slate-300 hover:bg-slate-100 hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 onClick={() => inputRef.current?.click()}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {
@@ -264,8 +264,8 @@ export function ResumeInsight({
               </div>
 
               {analyzing && !scoreData && (
-                <div className="flex items-center gap-3 text-sm text-slate-700">
-                  <div className="h-2 w-2 animate-pulse rounded-full bg-blue-500" />
+                <div className="flex gap-3 items-center text-sm text-slate-700">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
                   {tr(
                     "ResumeInsight.analyzing",
                     "AI is analyzing your resume and preparing your insights...",

@@ -439,14 +439,14 @@ export function ResumeScoreCard({
               {llm?.salaryRange &&
                 Number.isFinite(llm.salaryRange.min) &&
                 Number.isFinite(llm.salaryRange.max) && (
-                  <div className="mt-4 rounded-xl border border-slate-100 bg-white px-3 py-2.5">
-                    <p className="text-xs font-semibold text-slate-500">
+                  <div className="mt-4 space-y-1">
+                    <p className="text-xs font-semibold tracking-wide uppercase text-slate-500">
                       {tr("ResumeScore.salaryTitle", "Estimated monthly salary range")}
                     </p>
-                    <p className="text-sm font-semibold text-emerald-700">
+                    <p className="text-lg font-semibold text-emerald-700">
                       {formatSalary(llm.salaryRange.min)} – {formatSalary(llm.salaryRange.max)}
                     </p>
-                    <p className="mt-1 text-[11px] text-slate-500">
+                    <p className="text-[11px] text-slate-500">
                       {tr(
                         "ResumeScore.salarySubtitle",
                         "Based on similar profiles, roles, and skills in your target market.",
