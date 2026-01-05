@@ -68,33 +68,33 @@ const circleColor = "#f59e0b";
 
 function HalfArc({ value }: { value: number }) {
   const pct = Math.max(0, Math.min(100, value));
-  const radius = 80;
+  const radius = 70;
   const circumference = Math.PI * radius;
   const progress = (pct / 100) * circumference;
   return (
-    <div className="relative w-full max-w-[320px] mx-auto">
+    <div className="relative w-full max-w-[260px] mx-auto">
       <svg viewBox="0 0 200 120" className="w-full">
         <path
-          d="M20 100 A80 80 0 0 1 180 100"
+          d="M30 100 A70 70 0 0 1 170 100"
           fill="none"
           stroke="#e5e7eb"
-          strokeWidth="16"
+          strokeWidth="14"
           strokeLinecap="round"
           strokeDasharray={`${circumference} ${circumference}`}
         />
         <path
-          d="M20 100 A80 80 0 0 1 180 100"
+          d="M30 100 A70 70 0 0 1 170 100"
           fill="none"
           stroke={circleColor}
-          strokeWidth="16"
+          strokeWidth="14"
           strokeLinecap="round"
           strokeDasharray={`${progress} ${circumference}`}
           style={{ transition: "stroke-dasharray 0.9s ease" }}
         />
       </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-end pb-2 pointer-events-none">
-        <div className="text-[34px] font-bold text-[#f59e0b] leading-none">{dummyMainScore}/100</div>
-        <p className="text-sm text-[#6b7280]">{dummyIssues} Issues</p>
+      <div className="flex absolute inset-0 flex-col justify-end items-center pb-1 pointer-events-none">
+        <div className="text-[30px] font-bold text-[#f59e0b] leading-none">{dummyMainScore}/100</div>
+        <p className="text-xs text-[#6b7280]">{dummyIssues} Issues</p>
       </div>
     </div>
   );
@@ -102,8 +102,8 @@ function HalfArc({ value }: { value: number }) {
 
 function Row({ label, status, badge }: RowItem) {
   return (
-    <div className="flex items-center justify-between">
-      <div className="flex items-center gap-2">
+    <div className="flex justify-between items-center">
+      <div className="flex gap-2 items-center">
         {status === "success" ? <Check /> : <Cross />}
         <span className="text-sm text-[#111827]">{label}</span>
       </div>
@@ -121,9 +121,9 @@ function Row({ label, status, badge }: RowItem) {
 
 function SectionHeader({ title, score }: { title: string; score: string }) {
   return (
-    <div className="flex items-center justify-between">
+    <div className="flex justify-between items-center">
       <span className="text-xs font-semibold tracking-wide text-[#6b7280]">{title}</span>
-      <div className="flex items-center gap-2">
+      <div className="flex gap-2 items-center">
         <span className="text-xs font-semibold text-[#f59e0b] bg-[#fff7ed] px-2 py-0.5 rounded-full">{score}</span>
         <Chevron />
       </div>
@@ -144,9 +144,9 @@ function CollapsedSection({
 }) {
   return (
     <Collapsible defaultOpen={false}>
-      <CollapsibleTrigger className="flex items-center justify-between w-full">
+      <CollapsibleTrigger className="flex justify-between items-center w-full">
         <span className="text-xs font-semibold tracking-wide text-[#6b7280]">{title}</span>
-        <div className="flex items-center gap-2">
+        <div className="flex gap-2 items-center">
           <span className={cn("text-xs font-semibold px-2 py-0.5 rounded-full", scoreColor)}>{score}</span>
           <Chevron />
         </div>

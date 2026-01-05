@@ -21,9 +21,9 @@ export default function ResumeAnalyzerTestPage() {
     }
 
     // Kick off the sequence shortly after click
-    const stepDuration = 1100;
+    const stepDuration = 1600;
     let step = 0;
-    setTimeout(() => setCurrentStep(0), 150);
+    setTimeout(() => setCurrentStep(0), 250);
 
     intervalRef.current = setInterval(() => {
       step += 1;
@@ -37,7 +37,7 @@ export default function ResumeAnalyzerTestPage() {
           setShowLoader(false);
           setShowResult(true);
           setCurrentStep(-1);
-        }, 500);
+        }, 700);
         return;
       }
       setCurrentStep(step);
