@@ -20,16 +20,16 @@ export function LoadingProcess({ currentStep = 0, className }: LoadingProcessPro
 
   return (
     <div className={cn("w-full", className)}>
-      <div className="relative w-full max-w-[520px] mx-auto px-2 sm:px-6">
-        <div className="py-6 space-y-6">
+      <div className="relative w-full max-w-[620px] mx-auto px-3 sm:px-8">
+        <div className="py-7 space-y-7">
           {loadingSteps.map((label, index) => {
             const isDone = index < clampedStep;
             const isActive = index === clampedStep;
 
             return (
-              <div key={label} className="flex items-center gap-3 h-[40px]">
+              <div key={label} className="flex items-center gap-4 h-[48px]">
                 {isDone ? <DoneIcon /> : isActive ? <ActiveIcon /> : <PendingIcon />}
-                <span className="text-[18px] font-medium text-[#1f2937]">{label}</span>
+                <span className="text-[20px] font-medium text-[#111827]">{label}</span>
               </div>
             );
           })}
@@ -41,7 +41,7 @@ export function LoadingProcess({ currentStep = 0, className }: LoadingProcessPro
 
 function DoneIcon() {
   return (
-    <div className="w-7 h-7 rounded-lg bg-[#7c3aed] flex items-center justify-center">
+    <div className="w-8 h-8 rounded-lg bg-[#7c3aed] flex items-center justify-center">
       <Check />
     </div>
   );
@@ -50,8 +50,8 @@ function DoneIcon() {
 function ActiveIcon() {
   return (
     <div
-      className="w-7 h-7 rounded-lg bg-[#ede9fe] flex items-center justify-center"
-      style={{ animation: "spin 1.4s linear infinite" }}
+      className="w-8 h-8 rounded-lg bg-[#ede9fe] flex items-center justify-center"
+      style={{ animation: "spin 1.6s linear infinite" }}
     >
       <Check stroke="#7c3aed" />
     </div>
@@ -60,7 +60,7 @@ function ActiveIcon() {
 
 function PendingIcon() {
   return (
-    <div className="w-7 h-7 rounded-lg border border-[#c4b5fd] flex items-center justify-center opacity-70">
+    <div className="w-8 h-8 rounded-lg border border-[#c4b5fd] flex items-center justify-center opacity-70">
       <Check stroke="#a78bfa" />
     </div>
   );
@@ -68,11 +68,11 @@ function PendingIcon() {
 
 function Check({ stroke = "white" }: { stroke?: string }) {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
       <path
         d="M5 13l4 4L19 7"
         stroke={stroke}
-        strokeWidth="2"
+        strokeWidth="2.25"
         strokeLinecap="round"
         strokeLinejoin="round"
       />

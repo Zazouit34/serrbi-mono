@@ -102,15 +102,15 @@ function HalfArc({ value }: { value: number }) {
 
 function Row({ label, status, badge }: RowItem) {
   return (
-    <div className="flex justify-between items-center">
-      <div className="flex gap-2 items-center">
+    <div className="flex justify-between items-center py-2">
+      <div className="flex gap-3 items-center">
         {status === "success" ? <Check /> : <Cross />}
-        <span className="text-sm text-[#111827]">{label}</span>
+        <span className="text-[20px] font-medium text-[#1f2937]">{label}</span>
       </div>
       <span
         className={cn(
-          "text-xs px-2 py-0.5 rounded-full font-medium",
-          status === "success" ? "bg-[#ecfdf5] text-[#10b981]" : "bg-[#f3f4f6] text-[#374151]",
+          "text-sm px-3 py-1 rounded-full font-medium",
+          status === "success" ? "bg-[#ecfdf5] text-[#0f9f74]" : "bg-[#f3f4f6] text-[#374151]",
         )}
       >
         {badge}
@@ -121,11 +121,11 @@ function Row({ label, status, badge }: RowItem) {
 
 function SectionHeader({ title, score }: { title: string; score: string }) {
   return (
-    <div className="flex justify-between items-center">
-      <span className="text-xs font-semibold tracking-wide text-[#6b7280]">{title}</span>
+    <div className="flex justify-between items-center py-1">
+      <span className="text-[18px] font-medium tracking-wide text-[#4b5563]">{title}</span>
       <div className="flex gap-2 items-center">
-        <span className="text-xs font-semibold text-[#f59e0b] bg-[#fff7ed] px-2 py-0.5 rounded-full">{score}</span>
-        <Chevron />
+        <span className="text-[14px] font-semibold text-[#f59e0b] bg-[#fff7ed] px-3 py-1 rounded-full">{score}</span>
+        <Chevron size={18} />
       </div>
     </div>
   );
@@ -144,15 +144,15 @@ function CollapsedSection({
 }) {
   return (
     <Collapsible defaultOpen={false}>
-      <CollapsibleTrigger className="flex justify-between items-center w-full">
-        <span className="text-xs font-semibold tracking-wide text-[#6b7280]">{title}</span>
+      <CollapsibleTrigger className="flex justify-between items-center py-2 w-full">
+        <span className="text-[18px] font-medium tracking-wide text-[#4b5563]">{title}</span>
         <div className="flex gap-2 items-center">
-          <span className={cn("text-xs font-semibold px-2 py-0.5 rounded-full", scoreColor)}>{score}</span>
-          <Chevron />
+          <span className={cn("px-3 py-1 font-semibold rounded-full text-[14px]", scoreColor)}>{score}</span>
+          <Chevron size={18} />
         </div>
       </CollapsibleTrigger>
       {children && (
-        <CollapsibleContent className="mt-2 space-y-2">
+        <CollapsibleContent className="mt-2 space-y-3">
           {children}
         </CollapsibleContent>
       )}
@@ -176,10 +176,10 @@ function Cross() {
   );
 }
 
-function Chevron() {
+function Chevron({ size = 16 }: { size?: number }) {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-      <path d="M6 9l6 6 6-6" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <path d="M6 9l6 6 6-6" stroke="#6b7280" strokeWidth="2.25" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
