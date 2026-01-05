@@ -62,25 +62,22 @@ export default function ResumeAnalyzerTestPage() {
         </button>
       </div>
 
-      <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-8 max-w-7xl mx-auto">
-        <div className="lg:w-[32%] w-full lg:sticky lg:top-6 self-start">
-          <ResumeScoreCardSimple />
+      {showLoader && !showResult && (
+        <div className="w-full flex justify-center">
+          <LoadingProcess currentStep={currentStep} />
         </div>
+      )}
 
-        <div className="lg:w-[68%] w-full">
-          {showLoader && (
-            <div className="w-full flex justify-center">
-              <LoadingProcess currentStep={currentStep} />
-            </div>
-          )}
-
-          {showResult && (
-            <div className="max-h-[calc(100vh-140px)] overflow-y-auto pr-1">
-              <ResumeInsightTest />
-            </div>
-          )}
+      {showResult && (
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-8 max-w-7xl mx-auto">
+          <div className="lg:w-[32%] w-full lg:sticky lg:top-6 self-start">
+            <ResumeScoreCardSimple />
+          </div>
+          <div className="lg:w-[68%] w-full">
+            <ResumeInsightTest />
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
