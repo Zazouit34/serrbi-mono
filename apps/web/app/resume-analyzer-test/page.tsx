@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import ResumeScoreCardSimple from "@/components/ui/resume-score-card-simple";
+import ResumeInsightTest from "@/components/ui/resume-insight-test";
 import LoadingProcess, { loadingSteps } from "@/components/ui/loading-process";
 
 export default function ResumeAnalyzerTestPage() {
@@ -51,25 +52,35 @@ export default function ResumeAnalyzerTestPage() {
   }, []);
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center gap-8">
-      <button
-        onClick={start}
-        className="rounded-full bg-slate-900 px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-slate-800 transition"
-      >
-        Start analysis
-      </button>
+    <div className="min-h-screen px-4 py-6 md:py-10">
+      <div className="flex items-center justify-center mb-6">
+        <button
+          onClick={start}
+          className="rounded-full bg-slate-900 px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-slate-800 transition"
+        >
+          Start analysis
+        </button>
+      </div>
 
-      {showLoader && (
-        <div className="w-full flex justify-center">
-          <LoadingProcess currentStep={currentStep} />
-        </div>
-      )}
-
-      {showResult && (
-        <div className="w-full flex justify-center">
+      <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-8 max-w-7xl mx-auto">
+        <div className="lg:w-[32%] w-full lg:sticky lg:top-6 self-start">
           <ResumeScoreCardSimple />
         </div>
-      )}
+
+        <div className="lg:w-[68%] w-full">
+          {showLoader && (
+            <div className="w-full flex justify-center">
+              <LoadingProcess currentStep={currentStep} />
+            </div>
+          )}
+
+          {showResult && (
+            <div className="max-h-[calc(100vh-140px)] overflow-y-auto pr-1">
+              <ResumeInsightTest />
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
