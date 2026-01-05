@@ -3,7 +3,7 @@
 import React from "react";
 import { cn } from "@workspace/ui/lib/utils";
 
-const steps = [
+export const loadingSteps = [
   "Parsing your resume",
   "Analyzing your experience",
   "Extracting your skills",
@@ -15,24 +15,24 @@ type LoadingProcessProps = {
   className?: string;
 };
 
-export function LoadingProcess({ currentStep = 1, className }: LoadingProcessProps) {
-  const clampedStep = Math.max(0, Math.min(currentStep, steps.length - 1));
+export function LoadingProcess({ currentStep = 0, className }: LoadingProcessProps) {
+  const clampedStep = Math.max(-1, Math.min(currentStep, loadingSteps.length - 1));
 
   return (
     <div className={cn("w-full", className)}>
       <div className="relative w-full max-w-[520px] mx-auto px-2 sm:px-6">
-        {clampedStep < steps.length && (
+        {clampedStep >= 0 && clampedStep < loadingSteps.length && (
           <div
-            className="absolute left-0 h-px bg-[#e5e7eb] transition-all duration-500"
+            className="absolute left-11 h-px bg-[#e5e7eb] transition-all duration-500"
             style={{
-              top: `${clampedStep * 56 + 40}px`,
-              width: "100%",
+              top: `${clampedStep * 56 + 28}px`,
+              width: "calc(100% - 44px)",
             }}
           />
         )}
 
-        <div className="space-y-6 py-6">
-          {steps.map((label, index) => {
+        <div className="py-6 space-y-6">
+          {loadingSteps.map((label, index) => {
             const isDone = index < clampedStep;
             const isActive = index === clampedStep;
 

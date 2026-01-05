@@ -72,25 +72,31 @@ function HalfArc({ value }: { value: number }) {
   const circumference = Math.PI * radius;
   const progress = (pct / 100) * circumference;
   return (
-    <svg viewBox="0 0 200 120" className="w-full">
-      <path
-        d="M20 100 A80 80 0 0 1 180 100"
-        fill="none"
-        stroke="#e5e7eb"
-        strokeWidth="16"
-        strokeLinecap="round"
-        strokeDasharray={`${circumference} ${circumference}`}
-      />
-      <path
-        d="M20 100 A80 80 0 0 1 180 100"
-        fill="none"
-        stroke={circleColor}
-        strokeWidth="16"
-        strokeLinecap="round"
-        strokeDasharray={`${progress} ${circumference}`}
-        style={{ transition: "stroke-dasharray 0.9s ease" }}
-      />
-    </svg>
+    <div className="relative w-full max-w-[320px] mx-auto">
+      <svg viewBox="0 0 200 120" className="w-full">
+        <path
+          d="M20 100 A80 80 0 0 1 180 100"
+          fill="none"
+          stroke="#e5e7eb"
+          strokeWidth="16"
+          strokeLinecap="round"
+          strokeDasharray={`${circumference} ${circumference}`}
+        />
+        <path
+          d="M20 100 A80 80 0 0 1 180 100"
+          fill="none"
+          stroke={circleColor}
+          strokeWidth="16"
+          strokeLinecap="round"
+          strokeDasharray={`${progress} ${circumference}`}
+          style={{ transition: "stroke-dasharray 0.9s ease" }}
+        />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-end pb-2 pointer-events-none">
+        <div className="text-[34px] font-bold text-[#f59e0b] leading-none">{dummyMainScore}/100</div>
+        <p className="text-sm text-[#6b7280]">{dummyIssues} Issues</p>
+      </div>
+    </div>
   );
 }
 
@@ -137,7 +143,7 @@ function CollapsedSection({
   children?: React.ReactNode;
 }) {
   return (
-    <Collapsible>
+    <Collapsible defaultOpen={false}>
       <CollapsibleTrigger className="flex items-center justify-between w-full">
         <span className="text-xs font-semibold tracking-wide text-[#6b7280]">{title}</span>
         <div className="flex items-center gap-2">
@@ -194,8 +200,6 @@ export function ResumeScoreCardSimple() {
     <div className="w-full max-w-[380px] bg-white rounded-2xl shadow-sm border border-[#e6ebf1] px-6 py-7">
       <div className="text-center">
         <h2 className="text-[22px] font-semibold text-[#1f2937]">Your Score</h2>
-        <div className="mt-2 text-[34px] font-bold text-[#f59e0b]">{dummyMainScore}/100</div>
-        <p className="text-sm text-[#6b7280]">{issues} Issues</p>
       </div>
 
       <div className="mt-4">
