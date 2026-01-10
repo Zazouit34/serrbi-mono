@@ -4,6 +4,14 @@
     "hero": "Find the best talents, jobs, services and tasks",
     "cta": "Get started"
   },
+  "LoadingProcess": {
+    "steps": {
+      "parsing": "Parsing your resume",
+      "analyzing": "Analyzing your experience",
+      "skills": "Extracting your skills",
+      "recommendations": "Generating recommendations"
+    }
+  },
   "Navbar": {
     "jobs": "Jobs",
     "services": "Services",

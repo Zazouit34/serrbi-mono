@@ -4,6 +4,14 @@
     "hero": "Trouvez les meilleurs talents, emplois, services et tâches",
     "cta": "Commencer"
   },
+  "LoadingProcess": {
+    "steps": {
+      "parsing": "Analyse de votre CV",
+      "analyzing": "Analyse de votre expérience",
+      "skills": "Extraction de vos compétences",
+      "recommendations": "Génération des recommandations"
+    }
+  },
   "Navbar": {
     "jobs": "Emplois",
     "services": "Services",

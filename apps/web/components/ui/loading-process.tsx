@@ -13,16 +13,17 @@ export const loadingSteps = [
 type LoadingProcessProps = {
   currentStep?: number; // 0-based
   className?: string;
+  steps?: string[];
 };
 
-export function LoadingProcess({ currentStep = 0, className }: LoadingProcessProps) {
-  const clampedStep = Math.max(-1, Math.min(currentStep, loadingSteps.length - 1));
+export function LoadingProcess({ currentStep = 0, className, steps = loadingSteps }: LoadingProcessProps) {
+  const clampedStep = Math.max(-1, Math.min(currentStep, steps.length - 1));
 
   return (
     <div className={cn("w-full", className)}>
       <div className="relative w-full max-w-[620px] mx-auto px-3 sm:px-8">
         <div className="py-7 space-y-7">
-          {loadingSteps.map((label, index) => {
+          {steps.map((label, index) => {
             const isDone = index < clampedStep;
             const isActive = index === clampedStep;
 

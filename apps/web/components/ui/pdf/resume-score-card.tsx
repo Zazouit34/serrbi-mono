@@ -1,15 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { cn } from "@workspace/ui/lib/utils";
+import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@workspace/ui/components/collapsible";
-import { CheckCircle2, AlertTriangle, ChevronDown } from "lucide-react";
 import type { LLMResumeAnalysis } from "@/app/utils/pdf/score-calculator";
+import ResumeScoreCardSimple, {
+  RowItem,
+  ScoreCardData,
+} from "@/components/ui/resume-score-card-simple";
 
 type BreakdownItem = {
   category: string;
@@ -314,268 +311,48 @@ export function ResumeScoreCard({
   llm,
   size = "default",
 }: PropsWithTheme) {
-  const t = useTranslations("ResumeScore");
   const tAll = useTranslations();
-  const tr = (key: string, fallback: string) => (tAll as any).has?.(key) ? (tAll as any)(key) : fallback;
-  const [displayValue, setDisplayValue] = useState(0);
+  const tr = (key: string, fallback: string) =>
+    (tAll as any).has?.(key) ? (tAll as any)(key) : fallback;
   const target = Math.max(0, Math.min(100, Math.round(score || 0)));
-  const animRef = useRef<number | null>(null);
-  const isLarge = size === "large";
 
-  // Smooth animation
-  useEffect(() => {
-    if (loading && !score) {
-      let dir = 1;
-      let val = 20;
-      const tick = () => {
-        val += dir * 2;
-        if (val >= 60) dir = -1;
-        if (val <= 10) dir = 1;
-        setDisplayValue(val);
-        animRef.current = requestAnimationFrame(tick);
-      };
-      animRef.current = requestAnimationFrame(tick);
-      return () => {
-        if (animRef.current) cancelAnimationFrame(animRef.current);
-      };
-    }
-  }, [loading, score]);
-
-  // Animate to actual score
-  useEffect(() => {
-    if (score || score === 0) {
-      if (animRef.current) cancelAnimationFrame(animRef.current);
-      const start = performance.now();
-      const from = displayValue;
-      const duration = 900;
-      const step = (t: number) => {
-        const e = Math.min(1, (t - start) / duration);
-        const eased = 1 - Math.pow(1 - e, 3);
-        setDisplayValue(Math.round(from + (target - from) * eased));
-        if (e < 1) animRef.current = requestAnimationFrame(step);
-      };
-      animRef.current = requestAnimationFrame(step);
-      return () => {
-        if (animRef.current) cancelAnimationFrame(animRef.current);
-      };
-    }
-  }, [score]);
-
-  const hasLLM = !!llm;
-  const atsScore = llm?.overallScore ?? target;
-
-  const combinedChecklist: string[] = [
-    ...(breakdown.flatMap((b) => b.missing ?? []) ?? []),
-    ...(llm?.improvements ?? []),
-  ].slice(0, 12);
-
-  const keyMetrics = deriveKeyMetrics(breakdown, target);
-
-  const remainingBreakdown = breakdown.filter((b) => !mapToKeyCategory(b.category));
-
-  const formatSalary = (value: number) =>
-    `€${Math.round(value).toLocaleString()}`;
-
-  const getStatusForScore = (value: number, max: number) => {
-    const pct = max > 0 ? (value / max) * 100 : 0;
-    if (pct >= 75) {
-      return {
-        key: "strong",
-        label: tr("ResumeScore.status.strong", "Strong"),
-        className: "bg-emerald-50 text-emerald-700",
-      };
-    }
-    if (pct >= 45) {
-      return {
-        key: "goodStart",
-        label: tr("ResumeScore.status.goodStart", "Good start"),
-        className: "bg-amber-50 text-amber-700",
-      };
-    }
+  const rows: RowItem[] = breakdown.map((b) => {
+    const pct = b.max > 0 ? Math.round((b.score / b.max) * 100) : 0;
     return {
-      key: "needsWork",
-      label: tr("ResumeScore.status.needsWork", "Needs work"),
-      className: "bg-rose-50 text-rose-700",
+      label: b.category,
+      status: pct >= 75 ? "success" : "error",
+      badge: `${pct}%`,
+      details: b.missing ?? [],
     };
+  });
+
+  const issues =
+    rows.filter((r) => r.status === "error").length +
+    (llm?.improvements?.length ?? 0);
+
+  const data: ScoreCardData = {
+    score: target,
+    issues,
+    contentRows: rows.slice(0, 4),
+    groupedSections: [
+      {
+        title: "SECTIONS",
+        score: `${Math.round(target)}%`,
+        rows: rows.slice(4, 7),
+      },
+      {
+        title: "ATS ESSENTIALS",
+        score: `${Math.round(target - 10)}%`,
+        scoreTone: "red",
+        rows: rows.slice(7, 10),
+      },
+      {
+        title: "TAILORING",
+        score: `${Math.round(target - 5)}%`,
+        rows: rows.slice(10),
+      },
+    ],
   };
 
-  return (
-    <div
-      className={cn(
-        "mx-auto w-full max-w-5xl space-y-10 text-slate-900",
-        darkMode && "text-white",
-      )}
-    >
-      <div className="p-6 space-y-6 rounded-3xl border shadow-sm border-slate-200 bg-white/80">
-        <div className="flex flex-col gap-2">
-          <h2 className="text-xl font-semibold leading-tight">
-            {tr("ResumeScore.title", "Your Resume Score")}
-          </h2>
-          <p className="text-sm text-slate-600 dark:text-white/70">
-            {tr(
-              "ResumeScore.subtitle",
-              "A clear, human-friendly view of how your resume performs.",
-            )}
-          </p>
-        </div>
-
-        <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex flex-1 justify-center">
-            <ProgressCircle
-              value={displayValue}
-              max={100}
-              size={320}
-              label={tr("ResumeScore.overallLabel", "Your resume score")}
-            />
-          </div>
-
-          <div className="space-y-4 w-full max-w-md">
-           
-              <p className="text-xs font-semibold tracking-wide uppercase text-slate-500">
-                {tr("ResumeScore.atsTitle", "ATS Score - {score}/100").replace("{score}", String(atsScore))}
-              </p>
-              <p className="mt-2 text-sm text-slate-700">
-                {tr(
-                  "ResumeScore.atsIntro",
-                  "We scan your resume like an employer's Applicant Tracking System. Here's how it performs today:",
-                )}
-              </p>
-
-              <ul className="mt-3 space-y-2 text-xs">
-                <li className="flex gap-2 items-start text-emerald-700">
-                  <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-emerald-500" />
-                  <span>
-                    {tr(
-                      "ResumeScore.atsBullet.formatting",
-                      "Clear formatting that is easily readable by most ATS.",
-                    )}
-                  </span>
-                </li>
-                <li className="flex gap-2 items-start text-emerald-700">
-                  <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-emerald-500" />
-                  <span>
-                    {tr(
-                      "ResumeScore.atsBullet.keywords",
-                      "Good use of role‑relevant keywords across experience and skills.",
-                    )}
-                  </span>
-                </li>
-                <li className="flex gap-2 items-start text-amber-700">
-                  <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-500" />
-                  <span>
-                    {tr(
-                      "ResumeScore.atsBullet.skillsWarning",
-                      "Some sections could be stronger (skills, metrics, or links). See the checklist below.",
-                    )}
-                  </span>
-                </li>
-              </ul>
-
-              {llm?.salaryRange &&
-                Number.isFinite(llm.salaryRange.min) &&
-                Number.isFinite(llm.salaryRange.max) && (
-                  <div className="mt-4 space-y-1">
-                    <p className="text-xs font-semibold tracking-wide uppercase text-slate-500">
-                      {tr("ResumeScore.salaryTitle", "Estimated monthly salary range")}
-                    </p>
-                    <p className="text-lg font-semibold text-emerald-700">
-                      {formatSalary(llm.salaryRange.min)} – {formatSalary(llm.salaryRange.max)}
-                    </p>
-                    <p className="text-[11px] text-slate-500">
-                      {tr(
-                        "ResumeScore.salarySubtitle",
-                        "Based on similar profiles, roles, and skills in your target market.",
-                      )}
-                    </p>
-                  </div>
-                )}
-          </div>
-        </div>
-      </div>
-
-      <div className="p-6 rounded-3xl border shadow-sm border-slate-200 bg-white/80">
-        <div className="mb-4">
-          <p className="text-xs font-semibold tracking-wide uppercase text-slate-500">
-            {tr("ResumeScore.keySections", "Core sections")}
-          </p>
-          <p className="text-sm text-slate-600">
-            {tr(
-              "ResumeScore.keySectionsSubtitle",
-              "Experience, skills, impact, and projects with clear percentages.",
-            )}
-          </p>
-        </div>
-        <KeyArcStack metrics={keyMetrics} />
-      </div>
-
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
-        <div className="p-5 rounded-3xl border shadow-sm border-slate-200 bg-white/80">
-          <h3 className="text-sm font-semibold text-slate-800 dark:text-white">
-            {tr("ResumeScore.detailTitle", "Detailed signals")}
-          </h3>
-          <div className="grid gap-2 mt-3">
-            {remainingBreakdown.length === 0 ? (
-              <p className="text-sm text-slate-500">
-                {tr("ResumeScore.noDetails", "We surface details once your resume is analyzed.")}
-              </p>
-            ) : (
-              remainingBreakdown.map((item) => {
-                const status = getStatusForScore(item.score, item.max);
-                return (
-                  <div
-                    key={item.category}
-                    className="flex justify-between items-center px-3 py-2 text-xs rounded-xl border border-slate-200 bg-white/70"
-                  >
-                    <div className="space-y-1">
-                      <p className="font-semibold text-slate-900">{item.category}</p>
-                      <span
-                        className={cn(
-                          "inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium",
-                          status.className,
-                        )}
-                      >
-                        {status.label}
-                      </span>
-                    </div>
-                    <div className="text-sm font-semibold text-right text-slate-700">
-                      {item.score}/{item.max}
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </div>
-        </div>
-
-        <div className="p-5 rounded-3xl border shadow-sm border-slate-200 bg-white/80">
-          <Collapsible>
-            <CollapsibleTrigger className="flex justify-between items-center px-3 py-2 w-full text-sm font-semibold text-left bg-white rounded-xl border shadow-sm border-slate-200 text-slate-800">
-              <span>{tr("ResumeScore.checklistTitle", "Resume improvement checklist")}</span>
-              <ChevronDown className="w-4 h-4 text-slate-500" />
-            </CollapsibleTrigger>
-            <CollapsibleContent className="p-3 mt-2 space-y-1 text-xs rounded-xl border border-slate-100 bg-white/70 text-slate-700">
-              <p className="mb-1 text-[11px] text-slate-500">
-                {tr(
-                  "ResumeScore.checklistIntro",
-                  "Focus on the items below to move your score closer to 100.",
-                )}
-              </p>
-              {(combinedChecklist.length
-                ? combinedChecklist
-                : [tr("ResumeScore.noInsights", "AI insights will appear here after analyzing your resume.")]
-              ).map((item, idx) => (
-                <div
-                  key={`${item}-${idx}`}
-                  className="flex items-start gap-2 rounded-lg border border-slate-100 bg-white px-2 py-1.5"
-                >
-                  <AlertTriangle className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-amber-500" />
-                  <span>{item}</span>
-                </div>
-              ))}
-            </CollapsibleContent>
-          </Collapsible>
-        </div>
-      </div>
-    </div>
-  );
+  return <ResumeScoreCardSimple data={data} />;
 }

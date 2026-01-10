@@ -6,10 +6,11 @@ import { cn } from "@workspace/ui/lib/utils";
 
 type Status = "success" | "error";
 
-type RowItem = {
+export type RowItem = {
   label: string;
   status: Status;
   badge: string;
+  details?: string[];
 };
 
 type SectionGroup = {
@@ -17,6 +18,13 @@ type SectionGroup = {
   score: string;
   scoreTone?: "amber" | "red";
   rows?: RowItem[];
+};
+
+export type ScoreCardData = {
+  score: number;
+  issues: number;
+  contentRows: RowItem[];
+  groupedSections: SectionGroup[];
 };
 
 const sectionColors = {
@@ -184,17 +192,15 @@ function Chevron({ size = 16 }: { size?: number }) {
   );
 }
 
-export function ResumeScoreCardSimple() {
-  const issues = dummyIssues;
+export function ResumeScoreCardSimple({
+  data,
+}: {
+  data?: Partial<ScoreCardData>;
+}) {
+  const issues = data?.issues ?? dummyIssues;
 
-  const collapsibleContent = useMemo(
-    () => ({
-      sections: essentialsRows,
-      ats: atsRows,
-      tailoring: tailoringRows,
-    }),
-    [],
-  );
+  const resolvedContentRows = data?.contentRows ?? contentRows;
+  const resolvedGrouped = data?.groupedSections ?? groupedSections;
 
   return (
     <div className="w-full max-w-[380px] bg-white rounded-2xl shadow-sm border border-[#e6ebf1] px-6 py-7">
@@ -203,38 +209,33 @@ export function ResumeScoreCardSimple() {
       </div>
 
       <div className="mt-4">
-        <HalfArc value={dummyMainScore} />
+        <HalfArc value={data?.score ?? dummyMainScore} />
       </div>
 
       <div className="my-6 h-px bg-[#e5e7eb]" />
 
       <div className="space-y-4">
-        <SectionHeader title="CONTENT" score={`${dummyMainScore}%`} />
-        {contentRows.map((row) => (
+        <SectionHeader title="CONTENT" score={`${data?.score ?? dummyMainScore}%`} />
+        {resolvedContentRows.map((row) => (
           <Row key={row.label} {...row} />
         ))}
       </div>
 
       <div className="mt-6 space-y-3">
-        <CollapsedSection title="SECTIONS" score="81%">
-          {collapsibleContent.sections.map((row) => (
-            <Row key={row.label} {...row} />
-          ))}
-        </CollapsedSection>
-        <CollapsedSection
-          title="ATS ESSENTIALS"
-          score="50%"
-          scoreColor={`${sectionColors.red}`}
-        >
-          {collapsibleContent.ats.map((row) => (
-            <Row key={row.label} {...row} />
-          ))}
-        </CollapsedSection>
-        <CollapsedSection title="TAILORING" score="72%">
-          {collapsibleContent.tailoring.map((row) => (
-            <Row key={row.label} {...row} />
-          ))}
-        </CollapsedSection>
+        {resolvedGrouped.map((group, idx) => (
+          <CollapsedSection
+            key={`${group.title}-${idx}`}
+            title={group.title}
+            score={group.score}
+            scoreColor={
+              group.scoreTone ? sectionColors[group.scoreTone] : sectionColors.amber
+            }
+          >
+            {(group.rows ?? []).map((row) => (
+              <Row key={row.label} {...row} />
+            ))}
+          </CollapsedSection>
+        ))}
       </div>
     </div>
   );

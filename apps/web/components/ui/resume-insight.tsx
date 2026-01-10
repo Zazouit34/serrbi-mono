@@ -2,7 +2,6 @@
 
 import { useRef, useState, useEffect } from "react";
 import { CloudUpload } from "lucide-react";
-import { ResumeScoreCard } from "@/components/ui/pdf/resume-score-card";
 import { useTranslations } from "next-intl";
 import { parsePDF } from "@/app/utils/pdf/prase-pdf";
 import {
@@ -11,6 +10,9 @@ import {
 } from "@/app/utils/pdf/score-calculator";
 import { useAuthRedirect } from "@/lib/auth-client";
 import { trpc } from "@/app/_trpc/client";
+import LoadingProcess, { loadingSteps as defaultLoadingSteps } from "@/components/ui/loading-process";
+import ResumeInsightTest, { InsightData } from "@/components/ui/resume-insight-test";
+import { ResumeScoreCard } from "@/components/ui/pdf/resume-score-card";
 
 type ResumeInsightProps = {
   requireLogin?: boolean;
@@ -264,26 +266,40 @@ export function ResumeInsight({
               </div>
 
               {analyzing && !scoreData && (
-                <div className="flex gap-3 items-center text-sm text-slate-700">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
-                  {tr(
-                    "ResumeInsight.analyzing",
-                    "AI is analyzing your resume and preparing your insights...",
-                  )}
+                <div className="w-full flex justify-center">
+                  <LoadingProcess
+                    currentStep={Math.min(
+                      defaultLoadingSteps.length - 1,
+                      Math.max(0, Math.floor(progress / 25)),
+                    )}
+                    steps={[
+                      tr("LoadingProcess.steps.parsing", "Parsing your resume"),
+                      tr("LoadingProcess.steps.analyzing", "Analyzing your experience"),
+                      tr("LoadingProcess.steps.skills", "Extracting your skills"),
+                      tr("LoadingProcess.steps.recommendations", "Generating recommendations"),
+                    ]}
+                  />
                 </div>
               )}
             </div>
           </div>
         ) : (
           <div className="p-6 bg-gradient-to-br to-white sm:p-10 from-slate-50">
-            <ResumeScoreCard
-              score={scoreData.score}
-              breakdown={scoreData.breakdown as any}
-              llm={scoreData.llm}
-              loading={false}
-              darkMode={false}
-              size="large"
-            />
+            <div className="grid gap-6 lg:grid-cols-[32%_68%] items-start">
+              <div className="w-full lg:sticky lg:top-4 self-start">
+                <ResumeScoreCard
+                  score={scoreData.score}
+                  breakdown={scoreData.breakdown as any}
+                  llm={scoreData.llm}
+                  loading={false}
+                  darkMode={false}
+                  size="large"
+                />
+              </div>
+              <div className="w-full">
+                <ResumeInsightTest data={mapToInsightData(scoreData)} />
+              </div>
+            </div>
           </div>
         )}
       </div>
@@ -310,6 +326,52 @@ function defaultBreakdown(overall: number): BreakdownItem[] {
     { category: "Professional Links", score: keywords, max: 100 },
     { category: "Bullets / Formatting", score: keywords, max: 100 },
   ];
+}
+
+function mapToInsightData(scoreData: ResumeScore): InsightData {
+  const breakdown = (scoreData.breakdown as any as BreakdownItem[]) ?? [];
+
+  const rows = breakdown.map((b) => {
+    const pct = b.max > 0 ? Math.round((b.score / b.max) * 100) : 0;
+    const issues = b.missing?.length ?? 0;
+    const status: "success" | "error" = issues > 0 || pct < 75 ? "error" : "success";
+    return {
+      label: b.category,
+      status,
+      badge: issues > 0 ? `${issues} issue${issues > 1 ? "s" : ""}` : "No issues",
+      details:
+        b.missing?.length
+          ? b.missing
+          : [
+              `Keep this section above ${pct}% by adding metrics, clear headings, and strong verbs.`,
+            ],
+    };
+  });
+
+  const groups: InsightData["groups"] = [
+    {
+      title: "CONTENT",
+      icon: "content",
+      rows: rows.slice(0, 4),
+    },
+    {
+      title: "SECTIONS",
+      icon: "sections",
+      rows: rows.slice(4, 7),
+    },
+    {
+      title: "ATS ESSENTIALS",
+      icon: "ats",
+      rows: rows.slice(7, 10),
+    },
+    {
+      title: "TAILORING",
+      icon: "tailoring",
+      rows: rows.slice(10),
+    },
+  ].filter((g) => g.rows.length);
+
+  return { groups };
 }
 
 export default ResumeInsight;

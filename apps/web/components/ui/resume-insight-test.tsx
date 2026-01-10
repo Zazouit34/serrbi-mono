@@ -28,6 +28,10 @@ type InsightGroup = {
   rows: DetailRow[];
 };
 
+export type InsightData = {
+  groups: InsightGroup[];
+};
+
 const insightGroups: InsightGroup[] = [
   {
     title: "CONTENT",
@@ -171,10 +175,11 @@ function renderIcon(key?: string) {
   }
 }
 
-export function ResumeInsightTest() {
+export function ResumeInsightTest({ data }: { data?: InsightData }) {
+  const groups = data?.groups ?? insightGroups;
   return (
     <div className="flex flex-col gap-6 w-full">
-      {insightGroups.map((group) => {
+      {groups.map((group) => {
         const issues = group.rows.filter((r) => r.status === "error").length;
         return (
           <div
@@ -196,7 +201,7 @@ export function ResumeInsightTest() {
             <div className="mt-4 space-y-4">
               {group.rows.map((row) => (
                 <Collapsible key={row.label} defaultOpen={false}>
-                  <CollapsibleTrigger className="w-full">
+                  <CollapsibleTrigger className="w-full group">
                     <div className="flex items-center justify-between gap-3 rounded-2xl bg-white px-6 py-5 shadow-sm border border-[#e5e7eb]">
                       <div className="flex gap-3 items-center">
                         <div className="w-5 h-5 rounded bg-[#eef2ff] flex items-center justify-center">
@@ -220,7 +225,7 @@ export function ResumeInsightTest() {
                         >
                           {row.badge}
                         </span>
-                        <Chevron open={false} />
+                        <Chevron className="transition-transform duration-300 group-data-[state=open]:rotate-180" />
                       </div>
                     </div>
                   </CollapsibleTrigger>
@@ -258,14 +263,14 @@ export function ResumeInsightTest() {
   );
 }
 
-function Chevron({ open }: { open?: boolean }) {
+function Chevron({ className }: { className?: string }) {
   return (
     <svg
       width="20"
       height="20"
       viewBox="0 0 24 24"
       fill="none"
-      className={cn("transition-transform duration-300", open ? "rotate-180" : "")}
+      className={cn("transition-transform duration-300", className)}
     >
       <path d="M6 9l6 6 6-6" stroke="#374151" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
