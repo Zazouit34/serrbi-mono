@@ -11,8 +11,15 @@ import {
 import { useAuthRedirect } from "@/lib/auth-client";
 import { trpc } from "@/app/_trpc/client";
 import LoadingProcess, { loadingSteps as defaultLoadingSteps } from "@/components/ui/loading-process";
-import ResumeInsightTest, { InsightData } from "@/components/ui/resume-insight-test";
 import { ResumeScoreCard } from "@/components/ui/pdf/resume-score-card";
+import Tag from "./tag";
+import { FileText, Compass, Settings2, Target, Box } from "lucide-react";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@workspace/ui/components/collapsible";
+import { cn } from "@workspace/ui/lib/utils";
 
 type ResumeInsightProps = {
   requireLogin?: boolean;
@@ -24,6 +31,23 @@ type BreakdownItem = {
   score: number;
   max: number;
   missing?: string[];
+};
+
+type DetailRow = {
+  label: string;
+  status: "success" | "error";
+  badge: string;
+  details: string[];
+};
+
+type InsightGroup = {
+  title: string;
+  icon?: string;
+  rows: DetailRow[];
+};
+
+type InsightData = {
+  groups: InsightGroup[];
 };
 
 export function ResumeInsight({
@@ -52,9 +76,9 @@ export function ResumeInsight({
           setLoading(false);
           return 100;
         }
-        return p + 4;
+        return p + 2;
       });
-    }, 25);
+    }, 120);
     return () => clearInterval(interval);
   }, [file]);
 
@@ -266,11 +290,11 @@ export function ResumeInsight({
               </div>
 
               {analyzing && !scoreData && (
-                <div className="w-full flex justify-center">
+                <div className="flex justify-center w-full">
                   <LoadingProcess
                     currentStep={Math.min(
                       defaultLoadingSteps.length - 1,
-                      Math.max(0, Math.floor(progress / 25)),
+                      Math.max(0, Math.floor(progress / 35)),
                     )}
                     steps={[
                       tr("LoadingProcess.steps.parsing", "Parsing your resume"),
@@ -286,18 +310,15 @@ export function ResumeInsight({
         ) : (
           <div className="p-6 bg-gradient-to-br to-white sm:p-10 from-slate-50">
             <div className="grid gap-6 lg:grid-cols-[32%_68%] items-start">
-              <div className="w-full lg:sticky lg:top-4 self-start">
+              <div className="self-start w-full lg:sticky lg:top-4">
                 <ResumeScoreCard
                   score={scoreData.score}
                   breakdown={scoreData.breakdown as any}
                   llm={scoreData.llm}
-                  loading={false}
-                  darkMode={false}
-                  size="large"
                 />
               </div>
               <div className="w-full">
-                <ResumeInsightTest data={mapToInsightData(scoreData)} />
+                <InsightLayout data={mapToInsightData(scoreData)} />
               </div>
             </div>
           </div>
@@ -331,48 +352,163 @@ function defaultBreakdown(overall: number): BreakdownItem[] {
 function mapToInsightData(scoreData: ResumeScore): InsightData {
   const breakdown = (scoreData.breakdown as any as BreakdownItem[]) ?? [];
 
-  const rows = breakdown.map((b) => {
+  const rows: DetailRow[] = breakdown.map((b) => {
     const pct = b.max > 0 ? Math.round((b.score / b.max) * 100) : 0;
     const issues = b.missing?.length ?? 0;
     const status: "success" | "error" = issues > 0 || pct < 75 ? "error" : "success";
     return {
       label: b.category,
       status,
-      badge: issues > 0 ? `${issues} issue${issues > 1 ? "s" : ""}` : "No issues",
+      badge: issues > 0 ? `${issues} issue${issues > 1 ? "s" : ""}` : `${pct}%`,
       details:
         b.missing?.length
           ? b.missing
           : [
-              `Keep this section above ${pct}% by adding metrics, clear headings, and strong verbs.`,
+              "An Applicant Tracking System needs clear headings and measurable outcomes.",
+              "Add specific achievements, quantify impact, and keep formatting consistent.",
+              "Use strong action verbs and avoid repetition to improve readability.",
             ],
     };
   });
 
   const groups: InsightData["groups"] = [
-    {
-      title: "CONTENT",
-      icon: "content",
-      rows: rows.slice(0, 4),
-    },
-    {
-      title: "SECTIONS",
-      icon: "sections",
-      rows: rows.slice(4, 7),
-    },
-    {
-      title: "ATS ESSENTIALS",
-      icon: "ats",
-      rows: rows.slice(7, 10),
-    },
-    {
-      title: "TAILORING",
-      icon: "tailoring",
-      rows: rows.slice(10),
-    },
+    { title: "CONTENT", icon: "content", rows: rows.slice(0, 4) },
+    { title: "SECTIONS", icon: "sections", rows: rows.slice(4, 7) },
+    { title: "ATS ESSENTIALS", icon: "ats", rows: rows.slice(7, 10) },
+    { title: "TAILORING", icon: "tailoring", rows: rows.slice(10) },
   ].filter((g) => g.rows.length);
 
   return { groups };
 }
 
-export default ResumeInsight;
+function renderIcon(key?: string) {
+  const base = "w-5 h-5";
+  switch (key) {
+    case "content":
+      return <FileText className={base + " text-indigo-500"} />;
+    case "sections":
+      return <Compass className={base + " text-sky-500"} />;
+    case "ats":
+      return <Settings2 className={base + " text-emerald-500"} />;
+    case "tailoring":
+      return <Target className={base + " text-orange-500"} />;
+    default:
+      return <Box className={base + " text-slate-500"} />;
+  }
+}
 
+function statusColor(status: "success" | "error") {
+  return status === "success"
+    ? "bg-emerald-50 text-emerald-700 border border-emerald-100"
+    : "bg-amber-50 text-amber-800 border border-amber-100";
+}
+
+function issueTagColor(count: number) {
+  if (count <= 1) return "bg-slate-100 text-slate-700";
+  if (count <= 3) return "bg-amber-100 text-amber-800";
+  return "bg-rose-100 text-rose-800";
+}
+
+function Chevron({ className }: { className?: string }) {
+  return (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      className={cn("transition-transform duration-300", className)}
+    >
+      <path d="M6 9l6 6 6-6" stroke="#374151" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function InsightLayout({ data }: { data: InsightData }) {
+  const groups = data.groups;
+  return (
+    <div className="flex flex-col gap-6 w-full">
+      {groups.map((group) => {
+        const issues = group.rows.filter((r) => r.status === "error").length;
+        return (
+          <div
+            key={group.title}
+            className="rounded-2xl border border-[#e6ebf1] bg-white p-5 shadow-sm"
+          >
+            <div className="flex gap-3 justify-between items-center">
+              <div className="flex gap-3 items-center text-slate-800">
+                <div className="w-8 h-8 rounded-lg bg-[#eef2ff] flex items-center justify-center">
+                  {renderIcon(group.icon)}
+                </div>
+                <h3 className="text-[18px] font-semibold tracking-wide text-slate-900">{group.title}</h3>
+              </div>
+              <Tag className={cn("px-4 py-1 text-sm font-medium rounded-full shadow-sm", issueTagColor(issues))}>
+                {issues} issue{issues === 1 ? "" : "s"} found
+              </Tag>
+            </div>
+
+            <div className="mt-4 space-y-4">
+              {group.rows.map((row) => (
+                <Collapsible key={row.label} defaultOpen={false}>
+                  <CollapsibleTrigger className="w-full group">
+                    <div className="flex items-center justify-between gap-3 rounded-2xl bg-white px-6 py-5 shadow-sm border border-[#e5e7eb]">
+                      <div className="flex gap-3 items-center">
+                        <div className="w-5 h-5 rounded bg-[#eef2ff] flex items-center justify-center">
+                          <div className="w-1.5 h-4 bg-[#6366f1] rounded-full" />
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <span className="text-[15px] font-semibold tracking-wide text-[#111827]">
+                            {row.label.toUpperCase()}
+                          </span>
+                          <span className="text-[13px] text-[#475467] line-clamp-2">
+                            {row.details?.[0] ?? ""}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex gap-2 items-center">
+                        <span
+                          className={cn(
+                            "text-xs font-semibold px-2.5 py-1 rounded-full",
+                            statusColor(row.status),
+                          )}
+                        >
+                          {row.badge}
+                        </span>
+                        <Chevron className="transition-transform duration-300 group-data-[state=open]:rotate-180" />
+                      </div>
+                    </div>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="px-1 pt-2 pb-1">
+                    <div className="rounded-2xl bg-white shadow-sm border border-[#e5e7eb] px-6 py-5 space-y-3">
+                      <div className="flex flex-wrap gap-2 items-center">
+                        <span
+                          className={cn(
+                            "text-xs font-semibold px-2.5 py-1 rounded-full",
+                            statusColor(row.status),
+                          )}
+                        >
+                          {row.badge}
+                        </span>
+                      </div>
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        {(row.details ?? ["Add more measurable outcomes here."]).map((detail, idx) => (
+                          <div
+                            key={`${row.label}-${idx}`}
+                            className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-[15px] text-[#374151] leading-relaxed min-h-[160px]"
+                          >
+                            {detail}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
+              ))}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+export default ResumeInsight;
