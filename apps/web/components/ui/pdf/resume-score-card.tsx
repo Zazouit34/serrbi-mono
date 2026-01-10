@@ -192,7 +192,7 @@ export function ResumeScoreCard({
     [breakdown],
   );
 
-  const groupedSections: SectionGroup[] = useMemo(() => {
+  const groupedSections = useMemo<SectionGroup[]>(() => {
     const slices = {
       content: rows.slice(0, 4),
       sections: rows.slice(4, 7),
@@ -205,7 +205,7 @@ export function ResumeScoreCard({
       {
         title: tr("ResumeInsight.atsEssentials", "ATS ESSENTIALS"),
         score: `${Math.max(0, Math.round(score - 10))}%`,
-        scoreTone: "red",
+        scoreTone: "red" as const,
         rows: slices.ats,
       },
       { title: tr("ResumeInsight.tailoring", "TAILORING"), score: `${Math.max(0, Math.round(score - 5))}%`, rows: slices.tailoring },
