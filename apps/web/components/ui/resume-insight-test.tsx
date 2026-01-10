@@ -12,7 +12,7 @@ import {
   Compass,
   Settings2,
   Target,
-  ChevronDown,
+  Box,
 } from "lucide-react";
 
 type DetailRow = {
@@ -167,7 +167,7 @@ function renderIcon(key?: string) {
     case "tailoring":
       return <Target className={base + " text-orange-500"} />;
     default:
-      return null;
+      return <Box className={base + " text-slate-500"} />;
   }
 }
 
@@ -181,12 +181,14 @@ export function ResumeInsightTest() {
             key={group.title}
             className="rounded-2xl border border-[#e6ebf1] bg-white p-5 shadow-sm"
           >
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2 text-slate-800">
-                {renderIcon(group.icon)}
-                <h3 className="text-lg font-semibold tracking-wide text-slate-900">{group.title}</h3>
+            <div className="flex gap-3 justify-between items-center">
+              <div className="flex gap-3 items-center text-slate-800">
+                <div className="w-8 h-8 rounded-lg bg-[#eef2ff] flex items-center justify-center">
+                  {renderIcon(group.icon)}
+                </div>
+                <h3 className="text-[18px] font-semibold tracking-wide text-slate-900">{group.title}</h3>
               </div>
-              <Tag className={cn("text-xs font-semibold px-3 py-1 rounded-full shadow-sm", issueTagColor(issues))}>
+              <Tag className={cn("px-4 py-1 text-sm font-medium rounded-full shadow-sm", issueTagColor(issues))}>
                 {issues} issue{issues === 1 ? "" : "s"} found
               </Tag>
             </div>
@@ -195,9 +197,36 @@ export function ResumeInsightTest() {
               {group.rows.map((row) => (
                 <Collapsible key={row.label} defaultOpen={false}>
                   <CollapsibleTrigger className="w-full">
-                    <div className="flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-4 py-3 shadow-sm border border-slate-200">
-                      <div className="flex items-center gap-3">
-                        <span className="text-[18px] font-semibold text-slate-800">{row.label}</span>
+                    <div className="flex items-center justify-between gap-3 rounded-2xl bg-white px-6 py-5 shadow-sm border border-[#e5e7eb]">
+                      <div className="flex gap-3 items-center">
+                        <div className="w-5 h-5 rounded bg-[#eef2ff] flex items-center justify-center">
+                          <div className="w-1.5 h-4 bg-[#6366f1] rounded-full" />
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <span className="text-[15px] font-semibold tracking-wide text-[#111827]">
+                            {row.label.toUpperCase()}
+                          </span>
+                          <span className="text-[13px] text-[#475467] line-clamp-2">
+                            {row.details[0]}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex gap-2 items-center">
+                        <span
+                          className={cn(
+                            "text-xs font-semibold px-2.5 py-1 rounded-full",
+                            statusColor(row.status),
+                          )}
+                        >
+                          {row.badge}
+                        </span>
+                        <Chevron open={false} />
+                      </div>
+                    </div>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="px-1 pt-2 pb-1">
+                    <div className="rounded-2xl bg-white shadow-sm border border-[#e5e7eb] px-6 py-5 space-y-3">
+                      <div className="flex flex-wrap gap-2 items-center">
                         <span
                           className={cn(
                             "text-xs font-semibold px-2.5 py-1 rounded-full",
@@ -207,19 +236,16 @@ export function ResumeInsightTest() {
                           {row.badge}
                         </span>
                       </div>
-                      <ChevronDown className="w-5 h-5 text-slate-500" />
-                    </div>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent className="px-1 pt-2 pb-1">
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      {row.details.map((detail, idx) => (
-                        <div
-                          key={`${row.label}-${idx}`}
-                          className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 shadow-sm min-h-[96px] flex items-start"
-                        >
-                          {detail}
-                        </div>
-                      ))}
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        {row.details.map((detail, idx) => (
+                          <div
+                            key={`${row.label}-${idx}`}
+                            className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-[15px] text-[#374151] leading-relaxed min-h-[160px]"
+                          >
+                            {detail}
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </CollapsibleContent>
                 </Collapsible>
@@ -232,10 +258,16 @@ export function ResumeInsightTest() {
   );
 }
 
-function Chevron() {
+function Chevron({ open }: { open?: boolean }) {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-      <path d="M6 9l6 6 6-6" stroke="#6b7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      className={cn("transition-transform duration-300", open ? "rotate-180" : "")}
+    >
+      <path d="M6 9l6 6 6-6" stroke="#374151" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
