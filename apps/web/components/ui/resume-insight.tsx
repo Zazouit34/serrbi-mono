@@ -13,7 +13,7 @@ import { trpc } from "@/app/_trpc/client";
 import LoadingProcess, { loadingSteps as defaultLoadingSteps } from "@/components/ui/loading-process";
 import { ResumeScoreCard } from "@/components/ui/pdf/resume-score-card";
 import Tag from "./tag";
-import { FileText, Compass, Settings2, Target, Box } from "lucide-react";
+import { FileText, Compass, Settings2, Target, Box, Sparkles, TrendingUp, CircleDot } from "lucide-react";
 import {
   Collapsible,
   CollapsibleContent,
@@ -38,6 +38,8 @@ type DetailRow = {
   status: "success" | "error";
   badge: string;
   details: string[];
+  scorePct?: number;
+  issueCount?: number;
 };
 
 type InsightGroup = {
@@ -308,9 +310,9 @@ export function ResumeInsight({
             </div>
           </div>
         ) : (
-          <div className="p-6 bg-gradient-to-br to-white sm:p-10 from-slate-50">
+              <div className="p-6 bg-gradient-to-br to-white sm:p-10 from-slate-50">
             <div className="grid gap-6 lg:grid-cols-[32%_68%] items-start">
-              <div className="self-start w-full lg:sticky lg:top-4">
+              <div className="self-start w-full lg:sticky lg:top-6 lg:h-fit lg:max-h-[calc(100vh-64px)]">
                 <ResumeScoreCard
                   score={scoreData.score}
                   breakdown={scoreData.breakdown as any}
@@ -356,10 +358,13 @@ function mapToInsightData(scoreData: ResumeScore): InsightData {
     const pct = b.max > 0 ? Math.round((b.score / b.max) * 100) : 0;
     const issues = b.missing?.length ?? 0;
     const status: "success" | "error" = issues > 0 || pct < 75 ? "error" : "success";
+    const issueCount = issues > 0 ? issues : status === "error" ? 1 : 0;
     return {
       label: b.category,
       status,
-      badge: issues > 0 ? `${issues} issue${issues > 1 ? "s" : ""}` : `${pct}%`,
+      badge: issueCount > 0 ? `${issueCount} issue${issueCount > 1 ? "s" : ""}` : `${pct}%`,
+      issueCount,
+      scorePct: pct,
       details:
         b.missing?.length
           ? b.missing
@@ -428,7 +433,7 @@ function InsightLayout({ data }: { data: InsightData }) {
   return (
     <div className="flex flex-col gap-6 w-full">
       {groups.map((group) => {
-        const issues = group.rows.filter((r) => r.status === "error").length;
+        const issues = group.rows.reduce((sum, r) => sum + (r.issueCount ?? (r.status === "error" ? 1 : 0)), 0);
         return (
           <div
             key={group.title}
@@ -450,10 +455,10 @@ function InsightLayout({ data }: { data: InsightData }) {
               {group.rows.map((row) => (
                 <Collapsible key={row.label} defaultOpen={false}>
                   <CollapsibleTrigger className="w-full group">
-                    <div className="flex items-center justify-between gap-3 rounded-2xl bg-white px-6 py-5 shadow-sm border border-[#e5e7eb]">
+                    <div className="flex items-center justify-between gap-3 rounded-2xl bg-white px-6 py-5 shadow-sm border border-[#e5e7eb] transition hover:shadow-md">
                       <div className="flex gap-3 items-center">
-                        <div className="w-5 h-5 rounded bg-[#eef2ff] flex items-center justify-center">
-                          <div className="w-1.5 h-4 bg-[#6366f1] rounded-full" />
+                        <div className="flex justify-center items-center w-7 h-7 bg-gradient-to-br rounded-full from-indigo-500/15 to-sky-400/20">
+                          <Sparkles className="w-4 h-4 text-indigo-500" />
                         </div>
                         <div className="flex flex-col gap-1">
                           <span className="text-[15px] font-semibold tracking-wide text-[#111827]">
@@ -478,7 +483,25 @@ function InsightLayout({ data }: { data: InsightData }) {
                     </div>
                   </CollapsibleTrigger>
                   <CollapsibleContent className="px-1 pt-2 pb-1">
-                    <div className="rounded-2xl bg-white shadow-sm border border-[#e5e7eb] px-6 py-5 space-y-3">
+                    <div className="rounded-2xl bg-white shadow-sm border border-[#e5e7eb] px-6 py-5 space-y-4">
+                      <div className="flex gap-3 justify-between items-center">
+                        <div className="flex gap-2 items-center text-sm text-slate-700">
+                          <TrendingUp className="w-4 h-4 text-indigo-500" />
+                          <span>Strength indicator</span>
+                        </div>
+                        <span className="text-xs font-semibold text-slate-600">{row.scorePct ?? 0}%</span>
+                      </div>
+                      <div className="overflow-hidden relative h-2 rounded-full bg-slate-100">
+                        <div
+                          className={cn(
+                            "absolute left-0 top-0 h-full rounded-full transition-all duration-700",
+                            row.status === "success"
+                              ? "bg-gradient-to-r from-emerald-400 via-emerald-500 to-sky-400"
+                              : "bg-gradient-to-r from-amber-400 via-rose-400 to-rose-500",
+                          )}
+                          style={{ width: `${Math.min(100, Math.max(10, row.scorePct ?? 40))}%` }}
+                        />
+                      </div>
                       <div className="flex flex-wrap gap-2 items-center">
                         <span
                           className={cn(
@@ -493,9 +516,12 @@ function InsightLayout({ data }: { data: InsightData }) {
                         {(row.details ?? ["Add more measurable outcomes here."]).map((detail, idx) => (
                           <div
                             key={`${row.label}-${idx}`}
-                            className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-[15px] text-[#374151] leading-relaxed min-h-[160px]"
+                            className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-4 text-[15px] text-[#374151] leading-relaxed min-h-[160px] shadow-[0_8px_30px_rgb(0,0,0,0.02)]"
                           >
-                            {detail}
+                            <div className="flex gap-2 items-start">
+                              <CircleDot className="mt-1 w-4 h-4 text-indigo-500" />
+                              <span>{detail}</span>
+                            </div>
                           </div>
                         ))}
                       </div>

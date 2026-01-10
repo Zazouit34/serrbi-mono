@@ -27,16 +27,19 @@ type RowItem = {
   status: Status;
   badge: string;
   details?: string[];
+  scorePct?: number;
+  issueCount?: number;
 };
 
 type SectionGroup = {
   title: string;
   score: string;
-  scoreTone?: "amber" | "red";
+  scoreTone?: "green" | "amber" | "red";
   rows?: RowItem[];
 };
 
 const sectionColors = {
+  green: "bg-emerald-50 text-emerald-700",
   amber: "bg-[#fff7ed] text-[#f59e0b]",
   red: "bg-[#fee2e2] text-[#ef4444]",
 } as const;
@@ -170,27 +173,32 @@ export function ResumeScoreCard({
   const tr = (key: string, fallback: string) =>
     (tAll as any).has?.(key) ? (tAll as any)(key) : fallback;
 
-  const issuesFromMissing = breakdown.reduce((sum, b) => sum + (b.missing?.length ?? 0), 0);
-  const issuesFromLLM = llm?.improvements?.length ?? 0;
-  const issues = issuesFromMissing + issuesFromLLM;
-
   const rows: RowItem[] = useMemo(
     () =>
       breakdown.map((b) => {
         const pct = b.max > 0 ? Math.round((b.score / b.max) * 100) : 0;
         const status: Status = pct >= 75 && !(b.missing?.length) ? "success" : "error";
-        const badge = b.missing?.length
-          ? `${b.missing.length} issue${b.missing.length > 1 ? "s" : ""}`
-          : `${pct}%`;
+        const explicitIssues = b.missing?.length ?? 0;
+        const issueCount = explicitIssues > 0 ? explicitIssues : status === "error" ? 1 : 0;
+        const badge =
+          issueCount > 0
+            ? `${issueCount} issue${issueCount > 1 ? "s" : ""}`
+            : `${pct}%`;
         return {
           label: b.category,
           status,
           badge,
           details: b.missing ?? [],
+          scorePct: pct,
+          issueCount,
         };
       }),
     [breakdown],
   );
+
+  const issuesFromRows = rows.reduce((sum, r) => sum + (r.issueCount ?? 0), 0);
+  const issuesFromLLM = llm?.improvements?.length ?? 0;
+  const issues = issuesFromRows + issuesFromLLM;
 
   const groupedSections = useMemo<SectionGroup[]>(() => {
     const slices = {
@@ -199,16 +207,39 @@ export function ResumeScoreCard({
       ats: rows.slice(7, 10),
       tailoring: rows.slice(10),
     };
+    const tone = (val: number): SectionGroup["scoreTone"] =>
+      val >= 85 ? "green" : val >= 65 ? "amber" : "red";
+    const avg = (list: RowItem[]) =>
+      list.length
+        ? Math.round(
+            list.reduce((s, r) => s + (r.scorePct ?? 0), 0) / list.length,
+          )
+        : Math.round(score);
     return [
-      { title: tr("ResumeInsight.content", "CONTENT"), score: `${Math.round(score)}%`, rows: slices.content },
-      { title: tr("ResumeInsight.sections", "SECTIONS"), score: `${Math.round(score)}%`, rows: slices.sections },
+      {
+        title: tr("ResumeInsight.content", "CONTENT"),
+        score: `${avg(slices.content)}%`,
+        scoreTone: tone(avg(slices.content)),
+        rows: slices.content,
+      },
+      {
+        title: tr("ResumeInsight.sections", "SECTIONS"),
+        score: `${avg(slices.sections)}%`,
+        scoreTone: tone(avg(slices.sections)),
+        rows: slices.sections,
+      },
       {
         title: tr("ResumeInsight.atsEssentials", "ATS ESSENTIALS"),
         score: `${Math.max(0, Math.round(score - 10))}%`,
         scoreTone: "red" as const,
         rows: slices.ats,
       },
-      { title: tr("ResumeInsight.tailoring", "TAILORING"), score: `${Math.max(0, Math.round(score - 5))}%`, rows: slices.tailoring },
+      {
+        title: tr("ResumeInsight.tailoring", "TAILORING"),
+        score: `${Math.max(0, Math.round(score - 5))}%`,
+        scoreTone: tone(Math.max(0, Math.round(score - 5))),
+        rows: slices.tailoring,
+      },
     ].filter((g) => (g.rows?.length ?? 0) > 0);
   }, [rows, score]);
 
@@ -226,15 +257,8 @@ export function ResumeScoreCard({
 
       <div className="my-6 h-px bg-[#e5e7eb]" />
 
-      <div className="space-y-4">
-        <SectionHeader title={tr("ResumeInsight.content", "CONTENT")} score={`${Math.round(score)}%`} />
-        {rows.slice(0, 4).map((row) => (
-          <Row key={row.label} {...row} />
-        ))}
-      </div>
-
       <div className="mt-6 space-y-3">
-        {groupedSections.slice(1).map((group, idx) => (
+        {groupedSections.map((group, idx) => (
           <CollapsedSection
             key={`${group.title}-${idx}`}
             title={group.title}
