@@ -10,10 +10,21 @@ import {
 } from "@/app/utils/pdf/score-calculator";
 import { useAuthRedirect } from "@/lib/auth-client";
 import { trpc } from "@/app/_trpc/client";
-import LoadingProcess, { loadingSteps as defaultLoadingSteps } from "@/components/ui/loading-process";
+import LoadingProcess, {
+  loadingSteps as defaultLoadingSteps,
+} from "@/components/ui/loading-process";
 import { ResumeScoreCard } from "@/components/ui/pdf/resume-score-card";
 import Tag from "./tag";
-import { FileText, Compass, Settings2, Target, Box, Sparkles, TrendingUp, CircleDot } from "lucide-react";
+import {
+  FileText,
+  Compass,
+  Settings2,
+  Target,
+  Box,
+  Sparkles,
+  TrendingUp,
+  CircleDot,
+} from "lucide-react";
 import {
   Collapsible,
   CollapsibleContent,
@@ -63,7 +74,8 @@ export function ResumeInsight({
   const dropRef = useRef<HTMLDivElement | null>(null);
   const tAll = useTranslations();
   const locale = useLocale();
-  const tr = (key: string, fallback: string) => (tAll as any).has?.(key) ? (tAll as any)(key) : fallback;
+  const tr = (key: string, fallback: string) =>
+    (tAll as any).has?.(key) ? (tAll as any)(key) : fallback;
 
   const authStatus = useAuthRedirect(requireLogin, callbackUrl);
 
@@ -88,7 +100,8 @@ export function ResumeInsight({
   const onFiles = (files: FileList | null) => {
     const f = files?.[0];
     if (!f) return;
-    if (f.type !== "application/pdf" && !f.name.toLowerCase().endsWith(".pdf")) return;
+    if (f.type !== "application/pdf" && !f.name.toLowerCase().endsWith(".pdf"))
+      return;
     setFile(f);
   };
 
@@ -136,25 +149,32 @@ export function ResumeInsight({
 
   const formatIssueCount = useCallback(
     (count: number) => {
-      const key = count === 1 ? "ResumeInsight.issueCount.one" : "ResumeInsight.issueCount.other";
+      const key =
+        count === 1
+          ? "ResumeInsight.issueCount.one"
+          : "ResumeInsight.issueCount.other";
       if ((tAll as any).has?.(key)) return (tAll as any)(key, { count });
       return `${count} issue${count === 1 ? "" : "s"}`;
     },
-    [tAll],
+    [tAll]
   );
 
   const formatIssuesFound = useCallback(
     (count: number) => {
-      const key = count === 1 ? "ResumeInsight.issuesFound.one" : "ResumeInsight.issuesFound.other";
+      const key =
+        count === 1
+          ? "ResumeInsight.issuesFound.one"
+          : "ResumeInsight.issuesFound.other";
       if ((tAll as any).has?.(key)) return (tAll as any)(key, { count });
       return `${formatIssueCount(count)} found`;
     },
-    [formatIssueCount, tAll],
+    [formatIssueCount, tAll]
   );
 
   const insightData = useMemo(
-    () => (scoreData ? mapToInsightData(scoreData, formatIssueCount, tr) : null),
-    [scoreData, formatIssueCount, tr],
+    () =>
+      scoreData ? mapToInsightData(scoreData, formatIssueCount, tr) : null,
+    [scoreData, formatIssueCount, tr]
   );
 
   // When a file is selected, actually parse and score like resume-listing-form
@@ -175,7 +195,8 @@ export function ResumeInsight({
           const name = (file.name || "resume").toLowerCase();
           const size = file.size || 0;
           let seed = size % 101;
-          for (let i = 0; i < name.length; i++) seed = (seed + name.charCodeAt(i)) % 101;
+          for (let i = 0; i < name.length; i++)
+            seed = (seed + name.charCodeAt(i)) % 101;
           const base = Math.max(35, Math.min(95, seed));
           setScoreData({
             score: base,
@@ -201,7 +222,7 @@ export function ResumeInsight({
         <div className="p-10 text-center rounded-3xl border border-slate-200 bg-slate-50 text-slate-700">
           {tr(
             "ResumeInsight.loginRequired",
-            "Please sign in to access the AI resume analyzer.",
+            "Please sign in to access the AI resume analyzer."
           )}
         </div>
       </section>
@@ -223,12 +244,15 @@ export function ResumeInsight({
             <div className="relative mx-auto space-y-6 max-w-3xl text-center">
               <div className="mx-auto space-y-2 max-w-2xl">
                 <h2 className="text-3xl font-semibold leading-tight sm:text-4xl text-slate-900">
-                  {tr("ResumeInsight.title", "Get your resume checked by AI in seconds")}
+                  {tr(
+                    "ResumeInsight.title",
+                    "Get your resume checked by AI in seconds"
+                  )}
                 </h2>
                 <p className="text-sm sm:text-base text-slate-600">
                   {tr(
                     "ResumeInsight.subtitle",
-                    "Drop a single PDF below. We'll score it instantly.",
+                    "Drop a single PDF below. We'll score it instantly."
                   )}
                 </p>
               </div>
@@ -238,13 +262,13 @@ export function ResumeInsight({
                   <p className="font-medium text-slate-900">
                     {tr(
                       "ResumeInsight.existingResumeTitle",
-                      "You already have a resume saved to your profile.",
+                      "You already have a resume saved to your profile."
                     )}
                   </p>
                   <p className="mt-1 text-xs text-slate-600">
                     {tr(
                       "ResumeInsight.existingResumeSubtitle",
-                      "You can analyze that resume now, or drop a new PDF below.",
+                      "You can analyze that resume now, or drop a new PDF below."
                     )}
                   </p>
                   <button
@@ -255,18 +279,22 @@ export function ResumeInsight({
                         const res = await fetch(existingResumeUrl);
                         if (!res.ok) return;
                         const blob = await res.blob();
-                        const pdfFile = new File(
-                          [blob],
-                          "resume.pdf",
-                          { type: blob.type || "application/pdf" },
-                        );
+                        const pdfFile = new File([blob], "resume.pdf", {
+                          type: blob.type || "application/pdf",
+                        });
                         setFile(pdfFile);
                       } catch (e) {
-                        console.error("Failed to load existing resume for analysis", e);
+                        console.error(
+                          "Failed to load existing resume for analysis",
+                          e
+                        );
                       }
                     }}
                   >
-                    {tr("ResumeInsight.analyzeExisting", "Analyze my saved resume")}
+                    {tr(
+                      "ResumeInsight.analyzeExisting",
+                      "Analyze my saved resume"
+                    )}
                   </button>
                 </div>
               )}
@@ -283,7 +311,10 @@ export function ResumeInsight({
                 }}
                 role="button"
                 tabIndex={0}
-                aria-label={tr("ResumeInsight.dropHint", "Drag & drop your PDF here, or click to browse")}
+                aria-label={tr(
+                  "ResumeInsight.dropHint",
+                  "Drag & drop your PDF here, or click to browse"
+                )}
               >
                 <input
                   ref={inputRef}
@@ -296,7 +327,10 @@ export function ResumeInsight({
                 {!file ? (
                   <>
                     <p className="text-sm text-slate-700">
-                      {tr("ResumeInsight.dropHint", "Drag & drop your PDF here, or click to browse")}
+                      {tr(
+                        "ResumeInsight.dropHint",
+                        "Drag & drop your PDF here, or click to browse"
+                      )}
                     </p>
                     <p className="text-xs text-slate-500">
                       {tr("ResumeInsight.dropNote", "PDF only • Max 10MB")}
@@ -304,7 +338,9 @@ export function ResumeInsight({
                   </>
                 ) : (
                   <div className="w-full">
-                    <div className="text-sm font-medium truncate text-slate-900">{file.name}</div>
+                    <div className="text-sm font-medium truncate text-slate-900">
+                      {file.name}
+                    </div>
                     <div className="overflow-hidden relative mt-2 w-full h-2 rounded-full bg-slate-200">
                       <div
                         className="absolute top-0 left-0 h-full bg-gradient-to-r from-blue-500 to-blue-400 transition-all duration-300"
@@ -320,13 +356,22 @@ export function ResumeInsight({
                   <LoadingProcess
                     currentStep={Math.min(
                       defaultLoadingSteps.length - 1,
-                      Math.max(0, Math.floor(progress / 35)),
+                      Math.max(0, Math.floor(progress / 35))
                     )}
                     steps={[
                       tr("LoadingProcess.steps.parsing", "Parsing your resume"),
-                      tr("LoadingProcess.steps.analyzing", "Analyzing your experience"),
-                      tr("LoadingProcess.steps.skills", "Extracting your skills"),
-                      tr("LoadingProcess.steps.recommendations", "Generating recommendations"),
+                      tr(
+                        "LoadingProcess.steps.analyzing",
+                        "Analyzing your experience"
+                      ),
+                      tr(
+                        "LoadingProcess.steps.skills",
+                        "Extracting your skills"
+                      ),
+                      tr(
+                        "LoadingProcess.steps.recommendations",
+                        "Generating recommendations"
+                      ),
                     ]}
                   />
                 </div>
@@ -334,9 +379,9 @@ export function ResumeInsight({
             </div>
           </div>
         ) : (
-              <div className="p-6 bg-gradient-to-br to-white sm:p-10 from-slate-50">
+          <div className="p-6 bg-gradient-to-br to-white sm:p-10 from-slate-50">
             <div className="grid gap-6 lg:grid-cols-[32%_68%] items-start">
-              <div className="self-start w-full">
+              <div className="self-start w-full lg:sticky lg:top-6">
                 <ResumeScoreCard
                   score={scoreData.score}
                   breakdown={scoreData.breakdown as any}
@@ -384,14 +429,15 @@ function defaultBreakdown(overall: number): BreakdownItem[] {
 function mapToInsightData(
   scoreData: ResumeScore,
   formatIssueCount: (count: number) => string,
-  tr: (key: string, fallback: string) => string,
+  tr: (key: string, fallback: string) => string
 ): InsightData {
   const breakdown = (scoreData.breakdown as any as BreakdownItem[]) ?? [];
 
   const rows: DetailRow[] = breakdown.map((b) => {
     const pct = b.max > 0 ? Math.round((b.score / b.max) * 100) : 0;
     const hasMissing = (b.missing?.length ?? 0) > 0;
-    const status: "success" | "error" = hasMissing || pct < 75 ? "error" : "success";
+    const status: "success" | "error" =
+      hasMissing || pct < 75 ? "error" : "success";
     const issueCount = status === "error" ? 1 : 0;
     return {
       label: b.category,
@@ -399,35 +445,46 @@ function mapToInsightData(
       badge: issueCount > 0 ? formatIssueCount(issueCount) : `${pct}%`,
       issueCount,
       scorePct: pct,
-      details:
-        b.missing?.length
-          ? b.missing
-          : [
-              tr(
-                "ResumeInsight.defaultDetail1",
-                "An Applicant Tracking System needs clear headings and measurable outcomes.",
-              ),
-              tr(
-                "ResumeInsight.defaultDetail2",
-                "Add specific achievements, quantify impact, and keep formatting consistent.",
-              ),
-              tr(
-                "ResumeInsight.defaultDetail3",
-                "Use strong action verbs and avoid repetition to improve readability.",
-              ),
-            ],
+      details: b.missing?.length
+        ? b.missing
+        : [
+            tr(
+              "ResumeInsight.defaultDetail1",
+              "An Applicant Tracking System needs clear headings and measurable outcomes."
+            ),
+            tr(
+              "ResumeInsight.defaultDetail2",
+              "Add specific achievements, quantify impact, and keep formatting consistent."
+            ),
+            tr(
+              "ResumeInsight.defaultDetail3",
+              "Use strong action verbs and avoid repetition to improve readability."
+            ),
+          ],
     };
   });
 
   const groups: InsightData["groups"] = [
-    { title: tr("ResumeInsight.content", "CONTENT"), icon: "content", rows: rows.slice(0, 4) },
-    { title: tr("ResumeInsight.sections", "SECTIONS"), icon: "sections", rows: rows.slice(4, 7) },
+    {
+      title: tr("ResumeInsight.content", "CONTENT"),
+      icon: "content",
+      rows: rows.slice(0, 4),
+    },
+    {
+      title: tr("ResumeInsight.sections", "SECTIONS"),
+      icon: "sections",
+      rows: rows.slice(4, 7),
+    },
     {
       title: tr("ResumeInsight.atsEssentials", "ATS ESSENTIALS"),
       icon: "ats",
       rows: rows.slice(7, 10),
     },
-    { title: tr("ResumeInsight.tailoring", "TAILORING"), icon: "tailoring", rows: rows.slice(10) },
+    {
+      title: tr("ResumeInsight.tailoring", "TAILORING"),
+      icon: "tailoring",
+      rows: rows.slice(10),
+    },
   ].filter((g) => g.rows.length);
 
   return { groups };
@@ -470,7 +527,13 @@ function Chevron({ className }: { className?: string }) {
       fill="none"
       className={cn("transition-transform duration-300", className)}
     >
-      <path d="M6 9l6 6 6-6" stroke="#374151" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path
+        d="M6 9l6 6 6-6"
+        stroke="#374151"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }
@@ -488,7 +551,10 @@ function InsightLayout({
   return (
     <div className="flex flex-col gap-6 w-full">
       {groups.map((group) => {
-        const issues = group.rows.reduce((sum, r) => sum + (r.issueCount ?? (r.status === "error" ? 1 : 0)), 0);
+        const issues = group.rows.reduce(
+          (sum, r) => sum + (r.issueCount ?? (r.status === "error" ? 1 : 0)),
+          0
+        );
         return (
           <div
             key={group.title}
@@ -499,9 +565,16 @@ function InsightLayout({
                 <div className="w-8 h-8 rounded-lg bg-[#eef2ff] flex items-center justify-center">
                   {renderIcon(group.icon)}
                 </div>
-                <h3 className="text-[18px] font-semibold tracking-wide text-slate-900">{group.title}</h3>
+                <h3 className="text-[18px] font-semibold tracking-wide text-slate-900">
+                  {group.title}
+                </h3>
               </div>
-              <Tag className={cn("px-4 py-1 text-sm font-medium rounded-full shadow-sm", issueTagColor(issues))}>
+              <Tag
+                className={cn(
+                  "px-4 py-1 text-sm font-medium rounded-full shadow-sm",
+                  issueTagColor(issues)
+                )}
+              >
                 {formatIssuesFound(issues)}
               </Tag>
             </div>
@@ -528,7 +601,7 @@ function InsightLayout({
                         <span
                           className={cn(
                             "text-xs font-semibold px-2.5 py-1 rounded-full",
-                            statusColor(row.status),
+                            statusColor(row.status)
                           )}
                         >
                           {row.badge}
@@ -542,9 +615,16 @@ function InsightLayout({
                       <div className="flex gap-3 justify-between items-center">
                         <div className="flex gap-2 items-center text-sm text-slate-700">
                           <TrendingUp className="w-4 h-4 text-indigo-500" />
-                        <span>{tr("ResumeInsight.strengthIndicator", "Strength indicator")}</span>
+                          <span>
+                            {tr(
+                              "ResumeInsight.strengthIndicator",
+                              "Strength indicator"
+                            )}
+                          </span>
                         </div>
-                        <span className="text-xs font-semibold text-slate-600">{row.scorePct ?? 0}%</span>
+                        <span className="text-xs font-semibold text-slate-600">
+                          {row.scorePct ?? 0}%
+                        </span>
                       </div>
                       <div className="overflow-hidden relative h-2 rounded-full bg-slate-100">
                         <div
@@ -552,23 +632,27 @@ function InsightLayout({
                             "absolute left-0 top-0 h-full rounded-full transition-all duration-700",
                             row.status === "success"
                               ? "bg-gradient-to-r from-emerald-400 via-emerald-500 to-sky-400"
-                              : "bg-gradient-to-r from-amber-400 via-rose-400 to-rose-500",
+                              : "bg-gradient-to-r from-amber-400 via-rose-400 to-rose-500"
                           )}
-                          style={{ width: `${Math.min(100, Math.max(10, row.scorePct ?? 40))}%` }}
+                          style={{
+                            width: `${Math.min(100, Math.max(10, row.scorePct ?? 40))}%`,
+                          }}
                         />
                       </div>
                       <div className="flex flex-wrap gap-2 items-center">
                         <span
                           className={cn(
                             "text-xs font-semibold px-2.5 py-1 rounded-full",
-                            statusColor(row.status),
+                            statusColor(row.status)
                           )}
                         >
                           {row.badge}
                         </span>
                       </div>
                       <div className="grid gap-3 sm:grid-cols-2">
-                        {(row.details ?? ["Add more measurable outcomes here."]).map((detail, idx) => (
+                        {(
+                          row.details ?? ["Add more measurable outcomes here."]
+                        ).map((detail, idx) => (
                           <div
                             key={`${row.label}-${idx}`}
                             className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-4 text-[15px] text-[#374151] leading-relaxed min-h-[160px] shadow-[0_8px_30px_rgb(0,0,0,0.02)]"

@@ -210,7 +210,7 @@ export function ResumeScoreCard({
       tailoring: rows.slice(10),
     };
     const tone = (val: number): SectionGroup["scoreTone"] =>
-      val >= 85 ? "green" : val >= 65 ? "amber" : "red";
+      val >= 80 ? "green" : val >= 65 ? "amber" : "red";
     const avg = (list: RowItem[]) =>
       list.length
         ? Math.round(
