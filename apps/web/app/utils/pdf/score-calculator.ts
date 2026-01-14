@@ -217,7 +217,7 @@ function scoreResumeHeuristic(textInput: string): ResumeScore {
   };
 }
 
-async function callLLMForResume(textInput: string): Promise<LLMResumeAnalysis | null> {
+async function callLLMForResume(textInput: string, locale?: string): Promise<LLMResumeAnalysis | null> {
   const response = await fetch("/api/ai/analyze", {
     method: "POST",
     headers: {
@@ -225,7 +225,7 @@ async function callLLMForResume(textInput: string): Promise<LLMResumeAnalysis | 
     },
     body: JSON.stringify({
       action: "resumeAnalysis",
-      payload: { text: textInput },
+      payload: { text: textInput, locale },
     }),
   });
 
@@ -274,13 +274,13 @@ async function callLLMForResume(textInput: string): Promise<LLMResumeAnalysis | 
   };
 }
 
-export async function scoreResume(textInput: string): Promise<ResumeScore> {
+export async function scoreResume(textInput: string, locale?: string): Promise<ResumeScore> {
   // For now, we want to rely **only** on the LLM.
   // We still reuse the heuristic breakdown just for the category bars UI,
   // but the final score + suggestions come 100% from the model.
   const base = scoreResumeHeuristic(textInput);
 
-  const llm = await callLLMForResume(textInput);
+  const llm = await callLLMForResume(textInput, locale);
 
   if (!llm) {
     // If the LLM is not available, surface an error instead of silently

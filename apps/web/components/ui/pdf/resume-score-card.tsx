@@ -46,7 +46,7 @@ const sectionColors = {
 
 const circleColor = "#f59e0b";
 
-function HalfArc({ value, issues }: { value: number; issues: number }) {
+function HalfArc({ value, issuesLabel }: { value: number; issuesLabel: string }) {
   const pct = Math.max(0, Math.min(100, value));
   const radius = 70;
   const circumference = Math.PI * radius;
@@ -74,7 +74,7 @@ function HalfArc({ value, issues }: { value: number; issues: number }) {
       </svg>
       <div className="flex absolute inset-0 flex-col justify-end items-center pb-1 pointer-events-none">
         <div className="text-[30px] font-bold text-[#f59e0b] leading-none">{pct}/100</div>
-        <p className="text-xs text-[#6b7280]">{issues} Issues</p>
+        <p className="text-xs text-[#6b7280]">{issuesLabel}</p>
       </div>
     </div>
   );
@@ -173,17 +173,20 @@ export function ResumeScoreCard({
   const tr = (key: string, fallback: string) =>
     (tAll as any).has?.(key) ? (tAll as any)(key) : fallback;
 
+  const formatIssueCount = (count: number) => {
+    const key = count === 1 ? "ResumeInsight.issueCount.one" : "ResumeInsight.issueCount.other";
+    if ((tAll as any).has?.(key)) return (tAll as any)(key, { count });
+    return `${count} issue${count === 1 ? "" : "s"}`;
+  };
+
   const rows: RowItem[] = useMemo(
     () =>
       breakdown.map((b) => {
         const pct = b.max > 0 ? Math.round((b.score / b.max) * 100) : 0;
-        const status: Status = pct >= 75 && !(b.missing?.length) ? "success" : "error";
-        const explicitIssues = b.missing?.length ?? 0;
-        const issueCount = explicitIssues > 0 ? explicitIssues : status === "error" ? 1 : 0;
-        const badge =
-          issueCount > 0
-            ? `${issueCount} issue${issueCount > 1 ? "s" : ""}`
-            : `${pct}%`;
+        const hasMissing = (b.missing?.length ?? 0) > 0;
+        const status: Status = pct >= 75 && !hasMissing ? "success" : "error";
+        const issueCount = status === "error" ? 1 : 0;
+        const badge = issueCount > 0 ? formatIssueCount(issueCount) : `${pct}%`;
         return {
           label: b.category,
           status,
@@ -196,9 +199,8 @@ export function ResumeScoreCard({
     [breakdown],
   );
 
-  const issuesFromRows = rows.reduce((sum, r) => sum + (r.issueCount ?? 0), 0);
-  const issuesFromLLM = llm?.improvements?.length ?? 0;
-  const issues = issuesFromRows + issuesFromLLM;
+  const issues = rows.reduce((sum, r) => sum + (r.issueCount ?? 0), 0);
+  const issuesLabel = formatIssueCount(issues);
 
   const groupedSections = useMemo<SectionGroup[]>(() => {
     const slices = {
@@ -244,7 +246,7 @@ export function ResumeScoreCard({
   }, [rows, score]);
 
   return (
-    <div className="w-full max-w-[380px] bg-white rounded-2xl shadow-sm border border-[#e6ebf1] px-6 py-7 lg:sticky lg:top-4">
+    <div className="w-full max-w-[380px] bg-white rounded-2xl shadow-sm border border-[#e6ebf1] px-6 py-7">
       <div className="text-center">
         <h2 className="text-[22px] font-semibold text-[#1f2937]">
           {tr("ResumeInsight.yourScore", "Your Score")}
@@ -252,7 +254,7 @@ export function ResumeScoreCard({
       </div>
 
       <div className="mt-4">
-        <HalfArc value={score} issues={issues} />
+        <HalfArc value={score} issuesLabel={issuesLabel} />
       </div>
 
       <div className="my-6 h-px bg-[#e5e7eb]" />

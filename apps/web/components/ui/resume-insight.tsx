@@ -1,8 +1,8 @@
 "use client";
 
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, useMemo, useCallback } from "react";
 import { CloudUpload } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { parsePDF } from "@/app/utils/pdf/prase-pdf";
 import {
   scoreResume,
@@ -62,6 +62,7 @@ export function ResumeInsight({
   const inputRef = useRef<HTMLInputElement | null>(null);
   const dropRef = useRef<HTMLDivElement | null>(null);
   const tAll = useTranslations();
+  const locale = useLocale();
   const tr = (key: string, fallback: string) => (tAll as any).has?.(key) ? (tAll as any)(key) : fallback;
 
   const authStatus = useAuthRedirect(requireLogin, callbackUrl);
@@ -82,7 +83,7 @@ export function ResumeInsight({
       });
     }, 120);
     return () => clearInterval(interval);
-  }, [file]);
+  }, [file, locale]);
 
   const onFiles = (files: FileList | null) => {
     const f = files?.[0];
@@ -132,6 +133,29 @@ export function ResumeInsight({
     refetchOnWindowFocus: false,
   });
   const existingResumeUrl = userData?.user?.resumeUrl as string | undefined;
+
+  const formatIssueCount = useCallback(
+    (count: number) => {
+      const key = count === 1 ? "ResumeInsight.issueCount.one" : "ResumeInsight.issueCount.other";
+      if ((tAll as any).has?.(key)) return (tAll as any)(key, { count });
+      return `${count} issue${count === 1 ? "" : "s"}`;
+    },
+    [tAll],
+  );
+
+  const formatIssuesFound = useCallback(
+    (count: number) => {
+      const key = count === 1 ? "ResumeInsight.issuesFound.one" : "ResumeInsight.issuesFound.other";
+      if ((tAll as any).has?.(key)) return (tAll as any)(key, { count });
+      return `${formatIssueCount(count)} found`;
+    },
+    [formatIssueCount, tAll],
+  );
+
+  const insightData = useMemo(
+    () => (scoreData ? mapToInsightData(scoreData, formatIssueCount, tr) : null),
+    [scoreData, formatIssueCount, tr],
+  );
 
   // When a file is selected, actually parse and score like resume-listing-form
   useEffect(() => {
@@ -312,7 +336,7 @@ export function ResumeInsight({
         ) : (
               <div className="p-6 bg-gradient-to-br to-white sm:p-10 from-slate-50">
             <div className="grid gap-6 lg:grid-cols-[32%_68%] items-start">
-              <div className="self-start w-full lg:sticky lg:top-6 lg:h-fit lg:max-h-[calc(100vh-64px)]">
+              <div className="self-start w-full">
                 <ResumeScoreCard
                   score={scoreData.score}
                   breakdown={scoreData.breakdown as any}
@@ -320,7 +344,13 @@ export function ResumeInsight({
                 />
               </div>
               <div className="w-full">
-                <InsightLayout data={mapToInsightData(scoreData)} />
+                {insightData && (
+                  <InsightLayout
+                    data={insightData}
+                    formatIssuesFound={formatIssuesFound}
+                    tr={tr}
+                  />
+                )}
               </div>
             </div>
           </div>
@@ -351,36 +381,53 @@ function defaultBreakdown(overall: number): BreakdownItem[] {
   ];
 }
 
-function mapToInsightData(scoreData: ResumeScore): InsightData {
+function mapToInsightData(
+  scoreData: ResumeScore,
+  formatIssueCount: (count: number) => string,
+  tr: (key: string, fallback: string) => string,
+): InsightData {
   const breakdown = (scoreData.breakdown as any as BreakdownItem[]) ?? [];
 
   const rows: DetailRow[] = breakdown.map((b) => {
     const pct = b.max > 0 ? Math.round((b.score / b.max) * 100) : 0;
-    const issues = b.missing?.length ?? 0;
-    const status: "success" | "error" = issues > 0 || pct < 75 ? "error" : "success";
-    const issueCount = issues > 0 ? issues : status === "error" ? 1 : 0;
+    const hasMissing = (b.missing?.length ?? 0) > 0;
+    const status: "success" | "error" = hasMissing || pct < 75 ? "error" : "success";
+    const issueCount = status === "error" ? 1 : 0;
     return {
       label: b.category,
       status,
-      badge: issueCount > 0 ? `${issueCount} issue${issueCount > 1 ? "s" : ""}` : `${pct}%`,
+      badge: issueCount > 0 ? formatIssueCount(issueCount) : `${pct}%`,
       issueCount,
       scorePct: pct,
       details:
         b.missing?.length
           ? b.missing
           : [
-              "An Applicant Tracking System needs clear headings and measurable outcomes.",
-              "Add specific achievements, quantify impact, and keep formatting consistent.",
-              "Use strong action verbs and avoid repetition to improve readability.",
+              tr(
+                "ResumeInsight.defaultDetail1",
+                "An Applicant Tracking System needs clear headings and measurable outcomes.",
+              ),
+              tr(
+                "ResumeInsight.defaultDetail2",
+                "Add specific achievements, quantify impact, and keep formatting consistent.",
+              ),
+              tr(
+                "ResumeInsight.defaultDetail3",
+                "Use strong action verbs and avoid repetition to improve readability.",
+              ),
             ],
     };
   });
 
   const groups: InsightData["groups"] = [
-    { title: "CONTENT", icon: "content", rows: rows.slice(0, 4) },
-    { title: "SECTIONS", icon: "sections", rows: rows.slice(4, 7) },
-    { title: "ATS ESSENTIALS", icon: "ats", rows: rows.slice(7, 10) },
-    { title: "TAILORING", icon: "tailoring", rows: rows.slice(10) },
+    { title: tr("ResumeInsight.content", "CONTENT"), icon: "content", rows: rows.slice(0, 4) },
+    { title: tr("ResumeInsight.sections", "SECTIONS"), icon: "sections", rows: rows.slice(4, 7) },
+    {
+      title: tr("ResumeInsight.atsEssentials", "ATS ESSENTIALS"),
+      icon: "ats",
+      rows: rows.slice(7, 10),
+    },
+    { title: tr("ResumeInsight.tailoring", "TAILORING"), icon: "tailoring", rows: rows.slice(10) },
   ].filter((g) => g.rows.length);
 
   return { groups };
@@ -428,7 +475,15 @@ function Chevron({ className }: { className?: string }) {
   );
 }
 
-function InsightLayout({ data }: { data: InsightData }) {
+function InsightLayout({
+  data,
+  formatIssuesFound,
+  tr,
+}: {
+  data: InsightData;
+  formatIssuesFound: (count: number) => string;
+  tr: (key: string, fallback: string) => string;
+}) {
   const groups = data.groups;
   return (
     <div className="flex flex-col gap-6 w-full">
@@ -447,7 +502,7 @@ function InsightLayout({ data }: { data: InsightData }) {
                 <h3 className="text-[18px] font-semibold tracking-wide text-slate-900">{group.title}</h3>
               </div>
               <Tag className={cn("px-4 py-1 text-sm font-medium rounded-full shadow-sm", issueTagColor(issues))}>
-                {issues} issue{issues === 1 ? "" : "s"} found
+                {formatIssuesFound(issues)}
               </Tag>
             </div>
 
@@ -487,7 +542,7 @@ function InsightLayout({ data }: { data: InsightData }) {
                       <div className="flex gap-3 justify-between items-center">
                         <div className="flex gap-2 items-center text-sm text-slate-700">
                           <TrendingUp className="w-4 h-4 text-indigo-500" />
-                          <span>Strength indicator</span>
+                        <span>{tr("ResumeInsight.strengthIndicator", "Strength indicator")}</span>
                         </div>
                         <span className="text-xs font-semibold text-slate-600">{row.scorePct ?? 0}%</span>
                       </div>
