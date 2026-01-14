@@ -381,7 +381,7 @@ export function ResumeInsight({
         ) : (
           <div className="p-6 bg-gradient-to-br to-white sm:p-10 from-slate-50">
             <div className="grid gap-6 lg:grid-cols-[32%_68%] items-start">
-              <div className="self-start w-full lg:sticky lg:top-12">
+              <div className="self-start w-full lg:sticky lg:top-18">
                 <ResumeScoreCard
                   score={scoreData.score}
                   breakdown={scoreData.breakdown as any}
