@@ -17,6 +17,9 @@ importers:
       prettier:
         specifier: ^3.5.1
         version: 3.6.2
+      prisma:
+        specifier: 6.15.0
+        version: 6.15.0(typescript@5.7.3)
       turbo:
         specifier: ^2.4.2
         version: 2.5.6
@@ -332,14 +335,14 @@ importers:
   packages/database:
     dependencies:
       '@prisma/client':
-        specifier: ^6.14.0
+        specifier: ^6.15.0
         version: 6.15.0(prisma@6.15.0(typescript@5.7.3))(typescript@5.7.3)
       '@vigillabs/timescale-db-core':
         specifier: ^0.0.22
         version: 0.0.22
     devDependencies:
       prisma:
-        specifier: ^6.14.0
+        specifier: ^6.15.0
         version: 6.15.0(typescript@5.7.3)
       tsx:
         specifier: ^4.7.0
@@ -4864,6 +4867,7 @@ packages:
 
   intersection-observer@0.10.0:
     resolution: {integrity: sha512-fn4bQ0Xq8FTej09YC/jqKZwtijpvARlRp6wxL5WTA6yPe2YWSJ5RJh7Nm79rK2qB0wr6iDQzH60XGq5V/7u8YQ==}
+    deprecated: The Intersection Observer polyfill is no longer needed and can safely be removed. Intersection Observer has been Baseline since 2019.
 
   intl-messageformat@10.7.18:
     resolution: {integrity: sha512-m3Ofv/X/tV8Y3tHXLohcuVuhWKo7BBq62cqY15etqmLxg2DZ34AGGgQDeR+SCta2+zICb1NX83af0GJmbQ1++g==}
@@ -6586,6 +6590,7 @@ packages:
   tar@7.4.3:
     resolution: {integrity: sha512-5S7Va8hKfV7W5U6g3aYxXmlPoZVAwUMy9AOKyF2fVuZa2UD3qZjg578OrLRt8PcNN1PleVaL/5/yYATNL0ICUw==}
     engines: {node: '>=18'}
+    deprecated: Old versions of tar are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exhorbitant rates) by contacting i@izs.me
 
   temporal-polyfill@0.2.5:
     resolution: {integrity: sha512-ye47xp8Cb0nDguAhrrDS1JT1SzwEV9e26sSsrWzVu+yPZ7LzceEcH0i2gci9jWfOfSCCgM3Qv5nOYShVUUFUXA==}

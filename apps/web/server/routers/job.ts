@@ -107,9 +107,16 @@ export const jobRouter = router({
       const city = input?.city;
       const countryIso2 = (input as any)?.countryIso2 as string | undefined;
 
-      // When a search term is provided, use PostgreSQL unaccent() for
-      // accent-insensitive matching (e.g. "Developpeur" → "Développeur").
+      // When a search term is provided, prefer semantic search (pgvector) if we can
+      // embed the query; otherwise fall back to accent-insensitive keyword search.
       if (search) {
+        let queryEmbedding: number[] | null = null;
+        try {
+          queryEmbedding = await embedText(search);
+        } catch (err) {
+          console.error("Failed to embed search query, falling back to text search", err);
+        }
+
         // Determine tenant for Morocco filtering
         let tenant: string | null = null;
         try {
@@ -163,7 +170,69 @@ export const jobRouter = router({
           idx += 1;
         }
 
-        // Accent-insensitive search across key text fields
+        // Prefer vector similarity if we successfully embedded the query and have 1024 dims.
+        const hasVectorQuery = Array.isArray(queryEmbedding) && queryEmbedding.length === 1024;
+
+        if (hasVectorQuery) {
+          // Only consider rows that have an embedding vector.
+          whereSql += ` AND "embedding_vector" IS NOT NULL`;
+
+          const embeddingParamIdx = idx;
+          const limitIdx = idx + 1;
+          const offsetIdx = idx + 2;
+
+          const embeddingLiteral = `[${queryEmbedding!.join(",")}]`;
+
+          const baseSelect = `
+          SELECT
+            "id",
+            "title",
+            "companyName",
+            "companyImage",
+            "description",
+            "category",
+            "applicationUrl",
+            "applicationEmail",
+            "wage",
+            "countryIso2",
+            "stateAbbreviation",
+            "tags",
+            "city",
+            "type",
+            "experienceLevel",
+            "locationRequirement",
+            "status",
+            "createdAt"
+          FROM "Job"
+        `;
+
+          const itemsSql = `
+          ${baseSelect}
+          ${whereSql}
+          ORDER BY "embedding_vector" <-> $${embeddingParamIdx}::vector ASC
+          LIMIT $${limitIdx} OFFSET $${offsetIdx}
+        `;
+
+          const countSql = `
+          SELECT COUNT(*)::int AS "count"
+          FROM "Job"
+          ${whereSql}
+        `;
+
+          const limit = pageSize;
+          const offset = (page - 1) * pageSize;
+
+          const [items, countRowsRaw] = await Promise.all([
+            (db as any).$queryRawUnsafe(itemsSql, ...params, embeddingLiteral, limit, offset),
+            (db as any).$queryRawUnsafe(countSql, ...params, embeddingLiteral),
+          ]);
+
+          const countRows = countRowsRaw as { count: number }[];
+          const total = countRows[0]?.count ?? 0;
+          return { items, total, page, pageSize };
+        }
+
+        // Fallback: accent-insensitive keyword search across key text fields
         whereSql += ` AND (
           unaccent(lower("title")) LIKE unaccent(lower($${idx}))
           OR unaccent(lower("description")) LIKE unaccent(lower($${idx}))
