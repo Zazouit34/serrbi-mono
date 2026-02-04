@@ -111,13 +111,13 @@ export function PreviewCards({
             );
             })}
           </div>
-          {!isSearchMode && items.length > showCount && onLoadMore && (
+          {!isSearchMode && onLoadMore && items.length >= showCount && (
             <div className="flex justify-center mt-4">
               <button
                 type="button"
                 onClick={() => {
                   setShowCount((prev) => prev + 12);
-                  onLoadMore();
+                  onLoadMore?.();
                 }}
                 className="px-4 py-2 text-sm font-medium text-gray-700 bg-white rounded-full border border-gray-200 hover:bg-gray-50"
               >

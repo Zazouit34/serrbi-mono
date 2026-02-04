@@ -20,6 +20,7 @@ import { taskCategoryValues } from "@workspace/ui/lib/task-enum";
 
 type TabType = "jobs" | "services" | "tasks";
 
+const MAX_PAGE_SIZE = 50;
 const jobCategories = jobCategoryValues;
 const serviceCategories = serviceCategoryValues;
 const taskCategories = taskCategoryValues;
@@ -61,43 +62,43 @@ function HeroSearchBarComponent({ onPreviewChange }: HeroSearchBarProps) {
 
   // Preview queries (always on)
   const previewJobsQuery = trpc.job.getJob.useQuery(
-    { page: 1, pageSize: previewPageSize, search: undefined, category: undefined },
+    { page: 1, pageSize: Math.min(previewPageSize, MAX_PAGE_SIZE), search: undefined, category: undefined },
     { refetchOnWindowFocus: false },
   );
   const previewServicesQuery = trpc.service.getService.useQuery(
     {
       page: 1,
-      pageSize: previewPageSize,
+      pageSize: Math.min(previewPageSize, MAX_PAGE_SIZE),
       search: undefined,
       serviceCategory: undefined,
     },
     { refetchOnWindowFocus: false },
   );
   const previewTasksQuery = trpc.task.getTask.useQuery(
-    { page: 1, pageSize: previewPageSize, search: undefined, category: undefined },
+    { page: 1, pageSize: Math.min(previewPageSize, MAX_PAGE_SIZE), search: undefined, category: undefined },
     { refetchOnWindowFocus: false },
   );
 
   const handleLoadMorePreview = () => {
-    setPreviewPageSize((prev) => prev + 12);
+    setPreviewPageSize((prev) => Math.min(prev + 12, MAX_PAGE_SIZE));
   };
 
   // Search result queries (manual, wider pageSize to filter top 6)
   const searchJobsQuery = trpc.job.getJob.useQuery(
-    { page: 1, pageSize: 60, search: searchQuery || undefined, category: activeTab === "jobs" ? (selectedCategory as JobCategory | undefined) : undefined },
+    { page: 1, pageSize: MAX_PAGE_SIZE, search: searchQuery || undefined, category: activeTab === "jobs" ? (selectedCategory as JobCategory | undefined) : undefined },
     { enabled: false, refetchOnWindowFocus: false },
   );
   const searchServicesQuery = trpc.service.getService.useQuery(
     {
       page: 1,
-      pageSize: 60,
+      pageSize: MAX_PAGE_SIZE,
       search: searchQuery || undefined,
       serviceCategory: activeTab === "services" ? (selectedCategory as ServiceCategory | undefined) : undefined,
     },
     { enabled: false, refetchOnWindowFocus: false },
   );
   const searchTasksQuery = trpc.task.getTask.useQuery(
-    { page: 1, pageSize: 60, search: searchQuery || undefined, category: activeTab === "tasks" ? (selectedCategory as TaskCategory | undefined) : undefined },
+    { page: 1, pageSize: MAX_PAGE_SIZE, search: searchQuery || undefined, category: activeTab === "tasks" ? (selectedCategory as TaskCategory | undefined) : undefined },
     { enabled: false, refetchOnWindowFocus: false },
   );
 
