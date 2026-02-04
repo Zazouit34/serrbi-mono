@@ -6,7 +6,7 @@ import Link from "next/link";
 import { Tabs, TabsList, TabsTrigger } from "@workspace/ui/components/tabs";
 import { Input } from "@workspace/ui/components/input";
 import { Button } from "@workspace/ui/components/button";
-import { Briefcase, Wrench, ClipboardList, Check } from "lucide-react";
+import { Briefcase, Wrench, ClipboardList, Check, Paperclip } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { isSecondaryClient } from "@/lib/domain";
 import { JobCard } from "@/components/ui/form/job/job-card";
@@ -321,9 +321,9 @@ function HeroSearchBarComponent({ onPreviewChange }: HeroSearchBarProps) {
       {/* Search Content - Ask AI panel + suggestions + results, inside its own border */}
       <div className="px-4 md:px-6 md:pb-0">
         <div className="flex flex-col gap-4 mx-auto w-full">
-          {/* Chat-like search bar */}
-          <div className="relative w-full">
-            <div className="flex flex-1 items-center pl-4 pr-16 py-3 min-h-[68px] bg-white border border-gray-200 rounded-2xl shadow-sm">
+          {/* Chat-like search box */}
+          <div className="relative p-3 w-full bg-white min-h-[120px] rounded-2xl border border-gray-200 shadow-sm">
+            <div className="flex items-center">
               <Input
                 placeholder={t("placeholder")}
                 value={searchQuery}
@@ -336,14 +336,22 @@ function HeroSearchBarComponent({ onPreviewChange }: HeroSearchBarProps) {
                 className="flex-1 px-0 text-sm text-gray-900 bg-transparent border-none shadow-none outline-none placeholder:text-gray-400 focus-visible:ring-0 focus-visible:ring-offset-0"
               />
             </div>
-            <button
-              type="button"
-              onClick={() => void handleSearch()}
-              disabled={isSearching}
-              className="absolute bottom-2 right-2 flex items-center justify-center h-12 w-12 rounded-xl bg-[#f4f4f5] border border-gray-200 disabled:opacity-60"
-            >
-              <Image src="/icons/arrow.svg" alt="Send" width={20} height={20} />
-            </button>
+            <div className="flex justify-between items-center mt-3">
+              <button
+                type="button"
+                className="flex justify-center items-center w-10 h-10 bg-white rounded-lg border border-gray-200 hover:bg-gray-50"
+              >
+                <Paperclip className="w-4 h-4 text-gray-500" />
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleSearch()}
+                disabled={isSearching}
+                className="flex items-center justify-center h-12 w-12 rounded-xl bg-[#f4f4f5] border border-gray-200 disabled:opacity-60"
+              >
+                <Image src="/icons/arrow.svg" alt="Send" width={20} height={20} />
+              </button>
+            </div>
           </div>
 
           {/* Category filter */}
