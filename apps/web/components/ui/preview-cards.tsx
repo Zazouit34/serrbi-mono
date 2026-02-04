@@ -40,7 +40,7 @@ export function PreviewCards({ title, items, type, isLoading }: PreviewCardsProp
   return (
     <div
       ref={containerRef}
-      className={`rounded-3xl border border-gray-100/80 bg-white/70 p-4 md:p-6 shadow-sm transition-all duration-700 ease-out ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}
+      className={`rounded-3xl bg-white/70 p-4 md:p-6 transition-all duration-700 ease-out ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}
     >
       {title ? (
         <div className="mb-3 text-sm font-semibold text-gray-900">{title}</div>

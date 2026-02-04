@@ -1,97 +1,93 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import Image from "next/image";
+import Link from "next/link";
 import { Tabs, TabsList, TabsTrigger } from "@workspace/ui/components/tabs";
 import { Input } from "@workspace/ui/components/input";
 import { Button } from "@workspace/ui/components/button";
-import { Search, Briefcase, Wrench, ClipboardList, Sparkles } from "lucide-react";
+import { Briefcase, Wrench, ClipboardList, Sparkles, Check } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { isSecondaryClient } from "@/lib/domain";
-import Link from "next/link";
 import { JobCard } from "@/components/ui/form/job/job-card";
 import { ServiceCard } from "@/components/ui/form/service/service-card";
 import { TaskCard } from "@/components/ui/form/task/task-card";
-import { CategoryBadge } from "@/components/ui/category-badge";
 import { PreviewCards } from "@/components/ui/preview-cards";
 import { trpc } from "@/app/_trpc/client";
+import { jobCategoryValues } from "@workspace/ui/lib/job-enum";
+import { serviceCategoryValues } from "@workspace/ui/lib/service-enum";
+import { taskCategoryValues } from "@workspace/ui/lib/task-enum";
 
 type TabType = "jobs" | "services" | "tasks";
 
-const jobCategories: string[] = [
-  "Tech",
-  "Finance",
-  "Hospitality",
-  "Health",
-  "Legal",
-  "Construction",
-  "Education",
-  "CallCenter",
-  "Auto",
-  "Cleaning",
-  "Other",
-];
+const jobCategories = jobCategoryValues;
+const serviceCategories = serviceCategoryValues;
+const taskCategories = taskCategoryValues;
 
-const serviceCategories: string[] = [
-  "Lawyer",
-  "Doctor",
-  "Education",
-  "Architect",
-  "Plumber",
-  "Electrician",
-  "Mason",
-  "Mechanic",
-  "Accountant",
-  "Esthetician",
-  "Cleaning",
-  "Teacher",
-  "Dentist",
-];
+type JobCategory = (typeof jobCategoryValues)[number];
+type ServiceCategory = (typeof serviceCategoryValues)[number];
+type TaskCategory = (typeof taskCategoryValues)[number];
 
-const taskCategories: string[] = [
-  "MultiSector",
-  "Health",
-  "Cleaning",
-  "Construction",
-  "Auto",
-  "Tech",
-  "Finance",
-  "Hospitality",
-  "Legal",
-  "Education",
-];
+const jobCategoryIcons = require("@/components/ui/config/job-filters-config").jobCategoryIcons ?? {};
+const serviceCategoryIcons = require("@/components/ui/config/service-filters-config").categoryIcons ?? {};
+const taskCategoryIcons = require("@/components/ui/config/task-filter-config").taskCategoryIcons ?? {};
 
-export function HeroSearchBar() {
+export type HeroPreviewData = {
+  items: any[];
+  type: TabType;
+  isLoading: boolean;
+  title: string;
+};
+
+type HeroSearchBarProps = {
+  onPreviewChange?: (data: HeroPreviewData) => void;
+};
+
+function HeroSearchBarComponent({ onPreviewChange }: HeroSearchBarProps) {
   const t = useTranslations("HeroSearchBar");
   const [activeTab, setActiveTab] = useState<TabType>("jobs");
   const [searchQuery, setSearchQuery] = useState("");
   const [hasSearched, setHasSearched] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<
+    JobCategory | ServiceCategory | TaskCategory | undefined
+  >(undefined);
   const isSecondary = isSecondaryClient();
 
   // Preview queries (always on, 12 max)
   const previewJobsQuery = trpc.job.getJob.useQuery(
-    { page: 1, pageSize: 12, search: searchQuery || undefined },
+    { page: 1, pageSize: 12, search: searchQuery || undefined, category: activeTab === "jobs" ? (selectedCategory as JobCategory | undefined) : undefined },
     { refetchOnWindowFocus: false },
   );
   const previewServicesQuery = trpc.service.getService.useQuery(
-    { page: 1, pageSize: 12, search: searchQuery || undefined },
+    {
+      page: 1,
+      pageSize: 12,
+      search: searchQuery || undefined,
+      serviceCategory: activeTab === "services" ? (selectedCategory as ServiceCategory | undefined) : undefined,
+    },
     { refetchOnWindowFocus: false },
   );
   const previewTasksQuery = trpc.task.getTask.useQuery(
-    { page: 1, pageSize: 12, search: searchQuery || undefined },
+    { page: 1, pageSize: 12, search: searchQuery || undefined, category: activeTab === "tasks" ? (selectedCategory as TaskCategory | undefined) : undefined },
     { refetchOnWindowFocus: false },
   );
 
   // Search result queries (manual, wider pageSize to filter top 6)
   const searchJobsQuery = trpc.job.getJob.useQuery(
-    { page: 1, pageSize: 60, search: searchQuery || undefined },
+    { page: 1, pageSize: 60, search: searchQuery || undefined, category: activeTab === "jobs" ? (selectedCategory as JobCategory | undefined) : undefined },
     { enabled: false, refetchOnWindowFocus: false },
   );
   const searchServicesQuery = trpc.service.getService.useQuery(
-    { page: 1, pageSize: 60, search: searchQuery || undefined },
+    {
+      page: 1,
+      pageSize: 60,
+      search: searchQuery || undefined,
+      serviceCategory: activeTab === "services" ? (selectedCategory as ServiceCategory | undefined) : undefined,
+    },
     { enabled: false, refetchOnWindowFocus: false },
   );
   const searchTasksQuery = trpc.task.getTask.useQuery(
-    { page: 1, pageSize: 60, search: searchQuery || undefined },
+    { page: 1, pageSize: 60, search: searchQuery || undefined, category: activeTab === "tasks" ? (selectedCategory as TaskCategory | undefined) : undefined },
     { enabled: false, refetchOnWindowFocus: false },
   );
 
@@ -270,6 +266,21 @@ export function HeroSearchBar() {
     previewTasksQuery.isLoading,
   ]);
 
+  useEffect(() => {
+    if (!onPreviewChange) return;
+    onPreviewChange({
+      items: previewData.items,
+      type: previewData.type,
+      isLoading: previewData.loading,
+      title:
+        activeTab === "jobs"
+          ? t("jobsHint")
+          : activeTab === "services"
+            ? t("servicesHint")
+            : t("tasksHint"),
+    });
+  }, [previewData, activeTab, onPreviewChange, t]);
+
   return (
     <div className="-mx-4 w-screen max-w-none sm:mx-0 md:max-w-4xl">
       {/* Tabs Header - outside AI border */}
@@ -280,6 +291,7 @@ export function HeroSearchBar() {
             onValueChange={(value) => {
               setActiveTab(value as TabType);
               setHasSearched(false);
+              setSelectedCategory(undefined);
             }}
           >
             <div className="overflow-x-auto no-scrollbar">
@@ -306,80 +318,102 @@ export function HeroSearchBar() {
       </div>
 
       {/* Search Content - Ask AI panel + suggestions + results, inside its own border */}
-      <div className="px-4 md:px-6 md:pb-4">
-        <div className="flex flex-col gap-4 p-4 mx-auto w-full bg-white rounded-3xl border shadow md:p-6">
+      <div className="px-4 md:px-6 md:pb-0">
+        <div className="flex flex-col gap-4 mx-auto w-full">
           {/* Ask AI header */}
           <h2 className="flex gap-2 items-center text-sm font-semibold text-gray-900">
             <Sparkles size={16} className="text-violet-500" />
-            <span className="bg-gradient-to-r from-[#7f5cff] to-[#ba9cff] text-transparent bg-clip-text">
-              {t("askAiTitle")}
-            </span>
+            <span>{t("askAiTitle")}</span>
           </h2>
 
           {/* AI-style search bar */}
-          <div className="flex justify-between items-center px-2 h-12 text-gray-400 rounded-full border border-gray-200">
+          <div className="flex items-center w-full">
+            <div className="flex flex-1 items-center px-4 h-[58px] bg-white border border-gray-200 rounded-full">
             <Input
               placeholder={t("placeholder")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyPress={(e) => {
+                onKeyDown={(e) => {
                 if (e.key === "Enter" && !isSearching) {
                   void handleSearch();
                 }
               }}
-              className="flex-1 px-0 pl-4 h-10 text-sm text-gray-900 bg-transparent border-none shadow-none outline-none placeholder:text-gray-400 focus-visible:ring-0 focus-visible:ring-offset-0"
+                className="flex-1 px-0 h-10 text-sm text-gray-900 bg-transparent border-none shadow-none outline-none placeholder:text-gray-400 focus-visible:ring-0 focus-visible:ring-offset-0"
             />
-            <Button
+              <button
               type="button"
               onClick={() => void handleSearch()}
               disabled={isSearching}
-              className="flex gap-1 items-center px-3 ml-2 h-9 text-sm font-medium text-white bg-black rounded-full md:px-4 md:h-10 hover:bg-gray-800 focus:ring-black disabled:opacity-60 disabled:cursor-not-allowed"
-            >
-              <Search className="size-4" />
-              <span className="hidden md:inline md:ml-1 md:pr-1">
-                {isSearching ? t("searching") : t("search")}
-              </span>
-            </Button>
-          </div>
+                className="ml-3 flex items-center justify-center h-10 w-12 rounded-xl bg-[#f4f4f5] border border-gray-200 disabled:opacity-60"
+              >
+                <Image src="/icons/arrow.svg" alt="Send" width={20} height={20} />
+              </button>
+            </div>
+                    </div>
+
+          {/* Category filter */}
+          <div className="flex flex-wrap gap-2 justify-center md:justify-start">
+            {categoryList.map((option: string) => {
+              const icons =
+                activeTab === "jobs"
+                  ? jobCategoryIcons
+                  : activeTab === "services"
+                    ? serviceCategoryIcons
+                    : taskCategoryIcons;
+              const labelKeyPrefix =
+                activeTab === "jobs"
+                  ? "Enums.JobCategory."
+                  : activeTab === "services"
+                    ? "Enums.ServiceCategory."
+                    : "Enums.TaskCategory.";
+              const IconComponent = icons[option as keyof typeof icons];
+              const isSelected = selectedCategory === option;
+              return (
+                <button
+                  key={option}
+                  onClick={() => {
+                    setSelectedCategory(isSelected ? undefined : (option as JobCategory | ServiceCategory | TaskCategory));
+                    setHasSearched(false);
+                  }}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-sm transition ${
+                    isSelected
+                      ? "border-slate-900 bg-slate-900 text-white shadow-sm"
+                      : "border-slate-200 text-slate-700 hover:bg-slate-50"
+                  }`}
+                >
+                  {IconComponent && <IconComponent className="w-3.5 h-3.5" />}
+                  {t((labelKeyPrefix + option) as any)}
+                  {isSelected && <Check className="w-3 h-3" />}
+                </button>
+              );
+            })}
+                    </div>
 
           {/* Search results (semantic/keyword) */}
           <div className="text-xs">{renderSearchCards()}</div>
         </div>
       </div>
-
-      {/* Categories Footer */}
-      <div className="px-6 pb-6">
-        <div className="flex flex-wrap gap-2 justify-center md:justify-start">
-          {categoryList.map((cat) => (
-            <CategoryBadge key={cat} category={cat} type={activeTab === "jobs" ? "job" : activeTab === "services" ? "service" : "task"} />
-          ))}
-        </div>
-        {isSecondary && (
-          <div className="flex justify-center mt-6">
+      {isSecondary && (
+      <div className="px-6 pb-4">
+          <div className="flex justify-center">
             <Link href="/jobs">
               <Button className="px-6 h-10 text-white bg-black rounded-full hover:bg-gray-800">
                 {t("browseJobs")}
               </Button>
             </Link>
           </div>
+          </div>
         )}
-      </div>
-
-      {/* Preview cards */}
-      <div className="px-4 md:px-6 pb-8">
-        <PreviewCards
-          title={
-            activeTab === "jobs"
-              ? t("jobsHint")
-              : activeTab === "services"
-                ? t("servicesHint")
-                : t("tasksHint")
-          }
-          items={previewData.items}
-          type={previewData.type}
-          isLoading={previewData.loading}
-        />
-      </div>
     </div>
   );
 }
+
+type HeroSearchBarComponentType = typeof HeroSearchBarComponent & {
+  Preview: typeof PreviewCards;
+};
+
+const HeroSearchBar = Object.assign(HeroSearchBarComponent, {
+  Preview: PreviewCards,
+}) as HeroSearchBarComponentType;
+
+export { HeroSearchBar };

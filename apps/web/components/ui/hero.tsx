@@ -1,7 +1,7 @@
 "use client";
 
-import { HeroSearchBar } from "@/components/ui/hero-search-bar";
-import { GradientText } from "@workspace/ui/components/ui/shadcn-io/gradient-text";
+import { useState } from "react";
+import { HeroSearchBar, type HeroPreviewData } from "@/components/ui/hero-search-bar";
 
 import {
   Announcement,
@@ -13,6 +13,12 @@ import { useTranslations } from "next-intl";
 
 export default function Hero() {
   const t = useTranslations("Hero");
+  const [previewData, setPreviewData] = useState<HeroPreviewData>({
+    items: [],
+    type: "jobs",
+    isLoading: false,
+    title: "",
+  });
   // avatars removed on mobile for better fit
 
   return (
@@ -32,15 +38,14 @@ export default function Hero() {
             <ArrowUpRight className="size-4 text-[#ff040e]" />
           </AnnouncementTitle>
         </Announcement>
-        <h1 className="mb-0 text-balance font-medium text-3xl md:text-[80px] xl:text-[80px] leading-tight">
-        {t("headingLine1")} <br />
-          <GradientText
-            className="font-playfair text-4xl md:text-[80px] xl:text-[80px] font-semibold"
-            text={t("headingHighlight")}
-          />
+        <h1 className="mb-0 text-balance font-semibold text-[28px] md:text-[36px] leading-tight">
+          {t("headingLine1")}
         </h1>
 
-        <HeroSearchBar />
+        <HeroSearchBar onPreviewChange={setPreviewData} />
+        <div className="w-full mt-4">
+          <HeroSearchBar.Preview {...previewData} />
+        </div>
       </div>
     </div>
   );
