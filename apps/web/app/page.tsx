@@ -12,12 +12,12 @@ export default async function Page() {
   return (
     <main className="flex relative flex-col mx-auto">
       <Hero />
-      <ShowcaseSwitcher />
+      {/*<ShowcaseSwitcher />
       <AiAutoApplySection />
       <HowItWorks />
       <PricingShowcase />
       <CarouselMain />
-      <FAQ />
+      <FAQ />*/}
       <SiteFooter />
     </main>
   );

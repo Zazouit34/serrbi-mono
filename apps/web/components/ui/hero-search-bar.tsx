@@ -1,20 +1,64 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Tabs, TabsList, TabsTrigger } from "@workspace/ui/components/tabs";
 import { Input } from "@workspace/ui/components/input";
 import { Button } from "@workspace/ui/components/button";
 import { Search, Briefcase, Wrench, ClipboardList, Sparkles } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { FaGoogle, FaAws, FaMicrosoft, FaLinkedin } from "react-icons/fa";
 import { isSecondaryClient } from "@/lib/domain";
 import Link from "next/link";
 import { JobCard } from "@/components/ui/form/job/job-card";
 import { ServiceCard } from "@/components/ui/form/service/service-card";
 import { TaskCard } from "@/components/ui/form/task/task-card";
+import { CategoryBadge } from "@/components/ui/category-badge";
+import { PreviewCards } from "@/components/ui/preview-cards";
 import { trpc } from "@/app/_trpc/client";
 
 type TabType = "jobs" | "services" | "tasks";
+
+const jobCategories: string[] = [
+  "Tech",
+  "Finance",
+  "Hospitality",
+  "Health",
+  "Legal",
+  "Construction",
+  "Education",
+  "CallCenter",
+  "Auto",
+  "Cleaning",
+  "Other",
+];
+
+const serviceCategories: string[] = [
+  "Lawyer",
+  "Doctor",
+  "Education",
+  "Architect",
+  "Plumber",
+  "Electrician",
+  "Mason",
+  "Mechanic",
+  "Accountant",
+  "Esthetician",
+  "Cleaning",
+  "Teacher",
+  "Dentist",
+];
+
+const taskCategories: string[] = [
+  "MultiSector",
+  "Health",
+  "Cleaning",
+  "Construction",
+  "Auto",
+  "Tech",
+  "Finance",
+  "Hospitality",
+  "Legal",
+  "Education",
+];
 
 export function HeroSearchBar() {
   const t = useTranslations("HeroSearchBar");
@@ -23,38 +67,38 @@ export function HeroSearchBar() {
   const [hasSearched, setHasSearched] = useState(false);
   const isSecondary = isSecondaryClient();
 
-  // Jobs query (manual trigger)
-  const jobsQuery = trpc.job.getJob.useQuery(
-    {
-      page: 1,
-      pageSize: 3,
-      search: searchQuery || undefined,
-    },
-    { enabled: false, refetchOnWindowFocus: false },
+  // Preview queries (always on, 12 max)
+  const previewJobsQuery = trpc.job.getJob.useQuery(
+    { page: 1, pageSize: 12, search: searchQuery || undefined },
+    { refetchOnWindowFocus: false },
+  );
+  const previewServicesQuery = trpc.service.getService.useQuery(
+    { page: 1, pageSize: 12, search: searchQuery || undefined },
+    { refetchOnWindowFocus: false },
+  );
+  const previewTasksQuery = trpc.task.getTask.useQuery(
+    { page: 1, pageSize: 12, search: searchQuery || undefined },
+    { refetchOnWindowFocus: false },
   );
 
-  // Services query (manual trigger)
-  const servicesQuery = trpc.service.getService.useQuery(
-    {
-      page: 1,
-      pageSize: 3,
-      search: searchQuery || undefined,
-    },
+  // Search result queries (manual, wider pageSize to filter top 6)
+  const searchJobsQuery = trpc.job.getJob.useQuery(
+    { page: 1, pageSize: 60, search: searchQuery || undefined },
     { enabled: false, refetchOnWindowFocus: false },
   );
-
-  // Tasks query (manual trigger)
-  const tasksQuery = trpc.task.getTask.useQuery(
-    {
-      page: 1,
-      pageSize: 3,
-      search: searchQuery || undefined,
-    },
+  const searchServicesQuery = trpc.service.getService.useQuery(
+    { page: 1, pageSize: 60, search: searchQuery || undefined },
+    { enabled: false, refetchOnWindowFocus: false },
+  );
+  const searchTasksQuery = trpc.task.getTask.useQuery(
+    { page: 1, pageSize: 60, search: searchQuery || undefined },
     { enabled: false, refetchOnWindowFocus: false },
   );
 
   const isSearching =
-    jobsQuery.isFetching || servicesQuery.isFetching || tasksQuery.isFetching;
+    searchJobsQuery.isFetching ||
+    searchServicesQuery.isFetching ||
+    searchTasksQuery.isFetching;
 
   const handleSearch = async (overrideQuery?: string) => {
     const effectiveQuery = (overrideQuery ?? searchQuery).trim();
@@ -76,7 +120,6 @@ export function HeroSearchBar() {
     }
 
     if (!effectiveQuery) {
-      // Clear results if user cleared the search
       setHasSearched(false);
       return;
     }
@@ -85,14 +128,14 @@ export function HeroSearchBar() {
 
     try {
       if (activeTab === "jobs") {
-        await jobsQuery.refetch();
+        await searchJobsQuery.refetch();
       } else if (activeTab === "services") {
-        await servicesQuery.refetch();
+        await searchServicesQuery.refetch();
       } else if (activeTab === "tasks") {
-        await tasksQuery.refetch();
+        await searchTasksQuery.refetch();
       }
     } catch {
-      // Errors are exposed via query.error; we show generic messages in UI
+      // Errors are surfaced via query.error
     }
   };
 
@@ -108,12 +151,124 @@ export function HeroSearchBar() {
     tasks: ClipboardList,
   };
 
-  const companyIcons = [
-    { icon: FaGoogle, name: "Google" },
-    { icon: FaAws, name: "AWS" },
-    { icon: FaMicrosoft, name: "Microsoft" },
-    { icon: FaLinkedin, name: "LinkedIn" },
-  ];
+  const renderSearchCards = () => {
+    let items: any[] = [];
+    let error: unknown = null;
+
+    if (activeTab === "jobs") {
+      items = searchJobsQuery.data?.items ?? [];
+      error = searchJobsQuery.error;
+    } else if (activeTab === "services") {
+      items = searchServicesQuery.data?.items ?? [];
+      error = searchServicesQuery.error;
+    } else {
+      items = searchTasksQuery.data?.items ?? [];
+      error = searchTasksQuery.error;
+    }
+
+    const topItems = items.slice(0, 6);
+
+    if (!isSearching && hasSearched && error) {
+      return <p className="text-xs text-red-600">{t("searchError")}</p>;
+    }
+
+    if (!isSearching && hasSearched && topItems.length === 0) {
+      const noKey =
+        activeTab === "jobs"
+          ? "noResults.jobs"
+          : activeTab === "services"
+            ? "noResults.services"
+            : "noResults.tasks";
+      return <p className="text-xs text-gray-500">{t(noKey as any)}</p>;
+    }
+
+    if (!hasSearched || topItems.length === 0) return null;
+
+    return (
+      <div className="mt-2">
+        <div className="grid gap-3 md:grid-cols-3">
+          {topItems.map((item: any) => {
+            if (activeTab === "jobs") {
+              return (
+                <JobCard
+                  key={item.id}
+                  job={{
+                    id: item.id,
+                    title: item.title,
+                    companyName: item.companyName ?? null,
+                    companyImage: item.companyImage ?? null,
+                    wage: item.wage ?? null,
+                    stateAbbreviation: item.stateAbbreviation ?? null,
+                    city: item.city ?? null,
+                    type: item.type,
+                    experienceLevel: item.experienceLevel,
+                    locationRequirement: item.locationRequirement,
+                    category: item.category,
+                    user: null,
+                    createdAt: item.createdAt,
+                    description: item.description,
+                    status: item.status,
+                  }}
+                  featured={false}
+                  compact
+                  className="h-full"
+                />
+              );
+            }
+            if (activeTab === "services") {
+              return (
+                <Link
+                  key={item.id}
+                  href={`/services?serviceCategory=${encodeURIComponent(item.serviceCategory ?? "")}`}
+                >
+                  <ServiceCard service={item} compact className="h-full" />
+                </Link>
+              );
+            }
+            return (
+              <TaskCard key={item.id} task={item} compact className="h-full" />
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
+  const categoryList = useMemo(() => {
+    if (activeTab === "jobs") return jobCategories;
+    if (activeTab === "services") return serviceCategories;
+    return taskCategories;
+  }, [activeTab]);
+
+  const previewData = useMemo(() => {
+    if (activeTab === "jobs") {
+      return {
+        items: previewJobsQuery.data?.items ?? [],
+        loading: previewJobsQuery.isLoading,
+        type: "jobs" as const,
+      };
+    }
+    if (activeTab === "services") {
+      return {
+        items: previewServicesQuery.data?.items ?? [],
+        loading: previewServicesQuery.isLoading,
+        type: "services" as const,
+      };
+    }
+    return {
+      items: previewTasksQuery.data?.items ?? [],
+      loading: previewTasksQuery.isLoading,
+      type: "tasks" as const,
+    };
+  }, [
+    activeTab,
+    previewJobsQuery.data?.items,
+    previewJobsQuery.isLoading,
+    previewServicesQuery.data?.items,
+    previewServicesQuery.isLoading,
+    previewTasksQuery.data?.items,
+    previewTasksQuery.isLoading,
+  ]);
 
   return (
     <div className="-mx-4 w-screen max-w-none sm:mx-0 md:max-w-4xl">
@@ -187,221 +342,16 @@ export function HeroSearchBar() {
             </Button>
           </div>
 
-          {/* Jobs results */}
-          {activeTab === "jobs" && (
-            <div className="mt-1 space-y-2 text-xs">
-              {!isSearching && hasSearched && jobsQuery.error && (
-                <p className="text-red-600">
-                  {t("searchError")}
-                </p>
-              )}
-
-              {!isSearching &&
-                hasSearched &&
-                !jobsQuery.error &&
-                (jobsQuery.data?.items.length ?? 0) === 0 && (
-                  <p className="text-gray-500">
-                    {t("noResults.jobs")}
-                  </p>
-                )}
-
-              {!isSearching &&
-                jobsQuery.data &&
-                jobsQuery.data.items.length > 0 && (
-                  <>
-                    {/* Mobile: horizontal scroll */}
-                    <div className="flex overflow-x-auto gap-3 pb-2 mt-2 md:hidden">
-                      {jobsQuery.data.items.map((job: any) => (
-                        <div
-                          key={job.id}
-                          className="min-w-[260px] max-w-[280px] flex-shrink-0"
-                        >
-                          <JobCard
-                            job={{
-                              id: job.id,
-                              title: job.title,
-                              companyName: job.companyName ?? null,
-                              companyImage: job.companyImage ?? null,
-                              wage: job.wage ?? null,
-                              stateAbbreviation: job.stateAbbreviation ?? null,
-                              city: job.city ?? null,
-                              type: job.type,
-                              experienceLevel: job.experienceLevel,
-                              locationRequirement: job.locationRequirement,
-                              category: job.category,
-                              user: null,
-                              createdAt: job.createdAt,
-                              description: job.description,
-                              status: job.status,
-                            }}
-                            featured={false}
-                            compact
-                            className="h-[200px] md:h-full"
-                          />
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Desktop: 3 cards side by side, no scroll */}
-                    <div className="hidden gap-3 mt-3 md:grid md:grid-cols-3">
-                      {jobsQuery.data.items.map((job: any) => (
-                        <div key={job.id} className="h-full">
-                          <JobCard
-                            job={{
-                              id: job.id,
-                              title: job.title,
-                              companyName: job.companyName ?? null,
-                              companyImage: job.companyImage ?? null,
-                              wage: job.wage ?? null,
-                              stateAbbreviation: job.stateAbbreviation ?? null,
-                              city: job.city ?? null,
-                              type: job.type,
-                              experienceLevel: job.experienceLevel,
-                              locationRequirement: job.locationRequirement,
-                              category: job.category,
-                              user: null,
-                              createdAt: job.createdAt,
-                              description: job.description,
-                              status: job.status,
-                            }}
-                            featured={false}
-                            compact
-                            className="h-full"
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  </>
-                )}
-            </div>
-          )}
-
-          {/* Services results */}
-          {activeTab === "services" && (
-            <div className="mt-1 space-y-2 text-xs">
-              {!isSearching && hasSearched && servicesQuery.error && (
-                <p className="text-red-600">
-                  {t("searchError")}
-                </p>
-              )}
-
-              {!isSearching &&
-                hasSearched &&
-                !servicesQuery.error &&
-                (servicesQuery.data?.items.length ?? 0) === 0 && (
-                  <p className="text-gray-500">
-                    {t("noResults.services")}
-                  </p>
-                )}
-
-              {!isSearching &&
-                servicesQuery.data &&
-                servicesQuery.data.items.length > 0 && (
-                  <>
-                    {/* Mobile: horizontal scroll */}
-                    <div className="flex overflow-x-auto gap-3 pb-2 mt-2 md:hidden">
-                      {servicesQuery.data.items.map((service: any) => (
-                        <div
-                          key={service.id}
-                          className="min-w-[260px] max-w-[280px] flex-shrink-0"
-                        >
-                          <Link
-                            href={`/services?serviceCategory=${encodeURIComponent(
-                              service.serviceCategory ?? "",
-                            )}`}
-                          >
-                            <ServiceCard
-                              service={service}
-                              compact
-                              className="h-full"
-                            />
-                          </Link>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Desktop: 3 cards side by side */}
-                    <div className="hidden gap-3 mt-3 md:grid md:grid-cols-3">
-                      {servicesQuery.data.items.map((service: any) => (
-                        <div key={service.id} className="h-full">
-                          <Link
-                            href={`/services?serviceCategory=${encodeURIComponent(
-                              service.serviceCategory ?? "",
-                            )}`}
-                          >
-                            <ServiceCard
-                              service={service}
-                              compact
-                              className="h-full"
-                            />
-                          </Link>
-                        </div>
-                      ))}
-                    </div>
-                  </>
-                )}
-            </div>
-          )}
-
-          {/* Tasks results */}
-          {activeTab === "tasks" && (
-            <div className="mt-1 space-y-2 text-xs">
-              {!isSearching && hasSearched && tasksQuery.error && (
-                <p className="text-red-600">
-                  {t("searchError")}
-                </p>
-              )}
-
-              {!isSearching &&
-                hasSearched &&
-                !tasksQuery.error &&
-                (tasksQuery.data?.items.length ?? 0) === 0 && (
-                  <p className="text-gray-500">
-                    {t("noResults.tasks")}
-                  </p>
-                )}
-
-              {!isSearching &&
-                tasksQuery.data &&
-                tasksQuery.data.items.length > 0 && (
-                  <>
-                    {/* Mobile: horizontal scroll */}
-                    <div className="flex overflow-x-auto gap-3 pb-2 mt-2 md:hidden">
-                      {tasksQuery.data.items.map((task: any) => (
-                        <div
-                          key={task.id}
-                          className="min-w-[260px] max-w-[280px] flex-shrink-0"
-                        >
-                          <TaskCard task={task} compact className="h-full" />
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Desktop: 3 cards side by side */}
-                    <div className="hidden gap-3 mt-3 md:grid md:grid-cols-3">
-                      {tasksQuery.data.items.map((task: any) => (
-                        <div key={task.id} className="h-full">
-                          <TaskCard task={task} compact className="h-full" />
-                        </div>
-                      ))}
-                    </div>
-                  </>
-                )}
-            </div>
-          )}
+          {/* Search results (semantic/keyword) */}
+          <div className="text-xs">{renderSearchCards()}</div>
         </div>
       </div>
 
-      {/* Company Icons Footer */}
-      <div className="px-6 pb-4">
-        <div className="flex gap-8 justify-center items-center pt-4">
-          {companyIcons.map(({ icon: Icon, name }) => (
-            <div key={name} className="flex justify-center items-center">
-              <Icon
-                className="w-6 h-6 transition-opacity hover:opacity-70"
-                title={name}
-              />
-            </div>
+      {/* Categories Footer */}
+      <div className="px-6 pb-6">
+        <div className="flex flex-wrap gap-2 justify-center md:justify-start">
+          {categoryList.map((cat) => (
+            <CategoryBadge key={cat} category={cat} type={activeTab === "jobs" ? "job" : activeTab === "services" ? "service" : "task"} />
           ))}
         </div>
         {isSecondary && (
@@ -413,6 +363,22 @@ export function HeroSearchBar() {
             </Link>
           </div>
         )}
+      </div>
+
+      {/* Preview cards */}
+      <div className="px-4 md:px-6 pb-8">
+        <PreviewCards
+          title={
+            activeTab === "jobs"
+              ? t("jobsHint")
+              : activeTab === "services"
+                ? t("servicesHint")
+                : t("tasksHint")
+          }
+          items={previewData.items}
+          type={previewData.type}
+          isLoading={previewData.loading}
+        />
       </div>
     </div>
   );
