@@ -37,6 +37,10 @@ export type HeroPreviewData = {
   type: TabType;
   isLoading: boolean;
   title: string;
+  hasSearched: boolean;
+  isSearchMode: boolean;
+  onLoadMore?: () => void;
+  loadMoreLabel?: string;
 };
 
 type HeroSearchBarProps = {
@@ -49,29 +53,34 @@ function HeroSearchBarComponent({ onPreviewChange }: HeroSearchBarProps) {
   const [activeTab, setActiveTab] = useState<TabType>("jobs");
   const [searchQuery, setSearchQuery] = useState("");
   const [hasSearched, setHasSearched] = useState(false);
+  const [previewPageSize, setPreviewPageSize] = useState(12);
   const [selectedCategory, setSelectedCategory] = useState<
     JobCategory | ServiceCategory | TaskCategory | undefined
   >(undefined);
   const isSecondary = isSecondaryClient();
 
-  // Preview queries (always on, 12 max)
+  // Preview queries (always on)
   const previewJobsQuery = trpc.job.getJob.useQuery(
-    { page: 1, pageSize: 12, search: searchQuery || undefined, category: activeTab === "jobs" ? (selectedCategory as JobCategory | undefined) : undefined },
+    { page: 1, pageSize: previewPageSize, search: undefined, category: undefined },
     { refetchOnWindowFocus: false },
   );
   const previewServicesQuery = trpc.service.getService.useQuery(
     {
       page: 1,
-      pageSize: 12,
-      search: searchQuery || undefined,
-      serviceCategory: activeTab === "services" ? (selectedCategory as ServiceCategory | undefined) : undefined,
+      pageSize: previewPageSize,
+      search: undefined,
+      serviceCategory: undefined,
     },
     { refetchOnWindowFocus: false },
   );
   const previewTasksQuery = trpc.task.getTask.useQuery(
-    { page: 1, pageSize: 12, search: searchQuery || undefined, category: activeTab === "tasks" ? (selectedCategory as TaskCategory | undefined) : undefined },
+    { page: 1, pageSize: previewPageSize, search: undefined, category: undefined },
     { refetchOnWindowFocus: false },
   );
+
+  const handleLoadMorePreview = () => {
+    setPreviewPageSize((prev) => prev + 12);
+  };
 
   // Search result queries (manual, wider pageSize to filter top 6)
   const searchJobsQuery = trpc.job.getJob.useQuery(
@@ -148,115 +157,20 @@ function HeroSearchBarComponent({ onPreviewChange }: HeroSearchBarProps) {
     tasks: ClipboardList,
   };
 
-  const renderSearchCards = () => {
-    let items: any[] = [];
-    let error: unknown = null;
-
-    if (activeTab === "jobs") {
-      items = searchJobsQuery.data?.items ?? [];
-      error = searchJobsQuery.error;
-    } else if (activeTab === "services") {
-      items = searchServicesQuery.data?.items ?? [];
-      error = searchServicesQuery.error;
-    } else {
-      items = searchTasksQuery.data?.items ?? [];
-      error = searchTasksQuery.error;
-    }
-
-    const topItems = items.slice(0, 6);
-
-    if (!isSearching && hasSearched && error) {
-      return <p className="text-xs text-red-600">{t("searchError")}</p>;
-    }
-
-    if (!isSearching && hasSearched && topItems.length === 0) {
-      const noKey =
-        activeTab === "jobs"
-          ? "noResults.jobs"
-          : activeTab === "services"
-            ? "noResults.services"
-            : "noResults.tasks";
-      return <p className="text-xs text-gray-500">{t(noKey as any)}</p>;
-    }
-
-    if (!hasSearched || topItems.length === 0) return null;
-
-    return (
-      <div className="mt-2">
-        <div className="grid gap-3 md:grid-cols-3">
-          {topItems.map((item: any) => {
-            if (activeTab === "jobs") {
-              return (
-                <JobCard
-                  key={item.id}
-                  job={{
-                    id: item.id,
-                    title: item.title,
-                    companyName: item.companyName ?? null,
-                    companyImage: item.companyImage ?? null,
-                    wage: item.wage ?? null,
-                    stateAbbreviation: item.stateAbbreviation ?? null,
-                    city: item.city ?? null,
-                    type: item.type,
-                    experienceLevel: item.experienceLevel,
-                    locationRequirement: item.locationRequirement,
-                    category: item.category,
-                    user: null,
-                    createdAt: item.createdAt,
-                    description: item.description,
-                    status: item.status,
-                  }}
-                  featured={false}
-                  compact
-                  className="h-full"
-                />
-              );
-            }
-            if (activeTab === "services") {
-              return (
-                <Link
-                  key={item.id}
-                  href={`/services?serviceCategory=${encodeURIComponent(item.serviceCategory ?? "")}`}
-                >
-                  <ServiceCard service={item} compact className="h-full" />
-                </Link>
-              );
-            }
-            return (
-              <TaskCard key={item.id} task={item} compact className="h-full" />
-            );
-          })}
-        </div>
-      </div>
-    );
-  };
-
   const categoryList = useMemo(() => {
     if (activeTab === "jobs") return jobCategories;
     if (activeTab === "services") return serviceCategories;
     return taskCategories;
   }, [activeTab]);
 
-  const previewData = useMemo(() => {
+  const previewItems = useMemo(() => {
     if (activeTab === "jobs") {
-      return {
-        items: previewJobsQuery.data?.items ?? [],
-        loading: previewJobsQuery.isLoading,
-        type: "jobs" as const,
-      };
+      return { items: previewJobsQuery.data?.items ?? [], loading: previewJobsQuery.isLoading };
     }
     if (activeTab === "services") {
-      return {
-        items: previewServicesQuery.data?.items ?? [],
-        loading: previewServicesQuery.isLoading,
-        type: "services" as const,
-      };
+      return { items: previewServicesQuery.data?.items ?? [], loading: previewServicesQuery.isLoading };
     }
-    return {
-      items: previewTasksQuery.data?.items ?? [],
-      loading: previewTasksQuery.isLoading,
-      type: "tasks" as const,
-    };
+    return { items: previewTasksQuery.data?.items ?? [], loading: previewTasksQuery.isLoading };
   }, [
     activeTab,
     previewJobsQuery.data?.items,
@@ -269,18 +183,52 @@ function HeroSearchBarComponent({ onPreviewChange }: HeroSearchBarProps) {
 
   useEffect(() => {
     if (!onPreviewChange) return;
+
+    const isSearchMode = hasSearched && !!searchQuery.trim();
+    const loading = isSearchMode
+      ? activeTab === "jobs"
+        ? searchJobsQuery.isFetching
+        : activeTab === "services"
+          ? searchServicesQuery.isFetching
+          : searchTasksQuery.isFetching
+      : previewItems.loading;
+
+    const searchItems =
+      activeTab === "jobs"
+        ? (searchJobsQuery.data?.items ?? []).slice(0, 6)
+        : activeTab === "services"
+          ? (searchServicesQuery.data?.items ?? []).slice(0, 6)
+          : (searchTasksQuery.data?.items ?? []).slice(0, 6);
+
     onPreviewChange({
-      items: previewData.items,
-      type: previewData.type,
-      isLoading: previewData.loading,
+      items: isSearchMode ? searchItems : previewItems.items,
+      type: activeTab,
+      isLoading: loading,
       title:
         activeTab === "jobs"
           ? t("jobsHint")
           : activeTab === "services"
             ? t("servicesHint")
             : t("tasksHint"),
+      hasSearched,
+      isSearchMode,
+      onLoadMore: isSearchMode ? undefined : handleLoadMorePreview,
+      loadMoreLabel: t("loadMore"),
     });
-  }, [previewData, activeTab, onPreviewChange, t]);
+  }, [
+    hasSearched,
+    searchQuery,
+    activeTab,
+    onPreviewChange,
+    t,
+    previewItems,
+    searchJobsQuery.data?.items,
+    searchServicesQuery.data?.items,
+    searchTasksQuery.data?.items,
+    searchJobsQuery.isFetching,
+    searchServicesQuery.isFetching,
+    searchTasksQuery.isFetching,
+  ]);
 
   return (
     <div className="-mx-4 w-screen max-w-none sm:mx-0 md:max-w-4xl">
@@ -293,6 +241,7 @@ function HeroSearchBarComponent({ onPreviewChange }: HeroSearchBarProps) {
               setActiveTab(value as TabType);
               setHasSearched(false);
               setSelectedCategory(undefined);
+              setPreviewPageSize(12);
             }}
           >
             <div className="overflow-x-auto no-scrollbar">
@@ -328,11 +277,6 @@ function HeroSearchBarComponent({ onPreviewChange }: HeroSearchBarProps) {
                 placeholder={t("placeholder")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !isSearching) {
-                    void handleSearch();
-                  }
-                }}
                 className="flex-1 px-0 text-sm text-gray-900 bg-transparent border-none shadow-none outline-none placeholder:text-gray-400 focus-visible:ring-0 focus-visible:ring-offset-0"
               />
             </div>
@@ -347,7 +291,7 @@ function HeroSearchBarComponent({ onPreviewChange }: HeroSearchBarProps) {
                 type="button"
                 onClick={() => void handleSearch()}
                 disabled={isSearching}
-                className="flex items-center justify-center h-12 w-12 rounded-xl bg-[#f4f4f5] border border-gray-200 disabled:opacity-60"
+                className="flex items-center justify-center h-8 w-12 rounded-xl bg-[#f4f4f5] border border-gray-200 disabled:opacity-60"
               >
                 <Image src="/icons/arrow.svg" alt="Send" width={20} height={20} />
               </button>
@@ -377,6 +321,7 @@ function HeroSearchBarComponent({ onPreviewChange }: HeroSearchBarProps) {
                   onClick={() => {
                     setSelectedCategory(isSelected ? undefined : (option as JobCategory | ServiceCategory | TaskCategory));
                     setHasSearched(false);
+                    setPreviewPageSize(12);
                   }}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-sm transition ${
                     isSelected
@@ -392,8 +337,6 @@ function HeroSearchBarComponent({ onPreviewChange }: HeroSearchBarProps) {
             })}
                     </div>
 
-          {/* Search results (semantic/keyword) */}
-          <div className="text-xs">{renderSearchCards()}</div>
         </div>
       </div>
       {isSecondary && (

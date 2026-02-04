@@ -18,6 +18,8 @@ export default function Hero() {
     type: "jobs",
     isLoading: false,
     title: "",
+    hasSearched: false,
+    isSearchMode: false,
   });
   // avatars removed on mobile for better fit
 

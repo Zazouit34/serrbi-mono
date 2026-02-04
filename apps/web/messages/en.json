@@ -311,22 +311,11 @@
     "placeholder": "Search by role, skills...",
     "search": "Search",
     "searching": "Searching...",
-    "askAiTitle": "Ask AI",
-    "jobsHint": "AI-enhanced search highlights the 3 closest job matches for your query.",
-    "servicesHint": "AI-enhanced search highlights the 3 closest services for your request.",
-    "tasksHint": "AI-enhanced search highlights the 3 closest tasks for your request.",
-    "searchingHint": {
-      "jobs": "Letting our AI search recent roles that match your query...",
-      "services": "Letting our AI search recommended services near you...",
-      "tasks": "Letting our AI search relevant tasks matching your query..."
-    },
-    "searchError": "We couldn't fetch results. Please try again.",
-    "noResults": {
-      "jobs": "No matching jobs found yet. Try different keywords or broaden your request.",
-      "services": "No services found. Try a different query.",
-      "tasks": "No tasks found. Try a different query."
-    },
-    "browseJobs": "Browse Jobs"
+    "jobsHint": "AI highlights the 6 closest job matches for your query.",
+    "servicesHint": "AI highlights the 6 closest services for your request.",
+    "tasksHint": "AI highlights the 6 closest tasks for your request.",
+    "browseJobs": "Browse Jobs",
+    "loadMore": "Load more"
   },
   "FAQ": {
     "title": "Frequently asked questions",

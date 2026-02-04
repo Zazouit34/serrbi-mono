@@ -13,11 +13,23 @@ interface PreviewCardsProps {
   items: any[];
   type: PreviewType;
   isLoading?: boolean;
+  isSearchMode?: boolean;
+  onLoadMore?: () => void;
+  loadMoreLabel?: string;
 }
 
-export function PreviewCards({ title, items, type, isLoading }: PreviewCardsProps) {
+export function PreviewCards({
+  title,
+  items,
+  type,
+  isLoading,
+  isSearchMode = false,
+  onLoadMore,
+  loadMoreLabel = "Load more",
+}: PreviewCardsProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [visible, setVisible] = useState(false);
+  const [showCount, setShowCount] = useState(isSearchMode ? 6 : 12);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -37,6 +49,10 @@ export function PreviewCards({ title, items, type, isLoading }: PreviewCardsProp
     return () => observer.disconnect();
   }, []);
 
+  useEffect(() => {
+    setShowCount(isSearchMode ? 6 : 12);
+  }, [items, isSearchMode]);
+
   return (
     <div
       ref={containerRef}
@@ -50,8 +66,9 @@ export function PreviewCards({ title, items, type, isLoading }: PreviewCardsProp
         <p className="text-sm text-gray-500">No items to show yet.</p>
       )}
       {!isLoading && items.length > 0 && (
-        <div className="grid gap-3 md:grid-cols-4">
-          {items.slice(0, 12).map((item: any) => {
+        <>
+          <div className="grid gap-3 md:grid-cols-4">
+            {items.slice(0, showCount).map((item: any) => {
             if (type === "jobs") {
               return (
                 <JobCard
@@ -92,8 +109,23 @@ export function PreviewCards({ title, items, type, isLoading }: PreviewCardsProp
             return (
               <TaskCard key={item.id} task={item} compact className="h-full" />
             );
-          })}
-        </div>
+            })}
+          </div>
+          {!isSearchMode && items.length > showCount && onLoadMore && (
+            <div className="flex justify-center mt-4">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowCount((prev) => prev + 12);
+                  onLoadMore();
+                }}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white rounded-full border border-gray-200 hover:bg-gray-50"
+              >
+                {loadMoreLabel}
+              </button>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
