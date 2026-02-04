@@ -50,8 +50,9 @@ export function PreviewCards({
   }, []);
 
   useEffect(() => {
+    // Reset only when switching between search/default modes
     setShowCount(isSearchMode ? 6 : 12);
-  }, [items, isSearchMode]);
+  }, [isSearchMode]);
 
   return (
     <div
@@ -119,7 +120,7 @@ export function PreviewCards({
                   setShowCount((prev) => prev + 12);
                   onLoadMore?.();
                 }}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white rounded-full border border-gray-200 hover:bg-gray-50"
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white rounded-lg border border-gray-200 hover:bg-gray-50"
               >
                 {loadMoreLabel}
               </button>

@@ -292,7 +292,7 @@ function HeroSearchBarComponent({ onPreviewChange }: HeroSearchBarProps) {
                 type="button"
                 onClick={() => void handleSearch()}
                 disabled={isSearching}
-                className="flex items-center justify-center h-8 w-12 rounded-xl bg-[#f4f4f5] border border-gray-200 disabled:opacity-60"
+                className="flex justify-center items-center w-12 h-8 rounded-lg border border-gray-200 disabled:opacity-60"
               >
                 <Image src="/icons/arrow.svg" alt="Send" width={20} height={20} />
               </button>
