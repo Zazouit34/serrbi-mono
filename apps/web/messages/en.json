@@ -4,6 +4,14 @@
     "hero": "Find the best talents, jobs, services and tasks",
     "cta": "Get started"
   },
+  "LoadingProcess": {
+    "steps": {
+      "parsing": "Parsing your resume",
+      "analyzing": "Analyzing your experience",
+      "skills": "Extracting your skills",
+      "recommendations": "Generating recommendations"
+    }
+  },
   "Navbar": {
     "jobs": "Jobs",
     "services": "Services",
@@ -461,7 +469,24 @@
     "analyzing": "AI is analyzing your resume, estimating salary and generating tailored suggestions...",
     "existingResumeTitle": "You already have a resume saved to your profile.",
     "existingResumeSubtitle": "You can analyze that resume now, or drop a new PDF below.",
-    "analyzeExisting": "Analyze my saved resume"
+    "analyzeExisting": "Analyze my saved resume",
+    "yourScore": "Your Score",
+    "content": "CONTENT",
+    "sections": "SECTIONS",
+    "atsEssentials": "ATS ESSENTIALS",
+    "tailoring": "TAILORING",
+    "issueCount": {
+      "one": "{count} issue",
+      "other": "{count} issues"
+    },
+    "issuesFound": {
+      "one": "{count} issue found",
+      "other": "{count} issues found"
+    },
+    "strengthIndicator": "Strength indicator",
+    "defaultDetail1": "An Applicant Tracking System needs clear headings and measurable outcomes.",
+    "defaultDetail2": "Add specific achievements, quantify impact, and keep formatting consistent.",
+    "defaultDetail3": "Use strong action verbs and avoid repetition to improve readability."
   },
   "Form": {
     "back": "Back",

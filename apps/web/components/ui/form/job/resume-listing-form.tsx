@@ -28,7 +28,7 @@ import {
   type UppyPDFUploaderHandle,
 } from "@/components/ui/uppy-pdf-uploader";
 import { Trash2 } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 
 const resumeSchema = z.object({
   resumeUrl: z.string().url("Invalid URL").optional(),
@@ -38,6 +38,7 @@ type FormValues = z.infer<typeof resumeSchema>;
 
 export default function ResumeListingForm() {
   const tResume = useTranslations("ResumeForm");
+  const locale = useLocale();
   const { data: session } = useSession();
   const { data: userData, refetch: refetchUser } = trpc.auth.userData.useQuery();
   const [isPending, startTransition] = useTransition();
@@ -72,7 +73,7 @@ export default function ResumeListingForm() {
     try {
       setAnalyzing(true);
       const text = await parsePDF(file);
-      const score = await scoreResume(text);
+      const score = await scoreResume(text, locale);
       setResumeScore(score);
     } catch (err) {
       console.error("Resume analysis failed:", err);

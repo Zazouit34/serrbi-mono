@@ -7,6 +7,7 @@ type AnalyzeAction = "resumeAnalysis" | "careerSwitch";
 
 interface ResumePayload {
   text: string;
+  locale?: string;
 }
 
 interface CareerSwitchPayload {
@@ -106,7 +107,7 @@ async function callOpenRouter(prompt: string) {
   return JSON.parse(jsonSlice);
 }
 
-function buildResumePrompt(text: string): string {
+function buildResumePrompt(text: string, locale?: string): string {
   return `
 You are an expert career coach and resume analyst.
 
@@ -120,9 +121,8 @@ Analyze the resume text below and respond ONLY in valid JSON following exactly t
 }
 
 ### Language
-- Detect whether the resume is primarily written in English, French or Arabic.
-- Write all strings in "skillGaps", "suggestedRoles" and "improvements" in the same language as the resume.
-- If you are unsure, default to English.
+- Preferred output language: ${locale || "English"}.
+- If a preferred language is provided, respond using it even if the resume is in another language. Otherwise, detect whether the resume is primarily English, French, or Arabic and respond in that language. If unsure, default to English.
 
 ### Scoring Rules
 - Increase the score for resumes that are well-written, structured, and professional.
@@ -237,7 +237,7 @@ export async function POST(req: Request) {
           { status: 400 },
         );
       }
-      prompt = buildResumePrompt(payload.text);
+      prompt = buildResumePrompt(payload.text, payload.locale);
     } else if (body.action === "careerSwitch") {
       const payload = body.payload as CareerSwitchPayload;
       if (!payload.currentRole?.trim() || !payload.interests?.trim()) {

@@ -4,6 +4,14 @@
     "hero": "Trouvez les meilleurs talents, emplois, services et tâches",
     "cta": "Commencer"
   },
+  "LoadingProcess": {
+    "steps": {
+      "parsing": "Analyse de votre CV",
+      "analyzing": "Analyse de votre expérience",
+      "skills": "Extraction de vos compétences",
+      "recommendations": "Génération des recommandations"
+    }
+  },
   "Navbar": {
     "jobs": "Emplois",
     "services": "Services",
@@ -89,7 +97,27 @@
     "dropHint": "Glissez‑déposez votre PDF ici, ou cliquez pour parcourir",
     "dropNote": "PDF uniquement • 10 Mo max",
     "analyzing": "L’IA analyse votre CV, estime votre salaire et prépare des recommandations sur mesure...",
-    "loginRequired": "Veuillez vous connecter pour accéder à l’analyseur de CV."
+    "loginRequired": "Veuillez vous connecter pour accéder à l’analyseur de CV.",
+    "existingResumeTitle": "Vous avez déjà un CV enregistré sur votre profil.",
+    "existingResumeSubtitle": "Vous pouvez analyser ce CV maintenant ou déposer un nouveau PDF ci‑dessous.",
+    "analyzeExisting": "Analyser mon CV enregistré",
+    "yourScore": "Votre score",
+    "content": "CONTENU",
+    "sections": "SECTIONS",
+    "atsEssentials": "ÉLÉMENTS ATS",
+    "tailoring": "PERSONNALISATION",
+    "issueCount": {
+      "one": "{count} problème",
+      "other": "{count} problèmes"
+    },
+    "issuesFound": {
+      "one": "{count} problème détecté",
+      "other": "{count} problèmes détectés"
+    },
+    "strengthIndicator": "Indicateur de solidité",
+    "defaultDetail1": "Un ATS a besoin de rubriques claires et de résultats mesurables.",
+    "defaultDetail2": "Ajoutez des réalisations précises, quantifiez l’impact et gardez une mise en forme cohérente.",
+    "defaultDetail3": "Utilisez des verbes d’action forts et évitez les répétitions pour améliorer la lisibilité."
   },
   "HowItWorks": {
     "title": "Comment ça marche",

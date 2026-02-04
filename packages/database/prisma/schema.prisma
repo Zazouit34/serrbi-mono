@@ -117,6 +117,8 @@ model Job {
   tags                String[]            @default([])  //skill tags
   // Dense embedding vector for semantic search (DashScope text-embedding-v4)
   embedding           Float[]             @default([])
+  // Pgvector column for efficient similarity search (1024 dims, see migration)
+  embeddingVector     Unsupported("vector")? @map("embedding_vector")
   favorites           Favorite?
   moderator           User?               @relation("JobModerator", fields: [moderatedBy], references: [id])
   user                User                @relation(fields: [userId], references: [id])
