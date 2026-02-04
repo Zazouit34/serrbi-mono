@@ -6,7 +6,7 @@ import Link from "next/link";
 import { Tabs, TabsList, TabsTrigger } from "@workspace/ui/components/tabs";
 import { Input } from "@workspace/ui/components/input";
 import { Button } from "@workspace/ui/components/button";
-import { Briefcase, Wrench, ClipboardList, Sparkles, Check } from "lucide-react";
+import { Briefcase, Wrench, ClipboardList, Check } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { isSecondaryClient } from "@/lib/domain";
 import { JobCard } from "@/components/ui/form/job/job-card";
@@ -45,6 +45,7 @@ type HeroSearchBarProps = {
 
 function HeroSearchBarComponent({ onPreviewChange }: HeroSearchBarProps) {
   const t = useTranslations("HeroSearchBar");
+  const tAll = useTranslations();
   const [activeTab, setActiveTab] = useState<TabType>("jobs");
   const [searchQuery, setSearchQuery] = useState("");
   const [hasSearched, setHasSearched] = useState(false);
@@ -320,36 +321,30 @@ function HeroSearchBarComponent({ onPreviewChange }: HeroSearchBarProps) {
       {/* Search Content - Ask AI panel + suggestions + results, inside its own border */}
       <div className="px-4 md:px-6 md:pb-0">
         <div className="flex flex-col gap-4 mx-auto w-full">
-          {/* Ask AI header */}
-          <h2 className="flex gap-2 items-center text-sm font-semibold text-gray-900">
-            <Sparkles size={16} className="text-violet-500" />
-            <span>{t("askAiTitle")}</span>
-          </h2>
-
-          {/* AI-style search bar */}
-          <div className="flex items-center w-full">
-            <div className="flex flex-1 items-center px-4 h-[58px] bg-white border border-gray-200 rounded-full">
-            <Input
-              placeholder={t("placeholder")}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+          {/* Chat-like search bar */}
+          <div className="relative w-full">
+            <div className="flex flex-1 items-center pl-4 pr-16 py-3 min-h-[68px] bg-white border border-gray-200 rounded-2xl shadow-sm">
+              <Input
+                placeholder={t("placeholder")}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={(e) => {
-                if (e.key === "Enter" && !isSearching) {
-                  void handleSearch();
-                }
-              }}
-                className="flex-1 px-0 h-10 text-sm text-gray-900 bg-transparent border-none shadow-none outline-none placeholder:text-gray-400 focus-visible:ring-0 focus-visible:ring-offset-0"
-            />
-              <button
+                  if (e.key === "Enter" && !isSearching) {
+                    void handleSearch();
+                  }
+                }}
+                className="flex-1 px-0 text-sm text-gray-900 bg-transparent border-none shadow-none outline-none placeholder:text-gray-400 focus-visible:ring-0 focus-visible:ring-offset-0"
+              />
+            </div>
+            <button
               type="button"
               onClick={() => void handleSearch()}
               disabled={isSearching}
-                className="ml-3 flex items-center justify-center h-10 w-12 rounded-xl bg-[#f4f4f5] border border-gray-200 disabled:opacity-60"
-              >
-                <Image src="/icons/arrow.svg" alt="Send" width={20} height={20} />
-              </button>
-            </div>
-                    </div>
+              className="absolute bottom-2 right-2 flex items-center justify-center h-12 w-12 rounded-xl bg-[#f4f4f5] border border-gray-200 disabled:opacity-60"
+            >
+              <Image src="/icons/arrow.svg" alt="Send" width={20} height={20} />
+            </button>
+          </div>
 
           {/* Category filter */}
           <div className="flex flex-wrap gap-2 justify-center md:justify-start">
@@ -382,7 +377,7 @@ function HeroSearchBarComponent({ onPreviewChange }: HeroSearchBarProps) {
                   }`}
                 >
                   {IconComponent && <IconComponent className="w-3.5 h-3.5" />}
-                  {t((labelKeyPrefix + option) as any)}
+                  {tAll((labelKeyPrefix + option) as any)}
                   {isSelected && <Check className="w-3 h-3" />}
                 </button>
               );

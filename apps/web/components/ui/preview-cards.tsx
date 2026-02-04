@@ -43,7 +43,7 @@ export function PreviewCards({ title, items, type, isLoading }: PreviewCardsProp
       className={`rounded-3xl bg-white/70 p-4 md:p-6 transition-all duration-700 ease-out ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}
     >
       {title ? (
-        <div className="mb-3 text-sm font-semibold text-gray-900">{title}</div>
+        <div className="mb-3 text-sm font-medium text-gray-500">{title}</div>
       ) : null}
       {isLoading && <p className="text-sm text-gray-500">Loading...</p>}
       {!isLoading && items.length === 0 && (
