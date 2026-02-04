@@ -50,7 +50,7 @@ export function PreviewCards({ title, items, type, isLoading }: PreviewCardsProp
         <p className="text-sm text-gray-500">No items to show yet.</p>
       )}
       {!isLoading && items.length > 0 && (
-        <div className="grid gap-3 md:grid-cols-3">
+        <div className="grid gap-3 md:grid-cols-4">
           {items.slice(0, 12).map((item: any) => {
             if (type === "jobs") {
               return (
