@@ -68,7 +68,7 @@ export function PreviewCards({
       )}
       {!isLoading && items.length > 0 && (
         <>
-          <div className="grid gap-3 md:grid-cols-4">
+          <div className={`grid gap-3 ${type === "jobs" ? "md:grid-cols-3" : "md:grid-cols-4"}`}>
             {items.slice(0, showCount).map((item: any) => {
             if (type === "jobs") {
               return (
