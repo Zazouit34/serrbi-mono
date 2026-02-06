@@ -57,7 +57,9 @@ export function PreviewCards({
   return (
     <div
       ref={containerRef}
-      className={`rounded-3xl bg-white/70 p-4 md:p-6 transition-all duration-700 ease-out ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}
+      className={`space-y-6 transition-all duration-700 ease-out ${
+        visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+      }`}
     >
       {title ? (
         <div className="mb-3 text-sm font-medium text-gray-500">{title}</div>
@@ -68,7 +70,11 @@ export function PreviewCards({
       )}
       {!isLoading && items.length > 0 && (
         <>
-          <div className={`grid gap-3 ${type === "jobs" ? "md:grid-cols-3" : "md:grid-cols-4"}`}>
+          <div
+            className={`grid grid-cols-1 gap-6 ${
+              type === "services" ? "md:grid-cols-4" : "md:grid-cols-3"
+            }`}
+          >
             {items.slice(0, showCount).map((item: any) => {
             if (type === "jobs") {
               return (
