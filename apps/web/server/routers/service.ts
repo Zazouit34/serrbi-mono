@@ -41,7 +41,6 @@ export const serviceRouter = router({
             type: input.type,
             price: input.price,
             embedding: serviceEmbedding,
-            embeddingVector: serviceEmbedding as any,
             stateAbbreviation: input.stateAbbreviation || null,
             city: input.city || null,
             address: input.address || null,
