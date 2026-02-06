@@ -9,6 +9,7 @@ import {
 } from "@workspace/ui/lib/validation-schemas";
 import { TRPCError } from "@trpc/server";
 import type { PrismaClient } from "@workspace/db";
+import { embedText } from "@/lib/embedding";
 
 export const serviceRouter = router({
   createService: protectedProcedure
@@ -18,6 +19,16 @@ export const serviceRouter = router({
       const user = (ctx as any).user;
 
       try {
+        // Compute an embedding for this service so it participates in semantic search.
+        let serviceEmbedding: number[] = [];
+        try {
+          serviceEmbedding = await embedText(
+            `${input.title ?? ""} ${input.displayName ?? ""} ${input.description ?? ""} ${input.serviceCategory ?? ""} ${input.type ?? ""} ${input.city ?? ""} ${input.stateAbbreviation ?? ""} price:${input.price ?? ""}`,
+          );
+        } catch (err) {
+          console.error("Failed to compute service embedding", err);
+        }
+
         const service = await db.service.create({
           data: {
             userId: user.id,
@@ -29,6 +40,8 @@ export const serviceRouter = router({
             serviceCategory: input.serviceCategory,
             type: input.type,
             price: input.price,
+            embedding: serviceEmbedding,
+            embeddingVector: serviceEmbedding as any,
             stateAbbreviation: input.stateAbbreviation || null,
             city: input.city || null,
             address: input.address || null,
@@ -83,7 +96,7 @@ export const serviceRouter = router({
     .input(serviceListQuerySchema.optional())
     .query(async ({ ctx, input }) => {
       const page = input?.page ?? 1;
-      const pageSize = input?.pageSize ?? 16;
+      const pageSize = Math.min(input?.pageSize ?? 16, 50);
       const serviceCategory = input?.serviceCategory;
       const type = input?.type;
       const search = input?.search?.trim() || "";
@@ -94,8 +107,15 @@ export const serviceRouter = router({
       // priceType removed
       const db = ctx.prisma as any;
 
-      // When a search term is provided, use unaccent() for accent-insensitive matching.
+      // When a search term is provided, prefer semantic search (pgvector) if we can embed the query; otherwise fall back to accent-insensitive keyword search.
       if (search) {
+        let queryEmbedding: number[] | null = null;
+        try {
+          queryEmbedding = await embedText(search);
+        } catch (err) {
+          console.error("Failed to embed service search query, falling back to text search", err);
+        }
+
         let whereSql = `WHERE "status" = 'published'`;
         const params: any[] = [];
         let idx = 1;
@@ -133,6 +153,96 @@ export const serviceRouter = router({
           }
         }
 
+        const hasVectorQuery = Array.isArray(queryEmbedding) && queryEmbedding.length === 1024;
+
+        if (hasVectorQuery) {
+          whereSql += ` AND "embedding_vector" IS NOT NULL`;
+
+          const embeddingParamIdx = idx;
+          const limitIdx = idx + 1;
+          const offsetIdx = idx + 2;
+
+          const embeddingLiteral = `[${queryEmbedding!.join(",")}]`;
+
+          const baseSelect = `
+          SELECT
+            "id",
+            "title",
+            "displayName",
+            "displayImage",
+            "images",
+            "description",
+            "serviceCategory",
+            "type",
+            "price",
+            "stateAbbreviation",
+            "city",
+            "address",
+            "latitude",
+            "longitude",
+            "phoneNumber",
+            "email",
+            "website",
+            "openingHours",
+            "averageRating",
+            "numberOfReviews",
+            "userId",
+            "createdAt"
+          FROM "Service"
+        `;
+
+          const itemsSql = `
+          ${baseSelect}
+          ${whereSql}
+          ORDER BY "embedding_vector" <-> $${embeddingParamIdx}::vector ASC
+          LIMIT $${limitIdx} OFFSET $${offsetIdx}
+        `;
+
+          const countSql = `
+          SELECT COUNT(*)::int AS "count"
+          FROM "Service"
+          ${whereSql}
+        `;
+
+          const limit = pageSize;
+          const offset = (page - 1) * pageSize;
+
+          const [rawItems, countRowsRaw] = await Promise.all([
+            db.$queryRawUnsafe(itemsSql, ...params, embeddingLiteral, limit, offset),
+            db.$queryRawUnsafe(countSql, ...params, embeddingLiteral),
+          ]);
+
+          const countRows = countRowsRaw as { count: number }[];
+          const total = countRows[0]?.count ?? 0;
+
+          const userIds = Array.from(new Set((rawItems as any[]).map((s) => s.userId).filter(Boolean)));
+          const usersById: Record<string, { name: string | null; image: string | null }> =
+            userIds.length === 0
+              ? {}
+              : (
+                  await db.user.findMany({
+                    where: { id: { in: userIds } },
+                    select: { id: true, name: true, image: true },
+                  })
+                ).reduce(
+                  (acc: any, u: any) => ({
+                    ...acc,
+                    [u.id]: { name: u.name ?? null, image: u.image ?? null },
+                  }),
+                  {},
+                );
+
+          const items = (rawItems as any[]).map((s) => ({
+            ...s,
+            images: s.images ? JSON.parse(s.images) : [],
+            openingHours: s.openingHours ? JSON.parse(s.openingHours) : null,
+            user: s.userId ? usersById[s.userId] ?? { name: null, image: null } : null,
+          }));
+
+          return { items, total, page, pageSize };
+        }
+
+        // Fallback: accent-insensitive keyword search
         whereSql += ` AND (
           unaccent(lower("title")) LIKE unaccent(lower($${idx}))
           OR unaccent(lower("description")) LIKE unaccent(lower($${idx}))
@@ -197,10 +307,7 @@ export const serviceRouter = router({
         const countRows = countRowsRaw as { count: number }[];
         const total = countRows[0]?.count ?? 0;
 
-        // We don't have joined user info in the raw query; re-fetch minimal user info.
-        const userIds = Array.from(
-          new Set((rawItems as any[]).map((s) => s.userId).filter(Boolean)),
-        );
+        const userIds = Array.from(new Set((rawItems as any[]).map((s) => s.userId).filter(Boolean)));
         const usersById: Record<string, { name: string | null; image: string | null }> =
           userIds.length === 0
             ? {}
@@ -224,12 +331,7 @@ export const serviceRouter = router({
           user: s.userId ? usersById[s.userId] ?? { name: null, image: null } : null,
         }));
 
-        return {
-          items,
-          total,
-          page,
-          pageSize,
-        };
+        return { items, total, page, pageSize };
       }
 
       // Default path (no search term): keep existing Prisma query builder.

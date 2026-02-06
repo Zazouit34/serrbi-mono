@@ -161,6 +161,8 @@ model Service {
   title             String
   description       String
   price             Int
+  // Dense embedding vector for semantic search
+  embedding         Float[]            @default([])
   city              String?
   stateAbbreviation String?
   address           String?
@@ -172,6 +174,8 @@ model Service {
   openingHours      String?
   averageRating     Float?             
   numberOfReviews   Int                @default(0)
+  // Pgvector column for efficient similarity search (1024 dims, see migration)
+  embeddingVector   Unsupported("vector")? @map("embedding_vector")
   status            ServiceStatus      @default(pending)
   rejectionReason   String?
   moderatedAt       DateTime?

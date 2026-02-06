@@ -92,7 +92,7 @@ export function PreviewCards({
                     status: item.status,
                   }}
                   featured={false}
-                  compact
+                 
                   className="h-full"
                 />
               );
@@ -103,12 +103,12 @@ export function PreviewCards({
                   key={item.id}
                   href={`/services?serviceCategory=${encodeURIComponent(item.serviceCategory ?? "")}`}
                 >
-                  <ServiceCard service={item} compact className="h-full" />
+                  <ServiceCard service={item} className="h-full" />
                 </Link>
               );
             }
             return (
-              <TaskCard key={item.id} task={item} compact className="h-full" />
+              <TaskCard key={item.id} task={item} className="h-full" />
             );
             })}
           </div>

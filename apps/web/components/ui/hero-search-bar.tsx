@@ -60,9 +60,21 @@ function HeroSearchBarComponent({ onPreviewChange }: HeroSearchBarProps) {
   >(undefined);
   const isSecondary = isSecondaryClient();
 
+  const selectedJobCategory =
+    activeTab === "jobs" ? (selectedCategory as JobCategory | undefined) : undefined;
+  const selectedServiceCategory =
+    activeTab === "services" ? (selectedCategory as ServiceCategory | undefined) : undefined;
+  const selectedTaskCategory =
+    activeTab === "tasks" ? (selectedCategory as TaskCategory | undefined) : undefined;
+
   // Preview queries (always on)
   const previewJobsQuery = trpc.job.getJob.useQuery(
-    { page: 1, pageSize: Math.min(previewPageSize, MAX_PAGE_SIZE), search: undefined, category: undefined },
+    {
+      page: 1,
+      pageSize: Math.min(previewPageSize, MAX_PAGE_SIZE),
+      search: undefined,
+      category: selectedJobCategory,
+    },
     { refetchOnWindowFocus: false },
   );
   const previewServicesQuery = trpc.service.getService.useQuery(
@@ -70,12 +82,17 @@ function HeroSearchBarComponent({ onPreviewChange }: HeroSearchBarProps) {
       page: 1,
       pageSize: Math.min(previewPageSize, MAX_PAGE_SIZE),
       search: undefined,
-      serviceCategory: undefined,
+      serviceCategory: selectedServiceCategory,
     },
     { refetchOnWindowFocus: false },
   );
   const previewTasksQuery = trpc.task.getTask.useQuery(
-    { page: 1, pageSize: Math.min(previewPageSize, MAX_PAGE_SIZE), search: undefined, category: undefined },
+    {
+      page: 1,
+      pageSize: Math.min(previewPageSize, MAX_PAGE_SIZE),
+      search: undefined,
+      category: selectedTaskCategory,
+    },
     { refetchOnWindowFocus: false },
   );
 
@@ -85,7 +102,12 @@ function HeroSearchBarComponent({ onPreviewChange }: HeroSearchBarProps) {
 
   // Search result queries (manual, wider pageSize to filter top 6)
   const searchJobsQuery = trpc.job.getJob.useQuery(
-    { page: 1, pageSize: MAX_PAGE_SIZE, search: searchQuery || undefined, category: activeTab === "jobs" ? (selectedCategory as JobCategory | undefined) : undefined },
+    {
+      page: 1,
+      pageSize: MAX_PAGE_SIZE,
+      search: searchQuery || undefined,
+      category: selectedJobCategory,
+    },
     { enabled: false, refetchOnWindowFocus: false },
   );
   const searchServicesQuery = trpc.service.getService.useQuery(
@@ -93,12 +115,17 @@ function HeroSearchBarComponent({ onPreviewChange }: HeroSearchBarProps) {
       page: 1,
       pageSize: MAX_PAGE_SIZE,
       search: searchQuery || undefined,
-      serviceCategory: activeTab === "services" ? (selectedCategory as ServiceCategory | undefined) : undefined,
+      serviceCategory: selectedServiceCategory,
     },
     { enabled: false, refetchOnWindowFocus: false },
   );
   const searchTasksQuery = trpc.task.getTask.useQuery(
-    { page: 1, pageSize: MAX_PAGE_SIZE, search: searchQuery || undefined, category: activeTab === "tasks" ? (selectedCategory as TaskCategory | undefined) : undefined },
+    {
+      page: 1,
+      pageSize: MAX_PAGE_SIZE,
+      search: searchQuery || undefined,
+      category: selectedTaskCategory,
+    },
     { enabled: false, refetchOnWindowFocus: false },
   );
 
@@ -281,13 +308,7 @@ function HeroSearchBarComponent({ onPreviewChange }: HeroSearchBarProps) {
                 className="flex-1 px-0 text-sm text-gray-900 bg-transparent border-none shadow-none outline-none placeholder:text-gray-400 focus-visible:ring-0 focus-visible:ring-offset-0"
               />
             </div>
-            <div className="flex justify-between items-center mt-3">
-              <button
-                type="button"
-                className="flex justify-center items-center w-10 h-10 bg-white rounded-lg border border-gray-200 hover:bg-gray-50"
-              >
-                <Paperclip className="w-4 h-4 text-gray-500" />
-              </button>
+            <div className="flex justify-end items-center mt-3">
               <button
                 type="button"
                 onClick={() => void handleSearch()}
@@ -320,9 +341,24 @@ function HeroSearchBarComponent({ onPreviewChange }: HeroSearchBarProps) {
                 <button
                   key={option}
                   onClick={() => {
-                    setSelectedCategory(isSelected ? undefined : (option as JobCategory | ServiceCategory | TaskCategory));
-                    setHasSearched(false);
+                    const nextCategory = isSelected ? undefined : (option as JobCategory | ServiceCategory | TaskCategory);
+                    setSelectedCategory(nextCategory);
                     setPreviewPageSize(12);
+
+                    // If user already searched, re-run search with the new category; otherwise just filter previews.
+                    const hasQuery = !!searchQuery.trim();
+                    if (hasQuery) {
+                      setHasSearched(true);
+                      if (activeTab === "jobs") {
+                        void searchJobsQuery.refetch();
+                      } else if (activeTab === "services") {
+                        void searchServicesQuery.refetch();
+                      } else {
+                        void searchTasksQuery.refetch();
+                      }
+                    } else {
+                      setHasSearched(false);
+                    }
                   }}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-sm transition ${
                     isSelected
