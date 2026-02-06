@@ -24,7 +24,7 @@ export default function Hero() {
   // avatars removed on mobile for better fit
 
   return (
-    <div className="flex overflow-hidden relative flex-col gap-16 text-center">
+    <div className="flex overflow-hidden relative flex-col gap-16 text-center pb-4">
       <div className="flex relative z-10 flex-col gap-6 justify-center items-center">
         <Announcement className="px-3 py-2 text-[12px] md:text-[14px] w-auto rounded-full inline-flex items-center gap-2">
           <AnnouncementTag className="ml-1 font-semibold text-white bg-gradient-to-r from-red-500 via-pink-500 to-rose-500">
