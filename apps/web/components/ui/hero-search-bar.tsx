@@ -3,10 +3,12 @@
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { Tabs, TabsList, TabsTrigger } from "@workspace/ui/components/tabs";
 import { Input } from "@workspace/ui/components/input";
 import { Button } from "@workspace/ui/components/button";
-import { Briefcase, Wrench, ClipboardList, Check, Paperclip } from "lucide-react";
+import { Briefcase, Wrench, ClipboardList, Check, Paperclip, Brain, FileText, Shuffle } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { isSecondaryClient } from "@/lib/domain";
 import { JobCard } from "@/components/ui/form/job/job-card";
@@ -51,6 +53,10 @@ type HeroSearchBarProps = {
 function HeroSearchBarComponent({ onPreviewChange }: HeroSearchBarProps) {
   const t = useTranslations("HeroSearchBar");
   const tAll = useTranslations();
+  const { data: session } = useSession();
+  const isLoggedIn = !!session?.user?.email;
+  const router = useRouter();
+  const pathname = usePathname();
   const [activeTab, setActiveTab] = useState<TabType>("jobs");
   const [searchQuery, setSearchQuery] = useState("");
   const [hasSearched, setHasSearched] = useState(false);
@@ -136,6 +142,12 @@ function HeroSearchBarComponent({ onPreviewChange }: HeroSearchBarProps) {
 
   const handleSearch = async (overrideQuery?: string) => {
     const effectiveQuery = (overrideQuery ?? searchQuery).trim();
+
+    if (!isLoggedIn) {
+      const callback = pathname || "/";
+      router.push(`/login?callbackUrl=${encodeURIComponent(callback)}`);
+      return;
+    }
 
     // For the secondary client, keep simple redirect behavior
     if (isSecondary) {
@@ -314,19 +326,22 @@ function HeroSearchBarComponent({ onPreviewChange }: HeroSearchBarProps) {
                   href="/resume-analyzer"
                   className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-gray-200 bg-gray-50 text-sm text-gray-700 hover:bg-white transition"
                 >
-                  {tAll("Routes.resumeAnalyzer") ?? "Resume analyze"}
+                  <FileText className="w-4 h-4 text-gray-500" />
+                  {tAll("Routes.resumeAnalyzer")}
                 </Link>
                 <Link
                   href="/account/auto-apply"
                   className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-gray-200 bg-gray-50 text-sm text-gray-700 hover:bg-white transition"
                 >
-                  {tAll("Routes.autoApply") ?? "Auto apply"}
+                  <Brain className="w-4 h-4 text-gray-500" />
+                  {tAll("Routes.autoApply")}
                 </Link>
                 <Link
                   href="/career-switch"
                   className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-gray-200 bg-gray-50 text-sm text-gray-700 hover:bg-white transition"
                 >
-                  {tAll("Routes.careerSwitch") ?? "Career switch"}
+                  <Shuffle className="w-4 h-4 text-gray-500" />
+                  {tAll("Routes.careerSwitch")}
                 </Link>
               </div>
               <button

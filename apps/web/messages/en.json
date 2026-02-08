@@ -317,6 +317,11 @@
     "browseJobs": "Browse Jobs",
     "loadMore": "Load more"
   },
+  "Routes": {
+    "resumeAnalyzer": "Resume Analyzer",
+    "autoApply": "AI Auto-Apply",
+    "careerSwitch": "Career Switch"
+  },
   "FAQ": {
     "title": "Frequently asked questions",
     "subtitle": "Answers to common questions about using Serrbi.",

@@ -41,6 +41,7 @@ export function JobApplyForm({
   applicationUrl: string | null;
 }) {
   const { data: session } = useSession();
+  const isLoggedIn = !!session?.user?.email;
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | undefined>("");
   const [success, setSuccess] = useState<string | undefined>("");
@@ -87,6 +88,11 @@ export function JobApplyForm({
   async function onSubmit(values: JobApplyFormValues) {
     setSuccess("");
     setError("");
+    if (!isLoggedIn) {
+      const callback = typeof window !== "undefined" ? window.location.pathname + window.location.search : "/jobs";
+      router.push(`/login?callbackUrl=${encodeURIComponent(callback)}`);
+      return;
+    }
     startTransition(async () => {
       try {
         let cvData: string | undefined;
@@ -130,6 +136,12 @@ export function JobApplyForm({
   };
 
   const handleApplyClick = () => {
+    if (!isLoggedIn) {
+      const callback = typeof window !== "undefined" ? window.location.pathname + window.location.search : "/jobs";
+      router.push(`/login?callbackUrl=${encodeURIComponent(callback)}`);
+      return;
+    }
+
     if (applicationUrl) {
       // Redirect to external application URL
       window.open(applicationUrl, "_blank");

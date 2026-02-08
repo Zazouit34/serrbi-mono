@@ -344,6 +344,11 @@
     "browseJobs": "Parcourir Emplois",
     "loadMore": "Charger plus"
   },
+  "Routes": {
+    "resumeAnalyzer": "Analyseur de CV",
+    "autoApply": "AI Auto-Apply",
+    "careerSwitch": "Reconversion"
+  },
   "FAQ": {
     "title": "Questions fréquentes",
     "subtitle": "Réponses aux questions courantes sur l’utilisation de Serrbi.",
