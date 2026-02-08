@@ -9,7 +9,7 @@ import { Tabs, TabsList, TabsTrigger } from "@workspace/ui/components/tabs";
 import { Input } from "@workspace/ui/components/input";
 import { Button } from "@workspace/ui/components/button";
 import { Briefcase, Wrench, ClipboardList, Check, Paperclip, Brain, FileText, Shuffle } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { isSecondaryClient } from "@/lib/domain";
 import { JobCard } from "@/components/ui/form/job/job-card";
 import { ServiceCard } from "@/components/ui/form/service/service-card";
@@ -53,6 +53,8 @@ type HeroSearchBarProps = {
 function HeroSearchBarComponent({ onPreviewChange }: HeroSearchBarProps) {
   const t = useTranslations("HeroSearchBar");
   const tAll = useTranslations();
+  const locale = useLocale();
+  const dir = locale === "ar" ? "rtl" : "ltr";
   const { data: session } = useSession();
   const isLoggedIn = !!session?.user?.email;
   const router = useRouter();
@@ -350,7 +352,13 @@ function HeroSearchBarComponent({ onPreviewChange }: HeroSearchBarProps) {
                 disabled={isSearching}
                 className="flex justify-center items-center w-12 h-8 rounded-lg border border-gray-200 disabled:opacity-60"
               >
-                <Image src="/icons/arrow.svg" alt="Send" width={20} height={20} />
+                <Image 
+                  src="/icons/arrow.svg" 
+                  alt="Send" 
+                  width={20} 
+                  height={20}
+                  className={dir === 'rtl' ? 'rotate-180' : ''}
+                />
               </button>
             </div>
           </div>
