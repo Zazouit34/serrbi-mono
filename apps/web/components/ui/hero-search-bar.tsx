@@ -308,7 +308,27 @@ function HeroSearchBarComponent({ onPreviewChange }: HeroSearchBarProps) {
                 className="flex-1 px-0 text-sm text-gray-900 bg-transparent border-none shadow-none outline-none placeholder:text-gray-400 focus-visible:ring-0 focus-visible:ring-offset-0"
               />
             </div>
-            <div className="flex justify-end items-center mt-3">
+            <div className="flex gap-2 justify-between items-center mt-3">
+              <div className="flex flex-wrap gap-2">
+                <Link
+                  href="/resume-analyzer"
+                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-gray-200 bg-gray-50 text-sm text-gray-700 hover:bg-white transition"
+                >
+                  {tAll("Routes.resumeAnalyzer") ?? "Resume analyze"}
+                </Link>
+                <Link
+                  href="/account/auto-apply"
+                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-gray-200 bg-gray-50 text-sm text-gray-700 hover:bg-white transition"
+                >
+                  {tAll("Routes.autoApply") ?? "Auto apply"}
+                </Link>
+                <Link
+                  href="/career-switch"
+                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-gray-200 bg-gray-50 text-sm text-gray-700 hover:bg-white transition"
+                >
+                  {tAll("Routes.careerSwitch") ?? "Career switch"}
+                </Link>
+              </div>
               <button
                 type="button"
                 onClick={() => void handleSearch()}
