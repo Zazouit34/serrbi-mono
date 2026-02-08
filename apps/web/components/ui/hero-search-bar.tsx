@@ -313,7 +313,7 @@ function HeroSearchBarComponent({ onPreviewChange }: HeroSearchBarProps) {
       <div className="px-4 md:px-6 md:pb-0">
         <div className="flex flex-col gap-4 mx-auto w-full">
           {/* Chat-like search box */}
-          <div className="relative p-3 w-full bg-white min-h-[120px] rounded-2xl border border-gray-200 shadow-sm">
+          <div className="relative p-3 w-full bg-white min-h-[180px] rounded-2xl border border-gray-200 shadow-sm">
             <div className="flex items-center">
               <Input
                 placeholder={t("placeholder")}
