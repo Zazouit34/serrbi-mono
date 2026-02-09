@@ -45,7 +45,7 @@ export default function Hero() {
         </h2>
 
         <HeroSearchBar onPreviewChange={setPreviewData} />
-        <div className="mt-6 w-full">
+        <div className="mt-10 w-full">
           <HeroSearchBar.Preview {...previewData} />
         </div>
       </div>

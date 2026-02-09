@@ -164,17 +164,17 @@ export function JobCard({
                   : ""}
               </span>
             </div>
-            {!compact && (
-              <div
-                onClick={(e) => e.stopPropagation()}
-                onKeyDown={(e) => e.stopPropagation()}
-              >
-                <FavoriteButton
-                  jobId={job.id}
-                  color={[239, 68, 68]}
-                />
-              </div>
-            )}
+            <div
+              onClick={(e) => e.stopPropagation()}
+              onKeyDown={(e) => e.stopPropagation()}
+              className={cn(compact && "-mr-1")}
+            >
+              <FavoriteButton
+                jobId={job.id}
+                color={[239, 68, 68]}
+                className={cn(compact && "scale-90")}
+              />
+            </div>
           </div>
 
           {/* Job Title */}
@@ -204,31 +204,40 @@ export function JobCard({
             />
           </div>
 
-          {/* Wage + Apply button (hidden in compact mode) */}
-          {!compact && (
-            <div className="flex justify-between items-center pt-3 border-t">
-              {wageMin != null && wageMax != null && (
-                <div className="flex gap-1 items-baseline md:gap-2">
-                  <span className="text-sm font-semibold text-emerald-600 md:text-base">
-                    {wageMin.toLocaleString()} - {wageMax.toLocaleString()}{" "}
-                    {tAll("Currency.MAD")}
-                  </span>
-                </div>
-              )}
+          {/* Wage + Apply button */}
+          <div
+            className={cn(
+              "flex justify-between items-center pt-3 border-t",
+              compact && "pt-2"
+            )}
+          >
+            {wageMin != null && wageMax != null && (
+              <div className="flex gap-1 items-baseline md:gap-2">
+                <span
+                  className={cn(
+                    "text-sm font-semibold text-emerald-600 md:text-base",
+                    compact && "text-xs"
+                  )}
+                >
+                  {wageMin.toLocaleString()} - {wageMax.toLocaleString()}{" "}
+                  {tAll("Currency.MAD")}
+                </span>
+              </div>
+            )}
 
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  router.push(href);
-                }}
-              >
-                {t("apply")}
-                <ArrowRight className="ml-1 md:ml-2 size-3 md:size-4" />
-              </Button>
-            </div>
-          )}
+            <Button
+              variant="outline"
+              size={compact ? "sm" : "sm"}
+              className={cn(compact && "h-8 px-3 text-xs")}
+              onClick={(e) => {
+                e.stopPropagation();
+                router.push(href);
+              }}
+            >
+              {t("apply")}
+              <ArrowRight className={cn("ml-1 md:ml-2 size-3 md:size-4", compact && "size-3 ml-1")} />
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </div>
