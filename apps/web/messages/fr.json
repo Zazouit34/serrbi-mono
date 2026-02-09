@@ -18,7 +18,7 @@
     "tasks": "Tâches",
     "plans": "Plans",
     "autoApply": "AI Serrbi",
-    "careerSwitch": "Reconversion IA",
+    "careerSwitch": "Carrière IA",
     "resumeAnalyzer": "Analyseur de CV"
   },
   "Blog": {
@@ -125,7 +125,7 @@
     "nav": {
       "aiSerrbi": "AI Serrbi",
       "resumeAnalyzer": "Analyseur de CV",
-      "careerSwitch": "Reconversion IA"
+      "careerSwitch": "Carrière IA"
     },
     "steps": {
       "1": {
@@ -557,7 +557,7 @@
   },
   "UserMenu": {
     "myAccount": "Mon compte",
-    "careerSwitch": "Reconversion IA",
+    "careerSwitch": "Carrière IA",
     "resumeAnalyzer": "Analyseur de CV",
     "favorites": "Favoris",
     "plans": "Offres",
