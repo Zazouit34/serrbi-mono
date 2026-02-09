@@ -62,7 +62,7 @@ export function SiteFooter() {
             <FaLinkedin  className="w-5 h-5" />
           </Link>
         </div>
-        <p className="mt-10 text-xs leading-5 text-center text-gray-500">
+        <p className="mt-10 mb-4 text-xs leading-5 text-center text-gray-500">
           &copy; {new Date().getFullYear()} Serrbi. {t("copyright")}
         </p>
       </div>

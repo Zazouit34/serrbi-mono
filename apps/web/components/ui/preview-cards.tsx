@@ -62,7 +62,7 @@ export function PreviewCards({
       }`}
     >
       {title ? (
-        <div className="mb-3 text-sm font-medium text-gray-500">{title}</div>
+        <div className="mb-3 text-sm text-left font-medium text-gray-500">{title}</div>
       ) : null}
       {isLoading && <p className="text-sm text-gray-500">Loading...</p>}
       {!isLoading && items.length === 0 && (
@@ -70,7 +70,7 @@ export function PreviewCards({
       )}
       {!isLoading && items.length > 0 && (
         <>
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-3 text-left">
             {items.slice(0, showCount).map((item: any) => {
             if (type === "jobs") {
               return (

@@ -336,7 +336,7 @@ function HeroSearchBarComponent({ onPreviewChange }: HeroSearchBarProps) {
             </button>
             <div
               ref={categoryScrollRef}
-              className="flex overflow-x-auto no-scrollbar gap-2 py-1 px-1 w-full"
+              className="flex overflow-x-auto overflow-y-hidden no-scrollbar gap-2 py-1 px-1 w-full [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
             >
               {categoryList.map((option: string) => {
                 const icons =
