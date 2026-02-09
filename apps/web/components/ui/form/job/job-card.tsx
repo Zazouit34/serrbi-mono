@@ -46,6 +46,7 @@ export function JobCard({
   const t = useTranslations("JobCard");
   const tAll = useTranslations();
   const router = useRouter();
+  const compactMd = !!compact;
   const daysAgo = job.createdAt
     ? Math.max(
         0,
@@ -61,11 +62,11 @@ export function JobCard({
   const wageMax = wageMin != null ? wageMin + 200 : null;
 
   return (
-    <div className={cn(compact ? "block" : "flex justify-center sm:block")}>
+    <div className={cn("flex justify-center sm:block", compactMd && "md:block")}>
       <Card
         className={cn(
           "overflow-hidden w-full sm:max-w-none rounded-3xl shadow-md hover:shadow-lg transition-all !py-0 cursor-pointer",
-          compact && "rounded-2xl shadow-sm hover:shadow-md !py-0",
+          compactMd && "md:rounded-2xl md:shadow-sm md:hover:shadow-md md:!py-0",
           featured && "border-primary/50 bg-primary/5",
           className,
         )}
@@ -82,7 +83,7 @@ export function JobCard({
         <CardContent
           className={cn(
             "p-4 space-y-6 md:p-6",
-            compact && "p-2 md:p-3 space-y-2 flex flex-col",
+            compactMd && "md:p-3 md:space-y-2 md:flex md:flex-col"
           )}
         >
           {/* Top Row: Avatar + Category + Type */}
@@ -90,7 +91,7 @@ export function JobCard({
             <Avatar
               className={cn(
                 "bg-gray-100 rounded-2xl shadow-sm size-12 sm:size-16",
-                compact && "size-8 rounded-xl shadow"
+                compactMd && "md:size-8 md:rounded-xl md:shadow"
               )}
             >
               <AvatarImage
@@ -100,7 +101,7 @@ export function JobCard({
               <AvatarFallback
                 className={cn(
                   "bg-gray-200 text-gray-600 font-semibold",
-                  compact && "text-[10px]"
+                  compactMd && "md:text-[10px]"
                 )}
               >
                 {job.companyName?.slice(0, 2).toUpperCase() ?? "CO"}
@@ -110,20 +111,20 @@ export function JobCard({
             <div
               className={cn(
                 "flex flex-col gap-2 items-end",
-                compact && "gap-1"
+                compactMd && "md:gap-1"
               )}
             >
               {job.category && (
                 <CategoryBadge
                   category={job.category}
                   type="job"
-                  className={cn(compact && "text-[10px] px-1.5 py-0.5")}
+                  className={cn(compactMd && "md:text-[10px] md:px-1.5 md:py-0.5")}
                 />
               )}
               <span
                 className={cn(
                   "px-2 py-0.5 rounded-md border text-foreground/70 text-xs md:text-sm",
-                  compact && "text-[10px] px-1.5 py-0.5"
+                  compactMd && "md:text-[10px] md:px-1.5 md:py-0.5"
                 )}
               >
                 {tAll(`Enums.LocationRequirement.${job.locationRequirement}`)}
@@ -142,7 +143,7 @@ export function JobCard({
               <span
                 className={cn(
                   "text-sm font-semibold text-gray-800 md:text-lg truncate",
-                  compact && "text-xs md:text-sm"
+                  compactMd && "md:text-sm"
                 )}
               >
                 {job.companyName ?? t("unknownCompany")}
@@ -150,10 +151,10 @@ export function JobCard({
               <span
                 className={cn(
                   "flex gap-1 items-center text-xs text-gray-400 md:text-sm whitespace-nowrap",
-                  compact && "text-[10px]"
+                  compactMd && "md:text-[10px]"
                 )}
               >
-                <ClockIcon className={cn("size-3", compact && "size-2.5")} />
+                <ClockIcon className={cn("size-3", compactMd && "md:size-2.5")} />
                 {daysAgo !== null
                   ? daysAgo === 0
                     ? t("today")
@@ -167,12 +168,12 @@ export function JobCard({
             <div
               onClick={(e) => e.stopPropagation()}
               onKeyDown={(e) => e.stopPropagation()}
-              className={cn(compact && "-mr-1")}
+              className={cn(compactMd && "md:-mr-1")}
             >
               <FavoriteButton
                 jobId={job.id}
                 color={[239, 68, 68]}
-                className={cn(compact && "scale-90")}
+                className={cn(compactMd && "md:scale-90")}
               />
             </div>
           </div>
@@ -181,13 +182,13 @@ export function JobCard({
           <div
             className={cn(
               "min-h-[2.5rem] md:min-h-[3.75rem]",
-              compact && "min-h-[1.75rem]"
+              compactMd && "md:min-h-[1.75rem]"
             )}
           >
             <h2
               className={cn(
                 "text-base font-bold leading-tight text-gray-900 md:text-2xl line-clamp-2",
-                compact && "text-left text-sm md:text-base line-clamp-2"
+                compactMd && "md:text-left md:text-base md:line-clamp-2"
               )}
             >
               {job.title}
@@ -195,12 +196,12 @@ export function JobCard({
           </div>
 
           {/* Location + Experience */}
-          <div className={cn(compact && "mt-auto")}>
+          <div className={cn(compactMd && "md:mt-auto")}>
             <JobListingInfo
               city={job.city}
               stateAbbreviation={job.stateAbbreviation}
               experienceLevel={job.experienceLevel}
-              compact={compact}
+              compact={compactMd}
             />
           </div>
 
@@ -208,7 +209,7 @@ export function JobCard({
           <div
             className={cn(
               "flex justify-between items-center pt-3 border-t",
-              compact && "pt-2"
+              compactMd && "md:pt-2"
             )}
           >
             {wageMin != null && wageMax != null && (
@@ -216,7 +217,7 @@ export function JobCard({
                 <span
                   className={cn(
                     "text-sm font-semibold text-emerald-600 md:text-base",
-                    compact && "text-xs"
+                    compactMd && "md:text-xs"
                   )}
                 >
                   {wageMin.toLocaleString()} - {wageMax.toLocaleString()}{" "}
@@ -227,15 +228,15 @@ export function JobCard({
 
             <Button
               variant="outline"
-              size={compact ? "sm" : "sm"}
-              className={cn(compact && "h-8 px-3 text-xs")}
+              size="sm"
+              className={cn(compactMd && "md:h-8 md:px-3 md:text-xs")}
               onClick={(e) => {
                 e.stopPropagation();
                 router.push(href);
               }}
             >
               {t("apply")}
-              <ArrowRight className={cn("ml-1 md:ml-2 size-3 md:size-4", compact && "size-3 ml-1")} />
+              <ArrowRight className={cn("ml-1 md:ml-2 size-3 md:size-4", compactMd && "md:size-3 md:ml-1")} />
             </Button>
           </div>
         </CardContent>

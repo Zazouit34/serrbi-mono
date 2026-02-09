@@ -51,17 +51,6 @@ export function PreviewCards({
   }, []);
 
   useEffect(() => {
-    const mq = window.matchMedia("(min-width: 768px)");
-    const update = (event: MediaQueryListEvent | MediaQueryList) => setIsMdUp(event.matches);
-    update(mq);
-    const listener = (e: MediaQueryListEvent) => update(e);
-    mq.addEventListener?.("change", listener);
-    return () => {
-      mq.removeEventListener?.("change", listener);
-    };
-  }, []);
-
-  useEffect(() => {
     // Reset only when switching between search/default modes
     setShowCount(isSearchMode ? 6 : 12);
   }, [isSearchMode]);
@@ -90,7 +79,7 @@ export function PreviewCards({
                   key={item.id}
                   className="h-full"
                   job={item}
-                  compact={isMdUp}
+                  compact
                 />
               );
             }
