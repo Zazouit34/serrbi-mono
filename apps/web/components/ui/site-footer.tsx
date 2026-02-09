@@ -17,7 +17,10 @@ const navigation = {
     { key: "jobs", href: "/jobs" },
     { key: "services", href: "/services" },
     { key: "tasks", href: "/tasks" },
-    { key: "pricing", href: "/subscription" },
+    { key: "Auto Apply", href: "/account/auto-apply" },
+    { key: "AI Resume Analyzer", href: "/resume-analyzer" },
+    { key: "AI Career Switch", href: "/career-switch" },
+    
   ],
   support: [
     { key: "Talents", href: "mailto:talents@serrbi.com", displayName: "talents@serrbi.com" },
@@ -26,6 +29,7 @@ const navigation = {
   company: [
     { key: "about", href: "/about" },
     { key: "get in touch", href: "/contact" },
+    { key: "pricing", href: "/subscription" },
   ],
   resources: [
     { key: "careers", href: "/careers" },
