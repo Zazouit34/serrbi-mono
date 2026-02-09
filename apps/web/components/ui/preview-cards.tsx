@@ -78,6 +78,7 @@ export function PreviewCards({
                   key={item.id}
                   className="h-full"
                   job={item}
+                  compact={true}
                 />
               );
             }
