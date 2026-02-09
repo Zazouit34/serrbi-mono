@@ -25,7 +25,7 @@ export default function Hero() {
 
   return (
     <div className="flex overflow-hidden relative flex-col text-center">
-      <div className="flex relative z-10 flex-col gap-6 justify-center items-center min-h-[90vh] pt-10 pb-12 md:pb-20">
+      <div className="flex relative z-10 flex-col gap-6 justify-center items-center min-h-[90vh]">
         <Announcement className="px-3 py-2 text-[12px] md:text-[14px] w-auto rounded-full inline-flex items-center gap-2">
           <AnnouncementTag className="ml-1 font-semibold text-white bg-gradient-to-r from-red-500 via-pink-500 to-rose-500">
             {t("announcementNew")}
