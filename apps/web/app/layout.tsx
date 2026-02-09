@@ -16,6 +16,7 @@ import Provider from "@/app/_trpc/provider";
 
 import { Navbar } from "@/components/navbar";
 import { MobileNavbar } from "@/components/mobile-navbar";
+import { SiteFooter } from "@/components/ui/site-footer";
 import { Container } from "@workspace/ui/components/container";
 
 const fontSans = Inter({ subsets: ["latin"], variable: "--font-sans" });
@@ -104,6 +105,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 <main className="pt-4 pb-20 mb-4 md:pt-10 md:pb-4">
                   <Container>{children}</Container>
                 </main>
+                <SiteFooter />
                 <Toaster />
               </Providers>
             </Provider>

@@ -17,8 +17,8 @@ export default async function Page() {
       <HowItWorks />
       <PricingShowcase />
       <CarouselMain />
-      <FAQ />*/}
-      <SiteFooter />
+      <FAQ />
+      <SiteFooter />*/}
     </main>
   );
 }

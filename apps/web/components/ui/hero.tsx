@@ -24,7 +24,7 @@ export default function Hero() {
   // avatars removed on mobile for better fit
 
   return (
-    <div className="flex overflow-hidden relative flex-col gap-16 pb-4 text-center">
+    <div className="flex overflow-hidden relative flex-col justify-center gap-16 pt-12 pb-12 md:pt-20 md:pb-20 min-h-[70vh] text-center">
       <div className="flex relative z-10 flex-col gap-6 justify-center items-center">
         <Announcement className="px-3 py-2 text-[12px] md:text-[14px] w-auto rounded-full inline-flex items-center gap-2">
           <AnnouncementTag className="ml-1 font-semibold text-white bg-gradient-to-r from-red-500 via-pink-500 to-rose-500">
@@ -40,12 +40,12 @@ export default function Hero() {
             <ArrowUpRight className="size-4 text-[#ff040e]" />
           </AnnouncementTitle>
         </Announcement>
-        <h1 className="mb-0 text-balance font-semibold text-[28px] md:text-[36px] leading-tight">
+        <h2 className="mb-0 text-balance font-semibold text-[28px] md:text-[36px] leading-tight">
           {t("headingLine1")}
-        </h1>
+        </h2>
 
         <HeroSearchBar onPreviewChange={setPreviewData} />
-        <div className="mt-4 w-full">
+        <div className="mt-6 w-full">
           <HeroSearchBar.Preview {...previewData} />
         </div>
       </div>

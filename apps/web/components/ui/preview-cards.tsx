@@ -57,7 +57,7 @@ export function PreviewCards({
   return (
     <div
       ref={containerRef}
-      className={`space-y-6 transition-all duration-700 ease-out ${
+      className={`space-y-6 transition-all duration-700 ease-out mx-auto max-w-4xl ${
         visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
       }`}
     >
@@ -70,36 +70,14 @@ export function PreviewCards({
       )}
       {!isLoading && items.length > 0 && (
         <>
-          <div
-            className={`grid grid-cols-1 gap-6 ${
-              type === "services" ? "md:grid-cols-4" : "md:grid-cols-3"
-            }`}
-          >
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             {items.slice(0, showCount).map((item: any) => {
             if (type === "jobs") {
               return (
                 <JobCard
                   key={item.id}
-                  job={{
-                    id: item.id,
-                    title: item.title,
-                    companyName: item.companyName ?? null,
-                    companyImage: item.companyImage ?? null,
-                    wage: item.wage ?? null,
-                    stateAbbreviation: item.stateAbbreviation ?? null,
-                    city: item.city ?? null,
-                    type: item.type,
-                    experienceLevel: item.experienceLevel,
-                    locationRequirement: item.locationRequirement,
-                    category: item.category,
-                    user: null,
-                    createdAt: item.createdAt,
-                    description: item.description,
-                    status: item.status,
-                  }}
-                  featured={false}
-                 
                   className="h-full"
+                  job={item}
                 />
               );
             }

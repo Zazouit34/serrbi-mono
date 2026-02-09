@@ -1,19 +1,23 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { Tabs, TabsList, TabsTrigger } from "@workspace/ui/components/tabs";
 import { Input } from "@workspace/ui/components/input";
 import { Button } from "@workspace/ui/components/button";
-import { Briefcase, Wrench, ClipboardList, Check, Paperclip, Brain, FileText, Shuffle } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { isSecondaryClient } from "@/lib/domain";
-import { JobCard } from "@/components/ui/form/job/job-card";
-import { ServiceCard } from "@/components/ui/form/service/service-card";
-import { TaskCard } from "@/components/ui/form/task/task-card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@workspace/ui/components/select";
+
 import { PreviewCards } from "@/components/ui/preview-cards";
 import { trpc } from "@/app/_trpc/client";
 import { jobCategoryValues } from "@workspace/ui/lib/job-enum";
@@ -67,6 +71,7 @@ function HeroSearchBarComponent({ onPreviewChange }: HeroSearchBarProps) {
     JobCategory | ServiceCategory | TaskCategory | undefined
   >(undefined);
   const isSecondary = isSecondaryClient();
+  const categoryScrollRef = useRef<HTMLDivElement | null>(null);
 
   const selectedJobCategory =
     activeTab === "jobs" ? (selectedCategory as JobCategory | undefined) : undefined;
@@ -191,12 +196,6 @@ function HeroSearchBarComponent({ onPreviewChange }: HeroSearchBarProps) {
     jobs: t("tabs.jobs"),
     services: t("tabs.services"),
     tasks: t("tabs.tasks"),
-  } as const;
-
-  const tabIcons: Record<TabType, any> = {
-    jobs: Briefcase,
-    services: Wrench,
-    tasks: ClipboardList,
   };
 
   const categoryList = useMemo(() => {
@@ -274,46 +273,11 @@ function HeroSearchBarComponent({ onPreviewChange }: HeroSearchBarProps) {
 
   return (
     <div className="-mx-4 w-screen max-w-none sm:mx-0 md:max-w-4xl">
-      {/* Tabs Header - outside AI border */}
-      <div className="px-4 pt-3 pb-2 md:px-6 md:pt-4">
-        {!isSecondary && (
-          <Tabs
-            value={activeTab}
-            onValueChange={(value) => {
-              setActiveTab(value as TabType);
-              setHasSearched(false);
-              setSelectedCategory(undefined);
-              setPreviewPageSize(12);
-            }}
-          >
-            <div className="overflow-x-auto no-scrollbar">
-              <TabsList className="flex-nowrap justify-start w-full h-10 whitespace-nowrap bg-white rounded-full border border-gray-200 md:h-12">
-                {(["jobs", "services", "tasks"] as TabType[]).map((tab) => {
-                  const Icon = tabIcons[tab];
-                  return (
-                    <TabsTrigger
-                      key={tab}
-                      value={tab}
-                      className="gap-2 px-3 text-gray-400 data-[state=active]:text-[#000000] data-[state=active]:border-gray-200 data-[state=active]:bg-transparent rounded-full text-xs md:text-base min-w-[84px] md:min-w-0"
-                    >
-                      <Icon className="size-4 md:size-5" />
-                      <span className="hidden font-medium md:inline">
-                        {tabLabels[tab]}
-                      </span>
-                    </TabsTrigger>
-                  );
-                })}
-              </TabsList>
-            </div>
-          </Tabs>
-        )}
-      </div>
-
       {/* Search Content - Ask AI panel + suggestions + results, inside its own border */}
       <div className="px-4 md:px-6 md:pb-0">
         <div className="flex flex-col gap-4 mx-auto w-full">
           {/* Chat-like search box */}
-          <div className="relative p-3 w-full bg-white min-h-[180px] rounded-2xl border border-gray-200 shadow-sm">
+          <div className="relative p-3 w-full bg-white min-h-[120px] rounded-2xl border border-gray-200 shadow-sm">
             <div className="flex items-center">
               <Input
                 placeholder={t("placeholder")}
@@ -322,100 +286,118 @@ function HeroSearchBarComponent({ onPreviewChange }: HeroSearchBarProps) {
                 className="flex-1 px-0 text-sm text-gray-900 bg-transparent border-none shadow-none outline-none placeholder:text-gray-400 focus-visible:ring-0 focus-visible:ring-offset-0"
               />
             </div>
-            <div className="flex gap-2 justify-between items-center mt-3">
-              <div className="flex flex-wrap gap-2">
-                <Link
-                  href="/resume-analyzer"
-                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-gray-200 bg-gray-50 text-sm text-gray-700 hover:bg-white transition"
+            <div className="flex gap-2 justify-end items-center mt-3">
+              <div className="flex items-center gap-2">
+                <Select
+                  value={activeTab}
+                  onValueChange={(value) => {
+                    setActiveTab(value as TabType);
+                    setHasSearched(false);
+                    setSelectedCategory(undefined);
+                    setPreviewPageSize(12);
+                  }}
                 >
-                  <FileText className="w-4 h-4 text-gray-500" />
-                  {tAll("Routes.resumeAnalyzer")}
-                </Link>
-                <Link
-                  href="/account/auto-apply"
-                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-gray-200 bg-gray-50 text-sm text-gray-700 hover:bg-white transition"
+                  <SelectTrigger className="h-8 min-w-[120px] px-3 text-sm">
+                    <SelectValue placeholder={tabLabels[activeTab]} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="jobs">{tabLabels.jobs}</SelectItem>
+                    <SelectItem value="services">{tabLabels.services}</SelectItem>
+                    <SelectItem value="tasks">{tabLabels.tasks}</SelectItem>
+                  </SelectContent>
+                </Select>
+                <button
+                  type="button"
+                  onClick={() => void handleSearch()}
+                  disabled={isSearching}
+                  className="flex justify-center items-center w-12 h-8 rounded-lg border border-gray-200 disabled:opacity-60"
                 >
-                  <Brain className="w-4 h-4 text-gray-500" />
-                  {tAll("Routes.autoApply")}
-                </Link>
-                <Link
-                  href="/career-switch"
-                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-gray-200 bg-gray-50 text-sm text-gray-700 hover:bg-white transition"
-                >
-                  <Shuffle className="w-4 h-4 text-gray-500" />
-                  {tAll("Routes.careerSwitch")}
-                </Link>
+                  <Image 
+                    src="/icons/arrow.svg" 
+                    alt="Send" 
+                    width={20} 
+                    height={20}
+                    className={dir === 'rtl' ? 'rotate-180' : ''}
+                  />
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => void handleSearch()}
-                disabled={isSearching}
-                className="flex justify-center items-center w-12 h-8 rounded-lg border border-gray-200 disabled:opacity-60"
-              >
-                <Image 
-                  src="/icons/arrow.svg" 
-                  alt="Send" 
-                  width={20} 
-                  height={20}
-                  className={dir === 'rtl' ? 'rotate-180' : ''}
-                />
-              </button>
             </div>
           </div>
 
           {/* Category filter */}
-          <div className="flex flex-wrap gap-2 justify-center md:justify-start">
-            {categoryList.map((option: string) => {
-              const icons =
-                activeTab === "jobs"
-                  ? jobCategoryIcons
-                  : activeTab === "services"
-                    ? serviceCategoryIcons
-                    : taskCategoryIcons;
-              const labelKeyPrefix =
-                activeTab === "jobs"
-                  ? "Enums.JobCategory."
-                  : activeTab === "services"
-                    ? "Enums.ServiceCategory."
-                    : "Enums.TaskCategory.";
-              const IconComponent = icons[option as keyof typeof icons];
-              const isSelected = selectedCategory === option;
-              return (
-                <button
-                  key={option}
-                  onClick={() => {
-                    const nextCategory = isSelected ? undefined : (option as JobCategory | ServiceCategory | TaskCategory);
-                    setSelectedCategory(nextCategory);
-                    setPreviewPageSize(12);
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              aria-label="Scroll categories left"
+              className="flex items-center justify-center w-8 h-8 rounded-full border border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
+              onClick={() => categoryScrollRef.current?.scrollBy({ left: -180, behavior: "smooth" })}
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <div
+              ref={categoryScrollRef}
+              className="flex overflow-x-auto no-scrollbar gap-2 py-1 px-1 w-full"
+            >
+              {categoryList.map((option: string) => {
+                const icons =
+                  activeTab === "jobs"
+                    ? jobCategoryIcons
+                    : activeTab === "services"
+                      ? serviceCategoryIcons
+                      : taskCategoryIcons;
+                const labelKeyPrefix =
+                  activeTab === "jobs"
+                    ? "Enums.JobCategory."
+                    : activeTab === "services"
+                      ? "Enums.ServiceCategory."
+                      : "Enums.TaskCategory.";
+                const IconComponent = icons[option as keyof typeof icons];
+                const isSelected = selectedCategory === option;
+                return (
+                  <button
+                    key={option}
+                    onClick={() => {
+                      const nextCategory = isSelected ? undefined : (option as JobCategory | ServiceCategory | TaskCategory);
+                      setSelectedCategory(nextCategory);
+                      setPreviewPageSize(12);
 
-                    // If user already searched, re-run search with the new category; otherwise just filter previews.
-                    const hasQuery = !!searchQuery.trim();
-                    if (hasQuery) {
-                      setHasSearched(true);
-                      if (activeTab === "jobs") {
-                        void searchJobsQuery.refetch();
-                      } else if (activeTab === "services") {
-                        void searchServicesQuery.refetch();
+                      // If user already searched, re-run search with the new category; otherwise just filter previews.
+                      const hasQuery = !!searchQuery.trim();
+                      if (hasQuery) {
+                        setHasSearched(true);
+                        if (activeTab === "jobs") {
+                          void searchJobsQuery.refetch();
+                        } else if (activeTab === "services") {
+                          void searchServicesQuery.refetch();
+                        } else {
+                          void searchTasksQuery.refetch();
+                        }
                       } else {
-                        void searchTasksQuery.refetch();
+                        setHasSearched(false);
                       }
-                    } else {
-                      setHasSearched(false);
-                    }
-                  }}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-sm transition ${
-                    isSelected
-                      ? "border-slate-900 bg-slate-900 text-white shadow-sm"
-                      : "border-slate-200 text-slate-700 hover:bg-slate-50"
-                  }`}
-                >
-                  {IconComponent && <IconComponent className="w-3.5 h-3.5" />}
-                  {tAll((labelKeyPrefix + option) as any)}
-                  {isSelected && <Check className="w-3 h-3" />}
-                </button>
-              );
-            })}
-                    </div>
+                    }}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-sm transition whitespace-nowrap ${
+                      isSelected
+                        ? "border-slate-900 bg-slate-900 text-white shadow-sm"
+                        : "border-slate-200 text-slate-700 hover:bg-slate-50"
+                    }`}
+                  >
+                    {IconComponent && <IconComponent className="w-3.5 h-3.5" />}
+                    {tAll((labelKeyPrefix + option) as any)}
+                    {isSelected && <Check className="w-3 h-3" />}
+                  </button>
+                );
+              })}
+            </div>
+            <button
+              type="button"
+              aria-label="Scroll categories right"
+              className="flex items-center justify-center w-8 h-8 rounded-full border border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
+              onClick={() => categoryScrollRef.current?.scrollBy({ left: 180, behavior: "smooth" })}
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
 
         </div>
       </div>

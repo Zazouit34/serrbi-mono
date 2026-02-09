@@ -29,9 +29,12 @@ import {
 import { isSecondaryClient } from "@/lib/domain";
 
 const DEFAULT_LINKS = [
-  { href: "/jobs", key: "jobs", image: "/images/jobs.png" },
-  { href: "/services", key: "services", image: "/images/services.png" },
-  { href: "/tasks", key: "tasks", image: "/images/tasks.png" },
+  //{ href: "/jobs", key: "jobs", image: "/images/jobs.png" },
+  //{ href: "/services", key: "services", image: "/images/services.png" },
+  //{ href: "/tasks", key: "tasks", image: "/images/tasks.png" },
+  { href: "/career-switch", key: "careerSwitch", image: "/images/jobs.png" },
+  { href: "/account/auto-apply", key: "autoApply", image: "/images/services.png" },
+  { href: "/resume-analyzer", key: "resumeAnalyzer", image: "/images/tasks.png" },
 ];
 
 const LINKS = [
@@ -133,7 +136,7 @@ export function Navbar() {
                             alt={visibleLabel}
                             width={40}
                             height={40}
-                            priority={link.href === "/jobs"}
+                            priority={link.href === "/career-switch"}
                           />
                           <span className="relative">{visibleLabel}</span>
 
