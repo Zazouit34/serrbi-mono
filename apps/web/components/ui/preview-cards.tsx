@@ -30,6 +30,7 @@ export function PreviewCards({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [visible, setVisible] = useState(false);
   const [showCount, setShowCount] = useState(isSearchMode ? 6 : 12);
+  const [isMdUp, setIsMdUp] = useState(false);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -47,6 +48,17 @@ export function PreviewCards({
     );
     observer.observe(el);
     return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 768px)");
+    const update = (event: MediaQueryListEvent | MediaQueryList) => setIsMdUp(event.matches);
+    update(mq);
+    const listener = (e: MediaQueryListEvent) => update(e);
+    mq.addEventListener?.("change", listener);
+    return () => {
+      mq.removeEventListener?.("change", listener);
+    };
   }, []);
 
   useEffect(() => {
@@ -78,7 +90,7 @@ export function PreviewCards({
                   key={item.id}
                   className="h-full"
                   job={item}
-                  compact
+                  compact={isMdUp}
                 />
               );
             }
