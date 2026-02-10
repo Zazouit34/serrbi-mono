@@ -3,12 +3,6 @@
 import { useState } from "react";
 import { HeroSearchBar, type HeroPreviewData } from "@/components/ui/hero-search-bar";
 
-import {
-  Announcement,
-  AnnouncementTag,
-  AnnouncementTitle,
-} from "@workspace/ui/components/ui/shadcn-io/announcement";
-import { ArrowUpRight } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 export default function Hero() {
@@ -24,22 +18,8 @@ export default function Hero() {
   // avatars removed on mobile for better fit
 
   return (
-    <div className="flex overflow-hidden relative flex-col text-center">
-      <div className="flex relative z-10 flex-col gap-6 justify-center items-center min-h-[90vh]">
-        <Announcement className="px-3 py-2 text-[12px] md:text-[14px] w-auto rounded-full inline-flex items-center gap-2">
-          <AnnouncementTag className="ml-1 font-semibold text-white bg-gradient-to-r from-red-500 via-pink-500 to-rose-500">
-            {t("announcementNew")}
-          </AnnouncementTag>
-          <AnnouncementTitle>
-            <span className="block font-semibold text-foreground/70 md:hidden">
-              {t("announcementTitleShort")}
-            </span>
-            <span className="hidden font-semibold md:inline text-foreground/70">
-              {t("announcementTitle")}
-            </span>
-            <ArrowUpRight className="size-4 text-[#ff040e]" />
-          </AnnouncementTitle>
-        </Announcement>
+    <div className="flex flex-col text-center">
+      <div className="flex flex-col items-center justify-center gap-6 min-h-[100svh] px-4">
         <h2 className="mb-0 text-balance font-semibold text-[28px] md:text-[36px] leading-tight">
           {t("headingLine1")}
         </h2>

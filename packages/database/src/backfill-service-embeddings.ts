@@ -10,7 +10,7 @@ function getRequiredEnv(name: string): string {
 
 async function callEmbeddingApi(texts: string[]): Promise<number[][]> {
   const baseUrl = getRequiredEnv("EMBEDDING_API_URL");
-  const apiKey = getRequiredEnv("EMBEDDING_API_KEY");
+  const apiKey = getRequiredEnv("DASHSCOPE_API_KEY");
 
   const url = baseUrl.includes("/services/embeddings/")
     ? baseUrl

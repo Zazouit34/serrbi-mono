@@ -6,7 +6,7 @@
  *   or just the base API URL:
  *     "https://dashscope-intl.aliyuncs.com/api/v1"
  *   (in which case the DashScope embedding path will be appended automatically).
- * - EMBEDDING_API_KEY  (API key or shared secret for that server, if required.
+ * - DASHSCOPE_API_KEY  (API key or shared secret for that server, if required.
  *   For DashScope, set this to your DashScope API key, e.g. "sk-...".)
  *
  * This module encapsulates all calls to the embedding provider (DashScope text-embedding-v4).
@@ -39,7 +39,7 @@ async function callEmbeddingApi(
   body: EmbeddingApiRequest,
 ): Promise<EmbeddingApiResponse> {
   const baseUrl = getRequiredEnv("EMBEDDING_API_URL");
-  const apiKey = getRequiredEnv("EMBEDDING_API_KEY");
+  const apiKey = getRequiredEnv("DASHSCOPE_API_KEY");
 
   // If the user provided only the DashScope base URL, append the embedding path.
   const url = baseUrl.includes("/services/embeddings/")
