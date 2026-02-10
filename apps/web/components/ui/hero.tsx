@@ -18,7 +18,7 @@ export default function Hero() {
   // avatars removed on mobile for better fit
 
   return (
-    <div className="flex flex-col text-center -mt-4 md:-mt-12">
+    <div className="flex flex-col text-center -mt-4 md:-mt-20">
       <div className="flex flex-col items-center justify-center gap-6 min-h-[100svh] px-4">
         <h2 className="mb-0 text-balance font-semibold text-[28px] md:text-[36px] leading-tight">
           {t("headingLine1")}
