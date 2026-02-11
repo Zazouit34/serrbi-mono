@@ -23,6 +23,9 @@ import { trpc } from "@/app/_trpc/client";
 import { jobCategoryValues } from "@workspace/ui/lib/job-enum";
 import { serviceCategoryValues } from "@workspace/ui/lib/service-enum";
 import { taskCategoryValues } from "@workspace/ui/lib/task-enum";
+import { ChatContainerRoot, ChatContainerContent } from "@/components/ui/chat-container";
+import { Message, MessageAvatar, MessageContent } from "@/components/ui/message";
+import { Markdown } from "@/components/ui/markdown";
 
 type TabType = "jobs" | "services" | "tasks";
 
@@ -34,6 +37,12 @@ const taskCategories = taskCategoryValues;
 type JobCategory = (typeof jobCategoryValues)[number];
 type ServiceCategory = (typeof serviceCategoryValues)[number];
 type TaskCategory = (typeof taskCategoryValues)[number];
+
+type ChatMessage = {
+  id: number;
+  role: "user" | "assistant";
+  content: string;
+};
 
 const jobCategoryIcons = require("@/components/ui/config/job-filters-config").jobCategoryIcons ?? {};
 const serviceCategoryIcons = require("@/components/ui/config/service-filters-config").categoryIcons ?? {};
@@ -72,6 +81,19 @@ function HeroSearchBarComponent({ onPreviewChange }: HeroSearchBarProps) {
   >(undefined);
   const isSecondary = isSecondaryClient();
   const categoryScrollRef = useRef<HTMLDivElement | null>(null);
+  
+  // Chat state
+  const [messages, setMessages] = useState<ChatMessage[]>([
+    {
+      id: 1,
+      role: "assistant",
+      content: "Hi, I am Serrbi! Are you looking for a job, service, or task? Let me help you find what you need.",
+    },
+  ]);
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [chatExpanded, setChatExpanded] = useState(false);
+  const streamIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const streamContentRef = useRef("");
 
   const selectedJobCategory =
     activeTab === "jobs" ? (selectedCategory as JobCategory | undefined) : undefined;
@@ -177,6 +199,24 @@ function HeroSearchBarComponent({ onPreviewChange }: HeroSearchBarProps) {
       return;
     }
 
+    // Expand chat and add user message
+    setChatExpanded(true);
+    const userMessageId = messages.length + 1;
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: userMessageId,
+        role: "user",
+        content: effectiveQuery,
+      },
+    ]);
+
+    // Clear search input
+    setSearchQuery("");
+
+    // Start streaming assistant response
+    streamAssistantResponse(userMessageId + 1, effectiveQuery);
+
     setHasSearched(true);
 
     try {
@@ -191,6 +231,60 @@ function HeroSearchBarComponent({ onPreviewChange }: HeroSearchBarProps) {
       // Errors are surfaced via query.error
     }
   };
+
+  const streamAssistantResponse = (messageId: number, userQuery: string) => {
+    if (isStreaming) return;
+
+    setIsStreaming(true);
+    
+    // Static response for testing - customize based on activeTab
+    const responses: Record<TabType, string> = {
+      jobs: `Great! I'm searching for jobs matching "${userQuery}". I found several opportunities that might interest you. Let me show you the results below. You can filter by category to narrow down your search.`,
+      services: `Perfect! I'm looking for services related to "${userQuery}". I've found some great service providers that match your needs. Check out the results below and feel free to filter by category.`,
+      tasks: `Excellent! I'm searching for tasks matching "${userQuery}". I've found several tasks that you might be interested in. Take a look at the results below and use the category filters to refine your search.`,
+    };
+
+    const fullResponse = responses[activeTab];
+
+    // Add empty assistant message
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: messageId,
+        role: "assistant",
+        content: "",
+      },
+    ]);
+
+    let charIndex = 0;
+    streamContentRef.current = "";
+
+    streamIntervalRef.current = setInterval(() => {
+      if (charIndex < fullResponse.length) {
+        streamContentRef.current += fullResponse[charIndex];
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === messageId
+              ? { ...msg, content: streamContentRef.current }
+              : msg
+          )
+        );
+        charIndex++;
+      } else {
+        clearInterval(streamIntervalRef.current!);
+        setIsStreaming(false);
+      }
+    }, 20);
+  };
+
+  // Cleanup streaming on unmount
+  useEffect(() => {
+    return () => {
+      if (streamIntervalRef.current) {
+        clearInterval(streamIntervalRef.current);
+      }
+    };
+  }, []);
 
   const tabLabels = {
     jobs: t("tabs.jobs"),
@@ -273,54 +367,103 @@ function HeroSearchBarComponent({ onPreviewChange }: HeroSearchBarProps) {
 
   return (
     <div className="-mx-4 w-screen max-w-none sm:mx-0 md:max-w-4xl">
-      {/* Search Content - Ask AI panel + suggestions + results, inside its own border */}
+      {/* Search Content - Chat interface */}
       <div className="px-4 md:px-6 md:pb-0">
         <div className="flex flex-col gap-4 mx-auto w-full">
-          {/* Chat-like search box */}
-          <div className="relative p-3 w-full bg-white min-h-[120px] rounded-2xl border border-gray-200 shadow-sm">
-            <div className="flex items-center">
-            <Input
-              placeholder={t("placeholder")}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-                className="flex-1 px-0 text-sm text-gray-900 bg-transparent border-none shadow-none outline-none placeholder:text-gray-400 focus-visible:ring-0 focus-visible:ring-offset-0"
-              />
-            </div>
-            <div className="flex gap-2 justify-end items-center mt-3">
-              <div className="flex items-center gap-2">
-                <Select
-                  value={activeTab}
-                  onValueChange={(value) => {
-                    setActiveTab(value as TabType);
-                    setHasSearched(false);
-                    setSelectedCategory(undefined);
-                    setPreviewPageSize(12);
+          {/* Chat Container */}
+          <div className={`relative w-full bg-white rounded-2xl border border-gray-200 shadow-sm transition-all duration-300 ${
+            chatExpanded ? "min-h-[400px]" : "min-h-[120px]"
+          }`}>
+            {/* Chat Messages Area */}
+            {chatExpanded && (
+              <ChatContainerRoot className="h-[280px] px-3 pt-3">
+                <ChatContainerContent className="space-y-3">
+                  {messages.map((message) => {
+                    const isAssistant = message.role === "assistant";
+
+                    return (
+                      <Message
+                        key={message.id}
+                        className={
+                          message.role === "user" ? "justify-end" : "justify-start"
+                        }
+                      >
+                        {isAssistant && (
+                          <MessageAvatar
+                            fallback="S"
+                            className="bg-slate-900 text-white"
+                          />
+                        )}
+                        <div className="max-w-[85%] flex-1 sm:max-w-[75%]">
+                          {isAssistant ? (
+                            <div className="bg-slate-50 text-slate-900 rounded-lg p-3">
+                              <Markdown>{message.content}</Markdown>
+                            </div>
+                          ) : (
+                            <MessageContent className="bg-slate-900 text-white">
+                              {message.content}
+                            </MessageContent>
+                          )}
+                        </div>
+                      </Message>
+                    );
+                  })}
+                </ChatContainerContent>
+              </ChatContainerRoot>
+            )}
+
+            {/* Input Area at Bottom */}
+            <div className={`p-3 ${chatExpanded ? "border-t border-gray-200" : ""}`}>
+              <div className="flex items-center">
+                <Input
+                  placeholder={t("placeholder")}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey && searchQuery.trim()) {
+                      e.preventDefault();
+                      void handleSearch();
+                    }
                   }}
-                >
-                  <SelectTrigger className="h-8 min-w-[120px] px-3 text-sm">
-                    <SelectValue placeholder={tabLabels[activeTab]} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="jobs">{tabLabels.jobs}</SelectItem>
-                    <SelectItem value="services">{tabLabels.services}</SelectItem>
-                    <SelectItem value="tasks">{tabLabels.tasks}</SelectItem>
-                  </SelectContent>
-                </Select>
-                <button
-              type="button"
-              onClick={() => void handleSearch()}
-              disabled={isSearching}
-                  className="flex justify-center items-center w-12 h-8 rounded-lg border border-gray-200 disabled:opacity-60"
-                >
-                  <Image 
-                    src="/icons/arrow.svg" 
-                    alt="Send" 
-                    width={20} 
-                    height={20}
-                    className={dir === 'rtl' ? 'rotate-180' : ''}
-                  />
-                </button>
-                    </div>
+                  className="flex-1 px-0 text-sm text-gray-900 bg-transparent border-none shadow-none outline-none placeholder:text-gray-400 focus-visible:ring-0 focus-visible:ring-offset-0"
+                />
+              </div>
+              <div className="flex gap-2 justify-end items-center mt-3">
+                <div className="flex items-center gap-2">
+                  <Select
+                    value={activeTab}
+                    onValueChange={(value) => {
+                      setActiveTab(value as TabType);
+                      setHasSearched(false);
+                      setSelectedCategory(undefined);
+                      setPreviewPageSize(12);
+                    }}
+                  >
+                    <SelectTrigger className="h-8 min-w-[120px] px-3 text-sm">
+                      <SelectValue placeholder={tabLabels[activeTab]} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="jobs">{tabLabels.jobs}</SelectItem>
+                      <SelectItem value="services">{tabLabels.services}</SelectItem>
+                      <SelectItem value="tasks">{tabLabels.tasks}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <button
+                    type="button"
+                    onClick={() => void handleSearch()}
+                    disabled={isSearching || isStreaming}
+                    className="flex justify-center items-center w-12 h-8 rounded-lg border border-gray-200 disabled:opacity-60"
+                  >
+                    <Image 
+                      src="/icons/arrow.svg" 
+                      alt="Send" 
+                      width={20} 
+                      height={20}
+                      className={dir === 'rtl' ? 'rotate-180' : ''}
+                    />
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
 
