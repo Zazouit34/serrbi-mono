@@ -26,6 +26,9 @@ import { taskCategoryValues } from "@workspace/ui/lib/task-enum";
 import { ChatContainerRoot, ChatContainerContent } from "@/components/ui/chat-container";
 import { Message, MessageAvatar, MessageContent } from "@/components/ui/message";
 import { Markdown } from "@/components/ui/markdown";
+import { JobCard } from "@/components/ui/form/job/job-card";
+import { ServiceCard } from "@/components/ui/form/service/service-card";
+import { TaskCard } from "@/components/ui/form/task/task-card";
 
 type TabType = "jobs" | "services" | "tasks";
 
@@ -41,7 +44,14 @@ type TaskCategory = (typeof taskCategoryValues)[number];
 type ChatMessage = {
   id: number;
   role: "user" | "assistant";
-  content: string;
+  content?: string;
+  results?: {
+    key: string;
+    query: string;
+    type: TabType;
+    items: any[];
+    isLoading: boolean;
+  };
 };
 
 const jobCategoryIcons = require("@/components/ui/config/job-filters-config").jobCategoryIcons ?? {};
@@ -61,9 +71,10 @@ export type HeroPreviewData = {
 
 type HeroSearchBarProps = {
   onPreviewChange?: (data: HeroPreviewData) => void;
+  onChatExpandedChange?: (expanded: boolean) => void;
 };
 
-function HeroSearchBarComponent({ onPreviewChange }: HeroSearchBarProps) {
+function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroSearchBarProps) {
   const t = useTranslations("HeroSearchBar");
   const tAll = useTranslations();
   const locale = useLocale();
@@ -94,8 +105,13 @@ function HeroSearchBarComponent({ onPreviewChange }: HeroSearchBarProps) {
   ]);
   const [isStreaming, setIsStreaming] = useState(false);
   const [chatExpanded, setChatExpanded] = useState(false);
+  const nextMessageIdRef = useRef(2);
   const streamIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const streamContentRef = useRef("");
+
+  useEffect(() => {
+    onChatExpandedChange?.(chatExpanded);
+  }, [chatExpanded, onChatExpandedChange]);
 
   const selectedJobCategory =
     activeTab === "jobs" ? (selectedCategory as JobCategory | undefined) : undefined;
@@ -171,6 +187,68 @@ function HeroSearchBarComponent({ onPreviewChange }: HeroSearchBarProps) {
     searchServicesQuery.isFetching ||
     searchTasksQuery.isFetching;
 
+  const topSearchItems = useMemo(() => {
+    if (!hasSearched || !submittedQuery.trim()) return [];
+    if (activeTab === "jobs") return (searchJobsQuery.data?.items ?? []).slice(0, 6);
+    if (activeTab === "services") return (searchServicesQuery.data?.items ?? []).slice(0, 6);
+    return (searchTasksQuery.data?.items ?? []).slice(0, 6);
+  }, [
+    hasSearched,
+    submittedQuery,
+    activeTab,
+    searchJobsQuery.data?.items,
+    searchServicesQuery.data?.items,
+    searchTasksQuery.data?.items,
+  ]);
+
+  const topSearchLoading = useMemo(() => {
+    if (!hasSearched || !submittedQuery.trim()) return false;
+    if (activeTab === "jobs") return searchJobsQuery.isFetching;
+    if (activeTab === "services") return searchServicesQuery.isFetching;
+    return searchTasksQuery.isFetching;
+  }, [
+    hasSearched,
+    submittedQuery,
+    activeTab,
+    searchJobsQuery.isFetching,
+    searchServicesQuery.isFetching,
+    searchTasksQuery.isFetching,
+  ]);
+
+  const submittedResultsKey = useMemo(() => {
+    if (!submittedQuery.trim()) return "";
+    return `${activeTab}|${submittedQuery.trim()}`;
+  }, [activeTab, submittedQuery]);
+
+  useEffect(() => {
+    if (!hasSearched || !submittedQuery.trim()) return;
+    if (!submittedResultsKey) return;
+
+    setMessages((prev) =>
+      prev.map((msg) => {
+        if (!msg.results) return msg;
+        if (msg.results.key !== submittedResultsKey) return msg;
+        return {
+          ...msg,
+          results: {
+            ...msg.results,
+            items: topSearchItems,
+            isLoading: topSearchLoading,
+            type: activeTab,
+            query: submittedQuery,
+          },
+        };
+      }),
+    );
+  }, [
+    hasSearched,
+    submittedQuery,
+    submittedResultsKey,
+    activeTab,
+    topSearchItems,
+    topSearchLoading,
+  ]);
+
   const handleSearch = async (overrideQuery?: string) => {
     const effectiveQuery = (overrideQuery ?? chatInput).trim();
 
@@ -204,13 +282,25 @@ function HeroSearchBarComponent({ onPreviewChange }: HeroSearchBarProps) {
 
     // Expand chat and add user message
     setChatExpanded(true);
-    const userMessageId = messages.length + 1;
+    const userMessageId = nextMessageIdRef.current++;
+    const assistantMessageId = nextMessageIdRef.current++;
+    const resultsMessageId = nextMessageIdRef.current++;
+    const resultsKey = `${activeTab}|${effectiveQuery}`;
+
     setMessages((prev) => [
       ...prev,
+      { id: userMessageId, role: "user", content: effectiveQuery },
+      { id: assistantMessageId, role: "assistant", content: "" },
       {
-        id: userMessageId,
-        role: "user",
-        content: effectiveQuery,
+        id: resultsMessageId,
+        role: "assistant",
+        results: {
+          key: resultsKey,
+          query: effectiveQuery,
+          type: activeTab,
+          items: [],
+          isLoading: true,
+        },
       },
     ]);
 
@@ -219,7 +309,7 @@ function HeroSearchBarComponent({ onPreviewChange }: HeroSearchBarProps) {
     setChatInput("");
 
     // Start streaming assistant response
-    streamAssistantResponse(userMessageId + 1, effectiveQuery);
+    streamAssistantResponse(assistantMessageId, effectiveQuery);
 
     setHasSearched(true);
   };
@@ -237,16 +327,6 @@ function HeroSearchBarComponent({ onPreviewChange }: HeroSearchBarProps) {
     };
 
     const fullResponse = responses[activeTab];
-
-    // Add empty assistant message
-    setMessages((prev) => [
-      ...prev,
-      {
-        id: messageId,
-        role: "assistant",
-        content: "",
-      },
-    ]);
 
     let charIndex = 0;
     streamContentRef.current = "";
@@ -311,61 +391,37 @@ function HeroSearchBarComponent({ onPreviewChange }: HeroSearchBarProps) {
   useEffect(() => {
     if (!onPreviewChange) return;
 
-    const isSearchMode = hasSearched && !!submittedQuery.trim();
-    const loading = isSearchMode
-      ? activeTab === "jobs"
-        ? searchJobsQuery.isFetching
-        : activeTab === "services"
-          ? searchServicesQuery.isFetching
-          : searchTasksQuery.isFetching
-      : previewItems.loading;
-
-    const searchItems =
-      activeTab === "jobs"
-        ? (searchJobsQuery.data?.items ?? []).slice(0, 6)
-        : activeTab === "services"
-          ? (searchServicesQuery.data?.items ?? []).slice(0, 6)
-          : (searchTasksQuery.data?.items ?? []).slice(0, 6);
-
     onPreviewChange({
-      items: isSearchMode ? searchItems : previewItems.items,
+      items: previewItems.items,
       type: activeTab,
-      isLoading: loading,
+      isLoading: previewItems.loading,
       title:
         activeTab === "jobs"
           ? t("jobsHint")
           : activeTab === "services"
             ? t("servicesHint")
             : t("tasksHint"),
-      hasSearched,
-      isSearchMode,
-      onLoadMore: isSearchMode ? undefined : handleLoadMorePreview,
+      hasSearched: false,
+      isSearchMode: false,
+      onLoadMore: handleLoadMorePreview,
       loadMoreLabel: t("loadMore"),
     });
   }, [
-    hasSearched,
-    submittedQuery,
     activeTab,
     onPreviewChange,
     t,
     previewItems,
-    searchJobsQuery.data?.items,
-    searchServicesQuery.data?.items,
-    searchTasksQuery.data?.items,
-    searchJobsQuery.isFetching,
-    searchServicesQuery.isFetching,
-    searchTasksQuery.isFetching,
   ]);
 
   return (
-    <div className="-mx-4 w-screen max-w-none sm:mx-0 md:max-w-4xl">
+    <div className={`-mx-4 w-screen max-w-none sm:mx-0 md:max-w-4xl ${chatExpanded ? "h-full" : ""}`}>
       {/* Search Content - Chat interface */}
-      <div className="px-4 md:px-6 md:pb-0">
-        <div className="flex flex-col gap-4 mx-auto w-full">
+      <div className={`px-4 md:px-6 md:pb-0 ${chatExpanded ? "h-full" : ""}`}>
+        <div className={`flex flex-col gap-4 mx-auto w-full ${chatExpanded ? "h-full" : ""}`}>
           {/* Chat Container */}
           <div
-            className={`relative w-full bg-white rounded-2xl transition-all duration-300 flex flex-col ${
-              chatExpanded ? "h-[min(72svh,720px)]" : "min-h-[120px]"
+            className={`relative w-full bg-white rounded-2xl border border-gray-200 shadow-sm transition-all duration-300 flex flex-col ${
+              chatExpanded ? "flex-1 min-h-0" : "min-h-[120px]"
             }`}
           >
             {/* Chat Messages Area */}
@@ -389,9 +445,59 @@ function HeroSearchBarComponent({ onPreviewChange }: HeroSearchBarProps) {
                           />
                         )}
                         {isAssistant ? (
-                          <div className="inline-block w-fit max-w-[85%] sm:max-w-[75%] rounded-lg bg-slate-50 px-4 py-2.5 text-slate-900">
-                            <Markdown>{message.content}</Markdown>
-                          </div>
+                          message.results ? (
+                            <div className="inline-block w-fit max-w-[85%] sm:max-w-[75%] rounded-lg bg-slate-50 px-4 py-2.5 text-slate-900">
+                              <div className="text-sm font-medium">
+                                Results for “{message.results.query}”
+                              </div>
+                              <div className="mt-1 text-sm text-slate-600">
+                                {message.results.isLoading
+                                  ? "Searching…"
+                                  : message.results.items.length === 0
+                                    ? "No results found."
+                                    : "Here are the top matches:"}
+                              </div>
+                              {!message.results.isLoading && message.results.items.length > 0 && (
+                                <div className="mt-3 grid grid-cols-1 gap-4">
+                                  {message.results.items.map((item: any) => {
+                                    if (message.results?.type === "jobs") {
+                                      return (
+                                        <JobCard
+                                          key={item.id}
+                                          className="h-full"
+                                          job={item}
+                                          compact
+                                        />
+                                      );
+                                    }
+                                    if (message.results?.type === "services") {
+                                      return (
+                                        <Link
+                                          key={item.id}
+                                          href={`/services?serviceCategory=${encodeURIComponent(
+                                            item.serviceCategory ?? "",
+                                          )}`}
+                                        >
+                                          <ServiceCard service={item} className="h-full" />
+                                        </Link>
+                                      );
+                                    }
+                                    return (
+                                      <TaskCard
+                                        key={item.id}
+                                        task={item}
+                                        className="h-full"
+                                      />
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="inline-block w-fit max-w-[85%] sm:max-w-[75%] rounded-lg bg-slate-50 px-4 py-2.5 text-slate-900">
+                              <Markdown>{message.content ?? ""}</Markdown>
+                            </div>
+                          )
                         ) : (
                           <MessageContent className="w-fit max-w-[85%] sm:max-w-[75%] bg-slate-900 text-white">
                             {message.content}
@@ -461,68 +567,76 @@ function HeroSearchBarComponent({ onPreviewChange }: HeroSearchBarProps) {
           </div>
 
           {/* Category filter */}
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              aria-label="Scroll categories left"
-              className="flex items-center justify-center w-8 h-8 rounded-full border border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
-              onClick={() => categoryScrollRef.current?.scrollBy({ left: -180, behavior: "smooth" })}
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-            <div
-              ref={categoryScrollRef}
-              className="flex overflow-x-auto overflow-y-hidden no-scrollbar gap-2 py-1 px-1 w-full [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-            >
-              {categoryList.map((option: string) => {
-                const icons =
-                  activeTab === "jobs"
-                    ? jobCategoryIcons
-                    : activeTab === "services"
-                      ? serviceCategoryIcons
-                      : taskCategoryIcons;
-                const labelKeyPrefix =
-                  activeTab === "jobs"
-                    ? "Enums.JobCategory."
-                    : activeTab === "services"
-                      ? "Enums.ServiceCategory."
-                      : "Enums.TaskCategory.";
-                const IconComponent = icons[option as keyof typeof icons];
-                const isSelected = selectedCategory === option;
-                return (
-                  <button
-                    key={option}
-                    onClick={() => {
-                      const nextCategory = isSelected ? undefined : (option as JobCategory | ServiceCategory | TaskCategory);
-                      setSelectedCategory(nextCategory);
-                      setPreviewPageSize(12);
+          {!chatExpanded && (
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                aria-label="Scroll categories left"
+                className="flex items-center justify-center w-8 h-8 rounded-full border border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
+                onClick={() =>
+                  categoryScrollRef.current?.scrollBy({ left: -180, behavior: "smooth" })
+                }
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <div
+                ref={categoryScrollRef}
+                className="flex overflow-x-auto overflow-y-hidden no-scrollbar gap-2 py-1 px-1 w-full [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+              >
+                {categoryList.map((option: string) => {
+                  const icons =
+                    activeTab === "jobs"
+                      ? jobCategoryIcons
+                      : activeTab === "services"
+                        ? serviceCategoryIcons
+                        : taskCategoryIcons;
+                  const labelKeyPrefix =
+                    activeTab === "jobs"
+                      ? "Enums.JobCategory."
+                      : activeTab === "services"
+                        ? "Enums.ServiceCategory."
+                        : "Enums.TaskCategory.";
+                  const IconComponent = icons[option as keyof typeof icons];
+                  const isSelected = selectedCategory === option;
+                  return (
+                    <button
+                      key={option}
+                      onClick={() => {
+                        const nextCategory = isSelected
+                          ? undefined
+                          : (option as JobCategory | ServiceCategory | TaskCategory);
+                        setSelectedCategory(nextCategory);
+                        setPreviewPageSize(12);
 
-                      // If user already searched, keep search mode (query hooks will refetch automatically).
-                      const hasQuery = !!submittedQuery.trim();
-                      setHasSearched(hasQuery);
-                    }}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-sm transition whitespace-nowrap ${
-                      isSelected
-                        ? "border-slate-900 bg-slate-900 text-white shadow-sm"
-                        : "border-slate-200 text-slate-700 hover:bg-slate-50"
-                    }`}
-                  >
-                    {IconComponent && <IconComponent className="w-3.5 h-3.5" />}
-                    {tAll((labelKeyPrefix + option) as any)}
-                    {isSelected && <Check className="w-3 h-3" />}
-                  </button>
-                );
-              })}
+                        // If user already searched, keep search mode (query hooks will refetch automatically).
+                        const hasQuery = !!submittedQuery.trim();
+                        setHasSearched(hasQuery);
+                      }}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-sm transition whitespace-nowrap ${
+                        isSelected
+                          ? "border-slate-900 bg-slate-900 text-white shadow-sm"
+                          : "border-slate-200 text-slate-700 hover:bg-slate-50"
+                      }`}
+                    >
+                      {IconComponent && <IconComponent className="w-3.5 h-3.5" />}
+                      {tAll((labelKeyPrefix + option) as any)}
+                      {isSelected && <Check className="w-3 h-3" />}
+                    </button>
+                  );
+                })}
+              </div>
+              <button
+                type="button"
+                aria-label="Scroll categories right"
+                className="flex items-center justify-center w-8 h-8 rounded-full border border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
+                onClick={() =>
+                  categoryScrollRef.current?.scrollBy({ left: 180, behavior: "smooth" })
+                }
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
             </div>
-            <button
-              type="button"
-              aria-label="Scroll categories right"
-              className="flex items-center justify-center w-8 h-8 rounded-full border border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
-              onClick={() => categoryScrollRef.current?.scrollBy({ left: 180, behavior: "smooth" })}
-            >
-              <ChevronRight className="w-4 h-4" />
-            </button>
-                    </div>
+          )}
 
         </div>
       </div>
