@@ -458,7 +458,7 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
                                     : "Here are the top matches:"}
                               </div>
                               {!message.results.isLoading && message.results.items.length > 0 && (
-                                <div className="mt-3 grid grid-cols-1 gap-4 md:grid-cols-3">
+                                <div className="mt-3 grid grid-cols-1 gap-4 md:grid-cols-2">
                                   {message.results.items.map((item: any) => {
                                     if (message.results?.type === "jobs") {
                                       return (
