@@ -10,15 +10,6 @@ import AiAutoApplySection from "@/components/ui/ai-autoapply-section";
 
 export default async function Page() {
   return (
-    <main className="flex relative flex-col mx-auto">
-      <Hero />
-      {/*<ShowcaseSwitcher />
-      <AiAutoApplySection />
-      <HowItWorks />
-      <PricingShowcase />
-      <CarouselMain />
-      <FAQ />
-      <SiteFooter />*/}
-    </main>
+    <Hero />
   );
 }
