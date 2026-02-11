@@ -19,7 +19,7 @@ export default function Hero() {
 
   return (
     <div className="flex flex-col text-center">
-      <div className="flex flex-col items-center justify-center gap-6 min-h-[100svh] px-4">
+      <div className="flex flex-col items-center justify-center gap-6 min-h-[100svh] md:min-h-0 px-4 py-24 md:py-28 lg:py-32 mx-auto">
         <h2 className="mb-0 text-balance font-semibold text-[28px] md:text-[36px] leading-tight">
           {t("headingLine1")}
         </h2>

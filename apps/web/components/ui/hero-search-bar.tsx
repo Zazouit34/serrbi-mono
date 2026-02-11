@@ -279,10 +279,10 @@ function HeroSearchBarComponent({ onPreviewChange }: HeroSearchBarProps) {
           {/* Chat-like search box */}
           <div className="relative p-3 w-full bg-white min-h-[120px] rounded-2xl border border-gray-200 shadow-sm">
             <div className="flex items-center">
-              <Input
-                placeholder={t("placeholder")}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+            <Input
+              placeholder={t("placeholder")}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
                 className="flex-1 px-0 text-sm text-gray-900 bg-transparent border-none shadow-none outline-none placeholder:text-gray-400 focus-visible:ring-0 focus-visible:ring-offset-0"
               />
             </div>
@@ -307,9 +307,9 @@ function HeroSearchBarComponent({ onPreviewChange }: HeroSearchBarProps) {
                   </SelectContent>
                 </Select>
                 <button
-                  type="button"
-                  onClick={() => void handleSearch()}
-                  disabled={isSearching}
+              type="button"
+              onClick={() => void handleSearch()}
+              disabled={isSearching}
                   className="flex justify-center items-center w-12 h-8 rounded-lg border border-gray-200 disabled:opacity-60"
                 >
                   <Image 
@@ -320,7 +320,7 @@ function HeroSearchBarComponent({ onPreviewChange }: HeroSearchBarProps) {
                     className={dir === 'rtl' ? 'rotate-180' : ''}
                   />
                 </button>
-              </div>
+                    </div>
             </div>
           </div>
 
@@ -397,7 +397,7 @@ function HeroSearchBarComponent({ onPreviewChange }: HeroSearchBarProps) {
             >
               <ChevronRight className="w-4 h-4" />
             </button>
-          </div>
+                    </div>
 
         </div>
       </div>
