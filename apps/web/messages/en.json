@@ -308,14 +308,26 @@
       "services": "Find services",
       "tasks": "Complete tasks"
     },
-    "placeholder": "Search by role, skills...",
+    "placeholder": "Tell me what you're looking for...",
+    "placeholderStreaming": ["I can help you find jobs...", "I can help you find services...", "I can help you find tasks..."],
     "search": "Search",
     "searching": "Searching...",
     "jobsHint": "AI highlights the 6 closest job matches for your query.",
     "servicesHint": "AI highlights the 6 closest services for your request.",
     "tasksHint": "AI highlights the 6 closest tasks for your request.",
     "browseJobs": "Browse Jobs",
-    "loadMore": "Load more"
+    "loadMore": "Load more",
+    "onboarding": {
+      "greeting": "Hi, I am Serrbi! I can help you find jobs, services, or tasks. What are you looking for today?",
+      "choosePrompt": "Please select what you're looking for:",
+      "choiceJob": "Find a job",
+      "choiceService": "Find a service",
+      "choiceTask": "Find a task",
+      "confirmChoice": "Great! You chose **{choice}**. Now tell me what you're looking for.",
+      "confirmChoiceJob": "Great! You chose to find a **job**. Tell me what kind of job you're looking for (e.g., role, skills, location).",
+      "confirmChoiceService": "Perfect! You chose to find a **service**. Tell me what service you need (e.g., plumber, lawyer, designer).",
+      "confirmChoiceTask": "Excellent! You chose to find a **task**. Tell me what task you need help with."
+    }
   },
   "Routes": {
     "resumeAnalyzer": "Resume Analyzer",

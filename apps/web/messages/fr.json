@@ -335,14 +335,26 @@
       "services": "Trouver des services",
       "tasks": "Réaliser des tâches"
     },
-    "placeholder": "Rechercher par poste, compétences...",
+    "placeholder": "Dites-moi ce que vous cherchez...",
+    "placeholderStreaming": ["Je peux vous aider à trouver un emploi...", "Je peux vous aider à trouver un service...", "Je peux vous aider à trouver une tâche..."],
     "search": "Rechercher",
     "searching": "Recherche en cours...",
-    "jobsHint": "L’IA met en avant les 6 offres les plus proches de votre requête.",
-    "servicesHint": "L’IA met en avant les 6 services les plus pertinents pour votre demande.",
-    "tasksHint": "L’IA met en avant les 6 missions les plus pertinentes pour votre demande.",
+    "jobsHint": "L'IA met en avant les 6 offres les plus proches de votre requête.",
+    "servicesHint": "L'IA met en avant les 6 services les plus pertinents pour votre demande.",
+    "tasksHint": "L'IA met en avant les 6 missions les plus pertinentes pour votre demande.",
     "browseJobs": "Parcourir Emplois",
-    "loadMore": "Charger plus"
+    "loadMore": "Charger plus",
+    "onboarding": {
+      "greeting": "Bonjour, je suis Serrbi ! Je peux vous aider à trouver des emplois, des services ou des tâches. Que cherchez-vous aujourd'hui ?",
+      "choosePrompt": "Veuillez sélectionner ce que vous recherchez :",
+      "choiceJob": "Trouver un emploi",
+      "choiceService": "Trouver un service",
+      "choiceTask": "Trouver une tâche",
+      "confirmChoice": "Parfait ! Vous avez choisi **{choice}**. Maintenant, dites-moi ce que vous recherchez.",
+      "confirmChoiceJob": "Parfait ! Vous avez choisi de trouver un **emploi**. Dites-moi quel type d'emploi vous recherchez (par ex., poste, compétences, lieu).",
+      "confirmChoiceService": "Parfait ! Vous avez choisi de trouver un **service**. Dites-moi de quel service vous avez besoin (par ex., plombier, avocat, designer).",
+      "confirmChoiceTask": "Excellent ! Vous avez choisi de trouver une **tâche**. Dites-moi de quelle tâche vous avez besoin."
+    }
   },
   "Routes": {
     "resumeAnalyzer": "Analyseur de CV",

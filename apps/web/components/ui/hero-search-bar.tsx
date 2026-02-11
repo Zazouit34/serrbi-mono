@@ -52,6 +52,9 @@ type ChatMessage = {
     items: any[];
     isLoading: boolean;
   };
+  choicePrompt?: {
+    choices: Array<{ value: TabType; label: string }>;
+  };
 };
 
 const jobCategoryIcons = require("@/components/ui/config/job-filters-config").jobCategoryIcons ?? {};
@@ -96,22 +99,120 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
   const categoryScrollRef = useRef<HTMLDivElement | null>(null);
   
   // Chat state
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      id: 1,
-      role: "assistant",
-      content: "Hi, I am Serrbi! Are you looking for a job, service, or task? Let me help you find what you need.",
-    },
-  ]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
   const [chatExpanded, setChatExpanded] = useState(false);
-  const nextMessageIdRef = useRef(2);
+  const [onboardingStep, setOnboardingStep] = useState<"initial" | "choice" | "input" | "done">("initial");
+  const [userChoice, setUserChoice] = useState<TabType | null>(null);
+  const [placeholder, setPlaceholder] = useState("");
+  const nextMessageIdRef = useRef(1);
   const streamIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const streamContentRef = useRef("");
+  const placeholderIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     onChatExpandedChange?.(chatExpanded);
   }, [chatExpanded, onChatExpandedChange]);
+
+  // Streaming placeholder effect
+  useEffect(() => {
+    const placeholders = t.raw("placeholderStreaming") as string[];
+    if (!Array.isArray(placeholders) || placeholders.length === 0) {
+      setPlaceholder(t("placeholder"));
+      return;
+    }
+
+    let currentIndex = 0;
+    let charIndex = 0;
+    let currentText = "";
+    let isDeleting = false;
+
+    const streamPlaceholder = () => {
+      const targetText = placeholders[currentIndex];
+      if (!targetText) return;
+
+      if (!isDeleting) {
+        if (charIndex < targetText.length) {
+          currentText = targetText.slice(0, charIndex + 1);
+          setPlaceholder(currentText);
+          charIndex++;
+        } else {
+          // Wait before deleting
+          setTimeout(() => {
+            isDeleting = true;
+          }, 2000);
+          return;
+        }
+      } else {
+        if (charIndex > 0) {
+          currentText = targetText.slice(0, charIndex - 1);
+          setPlaceholder(currentText);
+          charIndex--;
+        } else {
+          isDeleting = false;
+          currentIndex = (currentIndex + 1) % placeholders.length;
+          charIndex = 0;
+        }
+      }
+    };
+
+    placeholderIntervalRef.current = setInterval(streamPlaceholder, isDeleting ? 30 : 80);
+
+    return () => {
+      if (placeholderIntervalRef.current) {
+        clearInterval(placeholderIntervalRef.current);
+      }
+    };
+  }, [t]);
+
+  // Initialize onboarding on first load
+  useEffect(() => {
+    if (messages.length === 0 && onboardingStep === "initial") {
+      const greetingId = nextMessageIdRef.current++;
+      const choiceId = nextMessageIdRef.current++;
+
+      setMessages([
+        {
+          id: greetingId,
+          role: "assistant",
+          content: "",
+        },
+        {
+          id: choiceId,
+          role: "assistant",
+          choicePrompt: {
+            choices: [
+              { value: "jobs", label: t("onboarding.choiceJob") },
+              { value: "services", label: t("onboarding.choiceService") },
+              { value: "tasks", label: t("onboarding.choiceTask") },
+            ],
+          },
+        },
+      ]);
+
+      // Stream the greeting
+      let charIndex = 0;
+      const greeting = t("onboarding.greeting");
+      streamContentRef.current = "";
+
+      streamIntervalRef.current = setInterval(() => {
+        if (charIndex < greeting.length) {
+          streamContentRef.current += greeting[charIndex];
+          setMessages((prev) =>
+            prev.map((msg) =>
+              msg.id === greetingId ? { ...msg, content: streamContentRef.current } : msg
+            )
+          );
+          charIndex++;
+        } else {
+          if (streamIntervalRef.current) {
+            clearInterval(streamIntervalRef.current);
+          }
+          setOnboardingStep("choice");
+        }
+      }, 20);
+    }
+  }, [messages.length, onboardingStep, t]);
 
   const selectedJobCategory =
     activeTab === "jobs" ? (selectedCategory as JobCategory | undefined) : undefined;
@@ -249,6 +350,73 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
     topSearchLoading,
   ]);
 
+  const handleChoiceSelection = (choice: TabType) => {
+    if (!isLoggedIn) {
+      const callback = pathname || "/";
+      router.push(`/login?callbackUrl=${encodeURIComponent(callback)}`);
+      return;
+    }
+
+    // For secondary client, redirect immediately
+    if (isSecondary) {
+      const routes: Record<TabType, string> = {
+        jobs: `/jobs`,
+        services: `/services`,
+        tasks: `/tasks`,
+      };
+      window.location.href = routes[choice];
+      return;
+    }
+
+    setChatExpanded(true);
+    setUserChoice(choice);
+    setActiveTab(choice);
+    setOnboardingStep("input");
+
+    // Add user's choice as a message
+    const choiceLabels: Record<TabType, string> = {
+      jobs: t("onboarding.choiceJob"),
+      services: t("onboarding.choiceService"),
+      tasks: t("onboarding.choiceTask"),
+    };
+
+    const userChoiceId = nextMessageIdRef.current++;
+    const confirmId = nextMessageIdRef.current++;
+
+    setMessages((prev) => [
+      ...prev,
+      { id: userChoiceId, role: "user", content: choiceLabels[choice] },
+      { id: confirmId, role: "assistant", content: "" },
+    ]);
+
+    // Stream confirmation message
+    const confirmMessages: Record<TabType, string> = {
+      jobs: t("onboarding.confirmChoiceJob"),
+      services: t("onboarding.confirmChoiceService"),
+      tasks: t("onboarding.confirmChoiceTask"),
+    };
+
+    let charIndex = 0;
+    const confirmMsg = confirmMessages[choice];
+    streamContentRef.current = "";
+
+    streamIntervalRef.current = setInterval(() => {
+      if (charIndex < confirmMsg.length) {
+        streamContentRef.current += confirmMsg[charIndex];
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === confirmId ? { ...msg, content: streamContentRef.current } : msg
+          )
+        );
+        charIndex++;
+      } else {
+        if (streamIntervalRef.current) {
+          clearInterval(streamIntervalRef.current);
+        }
+      }
+    }, 20);
+  };
+
   const handleSearch = async (overrideQuery?: string) => {
     const effectiveQuery = (overrideQuery ?? chatInput).trim();
 
@@ -278,6 +446,11 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
       setHasSearched(false);
       setSubmittedQuery("");
       return;
+    }
+
+    // Mark onboarding as done
+    if (onboardingStep !== "done") {
+      setOnboardingStep("done");
     }
 
     // Expand chat and add user message
@@ -445,7 +618,25 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
                           />
                         )}
                         {isAssistant ? (
-                          message.results ? (
+                          message.choicePrompt ? (
+                            <div className="inline-block w-fit max-w-[85%] sm:max-w-[75%] rounded-lg bg-slate-50 px-4 py-2.5 text-slate-900">
+                              <div className="text-sm font-medium mb-3">
+                                {t("onboarding.choosePrompt")}
+                              </div>
+                              <div className="flex flex-col gap-2">
+                                {message.choicePrompt.choices.map((choice) => (
+                                  <button
+                                    key={choice.value}
+                                    type="button"
+                                    onClick={() => handleChoiceSelection(choice.value)}
+                                    className="px-4 py-2 text-sm font-medium text-slate-900 bg-white border border-slate-200 rounded-lg hover:bg-slate-100 hover:border-slate-900 transition-colors"
+                                  >
+                                    {choice.label}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          ) : message.results ? (
                             <div className="w-full max-w-[85%] sm:max-w-[75%] rounded-lg bg-slate-50 px-4 py-2.5 text-slate-900">
                               <div className="text-sm font-medium">
                                 Results for “{message.results.query}”
@@ -515,7 +706,7 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
               <div className="rounded-2xl border border-gray-200 shadow-sm bg-white p-3">
                 <div className="flex items-center">
                   <Input
-                    placeholder={t("placeholder")}
+                    placeholder={placeholder || t("placeholder")}
                     value={chatInput}
                     onChange={(e) => setChatInput(e.target.value)}
                     onKeyDown={(e) => {
@@ -524,34 +715,37 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
                         void handleSearch();
                       }
                     }}
-                    className="flex-1 px-0 text-sm text-gray-900 bg-transparent border-none shadow-none outline-none placeholder:text-gray-400 focus-visible:ring-0 focus-visible:ring-offset-0"
+                    disabled={onboardingStep === "choice"}
+                    className="flex-1 px-0 text-sm text-gray-900 bg-transparent border-none shadow-none outline-none placeholder:text-gray-400 focus-visible:ring-0 focus-visible:ring-offset-0 disabled:opacity-50"
                   />
                 </div>
                 <div className="flex gap-2 justify-end items-center mt-3">
                   <div className="flex items-center gap-2">
-                    <Select
-                      value={activeTab}
-                      onValueChange={(value) => {
-                        setActiveTab(value as TabType);
-                        setHasSearched(false);
-                        setSubmittedQuery("");
-                        setSelectedCategory(undefined);
-                        setPreviewPageSize(12);
-                      }}
-                    >
-                      <SelectTrigger className="h-8 min-w-[120px] px-3 text-sm">
-                        <SelectValue placeholder={tabLabels[activeTab]} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="jobs">{tabLabels.jobs}</SelectItem>
-                        <SelectItem value="services">{tabLabels.services}</SelectItem>
-                        <SelectItem value="tasks">{tabLabels.tasks}</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    {onboardingStep === "done" && (
+                      <Select
+                        value={activeTab}
+                        onValueChange={(value) => {
+                          setActiveTab(value as TabType);
+                          setHasSearched(false);
+                          setSubmittedQuery("");
+                          setSelectedCategory(undefined);
+                          setPreviewPageSize(12);
+                        }}
+                      >
+                        <SelectTrigger className="h-8 min-w-[120px] px-3 text-sm">
+                          <SelectValue placeholder={tabLabels[activeTab]} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="jobs">{tabLabels.jobs}</SelectItem>
+                          <SelectItem value="services">{tabLabels.services}</SelectItem>
+                          <SelectItem value="tasks">{tabLabels.tasks}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
                     <button
                       type="button"
                       onClick={() => void handleSearch()}
-                      disabled={isSearching || isStreaming}
+                      disabled={isSearching || isStreaming || onboardingStep === "choice"}
                       className="flex justify-center items-center w-12 h-8 rounded-lg border border-gray-200 disabled:opacity-60"
                     >
                       <Image
