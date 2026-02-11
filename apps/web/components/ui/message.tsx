@@ -41,7 +41,7 @@ export function MessageContent({ children, className, ...props }: MessageContent
   return (
     <div
       className={cn(
-        "rounded-lg px-4 py-2.5",
+        "inline-block w-fit max-w-full whitespace-pre-wrap break-words rounded-lg px-4 py-2.5",
         className
       )}
       {...props}

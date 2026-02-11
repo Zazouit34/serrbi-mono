@@ -73,7 +73,9 @@ function HeroSearchBarComponent({ onPreviewChange }: HeroSearchBarProps) {
   const router = useRouter();
   const pathname = usePathname();
   const [activeTab, setActiveTab] = useState<TabType>("jobs");
-  const [searchQuery, setSearchQuery] = useState("");
+  // Input value used for chatting; separate from the last submitted search.
+  const [chatInput, setChatInput] = useState("");
+  const [submittedQuery, setSubmittedQuery] = useState("");
   const [hasSearched, setHasSearched] = useState(false);
   const [previewPageSize, setPreviewPageSize] = useState(12);
   const [selectedCategory, setSelectedCategory] = useState<
@@ -140,28 +142,28 @@ function HeroSearchBarComponent({ onPreviewChange }: HeroSearchBarProps) {
     {
       page: 1,
       pageSize: MAX_PAGE_SIZE,
-      search: searchQuery || undefined,
+      search: submittedQuery || undefined,
       category: selectedJobCategory,
     },
-    { enabled: false, refetchOnWindowFocus: false },
+    { enabled: hasSearched && !!submittedQuery.trim(), refetchOnWindowFocus: false },
   );
   const searchServicesQuery = trpc.service.getService.useQuery(
     {
       page: 1,
       pageSize: MAX_PAGE_SIZE,
-      search: searchQuery || undefined,
+      search: submittedQuery || undefined,
       serviceCategory: selectedServiceCategory,
     },
-    { enabled: false, refetchOnWindowFocus: false },
+    { enabled: hasSearched && !!submittedQuery.trim(), refetchOnWindowFocus: false },
   );
   const searchTasksQuery = trpc.task.getTask.useQuery(
     {
       page: 1,
       pageSize: MAX_PAGE_SIZE,
-      search: searchQuery || undefined,
+      search: submittedQuery || undefined,
       category: selectedTaskCategory,
     },
-    { enabled: false, refetchOnWindowFocus: false },
+    { enabled: hasSearched && !!submittedQuery.trim(), refetchOnWindowFocus: false },
   );
 
   const isSearching =
@@ -170,7 +172,7 @@ function HeroSearchBarComponent({ onPreviewChange }: HeroSearchBarProps) {
     searchTasksQuery.isFetching;
 
   const handleSearch = async (overrideQuery?: string) => {
-    const effectiveQuery = (overrideQuery ?? searchQuery).trim();
+    const effectiveQuery = (overrideQuery ?? chatInput).trim();
 
     if (!isLoggedIn) {
       const callback = pathname || "/";
@@ -196,6 +198,7 @@ function HeroSearchBarComponent({ onPreviewChange }: HeroSearchBarProps) {
 
     if (!effectiveQuery) {
       setHasSearched(false);
+      setSubmittedQuery("");
       return;
     }
 
@@ -211,25 +214,14 @@ function HeroSearchBarComponent({ onPreviewChange }: HeroSearchBarProps) {
       },
     ]);
 
-    // Clear search input
-    setSearchQuery("");
+    // Persist the submitted query for preview results, but clear the input box for chat UX.
+    setSubmittedQuery(effectiveQuery);
+    setChatInput("");
 
     // Start streaming assistant response
     streamAssistantResponse(userMessageId + 1, effectiveQuery);
 
     setHasSearched(true);
-
-    try {
-      if (activeTab === "jobs") {
-        await searchJobsQuery.refetch();
-      } else if (activeTab === "services") {
-        await searchServicesQuery.refetch();
-      } else if (activeTab === "tasks") {
-        await searchTasksQuery.refetch();
-      }
-    } catch {
-      // Errors are surfaced via query.error
-    }
   };
 
   const streamAssistantResponse = (messageId: number, userQuery: string) => {
@@ -319,7 +311,7 @@ function HeroSearchBarComponent({ onPreviewChange }: HeroSearchBarProps) {
   useEffect(() => {
     if (!onPreviewChange) return;
 
-    const isSearchMode = hasSearched && !!searchQuery.trim();
+    const isSearchMode = hasSearched && !!submittedQuery.trim();
     const loading = isSearchMode
       ? activeTab === "jobs"
         ? searchJobsQuery.isFetching
@@ -352,7 +344,7 @@ function HeroSearchBarComponent({ onPreviewChange }: HeroSearchBarProps) {
     });
   }, [
     hasSearched,
-    searchQuery,
+    submittedQuery,
     activeTab,
     onPreviewChange,
     t,
@@ -371,12 +363,14 @@ function HeroSearchBarComponent({ onPreviewChange }: HeroSearchBarProps) {
       <div className="px-4 md:px-6 md:pb-0">
         <div className="flex flex-col gap-4 mx-auto w-full">
           {/* Chat Container */}
-          <div className={`relative w-full bg-white rounded-2xl border border-gray-200 shadow-sm transition-all duration-300 ${
-            chatExpanded ? "min-h-[400px]" : "min-h-[120px]"
-          }`}>
+          <div
+            className={`relative w-full bg-white rounded-2xl transition-all duration-300 flex flex-col ${
+              chatExpanded ? "h-[min(72svh,720px)]" : "min-h-[120px]"
+            }`}
+          >
             {/* Chat Messages Area */}
             {chatExpanded && (
-              <ChatContainerRoot className="h-[280px] px-3 pt-3">
+              <ChatContainerRoot className="min-h-0 flex-1 px-3 pt-3">
                 <ChatContainerContent className="space-y-3">
                   {messages.map((message) => {
                     const isAssistant = message.role === "assistant";
@@ -394,17 +388,15 @@ function HeroSearchBarComponent({ onPreviewChange }: HeroSearchBarProps) {
                             className="bg-slate-900 text-white"
                           />
                         )}
-                        <div className="max-w-[85%] flex-1 sm:max-w-[75%]">
-                          {isAssistant ? (
-                            <div className="bg-slate-50 text-slate-900 rounded-lg p-3">
-                              <Markdown>{message.content}</Markdown>
-                            </div>
-                          ) : (
-                            <MessageContent className="bg-slate-900 text-white">
-                              {message.content}
-                            </MessageContent>
-                          )}
-                        </div>
+                        {isAssistant ? (
+                          <div className="inline-block w-fit max-w-[85%] sm:max-w-[75%] rounded-lg bg-slate-50 px-4 py-2.5 text-slate-900">
+                            <Markdown>{message.content}</Markdown>
+                          </div>
+                        ) : (
+                          <MessageContent className="w-fit max-w-[85%] sm:max-w-[75%] bg-slate-900 text-white">
+                            {message.content}
+                          </MessageContent>
+                        )}
                       </Message>
                     );
                   })}
@@ -413,14 +405,14 @@ function HeroSearchBarComponent({ onPreviewChange }: HeroSearchBarProps) {
             )}
 
             {/* Input Area at Bottom */}
-            <div className={`p-3 ${chatExpanded ? "border-t border-gray-200" : ""}`}>
+            <div className="p-3">
               <div className="flex items-center">
                 <Input
                   placeholder={t("placeholder")}
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  value={chatInput}
+                  onChange={(e) => setChatInput(e.target.value)}
                   onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey && searchQuery.trim()) {
+                    if (e.key === "Enter" && !e.shiftKey && chatInput.trim()) {
                       e.preventDefault();
                       void handleSearch();
                     }
@@ -435,6 +427,7 @@ function HeroSearchBarComponent({ onPreviewChange }: HeroSearchBarProps) {
                     onValueChange={(value) => {
                       setActiveTab(value as TabType);
                       setHasSearched(false);
+                      setSubmittedQuery("");
                       setSelectedCategory(undefined);
                       setPreviewPageSize(12);
                     }}
@@ -504,20 +497,9 @@ function HeroSearchBarComponent({ onPreviewChange }: HeroSearchBarProps) {
                       setSelectedCategory(nextCategory);
                       setPreviewPageSize(12);
 
-                      // If user already searched, re-run search with the new category; otherwise just filter previews.
-                      const hasQuery = !!searchQuery.trim();
-                      if (hasQuery) {
-                        setHasSearched(true);
-                        if (activeTab === "jobs") {
-                          void searchJobsQuery.refetch();
-                        } else if (activeTab === "services") {
-                          void searchServicesQuery.refetch();
-                        } else {
-                          void searchTasksQuery.refetch();
-                        }
-                      } else {
-                        setHasSearched(false);
-                      }
+                      // If user already searched, keep search mode (query hooks will refetch automatically).
+                      const hasQuery = !!submittedQuery.trim();
+                      setHasSearched(hasQuery);
                     }}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-sm transition whitespace-nowrap ${
                       isSelected
