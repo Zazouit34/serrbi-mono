@@ -414,13 +414,13 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
   ]);
 
   return (
-    <div className={`-mx-4 w-screen max-w-none sm:mx-0 md:max-w-4xl ${chatExpanded ? "h-full" : ""}`}>
+    <div className={`mx-auto w-full max-w-4xl ${chatExpanded ? "h-full" : ""}`}>
       {/* Search Content - Chat interface */}
       <div className={`px-4 md:px-6 md:pb-0 ${chatExpanded ? "h-full" : ""}`}>
         <div className={`flex flex-col gap-4 mx-auto w-full ${chatExpanded ? "h-full" : ""}`}>
           {/* Chat Container */}
           <div
-            className={`relative w-full bg-white rounded-2xl border border-gray-200 shadow-sm transition-all duration-300 flex flex-col ${
+            className={`relative w-full bg-white rounded-2xl transition-all duration-300 flex flex-col ${
               chatExpanded ? "flex-1 min-h-0" : "min-h-[120px]"
             }`}
           >
@@ -446,7 +446,7 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
                         )}
                         {isAssistant ? (
                           message.results ? (
-                            <div className="inline-block w-fit max-w-[85%] sm:max-w-[75%] rounded-lg bg-slate-50 px-4 py-2.5 text-slate-900">
+                            <div className="w-full max-w-[85%] sm:max-w-[75%] rounded-lg bg-slate-50 px-4 py-2.5 text-slate-900">
                               <div className="text-sm font-medium">
                                 Results for “{message.results.query}”
                               </div>
@@ -458,7 +458,7 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
                                     : "Here are the top matches:"}
                               </div>
                               {!message.results.isLoading && message.results.items.length > 0 && (
-                                <div className="mt-3 grid grid-cols-1 gap-4">
+                                <div className="mt-3 grid grid-cols-1 gap-4 md:grid-cols-3">
                                   {message.results.items.map((item: any) => {
                                     if (message.results?.type === "jobs") {
                                       return (
@@ -511,7 +511,7 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
             )}
 
             {/* Input Area at Bottom */}
-            <div className="p-3">
+            <div className="p-3 rounded-2xl border border-gray-200 shadow-sm bg-white">
               <div className="flex items-center">
                 <Input
                   placeholder={t("placeholder")}
