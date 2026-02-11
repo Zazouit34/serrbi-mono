@@ -420,7 +420,7 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
         <div className={`flex flex-col gap-4 mx-auto w-full ${chatExpanded ? "h-full" : ""}`}>
           {/* Chat Container */}
           <div
-            className={`relative w-full bg-white rounded-2xl transition-all duration-300 flex flex-col ${
+            className={`relative w-full bg-white rounded-2xl overflow-hidden transition-all duration-300 flex flex-col ${
               chatExpanded ? "flex-1 min-h-0" : "min-h-[120px]"
             }`}
           >
@@ -511,56 +511,58 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
             )}
 
             {/* Input Area at Bottom */}
-            <div className="p-3 rounded-2xl border border-gray-200 shadow-sm bg-white">
-              <div className="flex items-center">
-                <Input
-                  placeholder={t("placeholder")}
-                  value={chatInput}
-                  onChange={(e) => setChatInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey && chatInput.trim()) {
-                      e.preventDefault();
-                      void handleSearch();
-                    }
-                  }}
-                  className="flex-1 px-0 text-sm text-gray-900 bg-transparent border-none shadow-none outline-none placeholder:text-gray-400 focus-visible:ring-0 focus-visible:ring-offset-0"
-                />
-              </div>
-              <div className="flex gap-2 justify-end items-center mt-3">
-                <div className="flex items-center gap-2">
-                  <Select
-                    value={activeTab}
-                    onValueChange={(value) => {
-                      setActiveTab(value as TabType);
-                      setHasSearched(false);
-                      setSubmittedQuery("");
-                      setSelectedCategory(undefined);
-                      setPreviewPageSize(12);
+            <div className="sticky bottom-0 z-10 bg-white p-3">
+              <div className="rounded-2xl border border-gray-200 shadow-sm bg-white p-3">
+                <div className="flex items-center">
+                  <Input
+                    placeholder={t("placeholder")}
+                    value={chatInput}
+                    onChange={(e) => setChatInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey && chatInput.trim()) {
+                        e.preventDefault();
+                        void handleSearch();
+                      }
                     }}
-                  >
-                    <SelectTrigger className="h-8 min-w-[120px] px-3 text-sm">
-                      <SelectValue placeholder={tabLabels[activeTab]} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="jobs">{tabLabels.jobs}</SelectItem>
-                      <SelectItem value="services">{tabLabels.services}</SelectItem>
-                      <SelectItem value="tasks">{tabLabels.tasks}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <button
-                    type="button"
-                    onClick={() => void handleSearch()}
-                    disabled={isSearching || isStreaming}
-                    className="flex justify-center items-center w-12 h-8 rounded-lg border border-gray-200 disabled:opacity-60"
-                  >
-                    <Image 
-                      src="/icons/arrow.svg" 
-                      alt="Send" 
-                      width={20} 
-                      height={20}
-                      className={dir === 'rtl' ? 'rotate-180' : ''}
-                    />
-                  </button>
+                    className="flex-1 px-0 text-sm text-gray-900 bg-transparent border-none shadow-none outline-none placeholder:text-gray-400 focus-visible:ring-0 focus-visible:ring-offset-0"
+                  />
+                </div>
+                <div className="flex gap-2 justify-end items-center mt-3">
+                  <div className="flex items-center gap-2">
+                    <Select
+                      value={activeTab}
+                      onValueChange={(value) => {
+                        setActiveTab(value as TabType);
+                        setHasSearched(false);
+                        setSubmittedQuery("");
+                        setSelectedCategory(undefined);
+                        setPreviewPageSize(12);
+                      }}
+                    >
+                      <SelectTrigger className="h-8 min-w-[120px] px-3 text-sm">
+                        <SelectValue placeholder={tabLabels[activeTab]} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="jobs">{tabLabels.jobs}</SelectItem>
+                        <SelectItem value="services">{tabLabels.services}</SelectItem>
+                        <SelectItem value="tasks">{tabLabels.tasks}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <button
+                      type="button"
+                      onClick={() => void handleSearch()}
+                      disabled={isSearching || isStreaming}
+                      className="flex justify-center items-center w-12 h-8 rounded-lg border border-gray-200 disabled:opacity-60"
+                    >
+                      <Image
+                        src="/icons/arrow.svg"
+                        alt="Send"
+                        width={20}
+                        height={20}
+                        className={dir === "rtl" ? "rotate-180" : ""}
+                      />
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
