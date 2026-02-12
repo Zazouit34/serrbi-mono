@@ -345,15 +345,13 @@
     "browseJobs": "Parcourir Emplois",
     "loadMore": "Charger plus",
     "onboarding": {
-      "greeting": "Bonjour, je suis Serrbi ! Je peux vous aider à trouver des emplois, des services ou des tâches. Que cherchez-vous aujourd'hui ?",
-      "choosePrompt": "Veuillez sélectionner ce que vous recherchez :",
-      "choiceJob": "Trouver un emploi",
-      "choiceService": "Trouver un service",
-      "choiceTask": "Trouver une tâche",
-      "confirmChoice": "Parfait ! Vous avez choisi **{choice}**. Maintenant, dites-moi ce que vous recherchez.",
-      "confirmChoiceJob": "Parfait ! Vous avez choisi de trouver un **emploi**. Dites-moi quel type d'emploi vous recherchez (par ex., poste, compétences, lieu).",
-      "confirmChoiceService": "Parfait ! Vous avez choisi de trouver un **service**. Dites-moi de quel service vous avez besoin (par ex., plombier, avocat, designer).",
-      "confirmChoiceTask": "Excellent ! Vous avez choisi de trouver une **tâche**. Dites-moi de quelle tâche vous avez besoin."
+      "greeting": "Bonjour, je suis Serrbi ! Je peux vous aider à trouver des",
+      "choiceJob": "Emplois",
+      "choiceService": "Services",
+      "choiceTask": "Tâches",
+      "confirmChoiceJob": "Parfait ! Vous avez choisi **emplois**. Dites-moi quel type d'emploi vous recherchez (par ex., poste, compétences, lieu).",
+      "confirmChoiceService": "Parfait ! Vous avez choisi **services**. Dites-moi de quel service vous avez besoin (par ex., plombier, avocat, designer).",
+      "confirmChoiceTask": "Excellent ! Vous avez choisi **tâches**. Dites-moi de quelle tâche vous avez besoin."
     }
   },
   "Routes": {

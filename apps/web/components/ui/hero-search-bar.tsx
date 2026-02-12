@@ -52,9 +52,7 @@ type ChatMessage = {
     items: any[];
     isLoading: boolean;
   };
-  choicePrompt?: {
-    choices: Array<{ value: TabType; label: string }>;
-  };
+  selectPrompt?: boolean;
 };
 
 const jobCategoryIcons = require("@/components/ui/config/job-filters-config").jobCategoryIcons ?? {};
@@ -367,22 +365,10 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
 
       const userMessageId = nextMessageIdRef.current++;
       const greetingId = nextMessageIdRef.current++;
-      const choiceId = nextMessageIdRef.current++;
 
       setMessages([
         { id: userMessageId, role: "user", content: effectiveQuery },
-        { id: greetingId, role: "assistant", content: "" },
-        {
-          id: choiceId,
-          role: "assistant",
-          choicePrompt: {
-            choices: [
-              { value: "jobs", label: t("onboarding.choiceJob") },
-              { value: "services", label: t("onboarding.choiceService") },
-              { value: "tasks", label: t("onboarding.choiceTask") },
-            ],
-          },
-        },
+        { id: greetingId, role: "assistant", content: "", selectPrompt: true },
       ]);
 
       setChatInput("");
@@ -454,9 +440,9 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
     
     // Static response for testing - customize based on activeTab
     const responses: Record<TabType, string> = {
-      jobs: `Great! I'm searching for jobs matching "${userQuery}". I found several opportunities that might interest you. Let me show you the results below. You can filter by category to narrow down your search.`,
-      services: `Perfect! I'm looking for services related to "${userQuery}". I've found some great service providers that match your needs. Check out the results below and feel free to filter by category.`,
-      tasks: `Excellent! I'm searching for tasks matching "${userQuery}". I've found several tasks that you might be interested in. Take a look at the results below and use the category filters to refine your search.`,
+      jobs: `Great! I'm searching for jobs matching "${userQuery}". Let me show you the results below.`,
+      services: `Perfect! I'm looking for services related to "${userQuery}". Let me show you the results below.`,
+      tasks: `Excellent! I'm searching for tasks matching "${userQuery}". Let me show you the results below.`,
     };
 
     const fullResponse = responses[activeTab];
@@ -578,22 +564,20 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
                           />
                         )}
                         {isAssistant ? (
-                          message.choicePrompt ? (
+                          message.selectPrompt ? (
                             <div className="inline-block w-fit max-w-[85%] sm:max-w-[75%] rounded-lg bg-slate-50 px-4 py-2.5 text-slate-900">
-                              <div className="text-sm font-medium mb-3">
-                                {t("onboarding.choosePrompt")}
-                              </div>
-                              <div className="flex flex-col gap-2">
-                                {message.choicePrompt.choices.map((choice) => (
-                                  <button
-                                    key={choice.value}
-                                    type="button"
-                                    onClick={() => handleChoiceSelection(choice.value)}
-                                    className="px-4 py-2 text-sm font-medium text-slate-900 bg-white border border-slate-200 rounded-lg hover:bg-slate-100 hover:border-slate-900 transition-colors"
-                                  >
-                                    {choice.label}
-                                  </button>
-                                ))}
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <Markdown>{message.content ?? ""}</Markdown>
+                                <Select onValueChange={(value) => handleChoiceSelection(value as TabType)}>
+                                  <SelectTrigger className="h-8 min-w-[120px] px-3 text-sm">
+                                    <SelectValue placeholder={t("tabs.jobs")} />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="jobs">{t("onboarding.choiceJob")}</SelectItem>
+                                    <SelectItem value="services">{t("onboarding.choiceService")}</SelectItem>
+                                    <SelectItem value="tasks">{t("onboarding.choiceTask")}</SelectItem>
+                                  </SelectContent>
+                                </Select>
                               </div>
                             </div>
                           ) : message.results ? (
@@ -605,11 +589,11 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
                                 {message.results.isLoading
                                   ? "Searching…"
                                   : message.results.items.length === 0
-                                    ? "No results found."
-                                    : "Here are the top matches:"}
+                                    ? "No results found. Try adjusting your search."
+                                    : `Found ${message.results.items.length} ${message.results.items.length === 1 ? "result" : "results"}:`}
                               </div>
                               {!message.results.isLoading && message.results.items.length > 0 && (
-                                <div className="mt-3 grid grid-cols-1 gap-4 md:grid-cols-2">
+                                <div className="mt-3 grid grid-cols-1 gap-4 md:grid-cols-3">
                                   {message.results.items.map((item: any) => {
                                     if (message.results?.type === "jobs") {
                                       return (
