@@ -16,7 +16,7 @@ export default function Hero() {
     isSearchMode: false,
   });
   const [chatExpanded, setChatExpanded] = useState(false);
-  // avatars removed on mobile for better fit
+  // avatars removed on mobile for better UX
 
   return (
     <div className="flex flex-col text-center">

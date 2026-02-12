@@ -115,14 +115,27 @@ export const taskRouter = router({
           }
         }
 
-        whereSql += ` AND (
-          unaccent(lower("title")) LIKE unaccent(lower($${idx}))
-          OR unaccent(lower("description")) LIKE unaccent(lower($${idx}))
-          OR unaccent(lower("displayName")) LIKE unaccent(lower($${idx}))
-          OR unaccent(lower("city")) LIKE unaccent(lower($${idx}))
-        )`;
-        params.push(`%${search}%`);
-        idx += 1;
+        // Token-aware fallback search (multi-word queries like "vendeuse a casablanca").
+        const tokens = search
+          .toLowerCase()
+          .split(/\s+/)
+          .map((t) => t.trim())
+          .filter(Boolean)
+          .filter((t) => t.length >= 3)
+          .filter((t) => !["a", "à", "au", "aux", "de", "des", "du", "la", "le", "les"].includes(t));
+
+        const effectiveTokens = tokens.length ? tokens : [search];
+
+        for (const token of effectiveTokens) {
+          whereSql += ` AND (
+            unaccent(lower("title")) LIKE unaccent(lower($${idx}))
+            OR unaccent(lower("description")) LIKE unaccent(lower($${idx}))
+            OR unaccent(lower("displayName")) LIKE unaccent(lower($${idx}))
+            OR unaccent(lower("city")) LIKE unaccent(lower($${idx}))
+          )`;
+          params.push(`%${token}%`);
+          idx += 1;
+        }
 
         const limitIdx = idx;
         const offsetIdx = idx + 1;

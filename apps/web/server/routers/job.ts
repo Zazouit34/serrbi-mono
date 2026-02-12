@@ -232,15 +232,31 @@ export const jobRouter = router({
           return { items, total, page, pageSize };
         }
 
-        // Fallback: accent-insensitive keyword search across key text fields
-        whereSql += ` AND (
-          unaccent(lower("title")) LIKE unaccent(lower($${idx}))
-          OR unaccent(lower("description")) LIKE unaccent(lower($${idx}))
-          OR unaccent(lower("companyName")) LIKE unaccent(lower($${idx}))
-          OR unaccent(lower("city")) LIKE unaccent(lower($${idx}))
-        )`;
-        params.push(`%${search}%`);
-        idx += 1;
+        // Fallback: accent-insensitive keyword search.
+        // If embeddings are unavailable (e.g. missing EMBEDDING_API_*), we still want multi-word queries
+        // like "vendeuse a casablanca" to match "vendeuse" (title/description) + "casablanca" (city)
+        // instead of requiring the full phrase to exist verbatim.
+        const tokens = search
+          .toLowerCase()
+          .split(/\s+/)
+          .map((t) => t.trim())
+          .filter(Boolean)
+          // drop very short tokens and common connector words
+          .filter((t) => t.length >= 3)
+          .filter((t) => !["a", "à", "au", "aux", "de", "des", "du", "la", "le", "les"].includes(t));
+
+        const effectiveTokens = tokens.length ? tokens : [search];
+
+        for (const token of effectiveTokens) {
+          whereSql += ` AND (
+            unaccent(lower("title")) LIKE unaccent(lower($${idx}))
+            OR unaccent(lower("description")) LIKE unaccent(lower($${idx}))
+            OR unaccent(lower("companyName")) LIKE unaccent(lower($${idx}))
+            OR unaccent(lower("city")) LIKE unaccent(lower($${idx}))
+          )`;
+          params.push(`%${token}%`);
+          idx += 1;
+        }
 
         const limitIdx = idx;
         const offsetIdx = idx + 1;

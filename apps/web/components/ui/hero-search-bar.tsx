@@ -190,7 +190,10 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
       search: submittedQuery || undefined,
       category: selectedJobCategory,
     },
-    { enabled: hasSearched && !!submittedQuery.trim(), refetchOnWindowFocus: false },
+    {
+      enabled: hasSearched && activeTab === "jobs" && !!submittedQuery.trim(),
+      refetchOnWindowFocus: false,
+    },
   );
   const searchServicesQuery = trpc.service.getService.useQuery(
     {
@@ -199,7 +202,10 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
       search: submittedQuery || undefined,
       serviceCategory: selectedServiceCategory,
     },
-    { enabled: hasSearched && !!submittedQuery.trim(), refetchOnWindowFocus: false },
+    {
+      enabled: hasSearched && activeTab === "services" && !!submittedQuery.trim(),
+      refetchOnWindowFocus: false,
+    },
   );
   const searchTasksQuery = trpc.task.getTask.useQuery(
     {
@@ -208,13 +214,18 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
       search: submittedQuery || undefined,
       category: selectedTaskCategory,
     },
-    { enabled: hasSearched && !!submittedQuery.trim(), refetchOnWindowFocus: false },
+    {
+      enabled: hasSearched && activeTab === "tasks" && !!submittedQuery.trim(),
+      refetchOnWindowFocus: false,
+    },
   );
 
   const isSearching =
-    searchJobsQuery.isFetching ||
-    searchServicesQuery.isFetching ||
-    searchTasksQuery.isFetching;
+    activeTab === "jobs"
+      ? searchJobsQuery.isFetching
+      : activeTab === "services"
+        ? searchServicesQuery.isFetching
+        : searchTasksQuery.isFetching;
 
   const topSearchItems = useMemo(() => {
     if (!hasSearched || !submittedQuery.trim()) return [];
