@@ -309,7 +309,7 @@
       "tasks": "Complete tasks"
     },
     "placeholder": "Tell me what you're looking for...",
-    "placeholderStreaming": ["I can help you find jobs...", "I can help you find services...", "I can help you find tasks..."],
+    "placeholderStreaming": "I can help you find jobs, services, and tasks...",
     "search": "Search",
     "searching": "Searching...",
     "jobsHint": "AI highlights the 6 closest job matches for your query.",

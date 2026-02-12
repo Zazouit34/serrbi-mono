@@ -114,49 +114,28 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
     onChatExpandedChange?.(chatExpanded);
   }, [chatExpanded, onChatExpandedChange]);
 
-  // Streaming placeholder effect
+  // One-time streaming placeholder effect
   useEffect(() => {
-    const placeholders = t.raw("placeholderStreaming") as string[];
-    if (!Array.isArray(placeholders) || placeholders.length === 0) {
+    const placeholderText = t.raw("placeholderStreaming") as string;
+    if (typeof placeholderText !== "string" || !placeholderText) {
       setPlaceholder(t("placeholder"));
       return;
     }
 
-    let currentIndex = 0;
     let charIndex = 0;
-    let currentText = "";
-    let isDeleting = false;
 
     const streamPlaceholder = () => {
-      const targetText = placeholders[currentIndex];
-      if (!targetText) return;
-
-      if (!isDeleting) {
-        if (charIndex < targetText.length) {
-          currentText = targetText.slice(0, charIndex + 1);
-          setPlaceholder(currentText);
-          charIndex++;
-        } else {
-          // Wait before deleting
-          setTimeout(() => {
-            isDeleting = true;
-          }, 2000);
-          return;
-        }
+      if (charIndex < placeholderText.length) {
+        setPlaceholder(placeholderText.slice(0, charIndex + 1));
+        charIndex++;
       } else {
-        if (charIndex > 0) {
-          currentText = targetText.slice(0, charIndex - 1);
-          setPlaceholder(currentText);
-          charIndex--;
-        } else {
-          isDeleting = false;
-          currentIndex = (currentIndex + 1) % placeholders.length;
-          charIndex = 0;
+        if (placeholderIntervalRef.current) {
+          clearInterval(placeholderIntervalRef.current);
         }
       }
     };
 
-    placeholderIntervalRef.current = setInterval(streamPlaceholder, isDeleting ? 30 : 80);
+    placeholderIntervalRef.current = setInterval(streamPlaceholder, 50);
 
     return () => {
       if (placeholderIntervalRef.current) {
@@ -164,55 +143,6 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
       }
     };
   }, [t]);
-
-  // Initialize onboarding on first load
-  useEffect(() => {
-    if (messages.length === 0 && onboardingStep === "initial") {
-      const greetingId = nextMessageIdRef.current++;
-      const choiceId = nextMessageIdRef.current++;
-
-      setMessages([
-        {
-          id: greetingId,
-          role: "assistant",
-          content: "",
-        },
-        {
-          id: choiceId,
-          role: "assistant",
-          choicePrompt: {
-            choices: [
-              { value: "jobs", label: t("onboarding.choiceJob") },
-              { value: "services", label: t("onboarding.choiceService") },
-              { value: "tasks", label: t("onboarding.choiceTask") },
-            ],
-          },
-        },
-      ]);
-
-      // Stream the greeting
-      let charIndex = 0;
-      const greeting = t("onboarding.greeting");
-      streamContentRef.current = "";
-
-      streamIntervalRef.current = setInterval(() => {
-        if (charIndex < greeting.length) {
-          streamContentRef.current += greeting[charIndex];
-          setMessages((prev) =>
-            prev.map((msg) =>
-              msg.id === greetingId ? { ...msg, content: streamContentRef.current } : msg
-            )
-          );
-          charIndex++;
-        } else {
-          if (streamIntervalRef.current) {
-            clearInterval(streamIntervalRef.current);
-          }
-          setOnboardingStep("choice");
-        }
-      }, 20);
-    }
-  }, [messages.length, onboardingStep, t]);
 
   const selectedJobCategory =
     activeTab === "jobs" ? (selectedCategory as JobCategory | undefined) : undefined;
@@ -351,24 +281,6 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
   ]);
 
   const handleChoiceSelection = (choice: TabType) => {
-    if (!isLoggedIn) {
-      const callback = pathname || "/";
-      router.push(`/login?callbackUrl=${encodeURIComponent(callback)}`);
-      return;
-    }
-
-    // For secondary client, redirect immediately
-    if (isSecondary) {
-      const routes: Record<TabType, string> = {
-        jobs: `/jobs`,
-        services: `/services`,
-        tasks: `/tasks`,
-      };
-      window.location.href = routes[choice];
-      return;
-    }
-
-    setChatExpanded(true);
     setUserChoice(choice);
     setActiveTab(choice);
     setOnboardingStep("input");
@@ -448,13 +360,61 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
       return;
     }
 
-    // Mark onboarding as done
-    if (onboardingStep !== "done") {
-      setOnboardingStep("done");
+    // If this is the first user interaction, show onboarding
+    if (onboardingStep === "initial") {
+      setChatExpanded(true);
+      setOnboardingStep("choice");
+
+      const userMessageId = nextMessageIdRef.current++;
+      const greetingId = nextMessageIdRef.current++;
+      const choiceId = nextMessageIdRef.current++;
+
+      setMessages([
+        { id: userMessageId, role: "user", content: effectiveQuery },
+        { id: greetingId, role: "assistant", content: "" },
+        {
+          id: choiceId,
+          role: "assistant",
+          choicePrompt: {
+            choices: [
+              { value: "jobs", label: t("onboarding.choiceJob") },
+              { value: "services", label: t("onboarding.choiceService") },
+              { value: "tasks", label: t("onboarding.choiceTask") },
+            ],
+          },
+        },
+      ]);
+
+      setChatInput("");
+
+      // Stream the greeting
+      let charIndex = 0;
+      const greeting = t("onboarding.greeting");
+      streamContentRef.current = "";
+
+      streamIntervalRef.current = setInterval(() => {
+        if (charIndex < greeting.length) {
+          streamContentRef.current += greeting[charIndex];
+          setMessages((prev) =>
+            prev.map((msg) =>
+              msg.id === greetingId ? { ...msg, content: streamContentRef.current } : msg
+            )
+          );
+          charIndex++;
+        } else {
+          if (streamIntervalRef.current) {
+            clearInterval(streamIntervalRef.current);
+          }
+        }
+      }, 20);
+
+      return;
     }
 
-    // Expand chat and add user message
+    // Now do the actual search (after onboarding)
+    setOnboardingStep("done");
     setChatExpanded(true);
+
     const userMessageId = nextMessageIdRef.current++;
     const assistantMessageId = nextMessageIdRef.current++;
     const resultsMessageId = nextMessageIdRef.current++;
@@ -710,13 +670,12 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
                     value={chatInput}
                     onChange={(e) => setChatInput(e.target.value)}
                     onKeyDown={(e) => {
-                      if (e.key === "Enter" && !e.shiftKey && chatInput.trim()) {
+                      if (e.key === "Enter" && !e.shiftKey && chatInput.trim() && onboardingStep !== "choice") {
                         e.preventDefault();
                         void handleSearch();
                       }
                     }}
-                    disabled={onboardingStep === "choice"}
-                    className="flex-1 px-0 text-sm text-gray-900 bg-transparent border-none shadow-none outline-none placeholder:text-gray-400 focus-visible:ring-0 focus-visible:ring-offset-0 disabled:opacity-50"
+                    className="flex-1 px-0 text-sm text-gray-900 bg-transparent border-none shadow-none outline-none placeholder:text-gray-400 focus-visible:ring-0 focus-visible:ring-offset-0"
                   />
                 </div>
                 <div className="flex gap-2 justify-end items-center mt-3">

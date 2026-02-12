@@ -336,7 +336,7 @@
       "tasks": "Réaliser des tâches"
     },
     "placeholder": "Dites-moi ce que vous cherchez...",
-    "placeholderStreaming": ["Je peux vous aider à trouver un emploi...", "Je peux vous aider à trouver un service...", "Je peux vous aider à trouver une tâche..."],
+    "placeholderStreaming": "Je peux vous aider à trouver des emplois, des services et des tâches...",
     "search": "Rechercher",
     "searching": "Recherche en cours...",
     "jobsHint": "L'IA met en avant les 6 offres les plus proches de votre requête.",
