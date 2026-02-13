@@ -107,6 +107,13 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
   const [userChoice, setUserChoice] = useState<TabType | null>(null);
   const [placeholder, setPlaceholder] = useState("");
   const [choicePopoverOpen, setChoicePopoverOpen] = useState(false);
+  const [pendingAiReply, setPendingAiReply] = useState<{
+    messageId: number;
+    query: string;
+    tab: TabType;
+    resultsKey: string;
+    locale: string;
+  } | null>(null);
   const nextMessageIdRef = useRef(1);
   const streamIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const streamContentRef = useRef("");
@@ -152,6 +159,84 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
         }
       }, 20);
     }, delayMs);
+  };
+
+  const buildResultsContext = (tab: TabType, items: any[]) => {
+    if (!items?.length) return [];
+    return items.slice(0, 6).map((item: any) => {
+      if (tab === "jobs") {
+        return {
+          id: item.id,
+          title: item.title,
+          companyName: item.companyName,
+          city: item.city,
+          category: item.category,
+          type: item.type,
+          experienceLevel: item.experienceLevel,
+        };
+      }
+      if (tab === "services") {
+        return {
+          id: item.id,
+          title: item.title,
+          displayName: item.displayName,
+          city: item.city,
+          serviceCategory: item.serviceCategory,
+          type: item.type,
+          price: item.price,
+        };
+      }
+      return {
+        id: item.id,
+        title: item.title,
+        displayName: item.displayName,
+        city: item.city,
+        category: item.category,
+        budget: item.budget,
+      };
+    });
+  };
+
+  const callAgent = async (opts: {
+    messageId: number;
+    query: string;
+    tab: TabType;
+    locale: string;
+    contextResults: any[];
+  }) => {
+    const history = messages
+      .filter((m) => typeof m.content === "string" && m.content.trim())
+      .slice(-12)
+      .map((m) => ({ role: m.role, content: m.content as string }));
+    const finalHistory =
+      history.length > 0 &&
+      history[history.length - 1]?.role === "user" &&
+      history[history.length - 1]?.content === opts.query
+        ? history
+        : [...history, { role: "user" as const, content: opts.query }];
+
+    const res = await fetch("/api/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        messages: finalHistory,
+        context: {
+          locale: opts.locale,
+          tab: opts.tab,
+          query: opts.query,
+          results: opts.contextResults,
+        },
+      }),
+    });
+
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      throw new Error(text || `Chat API error ${res.status}`);
+    }
+    const json = (await res.json()) as any;
+    const text = json?.text;
+    if (typeof text !== "string") throw new Error("Chat API returned invalid payload.");
+    streamAssistantText(opts.messageId, text);
   };
 
   useEffect(() => {
@@ -430,7 +515,7 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
     setMessages((prev) => [
       ...prev,
       { id: userMessageId, role: "user", content: effectiveQuery },
-      { id: assistantMessageId, role: "assistant", content: "" },
+      { id: assistantMessageId, role: "assistant", content: "", thinking: true },
       {
         id: resultsMessageId,
         role: "assistant",
@@ -448,31 +533,53 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
     setSubmittedQuery(effectiveQuery);
     setChatInput("");
 
-    // Start streaming assistant response
-    streamAssistantResponse(assistantMessageId, effectiveQuery);
-
     setHasSearched(true);
+
+    // Generate a real assistant reply once results load (or quickly if none).
+    setPendingAiReply({
+      messageId: assistantMessageId,
+      query: effectiveQuery,
+      tab: activeTab,
+      resultsKey,
+      locale,
+    });
   };
 
-  const streamAssistantResponse = (messageId: number, userQuery: string) => {
-    if (isStreaming) return;
+  useEffect(() => {
+    if (!pendingAiReply) return;
+    // Wait until the active tab query finished loading for this query/tab combo.
+    const isSameKey = submittedResultsKey === pendingAiReply.resultsKey;
+    const ready = isSameKey && !topSearchLoading;
+    if (!ready) return;
 
+    // Prevent duplicate calls on re-render while the request is in-flight.
+    const pending = pendingAiReply;
+    setPendingAiReply(null);
+
+    const contextResults = buildResultsContext(pending.tab, topSearchItems);
     setIsStreaming(true);
-    
-    // Static response for testing - customize based on activeTab
-    const responses: Record<TabType, string> = {
-      jobs: `Great! I'm searching for jobs matching "${userQuery}". Let me show you the results below.`,
-      services: `Perfect! I'm looking for services related to "${userQuery}". Let me show you the results below.`,
-      tasks: `Excellent! I'm searching for tasks matching "${userQuery}". Let me show you the results below.`,
-    };
-
-    const fullResponse = responses[activeTab];
-    streamAssistantText(messageId, fullResponse);
-    // We consider "streaming" done once the typing finishes; since `streamAssistantText`
-    // manages timers, also release the flag after a reasonable bound.
-    // (Prevents the send button staying disabled if the component unmounts mid-stream.)
-    setTimeout(() => setIsStreaming(false), Math.min(12000, 650 + fullResponse.length * 25));
-  };
+    void callAgent({
+      messageId: pending.messageId,
+      query: pending.query,
+      tab: pending.tab,
+      locale: pending.locale,
+      contextResults,
+    })
+      .catch((err) => {
+        streamAssistantText(
+          pending.messageId,
+          locale === "fr"
+            ? "Désolé, je n’arrive pas à répondre pour le moment. Réessaie dans un instant."
+            : locale === "ar"
+              ? "عذرًا، لا أستطيع الرد الآن. حاول مرة أخرى بعد قليل."
+              : "Sorry, I can’t reply right now. Please try again in a moment.",
+        );
+        console.error(err);
+      })
+      .finally(() => {
+        setIsStreaming(false);
+      });
+  }, [pendingAiReply, submittedResultsKey, topSearchLoading, topSearchItems, locale]);
 
   // Cleanup streaming on unmount
   useEffect(() => {
