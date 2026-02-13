@@ -339,6 +339,7 @@
     "placeholderStreaming": "Je peux vous aider à trouver des emplois, des services et des tâches...",
     "search": "Rechercher",
     "searching": "Recherche en cours...",
+    "thinking": "Je réfléchis...",
     "jobsHint": "L'IA met en avant les 6 offres les plus proches de votre requête.",
     "servicesHint": "L'IA met en avant les 6 services les plus pertinents pour votre demande.",
     "tasksHint": "L'IA met en avant les 6 missions les plus pertinentes pour votre demande.",
@@ -346,6 +347,7 @@
     "loadMore": "Charger plus",
     "onboarding": {
       "greeting": "Bonjour, je suis Serrbi ! Je peux vous aider à trouver des",
+      "chooseAction": "Choisir",
       "choiceJob": "Emplois",
       "choiceService": "Services",
       "choiceTask": "Tâches",

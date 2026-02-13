@@ -312,6 +312,7 @@
     "placeholderStreaming": "I can help you find jobs, services, and tasks...",
     "search": "Search",
     "searching": "Searching...",
+    "thinking": "Thinking...",
     "jobsHint": "AI highlights the 6 closest job matches for your query.",
     "servicesHint": "AI highlights the 6 closest services for your request.",
     "tasksHint": "AI highlights the 6 closest tasks for your request.",
@@ -319,6 +320,7 @@
     "loadMore": "Load more",
     "onboarding": {
       "greeting": "Hi, I am Serrbi! I can help you find",
+      "chooseAction": "Choose",
       "choiceJob": "Jobs",
       "choiceService": "Services",
       "choiceTask": "Tasks",

@@ -7,7 +7,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { Input } from "@workspace/ui/components/input";
 import { Button } from "@workspace/ui/components/button";
-import { Check, ChevronLeft, ChevronRight } from "lucide-react";
+import { Check, ChevronDown, ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { isSecondaryClient } from "@/lib/domain";
 import {
@@ -17,6 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@workspace/ui/components/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@workspace/ui/components/popover";
 
 import { PreviewCards } from "@/components/ui/preview-cards";
 import { trpc } from "@/app/_trpc/client";
@@ -29,6 +30,7 @@ import { Markdown } from "@/components/ui/markdown";
 import { JobCard } from "@/components/ui/form/job/job-card";
 import { ServiceCard } from "@/components/ui/form/service/service-card";
 import { TaskCard } from "@/components/ui/form/task/task-card";
+import { ThinkingBar } from "@/components/ui/thinking-bar";
 
 type TabType = "jobs" | "services" | "tasks";
 
@@ -45,6 +47,7 @@ type ChatMessage = {
   id: number;
   role: "user" | "assistant";
   content?: string;
+  thinking?: boolean;
   results?: {
     key: string;
     query: string;
@@ -103,10 +106,53 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
   const [onboardingStep, setOnboardingStep] = useState<"initial" | "choice" | "input" | "done">("initial");
   const [userChoice, setUserChoice] = useState<TabType | null>(null);
   const [placeholder, setPlaceholder] = useState("");
+  const [choicePopoverOpen, setChoicePopoverOpen] = useState(false);
   const nextMessageIdRef = useRef(1);
   const streamIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const streamContentRef = useRef("");
   const placeholderIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const streamTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const clearStreamTimers = () => {
+    if (streamIntervalRef.current) {
+      clearInterval(streamIntervalRef.current);
+      streamIntervalRef.current = null;
+    }
+    if (streamTimeoutRef.current) {
+      clearTimeout(streamTimeoutRef.current);
+      streamTimeoutRef.current = null;
+    }
+  };
+
+  const streamAssistantText = (messageId: number, text: string, delayMs = 650) => {
+    clearStreamTimers();
+
+    // show "thinking" briefly before streaming
+    setMessages((prev) =>
+      prev.map((m) => (m.id === messageId ? { ...m, thinking: true, content: "" } : m)),
+    );
+
+    streamTimeoutRef.current = setTimeout(() => {
+      let charIndex = 0;
+      streamContentRef.current = "";
+
+      streamIntervalRef.current = setInterval(() => {
+        if (charIndex < text.length) {
+          streamContentRef.current += text[charIndex]!;
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === messageId
+                ? { ...m, thinking: false, content: streamContentRef.current }
+                : m,
+            ),
+          );
+          charIndex++;
+        } else {
+          clearStreamTimers();
+        }
+      }, 20);
+    }, delayMs);
+  };
 
   useEffect(() => {
     onChatExpandedChange?.(chatExpanded);
@@ -293,6 +339,7 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
     setUserChoice(choice);
     setActiveTab(choice);
     setOnboardingStep("input");
+    setChoicePopoverOpen(false);
 
     // Add user's choice as a message
     const choiceLabels: Record<TabType, string> = {
@@ -307,35 +354,16 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
     setMessages((prev) => [
       ...prev,
       { id: userChoiceId, role: "user", content: choiceLabels[choice] },
-      { id: confirmId, role: "assistant", content: "" },
+      { id: confirmId, role: "assistant", content: "", thinking: true },
     ]);
 
-    // Stream confirmation message
     const confirmMessages: Record<TabType, string> = {
       jobs: t("onboarding.confirmChoiceJob"),
       services: t("onboarding.confirmChoiceService"),
       tasks: t("onboarding.confirmChoiceTask"),
     };
-
-    let charIndex = 0;
     const confirmMsg = confirmMessages[choice];
-    streamContentRef.current = "";
-
-    streamIntervalRef.current = setInterval(() => {
-      if (charIndex < confirmMsg.length) {
-        streamContentRef.current += confirmMsg[charIndex];
-        setMessages((prev) =>
-          prev.map((msg) =>
-            msg.id === confirmId ? { ...msg, content: streamContentRef.current } : msg
-          )
-        );
-        charIndex++;
-      } else {
-        if (streamIntervalRef.current) {
-          clearInterval(streamIntervalRef.current);
-        }
-      }
-    }, 20);
+    streamAssistantText(confirmId, confirmMsg);
   };
 
   const handleSearch = async (overrideQuery?: string) => {
@@ -379,31 +407,13 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
 
       setMessages([
         { id: userMessageId, role: "user", content: effectiveQuery },
-        { id: greetingId, role: "assistant", content: "", selectPrompt: true },
+        { id: greetingId, role: "assistant", content: "", thinking: true, selectPrompt: true },
       ]);
 
       setChatInput("");
 
-      // Stream the greeting
-      let charIndex = 0;
       const greeting = t("onboarding.greeting");
-      streamContentRef.current = "";
-
-      streamIntervalRef.current = setInterval(() => {
-        if (charIndex < greeting.length) {
-          streamContentRef.current += greeting[charIndex];
-          setMessages((prev) =>
-            prev.map((msg) =>
-              msg.id === greetingId ? { ...msg, content: streamContentRef.current } : msg
-            )
-          );
-          charIndex++;
-        } else {
-          if (streamIntervalRef.current) {
-            clearInterval(streamIntervalRef.current);
-          }
-        }
-      }, 20);
+      streamAssistantText(greetingId, greeting);
 
       return;
     }
@@ -457,34 +467,17 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
     };
 
     const fullResponse = responses[activeTab];
-
-    let charIndex = 0;
-    streamContentRef.current = "";
-
-    streamIntervalRef.current = setInterval(() => {
-      if (charIndex < fullResponse.length) {
-        streamContentRef.current += fullResponse[charIndex];
-        setMessages((prev) =>
-          prev.map((msg) =>
-            msg.id === messageId
-              ? { ...msg, content: streamContentRef.current }
-              : msg
-          )
-        );
-        charIndex++;
-      } else {
-        clearInterval(streamIntervalRef.current!);
-        setIsStreaming(false);
-      }
-    }, 20);
+    streamAssistantText(messageId, fullResponse);
+    // We consider "streaming" done once the typing finishes; since `streamAssistantText`
+    // manages timers, also release the flag after a reasonable bound.
+    // (Prevents the send button staying disabled if the component unmounts mid-stream.)
+    setTimeout(() => setIsStreaming(false), Math.min(12000, 650 + fullResponse.length * 25));
   };
 
   // Cleanup streaming on unmount
   useEffect(() => {
     return () => {
-      if (streamIntervalRef.current) {
-        clearInterval(streamIntervalRef.current);
-      }
+      clearStreamTimers();
     };
   }, []);
 
@@ -577,18 +570,53 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
                         {isAssistant ? (
                           message.selectPrompt ? (
                             <div className="inline-block w-fit max-w-[85%] sm:max-w-[75%] rounded-lg bg-slate-50 px-4 py-2.5 text-slate-900">
-                              <div className="flex items-center gap-2 flex-wrap">
+                              {message.thinking ? (
+                                <ThinkingBar text={t("thinking")} />
+                              ) : (
                                 <Markdown>{message.content ?? ""}</Markdown>
-                                <Select onValueChange={(value) => handleChoiceSelection(value as TabType)}>
-                                  <SelectTrigger className="h-8 min-w-[120px] px-3 text-sm">
-                                    <SelectValue placeholder={t("tabs.jobs")} />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="jobs">{t("onboarding.choiceJob")}</SelectItem>
-                                    <SelectItem value="services">{t("onboarding.choiceService")}</SelectItem>
-                                    <SelectItem value="tasks">{t("onboarding.choiceTask")}</SelectItem>
-                                  </SelectContent>
-                                </Select>
+                              )}
+
+                              <div className="mt-3">
+                                <Popover open={choicePopoverOpen} onOpenChange={setChoicePopoverOpen}>
+                                  <PopoverTrigger asChild>
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      className="inline-flex items-center gap-2 font-semibold text-slate-900 transition hover:bg-slate-100 hover:text-slate-900"
+                                    >
+                                      <Sparkles className="h-4 w-4" />
+                                      {t("onboarding.chooseAction")}
+                                      <ChevronDown className="h-4 w-4 opacity-60" />
+                                    </Button>
+                                  </PopoverTrigger>
+                                  <PopoverContent
+                                    align={dir === "rtl" ? "end" : "start"}
+                                    sideOffset={8}
+                                    className="w-56 p-1"
+                                  >
+                                    <button
+                                      type="button"
+                                      onClick={() => handleChoiceSelection("jobs")}
+                                      className="flex w-full items-center rounded-md px-2 py-2 text-sm font-medium hover:bg-slate-100"
+                                    >
+                                      {t("onboarding.choiceJob")}
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleChoiceSelection("services")}
+                                      className="flex w-full items-center rounded-md px-2 py-2 text-sm font-medium hover:bg-slate-100"
+                                    >
+                                      {t("onboarding.choiceService")}
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleChoiceSelection("tasks")}
+                                      className="flex w-full items-center rounded-md px-2 py-2 text-sm font-medium hover:bg-slate-100"
+                                    >
+                                      {t("onboarding.choiceTask")}
+                                    </button>
+                                  </PopoverContent>
+                                </Popover>
                               </div>
                             </div>
                           ) : message.results ? (
@@ -641,7 +669,11 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
                             </div>
                           ) : (
                             <div className="inline-block w-fit max-w-[85%] sm:max-w-[75%] rounded-lg bg-slate-50 px-4 py-2.5 text-slate-900">
-                              <Markdown>{message.content ?? ""}</Markdown>
+                              {message.thinking ? (
+                                <ThinkingBar text={t("thinking")} />
+                              ) : (
+                                <Markdown>{message.content ?? ""}</Markdown>
+                              )}
                             </div>
                           )
                         ) : (
