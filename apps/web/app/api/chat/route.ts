@@ -84,6 +84,8 @@ async function callDashScope(body: {
       max_tokens: 700,
       // If supported, ask for message-shaped output.
       result_format: "message",
+      // Qwen3 may default to "thinking" mode; DashScope requires disabling it for non-streaming calls.
+      enable_thinking: false,
     },
   };
 
@@ -104,6 +106,8 @@ async function callDashScope(body: {
       temperature: 0.3,
       top_p: 0.9,
       max_tokens: 700,
+      // DashScope OpenAI-compatible mode may also enforce this for non-streaming.
+      enable_thinking: false,
     };
 
     response = await fetch(url, {
