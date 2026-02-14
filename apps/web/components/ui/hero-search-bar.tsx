@@ -35,6 +35,7 @@ import { ThinkingBar } from "@/components/ui/thinking-bar";
 type TabType = "jobs" | "services" | "tasks";
 
 const MAX_PAGE_SIZE = 50;
+const SEARCH_PAGE_SIZE = 3;
 const jobCategories = jobCategoryValues;
 const serviceCategories = serviceCategoryValues;
 const taskCategories = taskCategoryValues;
@@ -163,7 +164,7 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
 
   const buildResultsContext = (tab: TabType, items: any[]) => {
     if (!items?.length) return [];
-    return items.slice(0, 6).map((item: any) => {
+    return items.slice(0, SEARCH_PAGE_SIZE).map((item: any) => {
       if (tab === "jobs") {
         return {
           id: item.id,
@@ -317,7 +318,7 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
   const searchJobsQuery = trpc.job.getJob.useQuery(
     {
       page: 1,
-      pageSize: MAX_PAGE_SIZE,
+      pageSize: SEARCH_PAGE_SIZE,
       search: submittedQuery || undefined,
       category: selectedJobCategory,
     },
@@ -329,7 +330,7 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
   const searchServicesQuery = trpc.service.getService.useQuery(
     {
       page: 1,
-      pageSize: MAX_PAGE_SIZE,
+      pageSize: SEARCH_PAGE_SIZE,
       search: submittedQuery || undefined,
       serviceCategory: selectedServiceCategory,
     },
@@ -341,7 +342,7 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
   const searchTasksQuery = trpc.task.getTask.useQuery(
     {
       page: 1,
-      pageSize: MAX_PAGE_SIZE,
+      pageSize: SEARCH_PAGE_SIZE,
       search: submittedQuery || undefined,
       category: selectedTaskCategory,
     },
@@ -360,9 +361,9 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
 
   const topSearchItems = useMemo(() => {
     if (!hasSearched || !submittedQuery.trim()) return [];
-    if (activeTab === "jobs") return (searchJobsQuery.data?.items ?? []).slice(0, 6);
-    if (activeTab === "services") return (searchServicesQuery.data?.items ?? []).slice(0, 6);
-    return (searchTasksQuery.data?.items ?? []).slice(0, 6);
+    if (activeTab === "jobs") return (searchJobsQuery.data?.items ?? []).slice(0, SEARCH_PAGE_SIZE);
+    if (activeTab === "services") return (searchServicesQuery.data?.items ?? []).slice(0, SEARCH_PAGE_SIZE);
+    return (searchTasksQuery.data?.items ?? []).slice(0, SEARCH_PAGE_SIZE);
   }, [
     hasSearched,
     submittedQuery,
@@ -509,16 +510,16 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
 
     const userMessageId = nextMessageIdRef.current++;
     const assistantMessageId = nextMessageIdRef.current++;
-    const resultsMessageId = nextMessageIdRef.current++;
     const resultsKey = `${activeTab}|${effectiveQuery}`;
 
     setMessages((prev) => [
       ...prev,
       { id: userMessageId, role: "user", content: effectiveQuery },
-      { id: assistantMessageId, role: "assistant", content: "", thinking: true },
       {
-        id: resultsMessageId,
+        id: assistantMessageId,
         role: "assistant",
+        content: "",
+        thinking: true,
         results: {
           key: resultsKey,
           query: effectiveQuery,
@@ -728,18 +729,22 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
                             </div>
                           ) : message.results ? (
                             <div className="w-full max-w-[85%] sm:max-w-[75%] rounded-lg bg-slate-50 px-4 py-2.5 text-slate-900">
-                              <div className="text-sm font-medium">
-                                Results for “{message.results.query}”
-                              </div>
-                              <div className="mt-1 text-sm text-slate-600">
+                              {message.thinking ? (
+                                <ThinkingBar text={t("thinking")} />
+                              ) : (
+                                <Markdown>{message.content ?? ""}</Markdown>
+                              )}
+
+                              <div className="mt-2 text-sm text-slate-600">
                                 {message.results.isLoading
-                                  ? "Searching…"
+                                  ? t("searching")
                                   : message.results.items.length === 0
                                     ? "No results found. Try adjusting your search."
-                                    : `Found ${message.results.items.length} ${message.results.items.length === 1 ? "result" : "results"}:`}
+                                    : null}
                               </div>
+
                               {!message.results.isLoading && message.results.items.length > 0 && (
-                                <div className="mt-3 grid grid-cols-1 gap-4 md:grid-cols-3">
+                                <div className="mt-3 grid grid-cols-1 gap-4 md:grid-cols-2">
                                   {message.results.items.map((item: any) => {
                                     if (message.results?.type === "jobs") {
                                       return (

@@ -313,9 +313,9 @@
     "search": "Search",
     "searching": "Searching...",
     "thinking": "Thinking...",
-    "jobsHint": "AI highlights the 6 closest job matches for your query.",
-    "servicesHint": "AI highlights the 6 closest services for your request.",
-    "tasksHint": "AI highlights the 6 closest tasks for your request.",
+    "jobsHint": "AI highlights the 3 closest job matches for your query.",
+    "servicesHint": "AI highlights the 3 closest services for your request.",
+    "tasksHint": "AI highlights the 3 closest tasks for your request.",
     "browseJobs": "Browse Jobs",
     "loadMore": "Load more",
     "onboarding": {
