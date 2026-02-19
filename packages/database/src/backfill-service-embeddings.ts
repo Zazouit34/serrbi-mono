@@ -21,7 +21,7 @@ async function callEmbeddingApi(texts: string[]): Promise<number[][]> {
     input: { texts },
     parameters: {
       output_type: "dense",
-      // dimension: 1024, // Optional: customize embedding dimension if desired.
+      // dimension: 1024, // Optional: customize embedding dimension if desired
     },
   };
 
