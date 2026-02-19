@@ -343,6 +343,33 @@
     "jobsHint": "Parcourez les dernières offres d’emploi et opportunités.",
     "servicesHint": "Découvrez des services proposés par des professionnels de confiance.",
     "tasksHint": "Trouvez des tâches rapides et des missions courtes près de chez vous.",
+    "actionButtons": {
+      "categories": {
+        "jobs": "Emplois",
+        "services": "Services",
+        "tasks": "Tâches"
+      },
+      "prompts": {
+        "jobs": [
+          "Offres développeur frontend à Casablanca (React, TypeScript)",
+          "Offres vendeur à Rabat",
+          "Offres analyste data en remote au Maroc",
+          "Offres barista à temps partiel à Marrakech"
+        ],
+        "services": [
+          "Plombier à Casablanca pour une fuite de salle de bain",
+          "Dentiste à Rabat pour un détartrage",
+          "Avocat à Tanger pour relire un contrat",
+          "Électricien à Fès pour réparation de câblage"
+        ],
+        "tasks": [
+          "Besoin d’un ménage demain à Casablanca (budget 200 MAD)",
+          "Réparer une fuite de salle de bain à Rabat (urgent)",
+          "Livraison de repas aujourd’hui à Marrakech (petit job)",
+          "Rédiger le texte d’une landing page en français (à distance, budget 500 MAD)"
+        ]
+      }
+    },
     "browseJobs": "Parcourir Emplois",
     "loadMore": "Charger plus",
     "onboarding": {

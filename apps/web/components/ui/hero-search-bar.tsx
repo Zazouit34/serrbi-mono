@@ -31,6 +31,7 @@ import { JobCard } from "@/components/ui/form/job/job-card";
 import { ServiceCard } from "@/components/ui/form/service/service-card";
 import { TaskCard } from "@/components/ui/form/task/task-card";
 import { ThinkingBar } from "@/components/ui/thinking-bar";
+import { ActionButton } from "@/components/ui/action-button";
 
 type TabType = "jobs" | "services" | "tasks";
 
@@ -114,6 +115,7 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
   const streamContentRef = useRef("");
   const placeholderIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const streamTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const chatInputRef = useRef<HTMLInputElement | null>(null);
 
   const clearStreamTimers = () => {
     if (streamIntervalRef.current) {
@@ -810,6 +812,7 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
               <div className="rounded-2xl border border-gray-200 shadow-sm bg-white p-3">
                 <div className="flex items-center">
                   <Input
+                    ref={chatInputRef}
                     placeholder={placeholder || t("placeholder")}
                     value={chatInput}
                     onChange={(e) => setChatInput(e.target.value)}
@@ -864,6 +867,22 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
               </div>
             </div>
           </div>
+
+          {/* Prompt shortcuts (replaces old category chips) */}
+          {!chatExpanded && (
+            <ActionButton
+              className="mt-2"
+              inputRef={chatInputRef}
+              onCategoryClick={() => {
+                // no-op (reserved for analytics later)
+              }}
+              onSelectPrompt={(prompt) => {
+                setChatInput(prompt);
+                chatInputRef.current?.focus();
+                void handleSearch(prompt);
+              }}
+            />
+          )}
         </div>
       </div>
       {isSecondary && (

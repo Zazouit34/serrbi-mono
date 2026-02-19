@@ -23,8 +23,8 @@ export default function Hero() {
       <div
         className={`flex flex-col items-center mx-auto w-full ${
           chatExpanded
-            ? "justify-start gap-4 h-[100svh] px-4 py-6"
-            : "justify-center gap-6 min-h-[100svh] md:min-h-0 px-4 py-24 md:py-28 lg:py-32"
+            ? "justify-start gap-4 h-[100svh] py-6"
+            : "justify-center gap-6 min-h-[100svh] md:min-h-0 py-24 md:py-28 lg:py-32"
         }`}
       >
         {!chatExpanded && (

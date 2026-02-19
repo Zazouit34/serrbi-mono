@@ -316,6 +316,33 @@
     "jobsHint": "Browse the latest job listings and opportunities.",
     "servicesHint": "Discover trusted services from local professionals.",
     "tasksHint": "Find quick tasks and short gigs near you.",
+    "actionButtons": {
+      "categories": {
+        "jobs": "Jobs",
+        "services": "Services",
+        "tasks": "Tasks"
+      },
+      "prompts": {
+        "jobs": [
+          "Frontend developer jobs in Casablanca (React, TypeScript)",
+          "Sales / vendeur jobs in Rabat",
+          "Remote data analyst jobs in Morocco",
+          "Part-time barista jobs in Marrakech"
+        ],
+        "services": [
+          "Plumber in Casablanca for a bathroom leak",
+          "Dentist in Rabat for teeth cleaning",
+          "Lawyer in Tangier for contract review",
+          "Electrician in Fez for wiring repair"
+        ],
+        "tasks": [
+          "Need house cleaning tomorrow in Casablanca (budget 200 MAD)",
+          "Fix a bathroom leak in Rabat (urgent)",
+          "Food delivery gig today in Marrakech",
+          "Write French landing page copy (remote, budget 500 MAD)"
+        ]
+      }
+    },
     "browseJobs": "Browse Jobs",
     "loadMore": "Load more",
     "onboarding": {
