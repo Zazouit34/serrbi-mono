@@ -108,7 +108,7 @@ export function ActionButton({
   }, [activeCategory, inputRef]);
 
   return (
-    <div ref={containerRef} className={cn("relative h-[100px] w-full", className)}>
+    <div ref={containerRef} className={cn("relative h-[60px] w-full", className)}>
       <div className="relative h-full">
         {/* Category buttons */}
         <div
