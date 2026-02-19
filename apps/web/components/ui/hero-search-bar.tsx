@@ -567,7 +567,7 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
             ? "Désolé, je n’arrive pas à répondre pour le moment. Réessaie dans un instant."
             : locale === "ar"
               ? "عذرًا، لا أستطيع الرد الآن. حاول مرة أخرى بعد قليل."
-              : "Sorry, I can’t reply right now. Please try again in a moment..",
+              : "Sorry, I can’t reply right now. Please try again in a moment.",
         );
         console.error(err);
       })
