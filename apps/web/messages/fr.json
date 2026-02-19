@@ -340,9 +340,9 @@
     "search": "Rechercher",
     "searching": "Recherche en cours...",
     "thinking": "Je réfléchis...",
-    "jobsHint": "L'IA met en avant les 3 offres les plus proches de votre requête.",
-    "servicesHint": "L'IA met en avant les 3 services les plus pertinents pour votre demande.",
-    "tasksHint": "L'IA met en avant les 3 missions les plus pertinentes pour votre demande.",
+    "jobsHint": "Parcourez les dernières offres d’emploi et opportunités.",
+    "servicesHint": "Découvrez des services proposés par des professionnels de confiance.",
+    "tasksHint": "Trouvez des tâches rapides et des missions courtes près de chez vous.",
     "browseJobs": "Parcourir Emplois",
     "loadMore": "Charger plus",
     "onboarding": {

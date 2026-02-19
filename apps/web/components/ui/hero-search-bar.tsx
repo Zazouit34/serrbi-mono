@@ -7,7 +7,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { Input } from "@workspace/ui/components/input";
 import { Button } from "@workspace/ui/components/button";
-import { Check, ChevronDown, ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
+import { ChevronDown, Sparkles } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { isSecondaryClient } from "@/lib/domain";
 import {
@@ -36,9 +36,6 @@ type TabType = "jobs" | "services" | "tasks";
 
 const MAX_PAGE_SIZE = 50;
 const SEARCH_PAGE_SIZE = 3;
-const jobCategories = jobCategoryValues;
-const serviceCategories = serviceCategoryValues;
-const taskCategories = taskCategoryValues;
 
 type JobCategory = (typeof jobCategoryValues)[number];
 type ServiceCategory = (typeof serviceCategoryValues)[number];
@@ -59,10 +56,6 @@ type ChatMessage = {
   selectPrompt?: boolean;
 };
 
-const jobCategoryIcons = require("@/components/ui/config/job-filters-config").jobCategoryIcons ?? {};
-const serviceCategoryIcons = require("@/components/ui/config/service-filters-config").categoryIcons ?? {};
-const taskCategoryIcons = require("@/components/ui/config/task-filter-config").taskCategoryIcons ?? {};
-
 export type HeroPreviewData = {
   items: any[];
   type: TabType;
@@ -70,6 +63,9 @@ export type HeroPreviewData = {
   title: string;
   hasSearched: boolean;
   isSearchMode: boolean;
+  selectedCategory?: string;
+  onTypeChange?: (type: TabType) => void;
+  onCategoryChange?: (category?: string) => void;
   onLoadMore?: () => void;
   loadMoreLabel?: string;
 };
@@ -81,7 +77,6 @@ type HeroSearchBarProps = {
 
 function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroSearchBarProps) {
   const t = useTranslations("HeroSearchBar");
-  const tAll = useTranslations();
   const locale = useLocale();
   const dir = locale === "ar" ? "rtl" : "ltr";
   const { data: session } = useSession();
@@ -98,7 +93,6 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
     JobCategory | ServiceCategory | TaskCategory | undefined
   >(undefined);
   const isSecondary = isSecondaryClient();
-  const categoryScrollRef = useRef<HTMLDivElement | null>(null);
   
   // Chat state
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -595,12 +589,6 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
     tasks: t("tabs.tasks"),
   };
 
-  const categoryList = useMemo(() => {
-    if (activeTab === "jobs") return jobCategories;
-    if (activeTab === "services") return serviceCategories;
-    return taskCategories;
-  }, [activeTab]);
-
   const previewItems = useMemo(() => {
     if (activeTab === "jobs") {
       return { items: previewJobsQuery.data?.items ?? [], loading: previewJobsQuery.isLoading };
@@ -634,6 +622,21 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
             : t("tasksHint"),
       hasSearched: false,
       isSearchMode: false,
+      selectedCategory: selectedCategory ? String(selectedCategory) : undefined,
+      onTypeChange: (nextType) => {
+        setActiveTab(nextType);
+        setHasSearched(false);
+        setSubmittedQuery("");
+        setSelectedCategory(undefined);
+        setPreviewPageSize(12);
+      },
+      onCategoryChange: (nextCategory) => {
+        setSelectedCategory(nextCategory as any);
+        setPreviewPageSize(12);
+        // If user already searched, keep search mode (query hooks will refetch automatically).
+        const hasQuery = !!submittedQuery.trim();
+        setHasSearched(hasQuery);
+      },
       onLoadMore: handleLoadMorePreview,
       loadMoreLabel: t("loadMore"),
     });
@@ -642,6 +645,8 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
     onPreviewChange,
     t,
     previewItems,
+    selectedCategory,
+    submittedQuery,
   ]);
 
   return (
@@ -859,79 +864,6 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
               </div>
             </div>
           </div>
-
-          {/* Category filter */}
-          {!chatExpanded && (
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                aria-label="Scroll categories left"
-                className="flex items-center justify-center w-8 h-8 rounded-full border border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
-                onClick={() =>
-                  categoryScrollRef.current?.scrollBy({ left: -180, behavior: "smooth" })
-                }
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-              <div
-                ref={categoryScrollRef}
-                className="flex overflow-x-auto overflow-y-hidden no-scrollbar gap-2 py-1 px-1 w-full [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-              >
-                {categoryList.map((option: string) => {
-                  const icons =
-                    activeTab === "jobs"
-                      ? jobCategoryIcons
-                      : activeTab === "services"
-                        ? serviceCategoryIcons
-                        : taskCategoryIcons;
-                  const labelKeyPrefix =
-                    activeTab === "jobs"
-                      ? "Enums.JobCategory."
-                      : activeTab === "services"
-                        ? "Enums.ServiceCategory."
-                        : "Enums.TaskCategory.";
-                  const IconComponent = icons[option as keyof typeof icons];
-                  const isSelected = selectedCategory === option;
-                  return (
-                    <button
-                      key={option}
-                      onClick={() => {
-                        const nextCategory = isSelected
-                          ? undefined
-                          : (option as JobCategory | ServiceCategory | TaskCategory);
-                        setSelectedCategory(nextCategory);
-                        setPreviewPageSize(12);
-
-                        // If user already searched, keep search mode (query hooks will refetch automatically).
-                        const hasQuery = !!submittedQuery.trim();
-                        setHasSearched(hasQuery);
-                      }}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-sm transition whitespace-nowrap ${
-                        isSelected
-                          ? "border-slate-900 bg-slate-900 text-white shadow-sm"
-                          : "border-slate-200 text-slate-700 hover:bg-slate-50"
-                      }`}
-                    >
-                      {IconComponent && <IconComponent className="w-3.5 h-3.5" />}
-                      {tAll((labelKeyPrefix + option) as any)}
-                      {isSelected && <Check className="w-3 h-3" />}
-                    </button>
-                  );
-                })}
-              </div>
-              <button
-                type="button"
-                aria-label="Scroll categories right"
-                className="flex items-center justify-center w-8 h-8 rounded-full border border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
-                onClick={() =>
-                  categoryScrollRef.current?.scrollBy({ left: 180, behavior: "smooth" })
-                }
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
-          )}
-
         </div>
       </div>
       {isSecondary && (
