@@ -313,6 +313,13 @@
     "search": "Search",
     "searching": "Searching...",
     "thinking": "Thinking...",
+    "labels": {
+      "auto": "Auto",
+      "related": "Related"
+    },
+    "messages": {
+      "noResults": "No results found. Try adjusting your search."
+    },
     "jobsHint": "Browse the latest job listings and opportunities.",
     "servicesHint": "Discover trusted services from local professionals.",
     "tasksHint": "Find quick tasks and short gigs near you.",

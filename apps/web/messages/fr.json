@@ -340,6 +340,13 @@
     "search": "Rechercher",
     "searching": "Recherche en cours...",
     "thinking": "Je réfléchis...",
+    "labels": {
+      "auto": "Auto",
+      "related": "Suggestions"
+    },
+    "messages": {
+      "noResults": "Aucun résultat. Essayez d’affiner votre recherche."
+    },
     "jobsHint": "Parcourez les dernières offres d’emploi et opportunités.",
     "servicesHint": "Découvrez des services proposés par des professionnels de confiance.",
     "tasksHint": "Trouvez des tâches rapides et des missions courtes près de chez vous.",

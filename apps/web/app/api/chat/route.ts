@@ -1,4 +1,7 @@
 import { NextResponse } from "next/server";
+import { auth } from "@/auth";
+import { prisma, SubscriptionStatus } from "@workspace/db";
+import { PLANS } from "@/lib/plans";
 
 export const runtime = "nodejs";
 
@@ -30,7 +33,11 @@ type AgentResponse = {
   searchQuery: string;
   assistantText?: string;
   relatedPrompts: string[];
+  planLimitReached?: boolean;
+  upgradeUrl?: string;
 };
+
+const FREE_DAILY_LIMIT = 20;
 
 function getRequiredEnv(name: string): string {
   const value = process.env[name];
@@ -94,7 +101,9 @@ Rules:
   - If action is "search": keep assistantText empty "" unless you must ask 1-2 clarifying questions.
   - Never describe or list result cards (the UI will render cards).
 - relatedPrompts:
-  - Provide 4 to 6 short, high-quality next-step prompts based on the user's goal.
+  - Provide 4 to 6 short, high-quality next-step prompts based on the user's exact goal.
+  - They must be tightly grounded in the user's request topic (role/service/task, location, budget, seniority).
+  - Avoid generic prompts that could fit any request.
   - Make them actionable and diverse (filters, alternatives, adjacent needs).
 
 Language:
@@ -384,6 +393,65 @@ function normalizeLocale(locale: string): "en" | "fr" | "ar" {
   return "en";
 }
 
+function getDayBucketUtc(date = new Date()): Date {
+  const d = new Date(date);
+  d.setUTCHours(0, 0, 0, 0);
+  return d;
+}
+
+async function isEligiblePaidUser(userId: string): Promise<boolean> {
+  const db = prisma as any;
+  const subscription = await db.subscription.findFirst({
+    where: {
+      userId,
+      status: SubscriptionStatus.ACTIVE,
+    },
+    select: {
+      planId: true,
+    },
+  });
+  if (!subscription?.planId) return false;
+  return [PLANS.BASIC.id, PLANS.PREMIUM.id].includes(subscription.planId);
+}
+
+async function getDailyUsageCount(userId: string, dayBucket: Date): Promise<number> {
+  const db = prisma as any;
+  const row = await db.aiChatUsage.findUnique({
+    where: {
+      userId_dayBucket: {
+        userId,
+        dayBucket,
+      },
+    },
+    select: {
+      requests: true,
+    },
+  });
+  return row?.requests ?? 0;
+}
+
+async function incrementDailyUsage(userId: string, dayBucket: Date): Promise<void> {
+  const db = prisma as any;
+  await db.aiChatUsage.upsert({
+    where: {
+      userId_dayBucket: {
+        userId,
+        dayBucket,
+      },
+    },
+    create: {
+      userId,
+      dayBucket,
+      requests: 1,
+    },
+    update: {
+      requests: {
+        increment: 1,
+      },
+    },
+  });
+}
+
 function buildChatGreeting(locale: string): string {
   const normalizedLocale = normalizeLocale(locale);
   if (normalizedLocale === "fr") {
@@ -419,6 +487,169 @@ function buildChatRelatedPrompts(locale: string): string[] {
     "Show remote freelance tasks",
     "Help me refine my search",
   ];
+}
+
+function buildPlanLimitMessage(locale: string): string {
+  const normalizedLocale = normalizeLocale(locale);
+  if (normalizedLocale === "fr") {
+    return "Tu as atteint la limite gratuite de 20 requetes IA aujourd’hui. Pour continuer, passe a un plan payant depuis la page Plans.";
+  }
+  if (normalizedLocale === "ar") {
+    return "وصلتي للحد المجاني ديال 20 طلب ذكاء اصطناعي اليوم. باش تكمل الاستعمال، خذ خطة مدفوعة من صفحة Plans.";
+  }
+  return "You reached the free AI limit of 20 requests today. To continue, please upgrade from the Plans page.";
+}
+
+function buildPlanLimitPrompts(locale: string): string[] {
+  const normalizedLocale = normalizeLocale(locale);
+  if (normalizedLocale === "fr") {
+    return ["Plans", "Que contient le plan Basic ?", "Puis-je reprendre demain ?"];
+  }
+  if (normalizedLocale === "ar") {
+    return ["Plans", "شنو فيه Plan Basic؟", "واش نقدر نكمل غدا؟"];
+  }
+  return ["Plans", "What is included in Basic?", "Can I continue tomorrow?"];
+}
+
+function tokenizeForRelevance(text: string): string[] {
+  const normalized = normalizeForIntent(text);
+  const stopwords = new Set([
+    "the",
+    "a",
+    "an",
+    "for",
+    "to",
+    "of",
+    "in",
+    "on",
+    "with",
+    "je",
+    "tu",
+    "le",
+    "la",
+    "les",
+    "des",
+    "de",
+    "dans",
+    "pour",
+    "بغيت",
+    "في",
+    "من",
+    "على",
+    "and",
+    "or",
+  ]);
+  return normalized
+    .split(" ")
+    .map((t) => t.trim())
+    .filter((t) => t.length >= 3 && !stopwords.has(t));
+}
+
+function buildSearchRelatedPrompts(intent: AgentIntent, query: string, locale: string): string[] {
+  const normalizedLocale = normalizeLocale(locale);
+  const q = query.trim();
+
+  if (normalizedLocale === "fr") {
+    if (intent === "jobs") {
+      return [
+        `Montre-moi des postes ${q} en remote`,
+        `Trouve des roles ${q} junior`,
+        `Jobs ${q} a Casablanca`,
+        `Quelles competences sont demandees pour ${q} ?`,
+      ];
+    }
+    if (intent === "services") {
+      return [
+        `Services ${q} avec budget abordable`,
+        `Prestataires ${q} a Rabat`,
+        `Services similaires a ${q}`,
+        `Filtre les services ${q} les mieux notes`,
+      ];
+    }
+    return [
+      `Taches ${q} a distance`,
+      `Taches ${q} avec budget plus eleve`,
+      `Missions similaires a ${q}`,
+      `Taches ${q} disponibles cette semaine`,
+    ];
+  }
+
+  if (normalizedLocale === "ar") {
+    if (intent === "jobs") {
+      return [
+        `ورّيني وظائف ${q} عن بُعد`,
+        `لقّى ليا وظائف ${q} للمبتدئين`,
+        `وظائف ${q} فالدار البيضاء`,
+        `شنو المهارات المطلوبة فـ ${q}؟`,
+      ];
+    }
+    if (intent === "services") {
+      return [
+        `خدمات ${q} بثمن مناسب`,
+        `مزودين ${q} فالرباط`,
+        `خدمات مشابهة لـ ${q}`,
+        `فلتر خدمات ${q} الأعلى تقييماً`,
+      ];
+    }
+    return [
+      `مهام ${q} عن بُعد`,
+      `مهام ${q} بميزانية أكبر`,
+      `مهام مشابهة لـ ${q}`,
+      `مهام ${q} المتاحة هاد الأسبوع`,
+    ];
+  }
+
+  if (intent === "jobs") {
+    return [
+      `Show remote ${q} jobs`,
+      `Find junior ${q} jobs`,
+      `${q} jobs in Casablanca`,
+      `What skills are most requested for ${q}?`,
+    ];
+  }
+  if (intent === "services") {
+    return [
+      `Show ${q} services with lower budget`,
+      `Find ${q} services in Rabat`,
+      `Show services similar to ${q}`,
+      `Filter top-rated ${q} providers`,
+    ];
+  }
+  return [
+    `Show remote ${q} tasks`,
+    `Find ${q} tasks with higher budget`,
+    `Show tasks similar to ${q}`,
+    `What ${q} tasks are available this week?`,
+  ];
+}
+
+function chooseRelevantPrompts(input: {
+  action: AgentAction;
+  intent: AgentIntent;
+  query: string;
+  locale: string;
+  prompts: string[];
+}): string[] {
+  if (input.action === "chat") {
+    return input.prompts.length > 0 ? input.prompts.slice(0, 6) : buildChatRelatedPrompts(input.locale);
+  }
+
+  const queryTokens = tokenizeForRelevance(input.query);
+  const intentTokens: Record<AgentIntent, string[]> = {
+    jobs: ["job", "jobs", "emploi", "travail", "وظيفة", "وظائف"],
+    services: ["service", "services", "خدمة", "خدمات"],
+    tasks: ["task", "tasks", "mission", "tache", "taches", "مهمة", "مهام"],
+  };
+
+  const filtered = input.prompts.filter((prompt) => {
+    const p = normalizeForIntent(prompt);
+    const overlap = queryTokens.length > 0 && queryTokens.some((token) => p.includes(token));
+    const sameDomain = intentTokens[input.intent].some((token) => p.includes(token));
+    return overlap || sameDomain;
+  });
+
+  if (filtered.length >= 3) return filtered.slice(0, 6);
+  return buildSearchRelatedPrompts(input.intent, input.query, input.locale).slice(0, 6);
 }
 
 function safeParseAgentJson(text: string): AgentResponse | null {
@@ -474,6 +705,29 @@ export async function POST(req: Request) {
       "";
     const locale = body.context?.locale || "en";
 
+    // Enforce free-tier AI usage limit (20/day), BASIC/PREMIUM unlimited.
+    const session = await auth();
+    const userId = session?.user?.id;
+    if (userId) {
+      const eligiblePaid = await isEligiblePaidUser(userId);
+      if (!eligiblePaid) {
+        const dayBucket = getDayBucketUtc();
+        const used = await getDailyUsageCount(userId, dayBucket);
+        if (used >= FREE_DAILY_LIMIT) {
+          return NextResponse.json({
+            action: "chat",
+            intent: "jobs",
+            searchQuery: "",
+            assistantText: buildPlanLimitMessage(locale),
+            relatedPrompts: buildPlanLimitPrompts(locale),
+            planLimitReached: true,
+            upgradeUrl: "/subscription",
+          } satisfies AgentResponse);
+        }
+        await incrementDailyUsage(userId, dayBucket);
+      }
+    }
+
     // Guardrail: keep greetings/smalltalk conversational, never run search for them.
     if (isGreetingOrSmallTalk(lastUser)) {
       return NextResponse.json({
@@ -513,7 +767,16 @@ export async function POST(req: Request) {
           relatedPrompts: buildChatRelatedPrompts(locale),
         } satisfies AgentResponse);
       }
-      return NextResponse.json(parsed);
+      return NextResponse.json({
+        ...parsed,
+        relatedPrompts: chooseRelevantPrompts({
+          action: parsed.action,
+          intent: parsed.intent,
+          query: parsed.searchQuery || lastUser,
+          locale,
+          prompts: parsed.relatedPrompts,
+        }),
+      } satisfies AgentResponse);
     }
 
     // Fallback: if the LLM didn't follow instructions, degrade gracefully.
@@ -528,7 +791,10 @@ export async function POST(req: Request) {
       intent: fallbackIntent,
       searchQuery: fallbackAction === "search" ? fallbackQuery || "jobs" : "",
       assistantText: fallbackAction === "chat" ? buildChatGreeting(locale) : "",
-      relatedPrompts: fallbackAction === "chat" ? buildChatRelatedPrompts(locale) : [],
+      relatedPrompts:
+        fallbackAction === "chat"
+          ? buildChatRelatedPrompts(locale)
+          : buildSearchRelatedPrompts(fallbackIntent, fallbackQuery || "jobs", locale),
     } satisfies AgentResponse);
   } catch (err: any) {
     return NextResponse.json(

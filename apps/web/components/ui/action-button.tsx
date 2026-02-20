@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type React from "react";
 import { Briefcase, FileText, Search, StickyNote, TrendingUp, Wrench } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { useRouter } from "next/navigation";
 
 import { cn } from "@workspace/ui/lib/utils";
 
@@ -40,6 +41,7 @@ export function ActionButton({
   inputRef,
   className,
 }: ActionButtonProps) {
+  const router = useRouter();
   const t = useTranslations("HeroSearchBar");
   const [activeCategory, setActiveCategory] = useState<ActionKey | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -65,8 +67,21 @@ export function ActionButton({
   }, [t]);
 
   const handleCategoryClick = (category: ActionKey) => {
-    setActiveCategory(category);
     onCategoryClick?.(category);
+
+    // Resume Analyzer and Career Switch are dedicated flows; jump directly to pages.
+    if (category === "resumeAnalyzer") {
+      setActiveCategory(null);
+      router.push("/resume-analyzer");
+      return;
+    }
+    if (category === "careerSwitch") {
+      setActiveCategory(null);
+      router.push("/career-switch");
+      return;
+    }
+
+    setActiveCategory(category);
   };
 
   const handlePromptClick = (prompt: string) => {

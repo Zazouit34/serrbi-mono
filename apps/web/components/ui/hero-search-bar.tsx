@@ -24,7 +24,7 @@ import { jobCategoryValues } from "@workspace/ui/lib/job-enum";
 import { serviceCategoryValues } from "@workspace/ui/lib/service-enum";
 import { taskCategoryValues } from "@workspace/ui/lib/task-enum";
 import { ChatContainerRoot, ChatContainerContent } from "@/components/ui/chat-container";
-import { Message, MessageAvatar, MessageContent } from "@/components/ui/message";
+import { Message, MessageAvatar } from "@/components/ui/message";
 import { Markdown } from "@/components/ui/markdown";
 import { JobCard } from "@/components/ui/form/job/job-card";
 import { ServiceCard } from "@/components/ui/form/service/service-card";
@@ -57,6 +57,7 @@ type ChatMessage = {
   };
   relatedPrompts?: string[];
   suggestionsForKey?: string;
+  upgradeUrl?: string;
 };
 
 export type HeroPreviewData = {
@@ -86,11 +87,12 @@ type AgentResponse = {
   searchQuery: string;
   assistantText?: string;
   relatedPrompts: string[];
+  planLimitReached?: boolean;
+  upgradeUrl?: string;
 };
 
-function getScopeLabel(locale: string, scope: ScopeOverride, t: ReturnType<typeof useTranslations>) {
-  const auto =
-    locale === "ar" ? "تلقائي" : locale === "fr" ? "Auto" : "Auto";
+function getScopeLabel(scope: ScopeOverride, t: ReturnType<typeof useTranslations>) {
+  const auto = t("labels.auto");
   const tabLabels = {
     jobs: t("tabs.jobs"),
     services: t("tabs.services"),
@@ -98,18 +100,6 @@ function getScopeLabel(locale: string, scope: ScopeOverride, t: ReturnType<typeo
   };
   if (scope === "auto") return auto;
   return tabLabels[scope];
-}
-
-function getRelatedLabel(locale: string) {
-  if (locale === "ar") return "ذات صلة";
-  if (locale === "fr") return "Suggestions";
-  return "Related";
-}
-
-function getNoResultsLabel(locale: string) {
-  if (locale === "ar") return "لم يتم العثور على نتائج. جرّب تعديل طلبك.";
-  if (locale === "fr") return "Aucun résultat. Essayez d’affiner votre recherche.";
-  return "No results found. Try adjusting your search.";
 }
 
 function SuggestionList({
@@ -209,6 +199,17 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
       throw new Error("Chat API returned invalid payload.");
     }
     return json;
+  };
+
+  const handlePromptSelection = (prompt: string, upgradeUrl?: string) => {
+    const normalized = prompt.trim().toLowerCase();
+    if (normalized === "plans" || normalized === "plan" || normalized === "pricing") {
+      router.push(upgradeUrl || "/subscription");
+      return;
+    }
+    setChatInput(prompt);
+    chatInputRef.current?.focus();
+    void handleSearch(prompt);
   };
 
   useEffect(() => {
@@ -412,7 +413,7 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
           id,
           role: "assistant",
           kind: "suggestions",
-          content: getRelatedLabel(locale),
+          content: t("labels.related"),
           relatedPrompts: prompts,
           suggestionsForKey: submittedResultsKey,
         },
@@ -500,8 +501,9 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
               id: suggestionsId,
               role: "assistant",
               kind: "suggestions",
-              content: getRelatedLabel(locale),
+              content: t("labels.related"),
               relatedPrompts: agent.relatedPrompts,
+              upgradeUrl: agent.upgradeUrl,
             },
           ]);
         }
@@ -670,11 +672,14 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
                     return (
                       <Message
                         key={message.id}
-                        className={
-                          message.role === "user" ? "justify-end" : "justify-start"
-                        }
+                        className="justify-start"
                       >
-                        {isAssistant && (
+                        {message.role === "user" ? (
+                          <MessageAvatar
+                            fallback={session?.user?.name?.slice(0, 1)?.toUpperCase() || "U"}
+                            className="bg-slate-100 text-slate-700"
+                          />
+                        ) : (
                           <MessageAvatar
                             fallback="S"
                             className="bg-slate-900 text-white"
@@ -682,25 +687,23 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
                         )}
                         {isAssistant ? (
                           message.kind === "suggestions" ? (
-                            <div className="inline-block w-fit max-w-[85%] sm:max-w-[75%] rounded-lg bg-slate-50 px-4 py-2.5 text-slate-900">
+                            <div className="w-full">
                               <SuggestionList
                                 prompts={message.relatedPrompts ?? []}
                                 onSelect={(p) => {
-                                  setChatInput(p);
-                                  chatInputRef.current?.focus();
-                                  void handleSearch(p);
+                                  handlePromptSelection(p, message.upgradeUrl);
                                 }}
                               />
                             </div>
                           ) : message.results ? (
-                            <div className="w-full max-w-full rounded-lg bg-slate-50 px-4 py-2.5 text-slate-900">
+                            <div className="w-full text-slate-900">
                               {message.results.isLoading ? (
                                 <ThinkingBar text={t("searching")} />
                               ) : null}
 
                               {!message.results.isLoading && message.results.items.length === 0 ? (
                                 <div className="text-sm text-slate-700">
-                                  {getNoResultsLabel(locale)}
+                                  {t("messages.noResults")}
                                 </div>
                               ) : null}
 
@@ -741,7 +744,7 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
                               )}
                             </div>
                           ) : (
-                            <div className="inline-block w-fit max-w-[85%] sm:max-w-[75%] rounded-lg bg-slate-50 px-4 py-2.5 text-slate-900">
+                            <div className="w-full text-slate-900 leading-6">
                               {message.thinking ? (
                                 <ThinkingBar text={t("thinking")} />
                               ) : (
@@ -750,9 +753,9 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
                             </div>
                           )
                         ) : (
-                          <MessageContent className="w-fit max-w-[85%] sm:max-w-[75%] bg-slate-900 text-white">
+                          <div className="w-full text-slate-900 leading-6">
                             {message.content}
-                          </MessageContent>
+                          </div>
                         )}
                       </Message>
                     );
@@ -786,10 +789,10 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
                       onValueChange={(value) => setScopeOverride(value as ScopeOverride)}
                     >
                       <SelectTrigger className="h-8 min-w-[120px] px-3 text-sm">
-                        <SelectValue placeholder={getScopeLabel(locale, scopeOverride, t)} />
+                        <SelectValue placeholder={getScopeLabel(scopeOverride, t)} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="auto">{getScopeLabel(locale, "auto", t)}</SelectItem>
+                        <SelectItem value="auto">{getScopeLabel("auto", t)}</SelectItem>
                         <SelectItem value="jobs">{tabLabels.jobs}</SelectItem>
                         <SelectItem value="services">{tabLabels.services}</SelectItem>
                         <SelectItem value="tasks">{tabLabels.tasks}</SelectItem>
