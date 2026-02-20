@@ -13,6 +13,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@ai-sdk/openai": "^3.0.30",
+    "@ai-sdk/react": "^3.0.96",
     "@auth/prisma-adapter": "^2.10.0",
     "@aws-sdk/client-s3": "^3.901.0",
     "@aws-sdk/s3-request-presigner": "^3.901.0",
@@ -42,6 +44,7 @@
     "@uppy/react": "^5.1.0",
     "@workspace/db": "workspace:*",
     "@workspace/ui": "workspace:*",
+    "ai": "^5.0.34",
     "bcryptjs": "^3.0.2",
     "date-fns": "^4.1.0",
     "framer-motion": "^12.23.12",

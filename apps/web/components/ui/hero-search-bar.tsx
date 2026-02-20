@@ -7,7 +7,6 @@ import { usePathname, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { Input } from "@workspace/ui/components/input";
 import { Button } from "@workspace/ui/components/button";
-import { ChevronDown, Sparkles } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { isSecondaryClient } from "@/lib/domain";
 import {
@@ -17,7 +16,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@workspace/ui/components/select";
-import { Popover, PopoverContent, PopoverTrigger } from "@workspace/ui/components/popover";
 
 import { PreviewCards } from "@/components/ui/preview-cards";
 import { trpc } from "@/app/_trpc/client";
@@ -31,9 +29,9 @@ import { JobCard } from "@/components/ui/form/job/job-card";
 import { ServiceCard } from "@/components/ui/form/service/service-card";
 import { TaskCard } from "@/components/ui/form/task/task-card";
 import { ThinkingBar } from "@/components/ui/thinking-bar";
-import { ActionButton } from "@/components/ui/action-button";
 
 type TabType = "jobs" | "services" | "tasks";
+type ScopeOverride = "auto" | TabType;
 
 const MAX_PAGE_SIZE = 50;
 const SEARCH_PAGE_SIZE = 3;
@@ -54,7 +52,7 @@ type ChatMessage = {
     items: any[];
     isLoading: boolean;
   };
-  selectPrompt?: boolean;
+  relatedPrompts?: string[];
 };
 
 export type HeroPreviewData = {
@@ -76,6 +74,33 @@ type HeroSearchBarProps = {
   onChatExpandedChange?: (expanded: boolean) => void;
 };
 
+type AgentIntent = TabType;
+
+type AgentResponse = {
+  intent: AgentIntent;
+  searchQuery: string;
+  assistantText?: string;
+  relatedPrompts: string[];
+};
+
+function getScopeLabel(locale: string, scope: ScopeOverride, t: ReturnType<typeof useTranslations>) {
+  const auto =
+    locale === "ar" ? "تلقائي" : locale === "fr" ? "Auto" : "Auto";
+  const tabLabels = {
+    jobs: t("tabs.jobs"),
+    services: t("tabs.services"),
+    tasks: t("tabs.tasks"),
+  };
+  if (scope === "auto") return auto;
+  return tabLabels[scope];
+}
+
+function getRelatedLabel(locale: string) {
+  if (locale === "ar") return "ذات صلة";
+  if (locale === "fr") return "Suggestions";
+  return "Related";
+}
+
 function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroSearchBarProps) {
   const t = useTranslations("HeroSearchBar");
   const locale = useLocale();
@@ -90,6 +115,7 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
   const [submittedQuery, setSubmittedQuery] = useState("");
   const [hasSearched, setHasSearched] = useState(false);
   const [previewPageSize, setPreviewPageSize] = useState(12);
+  const [scopeOverride, setScopeOverride] = useState<ScopeOverride>("auto");
   const [selectedCategory, setSelectedCategory] = useState<
     JobCategory | ServiceCategory | TaskCategory | undefined
   >(undefined);
@@ -97,114 +123,23 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
   
   // Chat state
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [isStreaming, setIsStreaming] = useState(false);
+  const [isAgentWorking, setIsAgentWorking] = useState(false);
   const [chatExpanded, setChatExpanded] = useState(false);
-  const [onboardingStep, setOnboardingStep] = useState<"initial" | "choice" | "input" | "done">("initial");
-  const [userChoice, setUserChoice] = useState<TabType | null>(null);
   const [placeholder, setPlaceholder] = useState("");
-  const [choicePopoverOpen, setChoicePopoverOpen] = useState(false);
-  const [pendingAiReply, setPendingAiReply] = useState<{
-    messageId: number;
-    query: string;
-    tab: TabType;
-    resultsKey: string;
-    locale: string;
-  } | null>(null);
   const nextMessageIdRef = useRef(1);
-  const streamIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const streamContentRef = useRef("");
   const placeholderIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const streamTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const chatInputRef = useRef<HTMLInputElement | null>(null);
 
-  const clearStreamTimers = () => {
-    if (streamIntervalRef.current) {
-      clearInterval(streamIntervalRef.current);
-      streamIntervalRef.current = null;
-    }
-    if (streamTimeoutRef.current) {
-      clearTimeout(streamTimeoutRef.current);
-      streamTimeoutRef.current = null;
-    }
-  };
-
-  const streamAssistantText = (messageId: number, text: string, delayMs = 650) => {
-    clearStreamTimers();
-
-    // show "thinking" briefly before streaming
-    setMessages((prev) =>
-      prev.map((m) => (m.id === messageId ? { ...m, thinking: true, content: "" } : m)),
-    );
-
-    streamTimeoutRef.current = setTimeout(() => {
-      let charIndex = 0;
-      streamContentRef.current = "";
-
-      streamIntervalRef.current = setInterval(() => {
-        if (charIndex < text.length) {
-          streamContentRef.current += text[charIndex]!;
-          setMessages((prev) =>
-            prev.map((m) =>
-              m.id === messageId
-                ? { ...m, thinking: false, content: streamContentRef.current }
-                : m,
-            ),
-          );
-          charIndex++;
-        } else {
-          clearStreamTimers();
-        }
-      }, 20);
-    }, delayMs);
-  };
-
-  const buildResultsContext = (tab: TabType, items: any[]) => {
-    if (!items?.length) return [];
-    return items.slice(0, SEARCH_PAGE_SIZE).map((item: any) => {
-      if (tab === "jobs") {
-        return {
-          id: item.id,
-          title: item.title,
-          companyName: item.companyName,
-          city: item.city,
-          category: item.category,
-          type: item.type,
-          experienceLevel: item.experienceLevel,
-        };
-      }
-      if (tab === "services") {
-        return {
-          id: item.id,
-          title: item.title,
-          displayName: item.displayName,
-          city: item.city,
-          serviceCategory: item.serviceCategory,
-          type: item.type,
-          price: item.price,
-        };
-      }
-      return {
-        id: item.id,
-        title: item.title,
-        displayName: item.displayName,
-        city: item.city,
-        category: item.category,
-        budget: item.budget,
-      };
-    });
-  };
-
-  const callAgent = async (opts: {
-    messageId: number;
+  const callSearchAgent = async (opts: {
     query: string;
-    tab: TabType;
     locale: string;
-    contextResults: any[];
-  }) => {
+    scope: ScopeOverride;
+  }): Promise<AgentResponse> => {
     const history = messages
       .filter((m) => typeof m.content === "string" && m.content.trim())
       .slice(-12)
       .map((m) => ({ role: m.role, content: m.content as string }));
+
     const finalHistory =
       history.length > 0 &&
       history[history.length - 1]?.role === "user" &&
@@ -219,9 +154,8 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
         messages: finalHistory,
         context: {
           locale: opts.locale,
-          tab: opts.tab,
+          scope: opts.scope,
           query: opts.query,
-          results: opts.contextResults,
         },
       }),
     });
@@ -230,10 +164,11 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
       const text = await res.text().catch(() => "");
       throw new Error(text || `Chat API error ${res.status}`);
     }
-    const json = (await res.json()) as any;
-    const text = json?.text;
-    if (typeof text !== "string") throw new Error("Chat API returned invalid payload.");
-    streamAssistantText(opts.messageId, text);
+    const json = (await res.json()) as AgentResponse;
+    if (!json || typeof json.searchQuery !== "string" || !Array.isArray(json.relatedPrompts)) {
+      throw new Error("Chat API returned invalid payload.");
+    }
+    return json;
   };
 
   useEffect(() => {
@@ -417,37 +352,6 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
     topSearchLoading,
   ]);
 
-  const handleChoiceSelection = (choice: TabType) => {
-    setUserChoice(choice);
-    setActiveTab(choice);
-    setOnboardingStep("input");
-    setChoicePopoverOpen(false);
-
-    // Add user's choice as a message
-    const choiceLabels: Record<TabType, string> = {
-      jobs: t("onboarding.choiceJob"),
-      services: t("onboarding.choiceService"),
-      tasks: t("onboarding.choiceTask"),
-    };
-
-    const userChoiceId = nextMessageIdRef.current++;
-    const confirmId = nextMessageIdRef.current++;
-
-    setMessages((prev) => [
-      ...prev,
-      { id: userChoiceId, role: "user", content: choiceLabels[choice] },
-      { id: confirmId, role: "assistant", content: "", thinking: true },
-    ]);
-
-    const confirmMessages: Record<TabType, string> = {
-      jobs: t("onboarding.confirmChoiceJob"),
-      services: t("onboarding.confirmChoiceService"),
-      tasks: t("onboarding.confirmChoiceTask"),
-    };
-    const confirmMsg = confirmMessages[choice];
-    streamAssistantText(confirmId, confirmMsg);
-  };
-
   const handleSearch = async (overrideQuery?: string) => {
     const effectiveQuery = (overrideQuery ?? chatInput).trim();
 
@@ -457,20 +361,25 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
       return;
     }
 
-    // For the secondary client, keep simple redirect behavior
+    // For the secondary client, keep simple redirect behavior (but let the agent pick scope)
     if (isSecondary) {
-      const searchParams = new URLSearchParams();
-      if (effectiveQuery) {
-        searchParams.set("search", effectiveQuery);
+      setIsAgentWorking(true);
+      try {
+        const agent = await callSearchAgent({ query: effectiveQuery, locale, scope: scopeOverride });
+        const tab: TabType = scopeOverride === "auto" ? agent.intent : scopeOverride;
+        const q = (agent.searchQuery || effectiveQuery).trim();
+        const searchParams = new URLSearchParams();
+        if (q) searchParams.set("search", q);
+        const routes: Record<TabType, string> = {
+          jobs: `/jobs?${searchParams.toString()}`,
+          services: `/services?${searchParams.toString()}`,
+          tasks: `/tasks?${searchParams.toString()}`,
+        };
+        window.location.href = routes[tab] ?? routes.jobs;
+        return;
+      } finally {
+        setIsAgentWorking(false);
       }
-      const routes: Record<TabType, string> = {
-        jobs: `/jobs?${searchParams.toString()}`,
-        services: `/services?${searchParams.toString()}`,
-        tasks: `/tasks?${searchParams.toString()}`,
-      };
-      const route = routes[activeTab] ?? routes.jobs;
-      window.location.href = route;
-      return;
     }
 
     if (!effectiveQuery) {
@@ -479,111 +388,72 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
       return;
     }
 
-    // If this is the first user interaction, show onboarding
-    if (onboardingStep === "initial") {
-      setChatExpanded(true);
-      setOnboardingStep("choice");
-
-      const userMessageId = nextMessageIdRef.current++;
-      const greetingId = nextMessageIdRef.current++;
-
-      setMessages([
-        { id: userMessageId, role: "user", content: effectiveQuery },
-        { id: greetingId, role: "assistant", content: "", thinking: true, selectPrompt: true },
-      ]);
-
-      setChatInput("");
-
-      const greeting = t("onboarding.greeting");
-      streamAssistantText(greetingId, greeting);
-
-      return;
-    }
-
-    // Now do the actual search (after onboarding)
-    setOnboardingStep("done");
     setChatExpanded(true);
 
     const userMessageId = nextMessageIdRef.current++;
     const assistantMessageId = nextMessageIdRef.current++;
-    const resultsKey = `${activeTab}|${effectiveQuery}`;
 
     setMessages((prev) => [
       ...prev,
       { id: userMessageId, role: "user", content: effectiveQuery },
-      {
-        id: assistantMessageId,
-        role: "assistant",
-        content: "",
-        thinking: true,
-        results: {
-          key: resultsKey,
-          query: effectiveQuery,
-          type: activeTab,
-          items: [],
-          isLoading: true,
-        },
-      },
+      { id: assistantMessageId, role: "assistant", content: "", thinking: true },
     ]);
 
-    // Persist the submitted query for preview results, but clear the input box for chat UX.
-    setSubmittedQuery(effectiveQuery);
     setChatInput("");
 
-    setHasSearched(true);
+    setIsAgentWorking(true);
+    try {
+      const agent = await callSearchAgent({ query: effectiveQuery, locale, scope: scopeOverride });
+      const tab: TabType = scopeOverride === "auto" ? agent.intent : scopeOverride;
+      const q = (agent.searchQuery || effectiveQuery).trim();
+      const resultsKey = `${tab}|${q}`;
 
-    // Generate a real assistant reply once results load (or quickly if none).
-    setPendingAiReply({
-      messageId: assistantMessageId,
-      query: effectiveQuery,
-      tab: activeTab,
-      resultsKey,
-      locale,
-    });
+      setActiveTab(tab);
+      setSubmittedQuery(q);
+      setSelectedCategory(undefined);
+      setPreviewPageSize(12);
+      setHasSearched(true);
+
+      setMessages((prev) =>
+        prev.map((m) => {
+          if (m.id !== assistantMessageId) return m;
+          return {
+            ...m,
+            thinking: false,
+            content: agent.assistantText ?? "",
+            relatedPrompts: Array.isArray(agent.relatedPrompts) ? agent.relatedPrompts : [],
+            results: {
+              key: resultsKey,
+              query: q,
+              type: tab,
+              items: [],
+              isLoading: true,
+            },
+          };
+        }),
+      );
+    } catch (err) {
+      console.error(err);
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === assistantMessageId
+            ? {
+                ...m,
+                thinking: false,
+                content:
+                  locale === "fr"
+                    ? "Désolé, je n’arrive pas à lancer la recherche pour le moment. Réessaie dans un instant."
+                    : locale === "ar"
+                      ? "عذرًا، لا أستطيع بدء البحث الآن. حاول مرة أخرى بعد قليل."
+                      : "Sorry, I can’t start the search right now. Please try again in a moment.",
+              }
+            : m,
+        ),
+      );
+    } finally {
+      setIsAgentWorking(false);
+    }
   };
-
-  useEffect(() => {
-    if (!pendingAiReply) return;
-    // Wait until the active tab query finished loading for this query/tab combo.
-    const isSameKey = submittedResultsKey === pendingAiReply.resultsKey;
-    const ready = isSameKey && !topSearchLoading;
-    if (!ready) return;
-
-    // Prevent duplicate calls on re-render while the request is in-flight.
-    const pending = pendingAiReply;
-    setPendingAiReply(null);
-
-    const contextResults = buildResultsContext(pending.tab, topSearchItems);
-    setIsStreaming(true);
-    void callAgent({
-      messageId: pending.messageId,
-      query: pending.query,
-      tab: pending.tab,
-      locale: pending.locale,
-      contextResults,
-    })
-      .catch((err) => {
-        streamAssistantText(
-          pending.messageId,
-          locale === "fr"
-            ? "Désolé, je n’arrive pas à répondre pour le moment. Réessaie dans un instant."
-            : locale === "ar"
-              ? "عذرًا، لا أستطيع الرد الآن. حاول مرة أخرى بعد قليل."
-              : "Sorry, I can’t reply right now. Please try again in a moment.",
-        );
-        console.error(err);
-      })
-      .finally(() => {
-        setIsStreaming(false);
-      });
-  }, [pendingAiReply, submittedResultsKey, topSearchLoading, topSearchItems, locale]);
-
-  // Cleanup streaming on unmount
-  useEffect(() => {
-    return () => {
-      clearStreamTimers();
-    };
-  }, []);
 
   const tabLabels = {
     jobs: t("tabs.jobs"),
@@ -683,75 +553,20 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
                           />
                         )}
                         {isAssistant ? (
-                          message.selectPrompt ? (
-                            <div className="inline-block w-fit max-w-[85%] sm:max-w-[75%] rounded-lg bg-slate-50 px-4 py-2.5 text-slate-900">
-                              {message.thinking ? (
-                                <ThinkingBar text={t("thinking")} />
-                              ) : (
-                                <Markdown>{message.content ?? ""}</Markdown>
-                              )}
+                          message.results ? (
+                            <div className="w-full max-w-full rounded-lg bg-slate-50 px-4 py-2.5 text-slate-900">
+                              {message.results.isLoading ? (
+                                <ThinkingBar text={t("searching")} />
+                              ) : null}
 
-                              <div className="mt-3">
-                                <Popover open={choicePopoverOpen} onOpenChange={setChoicePopoverOpen}>
-                                  <PopoverTrigger asChild>
-                                    <Button
-                                      type="button"
-                                      variant="ghost"
-                                      className="inline-flex items-center gap-2 font-semibold text-slate-900 transition hover:bg-slate-100 hover:text-slate-900"
-                                    >
-                                      <Sparkles className="h-4 w-4" />
-                                      {t("onboarding.chooseAction")}
-                                      <ChevronDown className="h-4 w-4 opacity-60" />
-                                    </Button>
-                                  </PopoverTrigger>
-                                  <PopoverContent
-                                    align={dir === "rtl" ? "end" : "start"}
-                                    sideOffset={8}
-                                    className="w-56 p-1"
-                                  >
-                                    <button
-                                      type="button"
-                                      onClick={() => handleChoiceSelection("jobs")}
-                                      className="flex w-full items-center rounded-md px-2 py-2 text-sm font-medium hover:bg-slate-100"
-                                    >
-                                      {t("onboarding.choiceJob")}
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={() => handleChoiceSelection("services")}
-                                      className="flex w-full items-center rounded-md px-2 py-2 text-sm font-medium hover:bg-slate-100"
-                                    >
-                                      {t("onboarding.choiceService")}
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={() => handleChoiceSelection("tasks")}
-                                      className="flex w-full items-center rounded-md px-2 py-2 text-sm font-medium hover:bg-slate-100"
-                                    >
-                                      {t("onboarding.choiceTask")}
-                                    </button>
-                                  </PopoverContent>
-                                </Popover>
-                              </div>
-                            </div>
-                          ) : message.results ? (
-                            <div className="w-full max-w-[85%] sm:max-w-[75%] rounded-lg bg-slate-50 px-4 py-2.5 text-slate-900">
-                              {message.thinking ? (
-                                <ThinkingBar text={t("thinking")} />
-                              ) : (
-                                <Markdown>{message.content ?? ""}</Markdown>
-                              )}
-
-                              <div className="mt-2 text-sm text-slate-600">
-                                {message.results.isLoading
-                                  ? t("searching")
-                                  : message.results.items.length === 0
-                                    ? "No results found. Try adjusting your search."
-                                    : null}
-                              </div>
+                              {!message.results.isLoading && message.results.items.length === 0 ? (
+                                <div className="text-sm text-slate-700">
+                                  <Markdown>{message.content ?? ""}</Markdown>
+                                </div>
+                              ) : null}
 
                               {!message.results.isLoading && message.results.items.length > 0 && (
-                                <div className="mt-3 grid grid-cols-1 gap-4 md:grid-cols-2">
+                                <div className="mt-3 grid grid-cols-1 gap-6 md:grid-cols-3">
                                   {message.results.items.map((item: any) => {
                                     if (message.results?.type === "jobs") {
                                       return (
@@ -785,6 +600,32 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
                                   })}
                                 </div>
                               )}
+
+                              {!message.results.isLoading &&
+                              Array.isArray(message.relatedPrompts) &&
+                              message.relatedPrompts.length > 0 ? (
+                                <div className="mt-4">
+                                  <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                                    {getRelatedLabel(locale)}
+                                  </div>
+                                  <div className="mt-2 flex flex-wrap gap-2">
+                                    {message.relatedPrompts.slice(0, 6).map((p, idx) => (
+                                      <button
+                                        key={`${message.id}-rel-${idx}`}
+                                        type="button"
+                                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-sm transition whitespace-nowrap border-slate-200 text-slate-700 hover:bg-slate-50"
+                                        onClick={() => {
+                                          setChatInput(p);
+                                          chatInputRef.current?.focus();
+                                          void handleSearch(p);
+                                        }}
+                                      >
+                                        {p}
+                                      </button>
+                                    ))}
+                                  </div>
+                                </div>
+                              ) : null}
                             </div>
                           ) : (
                             <div className="inline-block w-fit max-w-[85%] sm:max-w-[75%] rounded-lg bg-slate-50 px-4 py-2.5 text-slate-900">
@@ -817,7 +658,7 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
                     value={chatInput}
                     onChange={(e) => setChatInput(e.target.value)}
                     onKeyDown={(e) => {
-                      if (e.key === "Enter" && !e.shiftKey && chatInput.trim() && onboardingStep !== "choice") {
+                      if (e.key === "Enter" && !e.shiftKey && chatInput.trim()) {
                         e.preventDefault();
                         void handleSearch();
                       }
@@ -827,31 +668,24 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
                 </div>
                 <div className="flex gap-2 justify-end items-center mt-3">
                   <div className="flex items-center gap-2">
-                    {onboardingStep === "done" && (
-                      <Select
-                        value={activeTab}
-                        onValueChange={(value) => {
-                          setActiveTab(value as TabType);
-                          setHasSearched(false);
-                          setSubmittedQuery("");
-                          setSelectedCategory(undefined);
-                          setPreviewPageSize(12);
-                        }}
-                      >
-                        <SelectTrigger className="h-8 min-w-[120px] px-3 text-sm">
-                          <SelectValue placeholder={tabLabels[activeTab]} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="jobs">{tabLabels.jobs}</SelectItem>
-                          <SelectItem value="services">{tabLabels.services}</SelectItem>
-                          <SelectItem value="tasks">{tabLabels.tasks}</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    )}
+                    <Select
+                      value={scopeOverride}
+                      onValueChange={(value) => setScopeOverride(value as ScopeOverride)}
+                    >
+                      <SelectTrigger className="h-8 min-w-[120px] px-3 text-sm">
+                        <SelectValue placeholder={getScopeLabel(locale, scopeOverride, t)} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="auto">{getScopeLabel(locale, "auto", t)}</SelectItem>
+                        <SelectItem value="jobs">{tabLabels.jobs}</SelectItem>
+                        <SelectItem value="services">{tabLabels.services}</SelectItem>
+                        <SelectItem value="tasks">{tabLabels.tasks}</SelectItem>
+                      </SelectContent>
+                    </Select>
                     <button
                       type="button"
                       onClick={() => void handleSearch()}
-                      disabled={isSearching || isStreaming || onboardingStep === "choice"}
+                      disabled={isSearching || isAgentWorking}
                       className="flex justify-center items-center w-12 h-8 rounded-lg border border-gray-200 disabled:opacity-60"
                     >
                       <Image
@@ -868,20 +702,6 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
             </div>
           </div>
 
-          {/* Prompt shortcuts (replaces old category chips) */}
-          {!chatExpanded && (
-            <ActionButton
-              inputRef={chatInputRef}
-              onCategoryClick={() => {
-                // no-op (reserved for analytics later)
-              }}
-              onSelectPrompt={(prompt) => {
-                setChatInput(prompt);
-                chatInputRef.current?.focus();
-                void handleSearch(prompt);
-              }}
-            />
-          )}
         </div>
       </div>
       {isSecondary && (

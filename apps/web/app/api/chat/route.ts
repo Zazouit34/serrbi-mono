@@ -11,14 +11,22 @@ type ChatMessage = {
 
 type ChatContext = {
   locale?: string;
-  tab?: "jobs" | "services" | "tasks";
+  scope?: "auto" | "jobs" | "services" | "tasks";
   query?: string;
-  results?: Array<Record<string, unknown>>;
 };
 
 type ChatRequestBody = {
   messages: ChatMessage[];
   context?: ChatContext;
+};
+
+type AgentIntent = "jobs" | "services" | "tasks";
+
+type AgentResponse = {
+  intent: AgentIntent;
+  searchQuery: string;
+  assistantText?: string;
+  relatedPrompts: string[];
 };
 
 function getRequiredEnv(name: string): string {
@@ -49,20 +57,40 @@ function extractAssistantText(json: any): string | null {
 
 function buildSystemPrompt(context?: ChatContext): string {
   const locale = context?.locale || "en";
-  const tab = context?.tab || "jobs";
+  const scope = context?.scope || "auto";
 
   return `
-You are Serrbi, a helpful AI assistant for a marketplace.
+You are Serrbi's Search Agent.
 
-Goals:
-- Help the user find ${tab} using the provided search results (if any).
-- Be concise, friendly, and practical.
-- If results are provided, write a short intro and refer to the cards shown below (do NOT paste the full listing details).
-- If results are empty, ask 1-2 targeted clarifying questions (location, category, budget, seniority, etc.).
-- Never invent listings; only reference results when they are provided.
+Your job is to route a user's message into the correct marketplace search intent and generate follow-up prompts.
+
+You MUST output ONLY valid JSON (no markdown, no code fences, no extra text) with this exact schema:
+{
+  "intent": "jobs" | "services" | "tasks",
+  "searchQuery": string,
+  "assistantText": string,
+  "relatedPrompts": string[]
+}
+
+Rules:
+- intent:
+  - If scope is "jobs" / "services" / "tasks", set intent to that value.
+  - If scope is "auto", infer intent from the user's message.
+- searchQuery:
+  - Rewrite the user's message into a compact semantic search query.
+  - Keep concrete signals (role, service type, task, city, seniority, budget, timeframe).
+  - Remove filler words and greetings.
+- assistantText:
+  - If the message is ambiguous, ask 1-2 clarifying questions.
+  - If it is clear, keep assistantText very short (1 sentence) and DO NOT describe or list the result cards (the UI will render cards).
+- relatedPrompts:
+  - Provide 4 to 6 short, high-quality next-step prompts based on the user's goal.
+  - Make them actionable and diverse (filters, alternatives, adjacent needs).
 
 Language:
-- Respond in the user's language: ${locale}. If the user writes in another language, follow their latest message.
+- Write in the user's language: ${locale}.
+
+Current scope override: ${scope}.
 `.trim();
 }
 
@@ -136,6 +164,51 @@ async function callDashScope(body: {
   return text;
 }
 
+function asNonEmptyString(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  return trimmed ? trimmed : null;
+}
+
+function asStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter((v): v is string => typeof v === "string")
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .slice(0, 8);
+}
+
+function safeParseAgentJson(text: string): AgentResponse | null {
+  const firstBrace = text.indexOf("{");
+  const lastBrace = text.lastIndexOf("}");
+  const jsonSlice =
+    firstBrace !== -1 && lastBrace !== -1 ? text.slice(firstBrace, lastBrace + 1) : text;
+
+  let parsed: any;
+  try {
+    parsed = JSON.parse(jsonSlice);
+  } catch {
+    return null;
+  }
+
+  const intent = parsed?.intent;
+  if (intent !== "jobs" && intent !== "services" && intent !== "tasks") return null;
+
+  const searchQuery = asNonEmptyString(parsed?.searchQuery);
+  if (!searchQuery) return null;
+
+  const assistantText = asNonEmptyString(parsed?.assistantText) ?? "";
+  const relatedPrompts = asStringArray(parsed?.relatedPrompts).slice(0, 6);
+
+  return {
+    intent,
+    searchQuery,
+    assistantText,
+    relatedPrompts,
+  };
+}
+
 export async function POST(req: Request) {
   try {
     const body = (await req.json()) as ChatRequestBody;
@@ -149,15 +222,9 @@ export async function POST(req: Request) {
     }
 
     const systemPrompt = buildSystemPrompt(body.context);
-    const contextResults = body.context?.results ?? [];
-
-    const contextBlock =
-      contextResults.length > 0
-        ? `\n\nSearch results (JSON, top items):\n${JSON.stringify(contextResults).slice(0, 12000)}`
-        : "";
 
     const finalMessages: ChatMessage[] = [
-      { role: "system", content: `${systemPrompt}${contextBlock}` },
+      { role: "system", content: systemPrompt },
       ...messages.map((m) => ({
         role: m.role,
         content: m.content,
@@ -170,7 +237,27 @@ export async function POST(req: Request) {
       messages: finalMessages,
     });
 
-    return NextResponse.json({ text });
+    const parsed = safeParseAgentJson(text);
+    if (parsed) {
+      return NextResponse.json(parsed);
+    }
+
+    // Fallback: if the LLM didn't follow instructions, degrade gracefully.
+    const scope = body.context?.scope;
+    const fallbackIntent: AgentIntent =
+      scope === "jobs" || scope === "services" || scope === "tasks" ? scope : "jobs";
+    const lastUser =
+      [...messages].reverse().find((m) => m?.role === "user" && typeof m.content === "string")?.content ??
+      body.context?.query ??
+      "";
+    const fallbackQuery = (lastUser || "").trim();
+
+    return NextResponse.json({
+      intent: fallbackIntent,
+      searchQuery: fallbackQuery || "jobs",
+      assistantText: "",
+      relatedPrompts: [],
+    } satisfies AgentResponse);
   } catch (err: any) {
     return NextResponse.json(
       { error: err?.message || "Unknown error" },
