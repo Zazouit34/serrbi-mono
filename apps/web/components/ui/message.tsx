@@ -22,7 +22,7 @@ export type MessageContentProps = {
 
 export function Message({ children, className, ...props }: MessageProps) {
   return (
-    <div className={cn("flex items-start gap-3", className)} {...props}>
+    <div className={cn("flex items-start gap-2 text-left", className)} {...props}>
       {children}
     </div>
   )
@@ -41,7 +41,7 @@ export function MessageContent({ children, className, ...props }: MessageContent
   return (
     <div
       className={cn(
-        "inline-block w-fit max-w-full whitespace-pre-wrap break-words rounded-lg px-4 py-2.5",
+        "inline-block w-fit max-w-full whitespace-pre-wrap break-words rounded-lg px-4 py-2.5 text-left",
         className
       )}
       {...props}

@@ -19,7 +19,7 @@ export default function Hero() {
   // avatars removed on mobile for better UX
 
   return (
-    <div className="flex flex-col text-center">
+    <div className="flex flex-col">
       <div
         className={`flex flex-col items-center mx-auto w-full ${
           chatExpanded
@@ -28,7 +28,7 @@ export default function Hero() {
         }`}
       >
         {!chatExpanded && (
-          <h2 className="mb-0 text-balance font-semibold text-[28px] md:text-[36px] leading-tight">
+          <h2 className="mb-0 text-balance text-center font-semibold text-[28px] md:text-[36px] leading-tight">
             {t("headingLine1")}
           </h2>
         )}

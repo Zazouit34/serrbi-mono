@@ -652,7 +652,7 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
   ]);
 
   return (
-    <div className={`mx-auto w-full max-w-4xl ${chatExpanded ? "h-full" : ""}`}>
+    <div className={`mx-auto w-full max-w-4xl text-left ${chatExpanded ? "h-full" : ""}`}>
       {/* Search Content - Chat interface */}
       <div className={`px-4 md:px-6 md:pb-0 ${chatExpanded ? "h-full" : ""}`}>
         <div className={`flex flex-col gap-4 mx-auto w-full ${chatExpanded ? "h-full" : ""}`}>
@@ -679,15 +679,10 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
                             fallback={session?.user?.name?.slice(0, 1)?.toUpperCase() || "U"}
                             className="bg-slate-100 text-slate-700"
                           />
-                        ) : (
-                          <MessageAvatar
-                            fallback="S"
-                            className="bg-slate-900 text-white"
-                          />
-                        )}
+                        ) : null}
                         {isAssistant ? (
                           message.kind === "suggestions" ? (
-                            <div className="w-full">
+                            <div className="w-full text-left">
                               <SuggestionList
                                 prompts={message.relatedPrompts ?? []}
                                 onSelect={(p) => {
@@ -696,7 +691,7 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
                               />
                             </div>
                           ) : message.results ? (
-                            <div className="w-full text-slate-900">
+                            <div className="w-full text-left text-slate-900">
                               {message.results.isLoading ? (
                                 <ThinkingBar text={t("searching")} />
                               ) : null}
@@ -708,7 +703,7 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
                               ) : null}
 
                               {!message.results.isLoading && message.results.items.length > 0 && (
-                                <div className="mt-3 grid grid-cols-1 gap-6 md:grid-cols-3">
+                                <div className="mt-3 grid grid-cols-1 gap-6 text-left md:grid-cols-3">
                                   {message.results.items.map((item: any) => {
                                     if (message.results?.type === "jobs") {
                                       return (
@@ -744,7 +739,7 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
                               )}
                             </div>
                           ) : (
-                            <div className="w-full text-slate-900 leading-6">
+                            <div className="w-full text-left text-slate-900 leading-6">
                               {message.thinking ? (
                                 <ThinkingBar text={t("thinking")} />
                               ) : (
@@ -753,7 +748,7 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
                             </div>
                           )
                         ) : (
-                          <div className="w-full text-slate-900 leading-6">
+                          <div className="w-full text-left text-slate-900 leading-6">
                             {message.content}
                           </div>
                         )}
