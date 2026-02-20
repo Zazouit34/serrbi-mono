@@ -189,6 +189,238 @@ function asStringArray(value: unknown): string[] {
     .slice(0, 8);
 }
 
+function normalizeForIntent(text: string): string {
+  const withoutDiacritics = text.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  return text
+    ? withoutDiacritics
+        .toLowerCase()
+        .trim()
+        .replace(/[.,!?;:()[\]{}'"`~@#$%^&*_+=<>|\\/.-]/g, " ")
+        .replace(/\s+/g, " ")
+    : "";
+}
+
+function countPhraseHits(text: string, phrases: string[]): number {
+  let score = 0;
+  for (const phrase of phrases) {
+    if (text.includes(phrase)) score += 1;
+  }
+  return score;
+}
+
+function classifyTurnIntent(text: string): "chat" | "search" {
+  const normalized = normalizeForIntent(text);
+  if (!normalized) return "chat";
+
+  const tokens = normalized.split(" ").filter(Boolean);
+
+  const greetingOrSmalltalkPhrases = [
+    // English
+    "hi",
+    "hey",
+    "hello",
+    "yo",
+    "good morning",
+    "good afternoon",
+    "good evening",
+    "how are you",
+    "who are you",
+    "what can you do",
+    "thanks",
+    "thank you",
+    // French
+    "salut",
+    "bonjour",
+    "bonsoir",
+    "coucou",
+    "ca va",
+    "qui es tu",
+    "tu fais quoi",
+    "merci",
+    // Arabic
+    "مرحبا",
+    "اهلا",
+    "أهلا",
+    "سلام",
+    "السلام عليكم",
+    "كيف حالك",
+    "شكرا",
+    "شكرًا",
+  ];
+
+  const searchActionPhrases = [
+    // English
+    "find",
+    "search",
+    "looking for",
+    "look for",
+    "show me",
+    "i need",
+    "i want",
+    "hire",
+    "apply",
+    // French
+    "cherche",
+    "recherche",
+    "trouve",
+    "montre moi",
+    "jai besoin",
+    "je veux",
+    // Arabic / Darija common
+    "بغيت",
+    "كنقلب",
+    "ابحث",
+    "أبحث",
+    "اريد",
+    "أريد",
+    "احتاج",
+    "أحتاج",
+    "وريني",
+  ];
+
+  const marketplaceNouns = [
+    // English
+    "job",
+    "jobs",
+    "work",
+    "service",
+    "services",
+    "task",
+    "tasks",
+    "freelance",
+    // French
+    "emploi",
+    "emplois",
+    "travail",
+    "service",
+    "services",
+    "mission",
+    "tache",
+    "taches",
+    // Arabic
+    "وظيفة",
+    "وظائف",
+    "خدمة",
+    "خدمات",
+    "مهمة",
+    "مهام",
+    "عمل",
+  ];
+
+  const constraintSignals = [
+    "remote",
+    "onsite",
+    "hybrid",
+    "distance",
+    "casablanca",
+    "rabat",
+    "marrakech",
+    "tangier",
+    "agadir",
+    "en ligne",
+    "a distance",
+    "عن بعد",
+    "في",
+    "بال",
+    "budget",
+    "salary",
+    "wage",
+    "prix",
+    "salaire",
+    "price",
+  ];
+
+  let chatScore = 0;
+  let searchScore = 0;
+
+  chatScore += countPhraseHits(normalized, greetingOrSmalltalkPhrases);
+  searchScore += countPhraseHits(normalized, searchActionPhrases);
+  searchScore += countPhraseHits(normalized, marketplaceNouns) * 2;
+  searchScore += countPhraseHits(normalized, constraintSignals);
+
+  // Numeric/currency hints usually mean search filters.
+  if (/\b\d{2,}\b/.test(normalized)) searchScore += 1;
+  if (/(dh|mad|usd|eur|\$|€)/.test(text.toLowerCase())) searchScore += 1;
+
+  const hasMarketplaceNoun = marketplaceNouns.some((w) => tokens.includes(w));
+  const hasSearchAction = searchActionPhrases.some((p) => normalized.includes(p));
+
+  // Very short non-domain messages should remain chat.
+  if (!hasMarketplaceNoun && !hasSearchAction && tokens.length <= 4) {
+    chatScore += 2;
+  }
+
+  // Questions about agent identity/capability are chat even if short.
+  if (
+    normalized.includes("who are you") ||
+    normalized.includes("what can you do") ||
+    normalized.includes("qui es tu") ||
+    normalized.includes("شنو تقدر") ||
+    normalized.includes("ماذا تستطيع")
+  ) {
+    chatScore += 3;
+  }
+
+  // If explicit marketplace intent is weak, default to conversational.
+  if (searchScore < 2) {
+    chatScore += 1;
+  }
+
+  return searchScore >= chatScore + 1 ? "search" : "chat";
+}
+
+function isGreetingOrSmallTalk(text: string): boolean {
+  return classifyTurnIntent(text) === "chat";
+}
+
+function isLikelySearchRequest(text: string): boolean {
+  return classifyTurnIntent(text) === "search";
+}
+
+function normalizeLocale(locale: string): "en" | "fr" | "ar" {
+  const lower = locale.toLowerCase();
+  if (lower.startsWith("fr")) return "fr";
+  if (lower.startsWith("ar")) return "ar";
+  return "en";
+}
+
+function buildChatGreeting(locale: string): string {
+  const normalizedLocale = normalizeLocale(locale);
+  if (normalizedLocale === "fr") {
+    return "Salut, je suis Serrbi. Je peux t’aider a trouver un job, un service, ou une tache. Dis-moi ce que tu cherches.";
+  }
+  if (normalizedLocale === "ar") {
+    return "مرحبا، أنا Serrbi. أقدر أساعدك تلقى وظيفة أو خدمة أو مهمة. قلّي شنو كاتقلب عليه.";
+  }
+  return "Hey, I am Serrbi. I can help you find a job, a service, or a task. Tell me what you need.";
+}
+
+function buildChatRelatedPrompts(locale: string): string[] {
+  const normalizedLocale = normalizeLocale(locale);
+  if (normalizedLocale === "fr") {
+    return [
+      "Trouve-moi des jobs marketing a Casablanca",
+      "Je cherche un service de plomberie a Rabat",
+      "Montre-moi des taches freelance a distance",
+      "Aide-moi a preciser ma recherche",
+    ];
+  }
+  if (normalizedLocale === "ar") {
+    return [
+      "بغيت وظائف تسويق فـ الدار البيضاء",
+      "كنقلب على خدمة سباك فـ الرباط",
+      "ورّيني مهام فريلانس عن بُعد",
+      "عاونّي نحدد البحث ديالي",
+    ];
+  }
+  return [
+    "Find me marketing jobs in Casablanca",
+    "I need a plumbing service in Rabat",
+    "Show remote freelance tasks",
+    "Help me refine my search",
+  ];
+}
+
 function safeParseAgentJson(text: string): AgentResponse | null {
   const firstBrace = text.indexOf("{");
   const lastBrace = text.lastIndexOf("}");
@@ -236,6 +468,23 @@ export async function POST(req: Request) {
       );
     }
 
+    const lastUser =
+      [...messages].reverse().find((m) => m?.role === "user" && typeof m.content === "string")?.content ??
+      body.context?.query ??
+      "";
+    const locale = body.context?.locale || "en";
+
+    // Guardrail: keep greetings/smalltalk conversational, never run search for them.
+    if (isGreetingOrSmallTalk(lastUser)) {
+      return NextResponse.json({
+        action: "chat",
+        intent: "jobs",
+        searchQuery: "",
+        assistantText: buildChatGreeting(locale),
+        relatedPrompts: buildChatRelatedPrompts(locale),
+      } satisfies AgentResponse);
+    }
+
     const systemPrompt = buildSystemPrompt(body.context);
 
     const finalMessages: ChatMessage[] = [
@@ -254,6 +503,16 @@ export async function POST(req: Request) {
 
     const parsed = safeParseAgentJson(text);
     if (parsed) {
+      // Safety net: if model still classifies greeting-like text as search, coerce to chat.
+      if (parsed.action === "search" && isGreetingOrSmallTalk(lastUser)) {
+        return NextResponse.json({
+          action: "chat",
+          intent: parsed.intent,
+          searchQuery: "",
+          assistantText: buildChatGreeting(locale),
+          relatedPrompts: buildChatRelatedPrompts(locale),
+        } satisfies AgentResponse);
+      }
       return NextResponse.json(parsed);
     }
 
@@ -261,18 +520,15 @@ export async function POST(req: Request) {
     const scope = body.context?.scope;
     const fallbackIntent: AgentIntent =
       scope === "jobs" || scope === "services" || scope === "tasks" ? scope : "jobs";
-    const lastUser =
-      [...messages].reverse().find((m) => m?.role === "user" && typeof m.content === "string")?.content ??
-      body.context?.query ??
-      "";
     const fallbackQuery = (lastUser || "").trim();
+    const fallbackAction: AgentAction = isLikelySearchRequest(lastUser) ? "search" : "chat";
 
     return NextResponse.json({
-      action: "search",
+      action: fallbackAction,
       intent: fallbackIntent,
-      searchQuery: fallbackQuery || "jobs",
-      assistantText: "",
-      relatedPrompts: [],
+      searchQuery: fallbackAction === "search" ? fallbackQuery || "jobs" : "",
+      assistantText: fallbackAction === "chat" ? buildChatGreeting(locale) : "",
+      relatedPrompts: fallbackAction === "chat" ? buildChatRelatedPrompts(locale) : [],
     } satisfies AgentResponse);
   } catch (err: any) {
     return NextResponse.json(
