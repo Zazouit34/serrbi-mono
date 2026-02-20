@@ -320,7 +320,9 @@
       "categories": {
         "jobs": "Jobs",
         "services": "Services",
-        "tasks": "Tasks"
+        "tasks": "Tasks",
+        "resumeAnalyzer": "Resume Analyzer",
+        "careerSwitch": "Career Switch"
       },
       "prompts": {
         "jobs": [
@@ -340,6 +342,18 @@
           "Fix a bathroom leak in Rabat (urgent)",
           "Food delivery gig today in Marrakech",
           "Write French landing page copy (remote, budget 500 MAD)"
+        ],
+        "resumeAnalyzer": [
+          "Analyze my resume and give me an ATS score",
+          "What skills am I missing for senior developer roles?",
+          "Estimate my salary range based on my CV",
+          "How can I improve my resume for tech jobs?"
+        ],
+        "careerSwitch": [
+          "I'm a developer, help me transition to product management",
+          "From finance analyst to data scientist - what's the path?",
+          "Career switch from hospitality to tech - is it realistic?",
+          "I want to move from teaching to UX design"
         ]
       }
     },

@@ -347,7 +347,9 @@
       "categories": {
         "jobs": "Emplois",
         "services": "Services",
-        "tasks": "Tâches"
+        "tasks": "Tâches",
+        "resumeAnalyzer": "Analyseur CV",
+        "careerSwitch": "Carrière IA"
       },
       "prompts": {
         "jobs": [

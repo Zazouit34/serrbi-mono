@@ -2,15 +2,14 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import type React from "react";
-import { Briefcase, Search, StickyNote, Wrench } from "lucide-react";
+import { Briefcase, FileText, Search, StickyNote, TrendingUp, Wrench } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { cn } from "@workspace/ui/lib/utils";
-import { Button } from "@workspace/ui/components/button";
 
 const FOCUS_OUT_DELAY_MS = 100;
 
-type ActionKey = "jobs" | "services" | "tasks";
+type ActionKey = "jobs" | "services" | "tasks" | "resumeAnalyzer" | "careerSwitch";
 
 const actionCategories: Array<{
   key: ActionKey;
@@ -19,6 +18,8 @@ const actionCategories: Array<{
   { key: "jobs", icon: Briefcase },
   { key: "services", icon: Wrench },
   { key: "tasks", icon: StickyNote },
+  { key: "resumeAnalyzer", icon: FileText },
+  { key: "careerSwitch", icon: TrendingUp },
 ];
 
 export interface ActionButtonProps {
@@ -48,6 +49,8 @@ export function ActionButton({
       jobs: t("actionButtons.categories.jobs"),
       services: t("actionButtons.categories.services"),
       tasks: t("actionButtons.categories.tasks"),
+      resumeAnalyzer: t("actionButtons.categories.resumeAnalyzer"),
+      careerSwitch: t("actionButtons.categories.careerSwitch"),
     };
   }, [t]);
 
@@ -56,6 +59,8 @@ export function ActionButton({
       jobs: asStringArray(t.raw("actionButtons.prompts.jobs")),
       services: asStringArray(t.raw("actionButtons.prompts.services")),
       tasks: asStringArray(t.raw("actionButtons.prompts.tasks")),
+      resumeAnalyzer: asStringArray(t.raw("actionButtons.prompts.resumeAnalyzer")),
+      careerSwitch: asStringArray(t.raw("actionButtons.prompts.careerSwitch")),
     } satisfies Record<ActionKey, string[]>;
   }, [t]);
 
@@ -107,64 +112,54 @@ export function ActionButton({
     };
   }, [activeCategory, inputRef]);
 
+  const activeSamples = activeCategory ? promptSamples[activeCategory] : [];
+
   return (
     <div ref={containerRef} className={cn("relative w-full", className)}>
-      <div className="relative h-full">
-        {/* Category buttons */}
-        <div
-          className={cn(
-            "absolute inset-0 flex items-start justify-center pt-2 transition-opacity duration-300",
-            activeCategory ? "opacity-0 pointer-events-none" : "opacity-100",
-          )}
-        >
-          <div className="flex flex-wrap justify-center gap-2 px-2">
-            {actionCategories.map((category) => {
-              const Icon = category.icon;
-              return (
-                <Button
-                  key={category.key}
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className={cn(
-                    "flex items-center gap-2 whitespace-nowrap rounded-full",
-                    "text-xs sm:text-sm px-3 sm:px-4",
-                  )}
-                  onClick={() => handleCategoryClick(category.key)}
-                >
-                  <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                  <span>{labels[category.key]}</span>
-                </Button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Prompt samples */}
-        <div
-          className={cn(
-            "absolute inset-0 py-1 space-y-1 overflow-y-auto transition-opacity duration-300",
-            !activeCategory ? "opacity-0 pointer-events-none" : "opacity-100",
-          )}
-        >
-          {activeCategory &&
-            promptSamples[activeCategory].map((prompt, index) => (
-              <button
-                key={`${activeCategory}-${index}`}
-                type="button"
-                className={cn(
-                  "w-full text-left px-3 py-2 rounded-md text-sm",
-                  "hover:bg-slate-50 transition-colors",
-                  "flex items-center gap-2 group",
-                )}
-                onClick={() => handlePromptClick(prompt)}
-              >
-                <Search className="h-3.5 w-3.5 text-slate-400 flex-shrink-0 group-hover:text-slate-700" />
-                <span className="line-clamp-1 text-slate-800">{prompt}</span>
-              </button>
-            ))}
-        </div>
+      {/* Category pill buttons (always visible) */}
+      <div className="flex flex-wrap justify-center gap-2">
+        {actionCategories.map((category) => {
+          const Icon = category.icon;
+          const isActive = activeCategory === category.key;
+          return (
+            <button
+              key={category.key}
+              type="button"
+              onClick={() => handleCategoryClick(category.key)}
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-sm transition whitespace-nowrap",
+                isActive
+                  ? "border-slate-900 bg-slate-900 text-white shadow-sm"
+                  : "border-slate-200 text-slate-700 hover:bg-slate-50",
+              )}
+            >
+              <Icon className="w-3.5 h-3.5" />
+              <span>{labels[category.key]}</span>
+            </button>
+          );
+        })}
       </div>
+
+      {/* Prompt samples (dynamic height, no scroll) */}
+      {activeSamples.length > 0 && (
+        <div className="mt-2 space-y-1">
+          {activeSamples.map((prompt, index) => (
+            <button
+              key={`${activeCategory}-${index}`}
+              type="button"
+              className={cn(
+                "w-full text-left px-3 py-2 rounded-md text-sm",
+                "hover:bg-slate-50 transition-colors",
+                "flex items-center gap-2 group",
+              )}
+              onClick={() => handlePromptClick(prompt)}
+            >
+              <Search className="h-3.5 w-3.5 text-slate-400 flex-shrink-0 group-hover:text-slate-700" />
+              <span className="text-slate-800">{prompt}</span>
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

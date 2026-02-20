@@ -871,7 +871,6 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
           {/* Prompt shortcuts (replaces old category chips) */}
           {!chatExpanded && (
             <ActionButton
-              className="mt-2"
               inputRef={chatInputRef}
               onCategoryClick={() => {
                 // no-op (reserved for analytics later)
