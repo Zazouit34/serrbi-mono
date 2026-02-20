@@ -22,7 +22,10 @@ type ChatRequestBody = {
 
 type AgentIntent = "jobs" | "services" | "tasks";
 
+type AgentAction = "chat" | "search";
+
 type AgentResponse = {
+  action: AgentAction;
   intent: AgentIntent;
   searchQuery: string;
   assistantText?: string;
@@ -62,10 +65,12 @@ function buildSystemPrompt(context?: ChatContext): string {
   return `
 You are Serrbi's Search Agent.
 
-Your job is to route a user's message into the correct marketplace search intent and generate follow-up prompts.
+Your job is to decide whether the user is chatting (greetings, smalltalk, vague intent) or searching (they want marketplace results),
+then route to the correct marketplace search intent and generate follow-up prompts.
 
 You MUST output ONLY valid JSON (no markdown, no code fences, no extra text) with this exact schema:
 {
+  "action": "chat" | "search",
   "intent": "jobs" | "services" | "tasks",
   "searchQuery": string,
   "assistantText": string,
@@ -73,16 +78,21 @@ You MUST output ONLY valid JSON (no markdown, no code fences, no extra text) wit
 }
 
 Rules:
+- action:
+  - Use "chat" for greetings ("hello"), smalltalk, or when the user intent is unclear. In this case, do NOT force a marketplace search.
+  - Use "search" only when the user is actually looking for jobs/services/tasks in the marketplace.
 - intent:
   - If scope is "jobs" / "services" / "tasks", set intent to that value.
   - If scope is "auto", infer intent from the user's message.
 - searchQuery:
-  - Rewrite the user's message into a compact semantic search query.
+  - If action is "chat", return an empty string "".
+  - If action is "search", rewrite the user's message into a compact semantic search query.
   - Keep concrete signals (role, service type, task, city, seniority, budget, timeframe).
   - Remove filler words and greetings.
 - assistantText:
-  - If the message is ambiguous, ask 1-2 clarifying questions.
-  - If it is clear, keep assistantText very short (1 sentence) and DO NOT describe or list the result cards (the UI will render cards).
+  - If action is "chat": respond naturally (e.g. greet as Serrbi and ask what they need today).
+  - If action is "search": keep assistantText empty "" unless you must ask 1-2 clarifying questions.
+  - Never describe or list result cards (the UI will render cards).
 - relatedPrompts:
   - Provide 4 to 6 short, high-quality next-step prompts based on the user's goal.
   - Make them actionable and diverse (filters, alternatives, adjacent needs).
@@ -192,16 +202,21 @@ function safeParseAgentJson(text: string): AgentResponse | null {
     return null;
   }
 
+  const action = parsed?.action;
+  if (action !== "chat" && action !== "search") return null;
+
   const intent = parsed?.intent;
   if (intent !== "jobs" && intent !== "services" && intent !== "tasks") return null;
 
-  const searchQuery = asNonEmptyString(parsed?.searchQuery);
-  if (!searchQuery) return null;
+  const rawSearchQuery = typeof parsed?.searchQuery === "string" ? parsed.searchQuery : "";
+  const searchQuery = rawSearchQuery.trim();
+  if (action === "search" && !searchQuery) return null;
 
-  const assistantText = asNonEmptyString(parsed?.assistantText) ?? "";
+  const assistantText = typeof parsed?.assistantText === "string" ? parsed.assistantText.trim() : "";
   const relatedPrompts = asStringArray(parsed?.relatedPrompts).slice(0, 6);
 
   return {
+    action,
     intent,
     searchQuery,
     assistantText,
@@ -253,6 +268,7 @@ export async function POST(req: Request) {
     const fallbackQuery = (lastUser || "").trim();
 
     return NextResponse.json({
+      action: "search",
       intent: fallbackIntent,
       searchQuery: fallbackQuery || "jobs",
       assistantText: "",

@@ -7,6 +7,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { Input } from "@workspace/ui/components/input";
 import { Button } from "@workspace/ui/components/button";
+import { Search } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { isSecondaryClient } from "@/lib/domain";
 import {
@@ -29,6 +30,7 @@ import { JobCard } from "@/components/ui/form/job/job-card";
 import { ServiceCard } from "@/components/ui/form/service/service-card";
 import { TaskCard } from "@/components/ui/form/task/task-card";
 import { ThinkingBar } from "@/components/ui/thinking-bar";
+import { ActionButton } from "@/components/ui/action-button";
 
 type TabType = "jobs" | "services" | "tasks";
 type ScopeOverride = "auto" | TabType;
@@ -45,6 +47,7 @@ type ChatMessage = {
   role: "user" | "assistant";
   content?: string;
   thinking?: boolean;
+  kind?: "text" | "results" | "suggestions";
   results?: {
     key: string;
     query: string;
@@ -53,6 +56,7 @@ type ChatMessage = {
     isLoading: boolean;
   };
   relatedPrompts?: string[];
+  suggestionsForKey?: string;
 };
 
 export type HeroPreviewData = {
@@ -77,6 +81,7 @@ type HeroSearchBarProps = {
 type AgentIntent = TabType;
 
 type AgentResponse = {
+  action: "chat" | "search";
   intent: AgentIntent;
   searchQuery: string;
   assistantText?: string;
@@ -99,6 +104,40 @@ function getRelatedLabel(locale: string) {
   if (locale === "ar") return "ذات صلة";
   if (locale === "fr") return "Suggestions";
   return "Related";
+}
+
+function getNoResultsLabel(locale: string) {
+  if (locale === "ar") return "لم يتم العثور على نتائج. جرّب تعديل طلبك.";
+  if (locale === "fr") return "Aucun résultat. Essayez d’affiner votre recherche.";
+  return "No results found. Try adjusting your search.";
+}
+
+function SuggestionList({
+  prompts,
+  onSelect,
+}: {
+  prompts: string[];
+  onSelect: (prompt: string) => void;
+}) {
+  if (!Array.isArray(prompts) || prompts.length === 0) return null;
+
+  return (
+    <div className="relative w-full">
+      <div className="mt-2 space-y-1">
+        {prompts.slice(0, 6).map((prompt, index) => (
+          <button
+            key={`${index}-${prompt}`}
+            type="button"
+            className="w-full text-left px-3 py-2 rounded-md text-sm hover:bg-slate-50 transition-colors flex items-center gap-2 group"
+            onClick={() => onSelect(prompt)}
+          >
+            <Search className="h-3.5 w-3.5 text-slate-400 flex-shrink-0 group-hover:text-slate-700" />
+            <span className="text-slate-800">{prompt}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroSearchBarProps) {
@@ -126,6 +165,7 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
   const [isAgentWorking, setIsAgentWorking] = useState(false);
   const [chatExpanded, setChatExpanded] = useState(false);
   const [placeholder, setPlaceholder] = useState("");
+  const [pendingRelatedByKey, setPendingRelatedByKey] = useState<Record<string, string[]>>({});
   const nextMessageIdRef = useRef(1);
   const placeholderIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const chatInputRef = useRef<HTMLInputElement | null>(null);
@@ -165,7 +205,7 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
       throw new Error(text || `Chat API error ${res.status}`);
     }
     const json = (await res.json()) as AgentResponse;
-    if (!json || typeof json.searchQuery !== "string" || !Array.isArray(json.relatedPrompts)) {
+    if (!json || (json.action !== "chat" && json.action !== "search") || !Array.isArray(json.relatedPrompts)) {
       throw new Error("Chat API returned invalid payload.");
     }
     return json;
@@ -352,6 +392,40 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
     topSearchLoading,
   ]);
 
+  // After a search finishes, append suggestions as their own assistant bubble.
+  useEffect(() => {
+    if (!submittedResultsKey) return;
+    if (!hasSearched) return;
+    if (topSearchLoading) return;
+
+    const prompts = pendingRelatedByKey[submittedResultsKey];
+    if (!Array.isArray(prompts) || prompts.length === 0) return;
+
+    setMessages((prev) => {
+      if (prev.some((m) => m.kind === "suggestions" && m.suggestionsForKey === submittedResultsKey)) {
+        return prev;
+      }
+      const id = nextMessageIdRef.current++;
+      return [
+        ...prev,
+        {
+          id,
+          role: "assistant",
+          kind: "suggestions",
+          content: getRelatedLabel(locale),
+          relatedPrompts: prompts,
+          suggestionsForKey: submittedResultsKey,
+        },
+      ];
+    });
+
+    setPendingRelatedByKey((prev) => {
+      const next = { ...prev };
+      delete next[submittedResultsKey];
+      return next;
+    });
+  }, [submittedResultsKey, hasSearched, topSearchLoading, pendingRelatedByKey, locale]);
+
   const handleSearch = async (overrideQuery?: string) => {
     const effectiveQuery = (overrideQuery ?? chatInput).trim();
 
@@ -396,7 +470,7 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
     setMessages((prev) => [
       ...prev,
       { id: userMessageId, role: "user", content: effectiveQuery },
-      { id: assistantMessageId, role: "assistant", content: "", thinking: true },
+      { id: assistantMessageId, role: "assistant", kind: "text", content: "", thinking: true },
     ]);
 
     setChatInput("");
@@ -404,8 +478,55 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
     setIsAgentWorking(true);
     try {
       const agent = await callSearchAgent({ query: effectiveQuery, locale, scope: scopeOverride });
+      if (agent.action === "chat") {
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === assistantMessageId
+              ? {
+                  ...m,
+                  thinking: false,
+                  kind: "text",
+                  content: agent.assistantText ?? "",
+                }
+              : m,
+          ),
+        );
+
+        if (Array.isArray(agent.relatedPrompts) && agent.relatedPrompts.length > 0) {
+          const suggestionsId = nextMessageIdRef.current++;
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: suggestionsId,
+              role: "assistant",
+              kind: "suggestions",
+              content: getRelatedLabel(locale),
+              relatedPrompts: agent.relatedPrompts,
+            },
+          ]);
+        }
+        return;
+      }
+
       const tab: TabType = scopeOverride === "auto" ? agent.intent : scopeOverride;
-      const q = (agent.searchQuery || effectiveQuery).trim();
+      const q = (agent.searchQuery || "").trim();
+      if (!q) {
+        // If the agent couldn't produce a search query, treat it like chat.
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === assistantMessageId
+              ? {
+                  ...m,
+                  thinking: false,
+                  kind: "text",
+                  content: agent.assistantText ?? "",
+                }
+              : m,
+          ),
+        );
+        return;
+      }
+
       const resultsKey = `${tab}|${q}`;
 
       setActiveTab(tab);
@@ -414,23 +535,29 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
       setPreviewPageSize(12);
       setHasSearched(true);
 
+      if (Array.isArray(agent.relatedPrompts) && agent.relatedPrompts.length > 0) {
+        setPendingRelatedByKey((prev) => ({ ...prev, [resultsKey]: agent.relatedPrompts.slice(0, 6) }));
+      }
+
+      // Turn the assistant bubble into the results bubble (cards only).
       setMessages((prev) =>
-        prev.map((m) => {
-          if (m.id !== assistantMessageId) return m;
-          return {
-            ...m,
-            thinking: false,
-            content: agent.assistantText ?? "",
-            relatedPrompts: Array.isArray(agent.relatedPrompts) ? agent.relatedPrompts : [],
-            results: {
-              key: resultsKey,
-              query: q,
-              type: tab,
-              items: [],
-              isLoading: true,
-            },
-          };
-        }),
+        prev.map((m) =>
+          m.id === assistantMessageId
+            ? {
+                ...m,
+                thinking: false,
+                kind: "results",
+                content: "",
+                results: {
+                  key: resultsKey,
+                  query: q,
+                  type: tab,
+                  items: [],
+                  isLoading: true,
+                },
+              }
+            : m,
+        ),
       );
     } catch (err) {
       console.error(err);
@@ -440,6 +567,7 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
             ? {
                 ...m,
                 thinking: false,
+                kind: "text",
                 content:
                   locale === "fr"
                     ? "Désolé, je n’arrive pas à lancer la recherche pour le moment. Réessaie dans un instant."
@@ -553,7 +681,18 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
                           />
                         )}
                         {isAssistant ? (
-                          message.results ? (
+                          message.kind === "suggestions" ? (
+                            <div className="inline-block w-fit max-w-[85%] sm:max-w-[75%] rounded-lg bg-slate-50 px-4 py-2.5 text-slate-900">
+                              <SuggestionList
+                                prompts={message.relatedPrompts ?? []}
+                                onSelect={(p) => {
+                                  setChatInput(p);
+                                  chatInputRef.current?.focus();
+                                  void handleSearch(p);
+                                }}
+                              />
+                            </div>
+                          ) : message.results ? (
                             <div className="w-full max-w-full rounded-lg bg-slate-50 px-4 py-2.5 text-slate-900">
                               {message.results.isLoading ? (
                                 <ThinkingBar text={t("searching")} />
@@ -561,7 +700,7 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
 
                               {!message.results.isLoading && message.results.items.length === 0 ? (
                                 <div className="text-sm text-slate-700">
-                                  <Markdown>{message.content ?? ""}</Markdown>
+                                  {getNoResultsLabel(locale)}
                                 </div>
                               ) : null}
 
@@ -600,32 +739,6 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
                                   })}
                                 </div>
                               )}
-
-                              {!message.results.isLoading &&
-                              Array.isArray(message.relatedPrompts) &&
-                              message.relatedPrompts.length > 0 ? (
-                                <div className="mt-4">
-                                  <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                                    {getRelatedLabel(locale)}
-                                  </div>
-                                  <div className="mt-2 flex flex-wrap gap-2">
-                                    {message.relatedPrompts.slice(0, 6).map((p, idx) => (
-                                      <button
-                                        key={`${message.id}-rel-${idx}`}
-                                        type="button"
-                                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-sm transition whitespace-nowrap border-slate-200 text-slate-700 hover:bg-slate-50"
-                                        onClick={() => {
-                                          setChatInput(p);
-                                          chatInputRef.current?.focus();
-                                          void handleSearch(p);
-                                        }}
-                                      >
-                                        {p}
-                                      </button>
-                                    ))}
-                                  </div>
-                                </div>
-                              ) : null}
                             </div>
                           ) : (
                             <div className="inline-block w-fit max-w-[85%] sm:max-w-[75%] rounded-lg bg-slate-50 px-4 py-2.5 text-slate-900">
@@ -702,6 +815,20 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
             </div>
           </div>
 
+          {/* Prompt shortcuts (like before) */}
+          {!chatExpanded && (
+            <ActionButton
+              inputRef={chatInputRef}
+              onCategoryClick={() => {
+                // reserved for analytics
+              }}
+              onSelectPrompt={(prompt) => {
+                setChatInput(prompt);
+                chatInputRef.current?.focus();
+                void handleSearch(prompt);
+              }}
+            />
+          )}
         </div>
       </div>
       {isSecondary && (
