@@ -92,6 +92,193 @@ type AgentResponse = {
   upgradeUrl?: string;
 };
 
+type ResultsSummaryResponse = {
+  summary: string;
+};
+
+function normalizeLocaleForSummary(locale: string): "en" | "fr" | "ar" {
+  const lower = locale.toLowerCase();
+  if (lower.startsWith("fr")) return "fr";
+  if (lower.startsWith("ar")) return "ar";
+  return "en";
+}
+
+function mapJobExperienceLabel(value: string, locale: "en" | "fr" | "ar"): string {
+  const key = value.toLowerCase();
+  if (locale === "fr") {
+    if (key === "mid_level") return "Intermediaire";
+    if (key === "junior") return "Junior";
+    if (key === "senior") return "Senior";
+    return value;
+  }
+  if (locale === "ar") {
+    if (key === "mid_level") return "متوسط";
+    if (key === "junior") return "مبتدئ";
+    if (key === "senior") return "متقدم";
+    return value;
+  }
+  if (key === "mid_level") return "Mid level";
+  if (key === "junior") return "Junior";
+  if (key === "senior") return "Senior";
+  return value;
+}
+
+function mapLocationRequirementLabel(value: string, locale: "en" | "fr" | "ar"): string {
+  const key = value.toLowerCase();
+  if (locale === "fr") {
+    if (key === "in_office") return "Presentiel";
+    if (key === "hybrid") return "Hybride";
+    if (key === "remote") return "A distance";
+    return value;
+  }
+  if (locale === "ar") {
+    if (key === "in_office") return "حضوري";
+    if (key === "hybrid") return "هجين";
+    if (key === "remote") return "عن بعد";
+    return value;
+  }
+  if (key === "in_office") return "On-site";
+  if (key === "hybrid") return "Hybrid";
+  if (key === "remote") return "Remote";
+  return value;
+}
+
+function buildResultsSummary(params: {
+  type: TabType;
+  items: any[];
+  query: string;
+  locale: string;
+}): string {
+  const { type, items, query, locale } = params;
+  const l = normalizeLocaleForSummary(locale);
+  if (!items.length) return "";
+
+  if (type === "jobs") {
+    const first = items[0];
+    const cities = Array.from(new Set(items.map((i) => i.city).filter(Boolean)));
+    const levels = Array.from(new Set(items.map((i) => i.experienceLevel).filter(Boolean))).map((v) =>
+      mapJobExperienceLabel(String(v), l),
+    );
+    const locations = Array.from(
+      new Set(items.map((i) => i.locationRequirement).filter(Boolean)),
+    ).map((v) => mapLocationRequirementLabel(String(v), l));
+    const wages = items.map((i) => Number(i.wage)).filter((v) => Number.isFinite(v));
+    const wageInfo =
+      wages.length > 0
+        ? `${Math.min(...wages)} - ${Math.max(...wages)} MAD`
+        : l === "fr"
+          ? "Non precise"
+          : l === "ar"
+            ? "غير محدد"
+            : "Not specified";
+
+    if (l === "fr") {
+      return [
+        `## Resultats pour "${query}"`,
+        `- **Meilleure correspondance:** ${first?.title ?? "Resultat principal"}${first?.city ? ` (${first.city})` : ""}.`,
+        `- **Niveau d'experience:** ${levels.length ? levels.join(", ") : "Non precise"}.`,
+        `- **Mode de travail:** ${locations.length ? locations.join(", ") : "Non precise"}.`,
+        `- **Salaire:** ${wageInfo}.`,
+        `- **Ville(s):** ${cities.length ? cities.join(", ") : "Non precise"}.`,
+      ].join("\n");
+    }
+    if (l === "ar") {
+      return [
+        `## نتائج "${query}"`,
+        `- **أفضل تطابق:** ${first?.title ?? "أفضل نتيجة"}${first?.city ? ` (${first.city})` : ""}.`,
+        `- **مستوى الخبرة:** ${levels.length ? levels.join("، ") : "غير محدد"}.`,
+        `- **نمط العمل:** ${locations.length ? locations.join("، ") : "غير محدد"}.`,
+        `- **الأجر:** ${wageInfo}.`,
+        `- **المدينة/المدن:** ${cities.length ? cities.join("، ") : "غير محدد"}.`,
+      ].join("\n");
+    }
+    return [
+      `## Results for "${query}"`,
+      `- **Top match:** ${first?.title ?? "Top result"}${first?.city ? ` (${first.city})` : ""}.`,
+      `- **Experience level:** ${levels.length ? levels.join(", ") : "Not specified"}.`,
+      `- **Work setup:** ${locations.length ? locations.join(", ") : "Not specified"}.`,
+      `- **Salary signal:** ${wageInfo}.`,
+      `- **City coverage:** ${cities.length ? cities.join(", ") : "Not specified"}.`,
+    ].join("\n");
+  }
+
+  if (type === "services") {
+    const first = items[0];
+    const cities = Array.from(new Set(items.map((i) => i.city).filter(Boolean)));
+    const prices = items.map((i) => Number(i.price)).filter((v) => Number.isFinite(v));
+    const priceInfo =
+      prices.length > 0
+        ? `${Math.min(...prices)} - ${Math.max(...prices)} MAD`
+        : l === "fr"
+          ? "Non precise"
+          : l === "ar"
+            ? "غير محدد"
+            : "Not specified";
+    if (l === "fr") {
+      return [
+        `## Services pour "${query}"`,
+        `- **Meilleure option:** ${first?.title ?? "Resultat principal"}${first?.city ? ` (${first.city})` : ""}.`,
+        `- **Categorie:** ${first?.serviceCategory ?? "Non precise"}.`,
+        `- **Prix:** ${priceInfo}.`,
+        `- **Ville(s):** ${cities.length ? cities.join(", ") : "Non precise"}.`,
+      ].join("\n");
+    }
+    if (l === "ar") {
+      return [
+        `## خدمات "${query}"`,
+        `- **أفضل خيار:** ${first?.title ?? "أفضل نتيجة"}${first?.city ? ` (${first.city})` : ""}.`,
+        `- **الفئة:** ${first?.serviceCategory ?? "غير محدد"}.`,
+        `- **السعر:** ${priceInfo}.`,
+        `- **المدينة/المدن:** ${cities.length ? cities.join("، ") : "غير محدد"}.`,
+      ].join("\n");
+    }
+    return [
+      `## Services for "${query}"`,
+      `- **Top option:** ${first?.title ?? "Top result"}${first?.city ? ` (${first.city})` : ""}.`,
+      `- **Category:** ${first?.serviceCategory ?? "Not specified"}.`,
+      `- **Price signal:** ${priceInfo}.`,
+      `- **City coverage:** ${cities.length ? cities.join(", ") : "Not specified"}.`,
+    ].join("\n");
+  }
+
+  const first = items[0];
+  const cities = Array.from(new Set(items.map((i) => i.city).filter(Boolean)));
+  const budgets = items.map((i) => Number(i.budget)).filter((v) => Number.isFinite(v));
+  const budgetInfo =
+    budgets.length > 0
+      ? `${Math.min(...budgets)} - ${Math.max(...budgets)} MAD`
+      : l === "fr"
+        ? "Non precise"
+        : l === "ar"
+          ? "غير محدد"
+          : "Not specified";
+  if (l === "fr") {
+    return [
+      `## Taches pour "${query}"`,
+      `- **Meilleure option:** ${first?.title ?? "Resultat principal"}${first?.city ? ` (${first.city})` : ""}.`,
+      `- **Categorie:** ${first?.category ?? "Non precise"}.`,
+      `- **Budget:** ${budgetInfo}.`,
+      `- **Ville(s):** ${cities.length ? cities.join(", ") : "Non precise"}.`,
+    ].join("\n");
+  }
+  if (l === "ar") {
+    return [
+      `## مهام "${query}"`,
+      `- **أفضل خيار:** ${first?.title ?? "أفضل نتيجة"}${first?.city ? ` (${first.city})` : ""}.`,
+      `- **الفئة:** ${first?.category ?? "غير محدد"}.`,
+      `- **الميزانية:** ${budgetInfo}.`,
+      `- **المدينة/المدن:** ${cities.length ? cities.join("، ") : "غير محدد"}.`,
+    ].join("\n");
+  }
+  return [
+    `## Tasks for "${query}"`,
+    `- **Top option:** ${first?.title ?? "Top result"}${first?.city ? ` (${first.city})` : ""}.`,
+    `- **Category:** ${first?.category ?? "Not specified"}.`,
+    `- **Budget signal:** ${budgetInfo}.`,
+    `- **City coverage:** ${cities.length ? cities.join(", ") : "Not specified"}.`,
+  ].join("\n");
+}
+
 function getScopeLabel(scope: ScopeOverride, t: ReturnType<typeof useTranslations>) {
   const auto = t("labels.auto");
   const tabLabels = {
@@ -208,6 +395,62 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
       throw new Error("Chat API returned invalid payload.");
     }
     return json;
+  };
+
+  const callResultsSummary = async (opts: {
+    locale: string;
+    intent: AgentIntent;
+    query: string;
+    items: any[];
+  }): Promise<string> => {
+    const compactItems = opts.items.slice(0, SEARCH_PAGE_SIZE).map((item: any) => {
+      if (opts.intent === "jobs") {
+        return {
+          title: item?.title ?? null,
+          companyName: item?.companyName ?? null,
+          city: item?.city ?? null,
+          experienceLevel: item?.experienceLevel ?? null,
+          locationRequirement: item?.locationRequirement ?? null,
+          wage: item?.wage ?? null,
+          type: item?.type ?? null,
+        };
+      }
+      if (opts.intent === "services") {
+        return {
+          title: item?.title ?? null,
+          serviceCategory: item?.serviceCategory ?? null,
+          city: item?.city ?? null,
+          price: item?.price ?? null,
+          type: item?.type ?? null,
+          averageRating: item?.averageRating ?? null,
+          numberOfReviews: item?.numberOfReviews ?? null,
+        };
+      }
+      return {
+        title: item?.title ?? null,
+        category: item?.category ?? null,
+        city: item?.city ?? null,
+        budget: item?.budget ?? null,
+        status: item?.status ?? null,
+      };
+    });
+
+    const res = await fetch("/api/chat/results-summary", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        locale: opts.locale,
+        intent: opts.intent,
+        query: opts.query,
+        items: compactItems,
+      }),
+    });
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      throw new Error(text || `Results summary API error ${res.status}`);
+    }
+    const json = (await res.json()) as ResultsSummaryResponse;
+    return typeof json?.summary === "string" ? json.summary.trim() : "";
   };
 
   const handlePromptSelection = (prompt: string, upgradeUrl?: string) => {
@@ -401,6 +644,57 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
     topSearchItems,
     topSearchLoading,
   ]);
+
+  useEffect(() => {
+    if (!hasSearched || !submittedQuery.trim() || !submittedResultsKey) return;
+    if (topSearchLoading || topSearchItems.length === 0) return;
+
+    let cancelled = false;
+    void (async () => {
+      try {
+        const summary = await callResultsSummary({
+          locale,
+          intent: activeTab,
+          query: submittedQuery,
+          items: topSearchItems,
+        });
+        if (cancelled || !summary) return;
+        setMessages((prev) =>
+          prev.map((msg) => {
+            if (!msg.results) return msg;
+            if (msg.results.key !== submittedResultsKey) return msg;
+            return {
+              ...msg,
+              content: summary,
+            };
+          }),
+        );
+      } catch {
+        // If summarization API fails, keep a deterministic local fallback.
+        const fallback = buildResultsSummary({
+          type: activeTab,
+          items: topSearchItems,
+          query: submittedQuery,
+          locale,
+        });
+        if (cancelled || !fallback) return;
+        setMessages((prev) =>
+          prev.map((msg) => {
+            if (!msg.results) return msg;
+            if (msg.results.key !== submittedResultsKey) return msg;
+            return {
+              ...msg,
+              content: fallback,
+            };
+          }),
+        );
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [hasSearched, submittedQuery, submittedResultsKey, topSearchLoading, topSearchItems, locale, activeTab]);
 
   // After a search finishes, append suggestions as their own assistant bubble.
   useEffect(() => {
@@ -749,7 +1043,7 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
                               )}
 
                               {!message.results.isLoading && (message.content ?? "").trim() ? (
-                                <div className="mt-4 rounded-xl border border-slate-100 bg-slate-50/70 px-4 py-3">
+                                <div className="mt-4 text-left text-slate-900 leading-6">
                                   <Markdown>{message.content ?? ""}</Markdown>
                                 </div>
                               ) : null}

@@ -80,12 +80,20 @@ function buildJobText(job: {
   city: string | null;
   description: string;
   tags: string[];
+  locationRequirement: string | null;
+  experienceLevel: string | null;
+  type: string | null;
+  wage: number | null;
 }): string {
   const parts: string[] = [
     job.title,
     job.companyName ?? "",
     job.city ?? "",
     job.description,
+    job.locationRequirement ? `location:${job.locationRequirement}` : "",
+    job.experienceLevel ? `experience:${job.experienceLevel}` : "",
+    job.type ? `type:${job.type}` : "",
+    job.wage != null ? `wage:${job.wage}` : "",
     ...(job.tags ?? []),
   ];
   return parts.filter((p) => p && p.trim().length > 0).join(" | ");
@@ -112,6 +120,10 @@ async function main() {
         city: true,
         description: true,
         tags: true,
+        locationRequirement: true,
+        experienceLevel: true,
+        type: true,
+        wage: true,
       },
       orderBy: {
         createdAt: "asc",
@@ -134,6 +146,10 @@ async function main() {
         city: job.city ?? null,
         description: job.description,
         tags: job.tags ?? [],
+        locationRequirement: job.locationRequirement ?? null,
+        experienceLevel: job.experienceLevel ?? null,
+        type: job.type ?? null,
+        wage: job.wage ?? null,
       }));
 
       const embeddings = await callEmbeddingApi(texts);

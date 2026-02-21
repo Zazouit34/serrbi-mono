@@ -18,6 +18,74 @@ import { getTenantFromHost } from "@/lib/domain";
 import maStates from "@workspace/ui/lib/states.json" assert { type: "json" };
 import { embedText, embedBatch } from "@/lib/embedding";
 
+type ExperienceLevelFilter = "junior" | "mid_level" | "senior";
+
+function normalizeIntentText(text: string): string {
+  const withoutDiacritics = text.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  return withoutDiacritics.toLowerCase();
+}
+
+function inferExperienceLevelFromText(text: string): ExperienceLevelFilter | null {
+  const normalized = normalizeIntentText(text);
+  if (!normalized.trim()) return null;
+
+  const hasMid =
+    normalized.includes("mid level") ||
+    normalized.includes("middle") ||
+    normalized.includes("intermediaire") ||
+    normalized.includes("intermediate") ||
+    normalized.includes("confirm") ||
+    normalized.includes("متوسط") ||
+    normalized.includes("متوسطة");
+  if (hasMid) return "mid_level";
+
+  const hasJunior =
+    normalized.includes("junior") ||
+    normalized.includes("entry level") ||
+    normalized.includes("debutant") ||
+    normalized.includes("fresh") ||
+    normalized.includes("intern") ||
+    normalized.includes("مبتدئ") ||
+    normalized.includes("junior");
+  if (hasJunior) return "junior";
+
+  const hasSenior =
+    normalized.includes("senior") ||
+    normalized.includes("lead") ||
+    normalized.includes("expert") ||
+    normalized.includes("avance") ||
+    normalized.includes("متقدم") ||
+    normalized.includes("خبير");
+  if (hasSenior) return "senior";
+
+  return null;
+}
+
+function buildJobEmbeddingText(input: {
+  title?: string | null;
+  description?: string | null;
+  tags?: string[] | null;
+  city?: string | null;
+  locationRequirement?: string | null;
+  experienceLevel?: string | null;
+  type?: string | null;
+  wage?: number | null;
+  companyName?: string | null;
+}): string {
+  const parts = [
+    input.title ?? "",
+    input.companyName ?? "",
+    input.description ?? "",
+    input.city ?? "",
+    input.locationRequirement ? `location:${input.locationRequirement}` : "",
+    input.experienceLevel ? `experience:${input.experienceLevel}` : "",
+    input.type ? `type:${input.type}` : "",
+    input.wage != null ? `wage:${input.wage}` : "",
+    ...((input.tags ?? []).filter(Boolean) as string[]),
+  ];
+  return parts.filter((p) => p && p.trim().length > 0).join(" | ");
+}
+
 
 export const jobRouter = router({
   createJob: protectedProcedure
@@ -31,7 +99,17 @@ export const jobRouter = router({
         let jobEmbedding: number[] = [];
         try {
           jobEmbedding = await embedText(
-            `${input.title ?? ""} ${input.description ?? ""} ${(input.tags || []).join(" ")}`,
+            buildJobEmbeddingText({
+              title: input.title,
+              description: input.description,
+              tags: input.tags || [],
+              city: input.city || null,
+              locationRequirement: input.locationRequirement,
+              experienceLevel: input.experienceLevel,
+              type: input.type,
+              wage: input.wage || null,
+              companyName: input.companyName || null,
+            }),
           );
         } catch (err) {
           console.error("Failed to compute job embedding", err);
@@ -106,6 +184,8 @@ export const jobRouter = router({
       const search = input?.search?.trim() || "";
       const city = input?.city;
       const countryIso2 = (input as any)?.countryIso2 as string | undefined;
+      const inferredExperienceLevel: ExperienceLevelFilter | null =
+        (experienceLevel as ExperienceLevelFilter | undefined) ?? inferExperienceLevelFromText(search);
 
       // When a search term is provided, prefer semantic search (pgvector) if we can
       // embed the query; otherwise fall back to accent-insensitive keyword search.
@@ -141,9 +221,9 @@ export const jobRouter = router({
           params.push(category);
           idx += 1;
         }
-        if (experienceLevel) {
+        if (inferredExperienceLevel) {
           whereSql += ` AND "experienceLevel" = $${idx}`;
-          params.push(experienceLevel);
+          params.push(inferredExperienceLevel);
           idx += 1;
         }
         if (type) {
@@ -761,7 +841,17 @@ bulkCreate: adminProcedure
     const texts = input.rows.map((r) => {
       const row = r as any;
       const description = r.description || row.description_rewritten || "";
-      return `${r.title ?? ""} ${description} ${(row.tags ?? []).join(" ")}`;
+      return buildJobEmbeddingText({
+        title: r.title ?? "",
+        description,
+        tags: row.tags ?? [],
+        city: r.city ?? null,
+        locationRequirement: r.locationRequirement ?? null,
+        experienceLevel: r.experienceLevel ?? null,
+        type: r.type ?? null,
+        wage: r.wage ?? null,
+        companyName: r.companyName ?? null,
+      });
     });
     const embeddings = await embedBatch(texts);
     embeddings.forEach((vec, idx) => {
