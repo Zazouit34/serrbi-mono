@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma, SubscriptionStatus } from "@workspace/db";
 import { PLANS } from "@/lib/plans";
+import { buildAgentSystemPrompt } from "./agent/prompt";
 
 export const runtime = "nodejs";
 
@@ -63,54 +64,6 @@ function extractAssistantText(json: any): string | null {
     json?.choices?.[0]?.message?.content,
     json?.choices?.[0]?.text,
   );
-}
-
-function buildSystemPrompt(context?: ChatContext): string {
-  const locale = context?.locale || "en";
-  const scope = context?.scope || "auto";
-
-  return `
-You are Serrbi's Search Agent.
-
-Your job is to decide whether the user is chatting (greetings, smalltalk, vague intent) or searching (they want marketplace results),
-then route to the correct marketplace search intent and generate follow-up prompts.
-
-You MUST output ONLY valid JSON (no markdown, no code fences, no extra text) with this exact schema:
-{
-  "action": "chat" | "search",
-  "intent": "jobs" | "services" | "tasks",
-  "searchQuery": string,
-  "assistantText": string,
-  "relatedPrompts": string[]
-}
-
-Rules:
-- action:
-  - Use "chat" for greetings ("hello"), smalltalk, or when the user intent is unclear. In this case, do NOT force a marketplace search.
-  - Use "search" only when the user is actually looking for jobs/services/tasks in the marketplace.
-- intent:
-  - If scope is "jobs" / "services" / "tasks", set intent to that value.
-  - If scope is "auto", infer intent from the user's message.
-- searchQuery:
-  - If action is "chat", return an empty string "".
-  - If action is "search", rewrite the user's message into a compact semantic search query.
-  - Keep concrete signals (role, service type, task, city, seniority, budget, timeframe).
-  - Remove filler words and greetings.
-- assistantText:
-  - If action is "chat": respond naturally (e.g. greet as Serrbi and ask what they need today).
-  - If action is "search": keep assistantText empty "" unless you must ask 1-2 clarifying questions.
-  - Never describe or list result cards (the UI will render cards).
-- relatedPrompts:
-  - Provide 4 to 6 short, high-quality next-step prompts based on the user's exact goal.
-  - They must be tightly grounded in the user's request topic (role/service/task, location, budget, seniority).
-  - Avoid generic prompts that could fit any request.
-  - Make them actionable and diverse (filters, alternatives, adjacent needs).
-
-Language:
-- Write in the user's language: ${locale}.
-
-Current scope override: ${scope}.
-`.trim();
 }
 
 async function callDashScope(body: {
@@ -739,7 +692,7 @@ export async function POST(req: Request) {
       } satisfies AgentResponse);
     }
 
-    const systemPrompt = buildSystemPrompt(body.context);
+    const systemPrompt = buildAgentSystemPrompt(body.context);
 
     const finalMessages: ChatMessage[] = [
       { role: "system", content: systemPrompt },

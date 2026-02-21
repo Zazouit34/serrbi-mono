@@ -31,6 +31,7 @@ import { ServiceCard } from "@/components/ui/form/service/service-card";
 import { TaskCard } from "@/components/ui/form/task/task-card";
 import { ThinkingBar } from "@/components/ui/thinking-bar";
 import { ActionButton } from "@/components/ui/action-button";
+import { SiGoogleassistant } from "react-icons/si";
 
 type TabType = "jobs" | "services" | "tasks";
 type ScopeOverride = "auto" | TabType;
@@ -104,15 +105,23 @@ function getScopeLabel(scope: ScopeOverride, t: ReturnType<typeof useTranslation
 
 function SuggestionList({
   prompts,
+  title,
   onSelect,
 }: {
   prompts: string[];
+  title?: string;
   onSelect: (prompt: string) => void;
 }) {
   if (!Array.isArray(prompts) || prompts.length === 0) return null;
 
   return (
     <div className="relative w-full">
+      {title ? (
+        <div className="mb-1 flex items-center gap-2 text-slate-500">
+          <SiGoogleassistant className="h-3.5 w-3.5" aria-hidden="true" />
+          <span className="text-sm font-semibold">{title}</span>
+        </div>
+      ) : null}
       <div className="mt-2 space-y-1">
         {prompts.slice(0, 6).map((prompt, index) => (
           <button
@@ -549,7 +558,7 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
                 ...m,
                 thinking: false,
                 kind: "results",
-                content: "",
+                content: agent.assistantText ?? "",
                 results: {
                   key: resultsKey,
                   query: q,
@@ -672,26 +681,27 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
                     return (
                       <Message
                         key={message.id}
-                        className="justify-start"
+                        className={`justify-start min-w-0 ${isAssistant ? "pl-8 md:pl-10" : "items-center"}`}
                       >
                         {message.role === "user" ? (
                           <MessageAvatar
                             fallback={session?.user?.name?.slice(0, 1)?.toUpperCase() || "U"}
-                            className="bg-slate-100 text-slate-700"
+                            className="h-6 w-6 bg-slate-100 text-[10px] text-slate-700"
                           />
                         ) : null}
                         {isAssistant ? (
                           message.kind === "suggestions" ? (
-                            <div className="w-full text-left">
+                            <div className="w-full min-w-0 text-left">
                               <SuggestionList
                                 prompts={message.relatedPrompts ?? []}
+                                title={message.content || t("labels.related")}
                                 onSelect={(p) => {
                                   handlePromptSelection(p, message.upgradeUrl);
                                 }}
                               />
                             </div>
                           ) : message.results ? (
-                            <div className="w-full text-left text-slate-900">
+                            <div className="w-full min-w-0 text-left text-slate-900">
                               {message.results.isLoading ? (
                                 <ThinkingBar text={t("searching")} />
                               ) : null}
@@ -737,9 +747,15 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
                                   })}
                                 </div>
                               )}
+
+                              {!message.results.isLoading && (message.content ?? "").trim() ? (
+                                <div className="mt-4 rounded-xl border border-slate-100 bg-slate-50/70 px-4 py-3">
+                                  <Markdown>{message.content ?? ""}</Markdown>
+                                </div>
+                              ) : null}
                             </div>
                           ) : (
-                            <div className="w-full text-left text-slate-900 leading-6">
+                            <div className="w-full min-w-0 text-left text-slate-900 leading-6">
                               {message.thinking ? (
                                 <ThinkingBar text={t("thinking")} />
                               ) : (
@@ -748,7 +764,7 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
                             </div>
                           )
                         ) : (
-                          <div className="w-full text-left text-slate-900 leading-6">
+                          <div className="w-full min-w-0 text-left text-sm text-slate-900 leading-6">
                             {message.content}
                           </div>
                         )}
