@@ -231,7 +231,7 @@ export function ResumeInsight({
 
   return (
     <section className="mx-auto mt-10 w-full">
-      <div className="relative bg-white rounded-3xl border shadow-sm text-slate-900 border-slate-200">
+      <div className="relative text-slate-900">
         {!scoreData ? (
           <div className="relative p-6 sm:p-10">
             <div className="relative mx-auto space-y-6 max-w-3xl text-center">
