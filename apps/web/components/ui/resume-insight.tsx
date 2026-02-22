@@ -233,17 +233,10 @@ export function ResumeInsight({
     <section className="mx-auto mt-10 w-full">
       <div className="relative bg-white rounded-3xl border shadow-sm text-slate-900 border-slate-200">
         {!scoreData ? (
-          <div className="relative p-6 bg-gradient-to-br to-white sm:p-10 from-slate-50">
-            <div
-              className="absolute inset-0 opacity-[0.03] pointer-events-none"
-              style={{
-                backgroundImage:
-                  "repeating-linear-gradient(135deg, #1e293b, #1e293b 2px, transparent 2px, transparent 12px)",
-              }}
-            />
+          <div className="relative p-6 sm:p-10">
             <div className="relative mx-auto space-y-6 max-w-3xl text-center">
               <div className="mx-auto space-y-2 max-w-2xl">
-                <h2 className="text-3xl font-semibold leading-tight sm:text-4xl text-slate-900">
+                <h2 className="font-work-sans text-3xl font-semibold leading-tight sm:text-4xl text-slate-900">
                   {tr(
                     "ResumeInsight.title",
                     "Get your resume checked by AI in seconds"
@@ -578,7 +571,7 @@ function InsightLayout({
                 {formatIssuesFound(issues)}
               </Tag>
             </div>
-
+            
             <div className="mt-4 space-y-4">
               {group.rows.map((row) => (
                 <Collapsible key={row.label} defaultOpen={false}>
