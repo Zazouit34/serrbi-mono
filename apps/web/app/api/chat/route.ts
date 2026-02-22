@@ -80,7 +80,7 @@ async function callDashScope(body: {
     model,
     input: { messages: body.messages },
     parameters: {
-      temperature: 0.3,
+      temperature: 0.4,
       top_p: 0.9,
       max_tokens: 700,
       // If supported, ask for message-shaped output.
@@ -104,7 +104,7 @@ async function callDashScope(body: {
     const openaiBody = {
       model,
       messages: body.messages,
-      temperature: 0.3,
+      temperature: 0.4,
       top_p: 0.9,
       max_tokens: 700,
       // DashScope OpenAI-compatible mode may also enforce this for non-streaming.
@@ -405,20 +405,51 @@ async function incrementDailyUsage(userId: string, dayBucket: Date): Promise<voi
   });
 }
 
-function buildChatGreeting(locale: string): string {
+function buildChatFallbackReply(locale: string, lastUser: string): string {
   const normalizedLocale = normalizeLocale(locale);
+  const normalizedInput = normalizeForIntent(lastUser);
+
   if (normalizedLocale === "fr") {
-    return "Salut, je suis Serrbi. Je peux t’aider a trouver un job, un service, ou une tache. Dis-moi ce que tu cherches.";
+    if (normalizedInput.includes("comment ca va") || normalizedInput.includes("ca va")) {
+      return "Je vais bien, merci. Et toi ? Si tu veux, je peux deja t’aider a cibler un job, un service ou une tache selon ta ville et ton budget.";
+    }
+    if (normalizedInput.includes("merci")) {
+      return "Avec plaisir. Si tu veux, on peut affiner ensemble ta recherche pour trouver des resultats plus precis.";
+    }
+    return "Super, on avance ensemble. Dis-moi ton besoin exact et je te propose la meilleure recherche.";
   }
+
   if (normalizedLocale === "ar") {
-    return "مرحبا، أنا Serrbi. أقدر أساعدك تلقى وظيفة أو خدمة أو مهمة. قلّي شنو كاتقلب عليه.";
+    if (normalizedInput.includes("كيف حالك")) {
+      return "بخير الحمد لله، شكرا. وانت؟ نقدر نعاونك تلقى وظيفة او خدمة او مهمة بطريقة ادق.";
+    }
+    if (normalizedInput.includes("شكرا")) {
+      return "العفو. اذا بغيتي نقدر نعاونك نضبط البحث باش تكون النتائج احسن.";
+    }
+    return "ممتاز، خلينا نخدموها خطوة بخطوة. قلّي بالضبط اش كتقلب عليه.";
   }
-  return "Hey, I am Serrbi. I can help you find a job, a service, or a task. Tell me what you need.";
+
+  if (normalizedInput.includes("how are you")) {
+    return "I am doing well, thanks. How are you? I can help you find better jobs, services, or tasks with specific filters.";
+  }
+  if (normalizedInput.includes("thank")) {
+    return "You are welcome. I can help refine your search to get sharper results.";
+  }
+  return "Great, let’s do it step by step. Tell me exactly what you need and I’ll guide you.";
 }
 
-function buildChatRelatedPrompts(locale: string): string[] {
+function buildChatRelatedPrompts(locale: string, query = ""): string[] {
   const normalizedLocale = normalizeLocale(locale);
+  const q = normalizeForIntent(query);
   if (normalizedLocale === "fr") {
+    if (q.includes("ca va") || q.includes("salut") || q.includes("bonjour")) {
+      return [
+        "Trouve-moi des jobs remote a Casablanca",
+        "Je cherche un service fiable avec budget precis",
+        "Montre-moi des taches urgentes cette semaine",
+        "Aide-moi a formuler une recherche plus precise",
+      ];
+    }
     return [
       "Trouve-moi des jobs marketing a Casablanca",
       "Je cherche un service de plomberie a Rabat",
@@ -427,6 +458,14 @@ function buildChatRelatedPrompts(locale: string): string[] {
     ];
   }
   if (normalizedLocale === "ar") {
+    if (q.includes("مرحبا") || q.includes("كيف حالك")) {
+      return [
+        "بغيت وظائف عن بعد فـ الدار البيضاء",
+        "كنقلب على خدمة بثمن محدد وفمدينة قريبة",
+        "ورّيني مهام مستعجلة متاحة هاد الأسبوع",
+        "عاونّي نصاوب بحث أدق للنتائج",
+      ];
+    }
     return [
       "بغيت وظائف تسويق فـ الدار البيضاء",
       "كنقلب على خدمة سباك فـ الرباط",
@@ -440,6 +479,20 @@ function buildChatRelatedPrompts(locale: string): string[] {
     "Show remote freelance tasks",
     "Help me refine my search",
   ];
+}
+
+function dedupePrompts(prompts: string[]): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const p of prompts) {
+    const trimmed = p.trim();
+    if (!trimmed) continue;
+    const key = normalizeForIntent(trimmed);
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    out.push(trimmed);
+  }
+  return out;
 }
 
 function buildPlanLimitMessage(locale: string): string {
@@ -584,7 +637,9 @@ function chooseRelevantPrompts(input: {
   prompts: string[];
 }): string[] {
   if (input.action === "chat") {
-    return input.prompts.length > 0 ? input.prompts.slice(0, 6) : buildChatRelatedPrompts(input.locale);
+    const base = input.prompts.length > 0 ? input.prompts : buildChatRelatedPrompts(input.locale, input.query);
+    const cleaned = dedupePrompts(base);
+    return (cleaned.length > 0 ? cleaned : buildChatRelatedPrompts(input.locale, input.query)).slice(0, 6);
   }
 
   const queryTokens = tokenizeForRelevance(input.query);
@@ -601,8 +656,8 @@ function chooseRelevantPrompts(input: {
     return overlap || sameDomain;
   });
 
-  if (filtered.length >= 3) return filtered.slice(0, 6);
-  return buildSearchRelatedPrompts(input.intent, input.query, input.locale).slice(0, 6);
+  if (filtered.length >= 3) return dedupePrompts(filtered).slice(0, 6);
+  return dedupePrompts(buildSearchRelatedPrompts(input.intent, input.query, input.locale)).slice(0, 6);
 }
 
 function safeParseAgentJson(text: string): AgentResponse | null {
@@ -681,17 +736,6 @@ export async function POST(req: Request) {
       }
     }
 
-    // Guardrail: keep greetings/smalltalk conversational, never run search for them.
-    if (isGreetingOrSmallTalk(lastUser)) {
-      return NextResponse.json({
-        action: "chat",
-        intent: "jobs",
-        searchQuery: "",
-        assistantText: buildChatGreeting(locale),
-        relatedPrompts: buildChatRelatedPrompts(locale),
-      } satisfies AgentResponse);
-    }
-
     const systemPrompt = buildAgentSystemPrompt(body.context);
 
     const finalMessages: ChatMessage[] = [
@@ -716,8 +760,14 @@ export async function POST(req: Request) {
           action: "chat",
           intent: parsed.intent,
           searchQuery: "",
-          assistantText: buildChatGreeting(locale),
-          relatedPrompts: buildChatRelatedPrompts(locale),
+          assistantText: asNonEmptyString(parsed.assistantText) ?? buildChatFallbackReply(locale, lastUser),
+          relatedPrompts: chooseRelevantPrompts({
+            action: "chat",
+            intent: parsed.intent,
+            query: lastUser,
+            locale,
+            prompts: parsed.relatedPrompts,
+          }),
         } satisfies AgentResponse);
       }
       return NextResponse.json({
@@ -743,10 +793,10 @@ export async function POST(req: Request) {
       action: fallbackAction,
       intent: fallbackIntent,
       searchQuery: fallbackAction === "search" ? fallbackQuery || "jobs" : "",
-      assistantText: fallbackAction === "chat" ? buildChatGreeting(locale) : "",
+      assistantText: fallbackAction === "chat" ? buildChatFallbackReply(locale, lastUser) : "",
       relatedPrompts:
         fallbackAction === "chat"
-          ? buildChatRelatedPrompts(locale)
+          ? buildChatRelatedPrompts(locale, lastUser)
           : buildSearchRelatedPrompts(fallbackIntent, fallbackQuery || "jobs", locale),
     } satisfies AgentResponse);
   } catch (err: any) {

@@ -22,6 +22,7 @@ Hard rules:
 - If a field is missing, do not guess.
 - Keep it short, clear, and practical.
 - Always respond in user's language: ${locale}.
+- Do not repeat identical wording patterns from previous generic templates.
 
 Output style:
 - Markdown only (no code fences).
@@ -32,9 +33,11 @@ Output style:
   - services: category, price, city, rating.
   - tasks: category, budget, city, status.
 - End with one actionable "next step" bullet.
+- Keep "next step" tied to actual fields present in payload.
 
 Tone:
 - Natural and helpful.
 - Slightly engaging, but not verbose.
+- Sound specific to THIS result set, not generic.
 `.trim();
 }
