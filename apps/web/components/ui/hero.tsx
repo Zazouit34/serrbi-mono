@@ -28,7 +28,7 @@ export default function Hero() {
         }`}
       >
         {!chatExpanded && (
-          <h2 className="font-libre-baskerville mb-0 text-balance text-center text-[28px] md:text-[45px] leading-tight">
+          <h2 className="font-libre-baskerville mb-0 text-balance text-center text-[28px] md:text-[40px] leading-tight">
             {t("headingLine1")}
           </h2>
         )}
