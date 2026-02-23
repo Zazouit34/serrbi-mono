@@ -242,27 +242,36 @@ export const serviceRouter = router({
         }
 
         // Fallback: accent-insensitive keyword search with token support (multi-word queries).
-        const tokens = search
+        const normalizedSearch = search
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
           .toLowerCase()
-          .split(/\s+/)
+          .replace(/[^a-z0-9\u0600-\u06ff\s]/g, " ")
+          .replace(/\s+/g, " ")
+          .trim();
+
+        const stopwords = new Set(["a", "au", "aux", "de", "des", "du", "la", "le", "les", "the", "and"]);
+        const tokens = normalizedSearch
+          .split(" ")
           .map((t) => t.trim())
           .filter(Boolean)
-          .filter((t) => t.length >= 3)
-          .filter((t) => !["a", "à", "au", "aux", "de", "des", "du", "la", "le", "les"].includes(t));
+          .filter((t) => t.length >= 2)
+          .filter((t) => !stopwords.has(t));
 
-        const effectiveTokens = tokens.length ? tokens : [search];
-
+        const effectiveTokens = tokens.length ? tokens : [normalizedSearch || search.toLowerCase()];
+        const tokenClauses: string[] = [];
         for (const token of effectiveTokens) {
-          whereSql += ` AND (
+          tokenClauses.push(`(
             unaccent(lower("title")) LIKE unaccent(lower($${idx}))
             OR unaccent(lower("description")) LIKE unaccent(lower($${idx}))
             OR unaccent(lower("displayName")) LIKE unaccent(lower($${idx}))
             OR unaccent(lower("type")) LIKE unaccent(lower($${idx}))
             OR unaccent(lower("city")) LIKE unaccent(lower($${idx}))
-          )`;
+          )`);
           params.push(`%${token}%`);
           idx += 1;
         }
+        whereSql += ` AND (${tokenClauses.join(" OR ")})`;
 
         const limitIdx = idx;
         const offsetIdx = idx + 1;
