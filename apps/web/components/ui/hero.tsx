@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { HeroSearchBar, type HeroPreviewData } from "@/components/ui/hero-search-bar";
+import { LettersPullUp } from "@/components/ui/letters-pull-up";
 
 import { useTranslations } from "next-intl";
 
@@ -46,7 +47,10 @@ export default function Hero() {
       >
         {!chatExpanded && (
           <h2 className="font-libre-baskerville mb-0 text-balance text-center text-[28px] md:text-[40px] leading-tight">
-            {rotatingHeadings[headingIndex] ?? t("headingLine1")}
+            <LettersPullUp
+              key={`${headingIndex}-${rotatingHeadings[headingIndex] ?? ""}`}
+              text={rotatingHeadings[headingIndex] ?? t("headingLine1")}
+            />
           </h2>
         )}
 
