@@ -919,7 +919,7 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
             chatExpanded={chatExpanded}
             messages={messages}
             chatInput={chatInput}
-            placeholder={placeholder || t("placeholder")}
+                    placeholder={placeholder || t("placeholder")}
             dir={dir}
             isSearching={isSearching}
             isAgentWorking={isAgentWorking}
@@ -937,7 +937,7 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
             }}
             onInputChange={setChatInput}
             onSubmit={() => {
-              void handleSearch();
+                        void handleSearch();
             }}
             onPinnedIntentClear={() => {
               setPinnedIntent(null);

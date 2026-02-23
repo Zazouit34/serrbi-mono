@@ -80,7 +80,7 @@ async function callDashScope(body: {
     model,
     input: { messages: body.messages },
     parameters: {
-      temperature: 0.4,
+      temperature: 0.2,
       top_p: 0.9,
       max_tokens: 700,
       // If supported, ask for message-shaped output.
@@ -754,6 +754,26 @@ export async function POST(req: Request) {
 
     const parsed = safeParseAgentJson(text);
     if (parsed) {
+      // Guardrail: When scope is explicitly pinned and user provides substantive input, force search.
+      const scope = body.context?.scope;
+      const isPinned = scope && scope !== "auto";
+      if (isPinned && parsed.action === "chat" && !isGreetingOrSmallTalk(lastUser)) {
+        // Override: if scope is pinned and input has marketplace content, force search.
+        return NextResponse.json({
+          action: "search",
+          intent: scope as AgentIntent,
+          searchQuery: lastUser.trim(),
+          assistantText: "",
+          relatedPrompts: chooseRelevantPrompts({
+            action: "search",
+            intent: scope as AgentIntent,
+            query: lastUser.trim(),
+            locale,
+            prompts: parsed.relatedPrompts,
+          }),
+        } satisfies AgentResponse);
+      }
+      
       // Safety net: if model still classifies greeting-like text as search, coerce to chat.
       if (parsed.action === "search" && isGreetingOrSmallTalk(lastUser)) {
         return NextResponse.json({
