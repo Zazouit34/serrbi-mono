@@ -4,6 +4,7 @@ import { buildRelatedPromptsPrompt } from "./related";
 type PromptContext = {
   locale?: string;
   scope?: "auto" | "jobs" | "services" | "tasks";
+  categoryHint?: string;
 };
 
 export function buildAgentSystemPrompt(context?: PromptContext): string {

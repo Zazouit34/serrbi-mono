@@ -296,6 +296,7 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
     query: string;
     locale: string;
     scope: ScopeOverride;
+    categoryHint?: string;
   }): Promise<AgentResponse> => {
     const history = messages
       .filter((m) => typeof m.content === "string" && m.content.trim())
@@ -318,6 +319,7 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
           locale: opts.locale,
           scope: opts.scope,
           query: opts.query,
+          categoryHint: opts.categoryHint,
         },
       }),
     });
@@ -334,6 +336,18 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
   };
 
   const currentScope: ScopeOverride = pinnedIntent ?? "auto";
+  const buildCategoryHint = (intent: TabType | null, category?: string): string | undefined => {
+    if (!intent || !category) return undefined;
+    const raw = category.trim();
+    if (!raw) return undefined;
+    const humanized = raw
+      .replace(/[_-]+/g, " ")
+      .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+      .toLowerCase()
+      .trim();
+    // Include both enum key and human-readable label to improve multilingual prompt matching.
+    return `${intent} category: ${raw}${humanized && humanized !== raw ? ` (${humanized})` : ""}`;
+  };
 
   const callResultsSummary = async (opts: {
     locale: string;
@@ -408,6 +422,9 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
       if (!next) {
         setSelectedCategory(undefined);
       } else {
+        if (prev && prev !== next) {
+          setSelectedCategory(undefined);
+        }
         setActiveTab(next);
       }
       return next;
@@ -506,7 +523,8 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
       page: 1,
       pageSize: SEARCH_PAGE_SIZE,
       search: submittedQuery || undefined,
-      category: selectedJobCategory,
+      // In chat mode, category chips are used to generate prompts, not hard-filter results.
+      category: undefined,
     },
     {
       enabled: hasSearched && activeTab === "jobs" && !!submittedQuery.trim(),
@@ -518,7 +536,8 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
       page: 1,
       pageSize: SEARCH_PAGE_SIZE,
       search: submittedQuery || undefined,
-      serviceCategory: selectedServiceCategory,
+      // In chat mode, category chips are used to generate prompts, not hard-filter results.
+      serviceCategory: undefined,
     },
     {
       enabled: hasSearched && activeTab === "services" && !!submittedQuery.trim(),
@@ -530,7 +549,8 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
       page: 1,
       pageSize: SEARCH_PAGE_SIZE,
       search: submittedQuery || undefined,
-      category: selectedTaskCategory,
+      // In chat mode, category chips are used to generate prompts, not hard-filter results.
+      category: undefined,
     },
     {
       enabled: hasSearched && activeTab === "tasks" && !!submittedQuery.trim(),
@@ -705,7 +725,11 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
     if (isSecondary) {
       setIsAgentWorking(true);
       try {
-        const agent = await callSearchAgent({ query: effectiveQuery, locale, scope: currentScope });
+        const categoryHint =
+          pinnedIntent && activeTab === pinnedIntent
+            ? buildCategoryHint(pinnedIntent, String(selectedCategory ?? ""))
+            : undefined;
+        const agent = await callSearchAgent({ query: effectiveQuery, locale, scope: currentScope, categoryHint });
         const tab: TabType = pinnedIntent ?? agent.intent;
         const q = (agent.searchQuery || effectiveQuery).trim();
         const searchParams = new URLSearchParams();
@@ -743,7 +767,11 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
 
     setIsAgentWorking(true);
     try {
-      const agent = await callSearchAgent({ query: effectiveQuery, locale, scope: currentScope });
+      const categoryHint =
+        pinnedIntent && activeTab === pinnedIntent
+          ? buildCategoryHint(pinnedIntent, String(selectedCategory ?? ""))
+          : undefined;
+      const agent = await callSearchAgent({ query: effectiveQuery, locale, scope: currentScope, categoryHint });
       if (agent.action === "chat") {
         setMessages((prev) =>
           prev.map((m) =>

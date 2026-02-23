@@ -17,6 +17,7 @@ type ChatContext = {
   locale?: string;
   scope?: "auto" | "jobs" | "services" | "tasks";
   query?: string;
+  categoryHint?: string;
 };
 
 type ChatRequestBody = {

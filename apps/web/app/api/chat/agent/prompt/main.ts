@@ -1,11 +1,13 @@
 type PromptContext = {
   locale?: string;
   scope?: "auto" | "jobs" | "services" | "tasks";
+  categoryHint?: string;
 };
 
 export function buildMainAgentPrompt(context?: PromptContext): string {
   const locale = context?.locale || "en";
   const scope = context?.scope || "auto";
+  const categoryHint = context?.categoryHint?.trim() || "";
 
   return `
 Instructions:
@@ -32,6 +34,9 @@ Your responses must be natural, context-aware, and genuinely helpful.
 - UI may pass an optional pinned intent via context scope: ${scope}.
 - If scope is "jobs", "services", or "tasks", keep that exact intent.
 - If scope is "auto", infer the best intent from the user request.
+- UI may pass an optional category hint: ${categoryHint || "(none)"}.
+- Treat category hint as a soft ranking/refinement signal only.
+- Never reject search just because category hint is missing or imperfect.
 
 ## Chat vs Search routing (CRITICAL - READ CAREFULLY)
 IMPORTANT: When scope is pinned (not "auto"), treat almost EVERY message as action = "search".
