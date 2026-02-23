@@ -40,7 +40,7 @@ export function UserMenu() {
       <DropdownMenuTrigger asChild>
         <Avatar className="cursor-pointer">
           <AvatarImage src={user?.image || ""} />
-          <AvatarFallback className="bg-rose-500">
+          <AvatarFallback className="bg-black">
             <User className="text-white size-4" />
           </AvatarFallback>
         </Avatar>

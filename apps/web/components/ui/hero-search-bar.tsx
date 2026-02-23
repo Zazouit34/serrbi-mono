@@ -8,15 +8,9 @@ import { useSession } from "next-auth/react";
 import { Input } from "@workspace/ui/components/input";
 import { Button } from "@workspace/ui/components/button";
 import { Search } from "lucide-react";
+import { X } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { isSecondaryClient } from "@/lib/domain";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@workspace/ui/components/select";
 
 import { PreviewCards } from "@/components/ui/preview-cards";
 import { trpc } from "@/app/_trpc/client";
@@ -279,17 +273,6 @@ function buildResultsSummary(params: {
   ].join("\n");
 }
 
-function getScopeLabel(scope: ScopeOverride, t: ReturnType<typeof useTranslations>) {
-  const auto = t("labels.auto");
-  const tabLabels = {
-    jobs: t("tabs.jobs"),
-    services: t("tabs.services"),
-    tasks: t("tabs.tasks"),
-  };
-  if (scope === "auto") return auto;
-  return tabLabels[scope];
-}
-
 function SuggestionList({
   prompts,
   title,
@@ -340,7 +323,7 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
   const [submittedQuery, setSubmittedQuery] = useState("");
   const [hasSearched, setHasSearched] = useState(false);
   const [previewPageSize, setPreviewPageSize] = useState(12);
-  const [scopeOverride, setScopeOverride] = useState<ScopeOverride>("auto");
+  const [pinnedIntent, setPinnedIntent] = useState<TabType | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<
     JobCategory | ServiceCategory | TaskCategory | undefined
   >(undefined);
@@ -396,6 +379,8 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
     }
     return json;
   };
+
+  const currentScope: ScopeOverride = pinnedIntent ?? "auto";
 
   const callResultsSummary = async (opts: {
     locale: string;
@@ -462,6 +447,30 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
     setChatInput(prompt);
     chatInputRef.current?.focus();
     void handleSearch(prompt);
+  };
+
+  const handleQuickActionToggle = (action: TabType) => {
+    setPinnedIntent((prev) => {
+      const next = prev === action ? null : action;
+      if (!next) {
+        setSelectedCategory(undefined);
+      } else {
+        setActiveTab(next);
+      }
+      return next;
+    });
+  };
+
+  const handleQuickCategoryToggle = (category: string) => {
+    const normalizedCategory = category?.trim();
+    if (!normalizedCategory) {
+      setSelectedCategory(undefined);
+      return;
+    }
+    setSelectedCategory((prev) => {
+      if (prev && String(prev) === normalizedCategory) return undefined;
+      return normalizedCategory as JobCategory | ServiceCategory | TaskCategory;
+    });
   };
 
   useEffect(() => {
@@ -743,8 +752,8 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
     if (isSecondary) {
       setIsAgentWorking(true);
       try {
-        const agent = await callSearchAgent({ query: effectiveQuery, locale, scope: scopeOverride });
-        const tab: TabType = scopeOverride === "auto" ? agent.intent : scopeOverride;
+        const agent = await callSearchAgent({ query: effectiveQuery, locale, scope: currentScope });
+        const tab: TabType = pinnedIntent ?? agent.intent;
         const q = (agent.searchQuery || effectiveQuery).trim();
         const searchParams = new URLSearchParams();
         if (q) searchParams.set("search", q);
@@ -781,7 +790,7 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
 
     setIsAgentWorking(true);
     try {
-      const agent = await callSearchAgent({ query: effectiveQuery, locale, scope: scopeOverride });
+      const agent = await callSearchAgent({ query: effectiveQuery, locale, scope: currentScope });
       if (agent.action === "chat") {
         setMessages((prev) =>
           prev.map((m) =>
@@ -813,7 +822,7 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
         return;
       }
 
-      const tab: TabType = scopeOverride === "auto" ? agent.intent : scopeOverride;
+      const tab: TabType = pinnedIntent ?? agent.intent;
       const q = (agent.searchQuery || "").trim();
       if (!q) {
         // If the agent couldn't produce a search query, treat it like chat.
@@ -836,7 +845,7 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
 
       setActiveTab(tab);
       setSubmittedQuery(q);
-      setSelectedCategory(undefined);
+      if (!pinnedIntent) setSelectedCategory(undefined);
       setPreviewPageSize(12);
       setHasSearched(true);
 
@@ -886,12 +895,6 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
     } finally {
       setIsAgentWorking(false);
     }
-  };
-
-  const tabLabels = {
-    jobs: t("tabs.jobs"),
-    services: t("tabs.services"),
-    tasks: t("tabs.tasks"),
   };
 
   const previewItems = useMemo(() => {
@@ -1073,6 +1076,34 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
             <div className="sticky bottom-0 z-10 bg-white p-3">
               <div className="rounded-2xl border border-gray-200 shadow-sm bg-white p-3">
                 <div className="flex items-center">
+                  {pinnedIntent ? (
+                    <span
+                      className={`group mr-2 inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium ${
+                        pinnedIntent === "jobs"
+                          ? "border-blue-200 bg-blue-50 text-blue-700"
+                          : pinnedIntent === "services"
+                            ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                            : "border-amber-200 bg-amber-50 text-amber-700"
+                      }`}
+                    >
+                      {pinnedIntent === "jobs"
+                        ? t("tabs.jobs")
+                        : pinnedIntent === "services"
+                          ? t("tabs.services")
+                          : t("tabs.tasks")}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPinnedIntent(null);
+                          setSelectedCategory(undefined);
+                        }}
+                        className="opacity-0 transition-opacity group-hover:opacity-100"
+                        aria-label="Remove selected action"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </span>
+                  ) : null}
                   <Input
                     ref={chatInputRef}
                     placeholder={placeholder || t("placeholder")}
@@ -1089,20 +1120,6 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
                 </div>
                 <div className="flex gap-2 justify-end items-center mt-3">
                   <div className="flex items-center gap-2">
-                    <Select
-                      value={scopeOverride}
-                      onValueChange={(value) => setScopeOverride(value as ScopeOverride)}
-                    >
-                      <SelectTrigger className="h-8 min-w-[120px] px-3 text-sm">
-                        <SelectValue placeholder={getScopeLabel(scopeOverride, t)} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="auto">{getScopeLabel("auto", t)}</SelectItem>
-                        <SelectItem value="jobs">{tabLabels.jobs}</SelectItem>
-                        <SelectItem value="services">{tabLabels.services}</SelectItem>
-                        <SelectItem value="tasks">{tabLabels.tasks}</SelectItem>
-                      </SelectContent>
-                    </Select>
                     <button
                       type="button"
                       onClick={() => void handleSearch()}
@@ -1110,7 +1127,7 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
                       className="flex justify-center items-center w-12 h-8 rounded-lg border border-gray-200 disabled:opacity-60"
                     >
                       <Image
-                        src="/icons/arrow.svg"
+                        src="/icons/arrow.svg" 
                         alt="Send"
                         width={20}
                         height={20}
@@ -1127,13 +1144,13 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
           {!chatExpanded && (
             <ActionButton
               inputRef={chatInputRef}
-              onCategoryClick={() => {
-                // reserved for analytics
-              }}
+              selectedAction={pinnedIntent}
+              selectedCategory={selectedCategory ? String(selectedCategory) : undefined}
+              onActionToggle={handleQuickActionToggle}
+              onCategoryToggle={handleQuickCategoryToggle}
               onSelectPrompt={(prompt) => {
                 setChatInput(prompt);
                 chatInputRef.current?.focus();
-                void handleSearch(prompt);
               }}
             />
           )}

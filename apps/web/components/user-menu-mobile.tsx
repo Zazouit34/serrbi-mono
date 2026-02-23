@@ -55,7 +55,7 @@ export function UserMenuMobile() {
         >
           <Avatar className="w-6 h-6">
             <AvatarImage src={user?.image || ""} />
-            <AvatarFallback className="bg-rose-500">
+            <AvatarFallback className="bg-black">
               <User className="text-white size-4" />
             </AvatarFallback>
           </Avatar>

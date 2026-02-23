@@ -16,6 +16,7 @@ Task:
   - intent (${intent})
   - items (already retrieved marketplace cards)
 - Produce a concise markdown summary based ONLY on provided items.
+- Do not rely on any UI select/dropdown state; rely only on payload.
 
 Hard rules:
 - Use ONLY the payload facts. Never invent missing details.
