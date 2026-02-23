@@ -1076,34 +1076,6 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
             <div className="sticky bottom-0 z-10 bg-white p-3">
               <div className="rounded-2xl border border-gray-200 shadow-sm bg-white p-3">
                 <div className="flex items-center">
-                  {pinnedIntent ? (
-                    <span
-                      className={`group mr-2 inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium ${
-                        pinnedIntent === "jobs"
-                          ? "border-blue-200 bg-blue-50 text-blue-700"
-                          : pinnedIntent === "services"
-                            ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                            : "border-amber-200 bg-amber-50 text-amber-700"
-                      }`}
-                    >
-                      {pinnedIntent === "jobs"
-                        ? t("tabs.jobs")
-                        : pinnedIntent === "services"
-                          ? t("tabs.services")
-                          : t("tabs.tasks")}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setPinnedIntent(null);
-                          setSelectedCategory(undefined);
-                        }}
-                        className="opacity-0 transition-opacity group-hover:opacity-100"
-                        aria-label="Remove selected action"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </span>
-                  ) : null}
                   <Input
                     ref={chatInputRef}
                     placeholder={placeholder || t("placeholder")}
@@ -1118,8 +1090,38 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
                     className="flex-1 px-0 text-sm text-gray-900 bg-transparent border-none shadow-none outline-none placeholder:text-gray-400 focus-visible:ring-0 focus-visible:ring-offset-0"
                   />
                 </div>
-                <div className="flex gap-2 justify-end items-center mt-3">
-                  <div className="flex items-center gap-2">
+                <div className="mt-3 flex items-center justify-between gap-2">
+                  <div className="min-h-8 flex items-center">
+                    {pinnedIntent ? (
+                      <span
+                        className={`group inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium ${
+                          pinnedIntent === "jobs"
+                            ? "border-blue-200 bg-blue-50 text-blue-700"
+                            : pinnedIntent === "services"
+                              ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                              : "border-amber-200 bg-amber-50 text-amber-700"
+                        }`}
+                      >
+                        {pinnedIntent === "jobs"
+                          ? t("tabs.jobs")
+                          : pinnedIntent === "services"
+                            ? t("tabs.services")
+                            : t("tabs.tasks")}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setPinnedIntent(null);
+                            setSelectedCategory(undefined);
+                          }}
+                          className="opacity-0 transition-opacity group-hover:opacity-100"
+                          aria-label="Remove selected action"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </span>
+                    ) : null}
+                  </div>
+                  <div className="flex items-center">
                     <button
                       type="button"
                       onClick={() => void handleSearch()}
@@ -1143,7 +1145,6 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
           {/* Prompt shortcuts (like before) */}
           {!chatExpanded && (
             <ActionButton
-              inputRef={chatInputRef}
               selectedAction={pinnedIntent}
               selectedCategory={selectedCategory ? String(selectedCategory) : undefined}
               onActionToggle={handleQuickActionToggle}

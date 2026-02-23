@@ -362,6 +362,23 @@
           "Career switch from hospitality to tech - is it realistic?",
           "I want to move from teaching to UX design"
         ]
+      },
+      "categorySuggestions": {
+        "jobs": {
+          "1": "Show {category} jobs in Casablanca",
+          "2": "Find remote {category} jobs with clear salary",
+          "3": "Show recent {category} jobs posted this week"
+        },
+        "services": {
+          "1": "Find {category} services near my location",
+          "2": "Show {category} providers within my budget",
+          "3": "Show top rated {category} services"
+        },
+        "tasks": {
+          "1": "Show {category} tasks available today",
+          "2": "Find {category} tasks with higher budget",
+          "3": "Show urgent {category} tasks nearby"
+        }
       }
     },
     "browseJobs": "Browse Jobs",

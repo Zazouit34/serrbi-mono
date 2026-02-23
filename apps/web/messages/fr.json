@@ -377,6 +377,23 @@
           "Livraison de repas aujourd’hui à Marrakech (petit job)",
           "Rédiger le texte d’une landing page en français (à distance, budget 500 MAD)"
         ]
+      },
+      "categorySuggestions": {
+        "jobs": {
+          "1": "Montre des emplois {category} à Casablanca",
+          "2": "Trouve des emplois {category} à distance avec salaire",
+          "3": "Montre les emplois {category} publiés cette semaine"
+        },
+        "services": {
+          "1": "Trouve des services {category} près de moi",
+          "2": "Montre des prestataires {category} dans mon budget",
+          "3": "Montre les services {category} les mieux notés"
+        },
+        "tasks": {
+          "1": "Montre des tâches {category} disponibles aujourd’hui",
+          "2": "Trouve des tâches {category} avec budget plus élevé",
+          "3": "Montre des tâches {category} urgentes près de moi"
+        }
       }
     },
     "browseJobs": "Parcourir Emplois",
