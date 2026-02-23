@@ -32,7 +32,7 @@ export default function Hero() {
     if (chatExpanded || rotatingHeadings.length <= 1) return;
     const interval = setInterval(() => {
       setHeadingIndex((prev) => (prev + 1) % rotatingHeadings.length);
-    }, 3000);
+    }, 4200);
     return () => clearInterval(interval);
   }, [chatExpanded, rotatingHeadings.length]);
 

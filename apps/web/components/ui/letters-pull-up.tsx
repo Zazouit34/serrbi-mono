@@ -21,7 +21,7 @@ export function LettersPullUp({ text, className }: LettersPullUpProps) {
           key={`${char}-${i}-${text}`}
           initial={{ y: 10, opacity: 0 }}
           animate={isInView ? { y: 0, opacity: 1 } : {}}
-          transition={{ delay: i * 0.04 }}
+          transition={{ delay: i * 0.03, duration: 0.32, ease: "easeOut" }}
           className="inline-block"
         >
           {char === " " ? "\u00A0" : char}
