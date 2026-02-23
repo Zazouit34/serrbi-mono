@@ -911,7 +911,7 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
   ]);
 
   return (
-    <div className={`mx-auto w-full max-w-4xl text-left ${chatExpanded ? "h-full min-h-0" : ""}`}>
+    <div className={`mx-auto w-full max-w-none text-left md:max-w-4xl ${chatExpanded ? "h-full min-h-0" : ""}`}>
       {/* Search Content - Chat interface */}
       <div className={`px-0 md:px-6 md:pb-0 ${chatExpanded ? "h-full min-h-0" : ""}`}>
         <div className={`mx-auto flex w-full flex-col gap-4 ${chatExpanded ? "h-full min-h-0" : ""}`}>

@@ -74,7 +74,7 @@ export function PreviewCards({
 
   return (
     <div className="mx-auto max-w-6xl space-y-7">
-      <div className="text-left">
+      <div className="hidden text-left md:block">
         <div className="text-base font-semibold text-slate-900">{heading}</div>
       </div>
 
@@ -108,11 +108,11 @@ export function PreviewCards({
             </Link>
           </div>
         </div>
-        <div className="hidden items-center gap-2 md:flex">
+        <div className="relative hidden md:block">
           <button
             type="button"
             aria-label="Scroll jobs left"
-            className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
+            className="absolute left-2 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-gray-200 bg-white/95 text-gray-600 shadow-sm hover:bg-white"
             onClick={() => scrollBy(jobsScrollRef, "prev")}
           >
             <ChevronLeft className={dir === "rtl" ? "h-4 w-4 rotate-180" : "h-4 w-4"} />
@@ -133,7 +133,7 @@ export function PreviewCards({
           <button
             type="button"
             aria-label="Scroll jobs right"
-            className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
+            className="absolute right-2 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-gray-200 bg-white/95 text-gray-600 shadow-sm hover:bg-white"
             onClick={() => scrollBy(jobsScrollRef, "next")}
           >
             <ChevronRight className={dir === "rtl" ? "h-4 w-4 rotate-180" : "h-4 w-4"} />
@@ -178,11 +178,11 @@ export function PreviewCards({
             </Link>
           </div>
         </div>
-        <div className="hidden items-center gap-2 md:flex">
+        <div className="relative hidden md:block">
           <button
             type="button"
             aria-label="Scroll services left"
-            className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
+            className="absolute left-2 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-gray-200 bg-white/95 text-gray-600 shadow-sm hover:bg-white"
             onClick={() => scrollBy(servicesScrollRef, "prev")}
           >
             <ChevronLeft className={dir === "rtl" ? "h-4 w-4 rotate-180" : "h-4 w-4"} />
@@ -205,7 +205,7 @@ export function PreviewCards({
           <button
             type="button"
             aria-label="Scroll services right"
-            className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
+            className="absolute right-2 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-gray-200 bg-white/95 text-gray-600 shadow-sm hover:bg-white"
             onClick={() => scrollBy(servicesScrollRef, "next")}
           >
             <ChevronRight className={dir === "rtl" ? "h-4 w-4 rotate-180" : "h-4 w-4"} />
@@ -256,11 +256,11 @@ export function PreviewCards({
             </Link>
           </div>
         </div>
-        <div className="hidden items-center gap-2 md:flex">
+        <div className="relative hidden md:block">
           <button
             type="button"
             aria-label="Scroll tasks left"
-            className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
+            className="absolute left-2 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-gray-200 bg-white/95 text-gray-600 shadow-sm hover:bg-white"
             onClick={() => scrollBy(tasksScrollRef, "prev")}
           >
             <ChevronLeft className={dir === "rtl" ? "h-4 w-4 rotate-180" : "h-4 w-4"} />
@@ -281,7 +281,7 @@ export function PreviewCards({
           <button
             type="button"
             aria-label="Scroll tasks right"
-            className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
+            className="absolute right-2 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-gray-200 bg-white/95 text-gray-600 shadow-sm hover:bg-white"
             onClick={() => scrollBy(tasksScrollRef, "next")}
           >
             <ChevronRight className={dir === "rtl" ? "h-4 w-4 rotate-180" : "h-4 w-4"} />
