@@ -1,12 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { HeroSearchBar, type HeroPreviewData } from "@/components/ui/hero-search-bar";
 
 import { useTranslations } from "next-intl";
 
 export default function Hero() {
   const t = useTranslations("Hero");
+  const rotatingHeadings = useMemo(
+    () => [t("headingLine1"), t("headingLine2"), t("headingLine3"), t("headingLine4")].filter(Boolean),
+    [t],
+  );
   const [previewData, setPreviewData] = useState<HeroPreviewData>({
     items: [],
     type: "jobs",
@@ -16,7 +20,20 @@ export default function Hero() {
     isSearchMode: false,
   });
   const [chatExpanded, setChatExpanded] = useState(false);
+  const [headingIndex, setHeadingIndex] = useState(0);
   // avatars removed on mobile for better UX
+
+  useEffect(() => {
+    setHeadingIndex(0);
+  }, [rotatingHeadings.length]);
+
+  useEffect(() => {
+    if (chatExpanded || rotatingHeadings.length <= 1) return;
+    const interval = setInterval(() => {
+      setHeadingIndex((prev) => (prev + 1) % rotatingHeadings.length);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [chatExpanded, rotatingHeadings.length]);
 
   return (
     <div className="flex flex-col">
@@ -29,7 +46,7 @@ export default function Hero() {
       >
         {!chatExpanded && (
           <h2 className="font-libre-baskerville mb-0 text-balance text-center text-[28px] md:text-[40px] leading-tight">
-            {t("headingLine1")}
+            {rotatingHeadings[headingIndex] ?? t("headingLine1")}
           </h2>
         )}
 
