@@ -23,8 +23,8 @@ export default function Hero() {
       <div
         className={`mx-auto flex w-full flex-col items-center px-4 md:px-0 ${
           chatExpanded
-            ? "h-[100svh] justify-start gap-4 pt-8 pb-6 md:py-6"
-            : "min-h-[100svh] justify-start gap-6 pt-12 pb-16 md:min-h-0 md:justify-center md:py-28 lg:py-32"
+            ? "h-[calc(100svh-7.5rem)] justify-start gap-3 pt-3 pb-2 md:h-[calc(100svh-5rem)] md:py-3"
+            : "justify-start gap-6 pt-10 pb-4 md:min-h-0 md:justify-center md:py-28 lg:py-32"
         }`}
       >
         {!chatExpanded && (
@@ -42,7 +42,7 @@ export default function Hero() {
       </div>
 
       {!chatExpanded && (
-        <div className="mt-3 w-full">
+        <div className="mt-0 w-full px-4 md:mt-3 md:px-0">
           <HeroSearchBar.Preview {...previewData} />
         </div>
       )}

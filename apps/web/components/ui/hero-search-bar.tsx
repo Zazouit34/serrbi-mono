@@ -958,10 +958,10 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
   ]);
 
   return (
-    <div className={`mx-auto w-full max-w-4xl text-left ${chatExpanded ? "h-full" : ""}`}>
+    <div className={`mx-auto w-full max-w-4xl text-left ${chatExpanded ? "h-full min-h-0" : ""}`}>
       {/* Search Content - Chat interface */}
-      <div className={`px-0 md:px-6 md:pb-0 ${chatExpanded ? "h-full" : ""}`}>
-        <div className={`flex flex-col gap-4 mx-auto w-full ${chatExpanded ? "h-full" : ""}`}>
+      <div className={`px-0 md:px-6 md:pb-0 ${chatExpanded ? "h-full min-h-0" : ""}`}>
+        <div className={`mx-auto flex w-full flex-col gap-4 ${chatExpanded ? "h-full min-h-0" : ""}`}>
           {/* Chat Container */}
           <div
             className={`relative w-full bg-white rounded-2xl overflow-hidden transition-all duration-300 flex flex-col ${
@@ -1073,7 +1073,7 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
             )}
 
             {/* Input Area at Bottom */}
-            <div className="sticky bottom-0 z-10 bg-white p-3">
+            <div className="sticky bottom-0 z-10 shrink-0 bg-white p-3">
               <div className="rounded-2xl border border-gray-200 shadow-sm bg-white p-3">
                 <div className="flex items-center">
                   <Input
