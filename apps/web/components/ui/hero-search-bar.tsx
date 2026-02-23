@@ -1,14 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { Input } from "@workspace/ui/components/input";
 import { Button } from "@workspace/ui/components/button";
-import { Search } from "lucide-react";
-import { X } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { isSecondaryClient } from "@/lib/domain";
 
@@ -17,15 +13,8 @@ import { trpc } from "@/app/_trpc/client";
 import { jobCategoryValues } from "@workspace/ui/lib/job-enum";
 import { serviceCategoryValues } from "@workspace/ui/lib/service-enum";
 import { taskCategoryValues } from "@workspace/ui/lib/task-enum";
-import { ChatContainerRoot, ChatContainerContent } from "@/components/ui/chat-container";
-import { Message, MessageAvatar } from "@/components/ui/message";
-import { Markdown } from "@/components/ui/markdown";
-import { JobCard } from "@/components/ui/form/job/job-card";
-import { ServiceCard } from "@/components/ui/form/service/service-card";
-import { TaskCard } from "@/components/ui/form/task/task-card";
-import { ThinkingBar } from "@/components/ui/thinking-bar";
 import { ActionButton } from "@/components/ui/action-button";
-import { SiGoogleassistant } from "react-icons/si";
+import { AgentChatContainer } from "@/components/ui/agent-chat-container";
 
 type TabType = "jobs" | "services" | "tasks";
 type ScopeOverride = "auto" | TabType;
@@ -271,42 +260,6 @@ function buildResultsSummary(params: {
     `- **Budget signal:** ${budgetInfo}.`,
     `- **City coverage:** ${cities.length ? cities.join(", ") : "Not specified"}.`,
   ].join("\n");
-}
-
-function SuggestionList({
-  prompts,
-  title,
-  onSelect,
-}: {
-  prompts: string[];
-  title?: string;
-  onSelect: (prompt: string) => void;
-}) {
-  if (!Array.isArray(prompts) || prompts.length === 0) return null;
-
-  return (
-    <div className="relative w-full">
-      {title ? (
-        <div className="mb-1 flex items-center gap-2 text-slate-500">
-          <SiGoogleassistant className="h-3.5 w-3.5" aria-hidden="true" />
-          <span className="text-sm font-semibold">{title}</span>
-        </div>
-      ) : null}
-      <div className="mt-2 space-y-1">
-        {prompts.slice(0, 6).map((prompt, index) => (
-          <button
-            key={`${index}-${prompt}`}
-            type="button"
-            className="w-full text-left px-3 py-2 rounded-md text-sm hover:bg-slate-50 transition-colors flex items-center gap-2 group"
-            onClick={() => onSelect(prompt)}
-          >
-            <Search className="h-3.5 w-3.5 text-slate-400 flex-shrink-0 group-hover:text-slate-700" />
-            <span className="text-slate-800">{prompt}</span>
-          </button>
-        ))}
-      </div>
-    </div>
-  );
 }
 
 function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroSearchBarProps) {
@@ -962,185 +915,36 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
       {/* Search Content - Chat interface */}
       <div className={`px-0 md:px-6 md:pb-0 ${chatExpanded ? "h-full min-h-0" : ""}`}>
         <div className={`mx-auto flex w-full flex-col gap-4 ${chatExpanded ? "h-full min-h-0" : ""}`}>
-          {/* Chat Container */}
-          <div
-            className={`relative w-full bg-white rounded-2xl overflow-hidden transition-all duration-300 flex flex-col ${
-              chatExpanded ? "flex-1 min-h-0" : "min-h-[120px]"
-            }`}
-          >
-            {/* Chat Messages Area */}
-            {chatExpanded && (
-              <ChatContainerRoot className="min-h-0 flex-1 px-3 pt-3">
-                <ChatContainerContent className="space-y-3">
-                  {messages.map((message) => {
-                    const isAssistant = message.role === "assistant";
-
-                    return (
-                      <Message
-                        key={message.id}
-                        className={`justify-start min-w-0 ${isAssistant ? "pl-8 md:pl-10" : "items-center"}`}
-                      >
-                        {message.role === "user" ? (
-                          <MessageAvatar
-                            fallback={session?.user?.name?.slice(0, 1)?.toUpperCase() || "U"}
-                            className="h-6 w-6 bg-slate-100 text-[10px] text-slate-700"
-                          />
-                        ) : null}
-                        {isAssistant ? (
-                          message.kind === "suggestions" ? (
-                            <div className="w-full min-w-0 text-left">
-                              <SuggestionList
-                                prompts={message.relatedPrompts ?? []}
-                                title={message.content || t("labels.related")}
-                                onSelect={(p) => {
-                                  handlePromptSelection(p, message.upgradeUrl);
-                                }}
-                              />
-                            </div>
-                          ) : message.results ? (
-                            <div className="w-full min-w-0 text-left text-slate-900">
-                              {message.results.isLoading ? (
-                                <ThinkingBar text={t("searching")} />
-                              ) : null}
-
-                              {!message.results.isLoading && message.results.items.length === 0 ? (
-                                <div className="text-sm text-slate-700">
-                                  {t("messages.noResults")}
-                                </div>
-                              ) : null}
-
-                              {!message.results.isLoading && message.results.items.length > 0 && (
-                                <div className="mt-3 grid grid-cols-1 gap-6 text-left md:grid-cols-3">
-                                  {message.results.items.map((item: any) => {
-                                    if (message.results?.type === "jobs") {
-                                      return (
-                                        <JobCard
-                                          key={item.id}
-                                          className="h-full"
-                                          job={item}
-                                          compact
-                                        />
-                                      );
-                                    }
-                                    if (message.results?.type === "services") {
-                                      return (
-                                        <Link
-                                          key={item.id}
-                                          href={`/services?serviceCategory=${encodeURIComponent(
-                                            item.serviceCategory ?? "",
-                                          )}`}
-                                        >
-                                          <ServiceCard service={item} className="h-full" />
-                                        </Link>
-                                      );
-                                    }
-                                    return (
-                                      <TaskCard
-                                        key={item.id}
-                                        task={item}
-                                        className="h-full"
-                                      />
-                                    );
-                                  })}
-                                </div>
-                              )}
-
-                              {!message.results.isLoading && (message.content ?? "").trim() ? (
-                                <div className="mt-4 text-left text-slate-900 leading-6">
-                                  <Markdown>{message.content ?? ""}</Markdown>
-                                </div>
-                              ) : null}
-                            </div>
-                          ) : (
-                            <div className="w-full min-w-0 text-left text-slate-900 leading-6">
-                              {message.thinking ? (
-                                <ThinkingBar text={t("thinking")} />
-                              ) : (
-                                <Markdown>{message.content ?? ""}</Markdown>
-                              )}
-                            </div>
-                          )
-                        ) : (
-                          <div className="w-full min-w-0 text-left text-sm text-slate-900 leading-6">
-                            {message.content}
-                          </div>
-                        )}
-                      </Message>
-                    );
-                  })}
-                </ChatContainerContent>
-              </ChatContainerRoot>
-            )}
-
-            {/* Input Area at Bottom */}
-            <div className="sticky bottom-0 z-10 shrink-0 bg-white p-3">
-              <div className="rounded-2xl border border-gray-200 shadow-sm bg-white p-3">
-                <div className="flex items-center">
-                  <Input
-                    ref={chatInputRef}
-                    placeholder={placeholder || t("placeholder")}
-                    value={chatInput}
-                    onChange={(e) => setChatInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && !e.shiftKey && chatInput.trim()) {
-                        e.preventDefault();
-                        void handleSearch();
-                      }
-                    }}
-                    className="flex-1 px-0 text-sm text-gray-900 bg-transparent border-none shadow-none outline-none placeholder:text-gray-400 focus-visible:ring-0 focus-visible:ring-offset-0"
-                  />
-                </div>
-                <div className="mt-3 flex items-center justify-between gap-2">
-                  <div className="min-h-8 flex items-center">
-                    {pinnedIntent ? (
-                      <span
-                        className={`group inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium ${
-                          pinnedIntent === "jobs"
-                            ? "border-blue-200 bg-blue-50 text-blue-700"
-                            : pinnedIntent === "services"
-                              ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                              : "border-amber-200 bg-amber-50 text-amber-700"
-                        }`}
-                      >
-                        {pinnedIntent === "jobs"
-                          ? t("tabs.jobs")
-                          : pinnedIntent === "services"
-                            ? t("tabs.services")
-                            : t("tabs.tasks")}
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setPinnedIntent(null);
-                            setSelectedCategory(undefined);
-                          }}
-                          className="opacity-0 transition-opacity group-hover:opacity-100"
-                          aria-label="Remove selected action"
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                      </span>
-                    ) : null}
-                  </div>
-                  <div className="flex items-center">
-                    <button
-                      type="button"
-                      onClick={() => void handleSearch()}
-                      disabled={isSearching || isAgentWorking}
-                      className="flex justify-center items-center w-12 h-8 rounded-lg border border-gray-200 disabled:opacity-60"
-                    >
-                      <Image
-                        src="/icons/arrow.svg" 
-                        alt="Send"
-                        width={20}
-                        height={20}
-                        className={dir === "rtl" ? "rotate-180" : ""}
-                      />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+          <AgentChatContainer
+            chatExpanded={chatExpanded}
+            messages={messages}
+            chatInput={chatInput}
+            placeholder={placeholder || t("placeholder")}
+            dir={dir}
+            isSearching={isSearching}
+            isAgentWorking={isAgentWorking}
+            pinnedIntent={pinnedIntent}
+            userInitial={session?.user?.name?.slice(0, 1)?.toUpperCase() || "U"}
+            chatInputRef={chatInputRef}
+            labels={{
+              searching: t("searching"),
+              thinking: t("thinking"),
+              noResults: t("messages.noResults"),
+              related: t("labels.related"),
+              jobs: t("tabs.jobs"),
+              services: t("tabs.services"),
+              tasks: t("tabs.tasks"),
+            }}
+            onInputChange={setChatInput}
+            onSubmit={() => {
+              void handleSearch();
+            }}
+            onPinnedIntentClear={() => {
+              setPinnedIntent(null);
+              setSelectedCategory(undefined);
+            }}
+            onSuggestionSelect={handlePromptSelection}
+          />
 
           {/* Prompt shortcuts (like before) */}
           {!chatExpanded && (
