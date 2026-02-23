@@ -21,10 +21,10 @@ export default function Hero() {
   return (
     <div className="flex flex-col">
       <div
-        className={`flex flex-col items-center mx-auto w-full ${
+        className={`mx-auto flex w-full flex-col items-center px-4 md:px-0 ${
           chatExpanded
-            ? "justify-start gap-4 h-[100svh] py-6"
-            : "justify-center gap-6 min-h-[100svh] md:min-h-0 py-24 md:py-28 lg:py-32"
+            ? "h-[100svh] justify-start gap-4 pt-8 pb-6 md:py-6"
+            : "min-h-[100svh] justify-start gap-6 pt-12 pb-16 md:min-h-0 md:justify-center md:py-28 lg:py-32"
         }`}
       >
         {!chatExpanded && (

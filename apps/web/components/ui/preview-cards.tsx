@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import { JobCard } from "@/components/ui/form/job/job-card";
@@ -31,6 +31,9 @@ export function PreviewCards({
   const jobsScrollRef = useRef<HTMLDivElement | null>(null);
   const servicesScrollRef = useRef<HTMLDivElement | null>(null);
   const tasksScrollRef = useRef<HTMLDivElement | null>(null);
+  const [jobsIndex, setJobsIndex] = useState(0);
+  const [servicesIndex, setServicesIndex] = useState(0);
+  const [tasksIndex, setTasksIndex] = useState(0);
   const locale = useLocale();
   const dir = locale === "ar" ? "rtl" : "ltr";
   const tNavbar = useTranslations("Navbar");
@@ -59,6 +62,16 @@ export function PreviewCards({
     });
   };
 
+  const getMobileItem = (items: any[], index: number) => {
+    if (!items.length) return null;
+    const normalized = ((index % items.length) + items.length) % items.length;
+    return items[normalized] ?? null;
+  };
+
+  const jobsItems = jobsQuery.data?.items ?? [];
+  const servicesItems = servicesQuery.data?.items ?? [];
+  const tasksItems = tasksQuery.data?.items ?? [];
+
   return (
     <div className="mx-auto max-w-6xl space-y-7">
       <div className="text-left">
@@ -68,14 +81,34 @@ export function PreviewCards({
       <section className="space-y-3">
         <div className="flex items-center justify-between">
           <div className="text-sm font-semibold text-slate-900">{tNavbar("jobs")}</div>
-          <Link
-            href="/jobs"
-            className="text-sm font-semibold text-slate-700 underline decoration-transparent underline-offset-4 transition hover:decoration-current"
-          >
-            {tHero("loadMore")}
-          </Link>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 md:hidden">
+              <button
+                type="button"
+                aria-label="Previous job card"
+                className="flex h-7 w-7 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
+                onClick={() => setJobsIndex((prev) => prev - 1)}
+              >
+                <ChevronLeft className={dir === "rtl" ? "h-4 w-4 rotate-180" : "h-4 w-4"} />
+              </button>
+              <button
+                type="button"
+                aria-label="Next job card"
+                className="flex h-7 w-7 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
+                onClick={() => setJobsIndex((prev) => prev + 1)}
+              >
+                <ChevronRight className={dir === "rtl" ? "h-4 w-4 rotate-180" : "h-4 w-4"} />
+              </button>
+            </div>
+            <Link
+              href="/jobs"
+              className="text-sm font-semibold text-slate-700 underline decoration-transparent underline-offset-4 transition hover:decoration-current"
+            >
+              {tHero("loadMore")}
+            </Link>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="hidden items-center gap-2 md:flex">
           <button
             type="button"
             aria-label="Scroll jobs left"
@@ -106,19 +139,46 @@ export function PreviewCards({
             <ChevronRight className={dir === "rtl" ? "h-4 w-4 rotate-180" : "h-4 w-4"} />
           </button>
         </div>
+        <div className="md:hidden">
+          {jobsQuery.isLoading ? (
+            <div className="px-1 py-2 text-sm text-slate-500">{tHero("searching")}</div>
+          ) : getMobileItem(jobsItems, jobsIndex) ? (
+            <JobCard className="h-full" job={getMobileItem(jobsItems, jobsIndex)} />
+          ) : null}
+        </div>
       </section>
 
       <section className="space-y-3">
         <div className="flex items-center justify-between">
           <div className="text-sm font-semibold text-slate-900">{tNavbar("services")}</div>
-          <Link
-            href="/services"
-            className="text-sm font-semibold text-slate-700 underline decoration-transparent underline-offset-4 transition hover:decoration-current"
-          >
-            {tHero("loadMore")}
-          </Link>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 md:hidden">
+              <button
+                type="button"
+                aria-label="Previous service card"
+                className="flex h-7 w-7 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
+                onClick={() => setServicesIndex((prev) => prev - 1)}
+              >
+                <ChevronLeft className={dir === "rtl" ? "h-4 w-4 rotate-180" : "h-4 w-4"} />
+              </button>
+              <button
+                type="button"
+                aria-label="Next service card"
+                className="flex h-7 w-7 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
+                onClick={() => setServicesIndex((prev) => prev + 1)}
+              >
+                <ChevronRight className={dir === "rtl" ? "h-4 w-4 rotate-180" : "h-4 w-4"} />
+              </button>
+            </div>
+            <Link
+              href="/services"
+              className="text-sm font-semibold text-slate-700 underline decoration-transparent underline-offset-4 transition hover:decoration-current"
+            >
+              {tHero("loadMore")}
+            </Link>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="hidden items-center gap-2 md:flex">
           <button
             type="button"
             aria-label="Scroll services left"
@@ -151,19 +211,52 @@ export function PreviewCards({
             <ChevronRight className={dir === "rtl" ? "h-4 w-4 rotate-180" : "h-4 w-4"} />
           </button>
         </div>
+        <div className="md:hidden">
+          {servicesQuery.isLoading ? (
+            <div className="px-1 py-2 text-sm text-slate-500">{tHero("searching")}</div>
+          ) : getMobileItem(servicesItems, servicesIndex) ? (
+            <Link
+              href={`/services?serviceCategory=${encodeURIComponent(
+                getMobileItem(servicesItems, servicesIndex)?.serviceCategory ?? "",
+              )}`}
+            >
+              <ServiceCard service={getMobileItem(servicesItems, servicesIndex)} className="h-full" />
+            </Link>
+          ) : null}
+        </div>
       </section>
 
       <section className="space-y-3">
         <div className="flex items-center justify-between">
           <div className="text-sm font-semibold text-slate-900">{tNavbar("tasks")}</div>
-          <Link
-            href="/tasks"
-            className="text-sm font-semibold text-slate-700 underline decoration-transparent underline-offset-4 transition hover:decoration-current"
-          >
-            {tHero("loadMore")}
-          </Link>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 md:hidden">
+              <button
+                type="button"
+                aria-label="Previous task card"
+                className="flex h-7 w-7 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
+                onClick={() => setTasksIndex((prev) => prev - 1)}
+              >
+                <ChevronLeft className={dir === "rtl" ? "h-4 w-4 rotate-180" : "h-4 w-4"} />
+              </button>
+              <button
+                type="button"
+                aria-label="Next task card"
+                className="flex h-7 w-7 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
+                onClick={() => setTasksIndex((prev) => prev + 1)}
+              >
+                <ChevronRight className={dir === "rtl" ? "h-4 w-4 rotate-180" : "h-4 w-4"} />
+              </button>
+            </div>
+            <Link
+              href="/tasks"
+              className="text-sm font-semibold text-slate-700 underline decoration-transparent underline-offset-4 transition hover:decoration-current"
+            >
+              {tHero("loadMore")}
+            </Link>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="hidden items-center gap-2 md:flex">
           <button
             type="button"
             aria-label="Scroll tasks left"
@@ -193,6 +286,13 @@ export function PreviewCards({
           >
             <ChevronRight className={dir === "rtl" ? "h-4 w-4 rotate-180" : "h-4 w-4"} />
           </button>
+        </div>
+        <div className="md:hidden">
+          {tasksQuery.isLoading ? (
+            <div className="px-1 py-2 text-sm text-slate-500">{tHero("searching")}</div>
+          ) : getMobileItem(tasksItems, tasksIndex) ? (
+            <TaskCard task={getMobileItem(tasksItems, tasksIndex)} className="h-full" />
+          ) : null}
         </div>
       </section>
     </div>
