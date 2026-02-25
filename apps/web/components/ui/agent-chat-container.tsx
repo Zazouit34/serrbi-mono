@@ -247,6 +247,27 @@ export function AgentChatContainer({
                 </Message>
               );
             })}
+            {(typeof resumeAttachProgress === "number" || (!!resumeAttachStatusText && !hasResumeAttached)) ? (
+              <Message className="min-w-0 justify-start pl-8 md:pl-10">
+                <div className="w-full min-w-0 rounded-xl border border-slate-200 bg-slate-50 p-3 text-left">
+                  {resumeAttachStatusText ? (
+                    <div className="text-xs text-slate-700">{resumeAttachStatusText}</div>
+                  ) : null}
+                  {typeof resumeAttachProgress === "number" ? (
+                    <div className="mt-2 space-y-1">
+                      <div className="flex items-center justify-between text-[11px] font-medium text-slate-500">
+                        <span className="truncate">{resumeAttachFileName || "resume.pdf"}</span>
+                        <span>{resumeAttachProgress}%</span>
+                      </div>
+                      <Progress
+                        value={resumeAttachProgress}
+                        className="h-2 bg-slate-200 [&>[data-slot=progress-indicator]]:bg-slate-900"
+                      />
+                    </div>
+                  ) : null}
+                </div>
+              </Message>
+            ) : null}
           </ChatContainerContent>
         </ChatContainerRoot>
       )}
@@ -322,20 +343,6 @@ export function AgentChatContainer({
               />
             </button>
           </div>
-          {(typeof resumeAttachProgress === "number" || (!!resumeAttachStatusText && !hasResumeAttached)) ? (
-            <div className="mt-2 space-y-2">
-              <div className="text-xs text-slate-600">{resumeAttachStatusText}</div>
-              {typeof resumeAttachProgress === "number" ? (
-                <div className="space-y-1">
-                  <div className="flex items-center justify-between text-[11px] font-medium text-slate-500">
-                    <span className="truncate">{resumeAttachFileName || "resume.pdf"}</span>
-                    <span>{resumeAttachProgress}%</span>
-                  </div>
-                  <Progress value={resumeAttachProgress} className="h-2 bg-slate-200 [&>[data-slot=progress-indicator]]:bg-slate-900" />
-                </div>
-              ) : null}
-            </div>
-          ) : null}
           <input
             ref={resumeInputRef}
             type="file"
