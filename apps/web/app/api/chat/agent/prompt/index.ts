@@ -1,5 +1,6 @@
 import { buildMainAgentPrompt } from "./main";
 import { buildRelatedPromptsPrompt } from "./related";
+import { buildIntentExtractorPrompt } from "./intent";
 
 type PromptContext = {
   locale?: string;
@@ -10,3 +11,5 @@ type PromptContext = {
 export function buildAgentSystemPrompt(context?: PromptContext): string {
   return [buildMainAgentPrompt(context), buildRelatedPromptsPrompt(context)].join("\n\n");
 }
+
+export { buildIntentExtractorPrompt };

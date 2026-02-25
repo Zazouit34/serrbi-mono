@@ -71,6 +71,10 @@ type AgentResponse = {
   searchQuery: string;
   assistantText?: string;
   relatedPrompts: string[];
+  results?: {
+    type: TabType;
+    items: any[];
+  };
   planLimitReached?: boolean;
   upgradeUrl?: string;
 };
@@ -329,6 +333,15 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
       throw new Error(text || `Chat API error ${res.status}`);
     }
     const json = (await res.json()) as AgentResponse;
+    console.log("[chat-ui] /api/chat response", {
+      action: json?.action,
+      intent: json?.intent,
+      searchQuery: json?.searchQuery,
+      hasResults: !!json?.results,
+      resultType: json?.results?.type,
+      resultCount: Array.isArray(json?.results?.items) ? json.results.items.length : 0,
+      relatedPromptsCount: Array.isArray(json?.relatedPrompts) ? json.relatedPrompts.length : 0,
+    });
     if (!json || (json.action !== "chat" && json.action !== "search") || !Array.isArray(json.relatedPrompts)) {
       throw new Error("Chat API returned invalid payload.");
     }
@@ -823,6 +836,56 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
       }
 
       const resultsKey = `${tab}|${q}`;
+      const directResults =
+        agent.results &&
+        Array.isArray(agent.results.items) &&
+        agent.results.items.length >= 0
+          ? agent.results
+          : null;
+
+      if (directResults && (tab === "jobs" || tab === "services")) {
+        setActiveTab(tab);
+        setHasSearched(false);
+        setSubmittedQuery("");
+        if (!pinnedIntent) setSelectedCategory(undefined);
+        setPreviewPageSize(12);
+
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === assistantMessageId
+              ? {
+                  ...m,
+                  thinking: false,
+                  kind: "results",
+                  content: agent.assistantText ?? "",
+                  results: {
+                    key: resultsKey,
+                    query: q,
+                    type: tab,
+                    items: directResults.items.slice(0, SEARCH_PAGE_SIZE),
+                    isLoading: false,
+                  },
+                }
+              : m,
+          ),
+        );
+
+        if (Array.isArray(agent.relatedPrompts) && agent.relatedPrompts.length > 0) {
+          const suggestionsId = nextMessageIdRef.current++;
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: suggestionsId,
+              role: "assistant",
+              kind: "suggestions",
+              content: t("labels.related"),
+              relatedPrompts: agent.relatedPrompts,
+              suggestionsForKey: resultsKey,
+            },
+          ]);
+        }
+        return;
+      }
 
       setActiveTab(tab);
       setSubmittedQuery(q);

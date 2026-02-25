@@ -1,8 +1,15 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { prisma, SubscriptionStatus } from "@workspace/db";
+import { prisma, SubscriptionStatus, type PrismaClient } from "@workspace/db";
 import { PLANS } from "@/lib/plans";
-import { buildAgentSystemPrompt } from "./agent/prompt";
+import {
+  extractIntent,
+  type JobIntentData,
+  type ServiceIntentData,
+  type ChatMessage as IntentExtractorMessage,
+} from "./agent/intentExtractor";
+import { jobSearchEngine } from "./agent/jobSearchEngine";
+import { serviceSearchEngine } from "./agent/serviceSearchEngine";
 
 export const runtime = "nodejs";
 
@@ -35,6 +42,10 @@ type AgentResponse = {
   searchQuery: string;
   assistantText?: string;
   relatedPrompts: string[];
+  results?: {
+    type: AgentIntent;
+    items: any[];
+  };
   planLimitReached?: boolean;
   upgradeUrl?: string;
 };
@@ -696,6 +707,110 @@ function safeParseAgentJson(text: string): AgentResponse | null {
   };
 }
 
+function formatJobResultsReply(
+  locale: string,
+  count: number,
+  topTitle?: string,
+): string {
+  if (count === 0) {
+    if (normalizeLocale(locale) === "fr") return "Aucun job pertinent trouve avec ces filtres.";
+    if (normalizeLocale(locale) === "ar") return "ملقيناش وظائف مناسبة بهاد المعايير.";
+    return "No relevant jobs found for these filters.";
+  }
+  if (normalizeLocale(locale) === "fr") {
+    return `J'ai trouve ${count} jobs pertinents${topTitle ? ` (top: ${topTitle})` : ""}.`;
+  }
+  if (normalizeLocale(locale) === "ar") {
+    return `لقيت ${count} وظائف مناسبة${topTitle ? ` (الأول: ${topTitle})` : ""}.`;
+  }
+  return `I found ${count} relevant jobs${topTitle ? ` (top: ${topTitle})` : ""}.`;
+}
+
+function formatServiceResultsReply(
+  locale: string,
+  count: number,
+  topTitle?: string,
+): string {
+  if (count === 0) {
+    if (normalizeLocale(locale) === "fr") return "Aucun service pertinent trouve avec ces filtres.";
+    if (normalizeLocale(locale) === "ar") return "ملقيناش خدمات مناسبة بهاد المعايير.";
+    return "No relevant services found for these filters.";
+  }
+  if (normalizeLocale(locale) === "fr") {
+    return `J'ai trouve ${count} services pertinents${topTitle ? ` (top: ${topTitle})` : ""}.`;
+  }
+  if (normalizeLocale(locale) === "ar") {
+    return `لقيت ${count} خدمات مناسبة${topTitle ? ` (الأول: ${topTitle})` : ""}.`;
+  }
+  return `I found ${count} relevant services${topTitle ? ` (top: ${topTitle})` : ""}.`;
+}
+
+function buildJobSearchExplanation(locale: string, params: { count: number; query: string; topTitle?: string }): string {
+  const normalized = normalizeLocale(locale);
+  if (params.count === 0) return formatJobResultsReply(locale, 0);
+  if (normalized === "fr") {
+    return `J'ai trouvé ${params.count} offres pertinentes pour "${params.query}". Meilleur match: ${params.topTitle ?? "sans titre"}.`;
+  }
+  if (normalized === "ar") {
+    return `لقيت ${params.count} وظائف مناسبة لـ "${params.query}". أفضل نتيجة: ${params.topTitle ?? "بدون عنوان"}.`;
+  }
+  return `I found ${params.count} relevant jobs for "${params.query}". Top match: ${params.topTitle ?? "untitled"}.`;
+}
+
+function buildServiceSearchExplanation(
+  locale: string,
+  params: { count: number; query: string; topTitle?: string },
+): string {
+  const normalized = normalizeLocale(locale);
+  if (params.count === 0) return formatServiceResultsReply(locale, 0);
+  if (normalized === "fr") {
+    return `J'ai trouvé ${params.count} services pertinents pour "${params.query}". Meilleur choix: ${params.topTitle ?? "sans titre"}.`;
+  }
+  if (normalized === "ar") {
+    return `لقيت ${params.count} خدمات مناسبة لـ "${params.query}". أفضل اختيار: ${params.topTitle ?? "بدون عنوان"}.`;
+  }
+  return `I found ${params.count} relevant services for "${params.query}". Top choice: ${params.topTitle ?? "untitled"}.`;
+}
+
+function mapJobCards(items: any[]): any[] {
+  return items.map((item) => ({
+    id: item.id,
+    title: item.title,
+    companyName: item.companyName ?? null,
+    companyImage: item.companyImage ?? null,
+    wage: item.wage ?? null,
+    stateAbbreviation: item.stateAbbreviation ?? null,
+    city: item.city ?? null,
+    type: item.type,
+    experienceLevel: item.experienceLevel,
+    locationRequirement: item.locationRequirement,
+    category: item.category,
+    createdAt: item.createdAt,
+    description: item.description ?? "",
+  }));
+}
+
+function mapServiceCards(items: any[]): any[] {
+  return items.map((item) => ({
+    id: item.id,
+    title: item.title,
+    displayImage: item.displayImage ?? null,
+    images: [],
+    serviceCategory: item.serviceCategory,
+    price: item.price,
+    currency: "MAD",
+    stateAbbreviation: item.stateAbbreviation ?? null,
+    city: item.city ?? null,
+    phoneNumber: item.phoneNumber ?? null,
+    averageRating: item.averageRating ?? null,
+    numberOfReviews: item.numberOfReviews ?? 0,
+  }));
+}
+
+function logChatDebug(step: string, payload: unknown): void {
+  console.log(`[chat-debug] ${step}`, payload);
+}
+
 export async function POST(req: Request) {
   try {
     const body = (await req.json()) as ChatRequestBody;
@@ -737,88 +852,122 @@ export async function POST(req: Request) {
       }
     }
 
-    const systemPrompt = buildAgentSystemPrompt(body.context);
+    const extractorHistory: IntentExtractorMessage[] = messages
+      .filter((m): m is IntentExtractorMessage => {
+        return (
+          (m.role === "user" || m.role === "assistant") &&
+          typeof m.content === "string" &&
+          m.content.trim().length > 0
+        );
+      })
+      .slice(-8);
 
-    const finalMessages: ChatMessage[] = [
-      { role: "system", content: systemPrompt },
-      ...messages.map((m) => ({
-        role: m.role,
-        content: m.content,
-      })),
-    ];
-
-    const text = await callDashScope({
-      // model is fixed inside callDashScope
-      model: "qwen3-32b",
-      messages: finalMessages,
+    const aiResult = await extractIntent({
+      locale,
+      scope: body.context?.scope,
+      categoryHint: body.context?.categoryHint,
+      message: lastUser,
+      history: extractorHistory,
+    });
+    logChatDebug("intent_extracted", {
+      message: lastUser,
+      type: aiResult.type,
+      reply: aiResult.reply,
+      intent_data: aiResult.intent_data,
     });
 
-    const parsed = safeParseAgentJson(text);
-    if (parsed) {
-      // Guardrail: When scope is explicitly pinned and user provides substantive input, force search.
-      const scope = body.context?.scope;
-      const isPinned = scope && scope !== "auto";
-      if (isPinned && parsed.action === "chat" && !isGreetingOrSmallTalk(lastUser)) {
-        // Override: if scope is pinned and input has marketplace content, force search.
-        return NextResponse.json({
-          action: "search",
-          intent: scope as AgentIntent,
-          searchQuery: lastUser.trim(),
-          assistantText: "",
-          relatedPrompts: chooseRelevantPrompts({
-            action: "search",
-            intent: scope as AgentIntent,
-            query: lastUser.trim(),
-            locale,
-            prompts: parsed.relatedPrompts,
-          }),
-        } satisfies AgentResponse);
-      }
-      
-      // Safety net: if model still classifies greeting-like text as search, coerce to chat.
-      if (parsed.action === "search" && isGreetingOrSmallTalk(lastUser)) {
-        return NextResponse.json({
-          action: "chat",
-          intent: parsed.intent,
-          searchQuery: "",
-          assistantText: asNonEmptyString(parsed.assistantText) ?? buildChatFallbackReply(locale, lastUser),
-          relatedPrompts: chooseRelevantPrompts({
-            action: "chat",
-            intent: parsed.intent,
-            query: lastUser,
-            locale,
-            prompts: parsed.relatedPrompts,
-          }),
-        } satisfies AgentResponse);
-      }
+    if (aiResult.type === "conversation") {
       return NextResponse.json({
-        ...parsed,
-        relatedPrompts: chooseRelevantPrompts({
-          action: parsed.action,
-          intent: parsed.intent,
-          query: parsed.searchQuery || lastUser,
-          locale,
-          prompts: parsed.relatedPrompts,
-        }),
+        action: "chat",
+        intent: "jobs",
+        searchQuery: "",
+        assistantText: aiResult.reply || buildChatFallbackReply(locale, lastUser),
+        relatedPrompts: buildChatRelatedPrompts(locale, lastUser),
       } satisfies AgentResponse);
     }
 
-    // Fallback: if the LLM didn't follow instructions, degrade gracefully.
-    const scope = body.context?.scope;
-    const fallbackIntent: AgentIntent =
-      scope === "jobs" || scope === "services" || scope === "tasks" ? scope : "jobs";
-    const fallbackQuery = (lastUser || "").trim();
-    const fallbackAction: AgentAction = isLikelySearchRequest(lastUser) ? "search" : "chat";
+    if (aiResult.type === "search_job" && aiResult.intent_data) {
+      const searchResult = await jobSearchEngine(
+        prisma as PrismaClient,
+        aiResult.intent_data as JobIntentData,
+      );
+      const searchQuery = aiResult.intent_data.query?.trim() || lastUser.trim();
+      const cards = mapJobCards(searchResult.topResults);
+      logChatDebug("job_search_pipeline", {
+        extracted_query: searchQuery,
+        filters_applied: searchResult.filtersApplied,
+        result_count: cards.length,
+        top_ids: cards.map((card) => card.id),
+      });
+      return NextResponse.json({
+        action: "search",
+        intent: "jobs",
+        searchQuery,
+        assistantText:
+          aiResult.reply?.trim() ||
+          buildJobSearchExplanation(locale, {
+            count: cards.length,
+            query: searchQuery,
+            topTitle: cards[0]?.title,
+          }),
+        results: {
+          type: "jobs",
+          items: cards,
+        },
+        relatedPrompts: buildSearchRelatedPrompts("jobs", searchQuery || "jobs", locale),
+      } satisfies AgentResponse);
+    }
 
+    if (aiResult.type === "search_service" && aiResult.intent_data) {
+      const searchResult = await serviceSearchEngine(
+        prisma as PrismaClient,
+        aiResult.intent_data as ServiceIntentData,
+      );
+      const searchQuery = aiResult.intent_data.query?.trim() || lastUser.trim();
+      const cards = mapServiceCards(searchResult.topResults);
+      logChatDebug("service_search_pipeline", {
+        extracted_query: searchQuery,
+        filters_applied: searchResult.filtersApplied,
+        result_count: cards.length,
+        top_ids: cards.map((card) => card.id),
+      });
+      return NextResponse.json({
+        action: "search",
+        intent: "services",
+        searchQuery,
+        assistantText:
+          aiResult.reply?.trim() ||
+          buildServiceSearchExplanation(locale, {
+            count: cards.length,
+            query: searchQuery,
+            topTitle: cards[0]?.title,
+          }),
+        results: {
+          type: "services",
+          items: cards,
+        },
+        relatedPrompts: buildSearchRelatedPrompts("services", searchQuery || "services", locale),
+      } satisfies AgentResponse);
+    }
+
+    if (aiResult.type === "search_task" && aiResult.intent_data) {
+      const searchQuery = aiResult.intent_data.query?.trim() || lastUser.trim();
+      return NextResponse.json({
+        action: "search",
+        intent: "tasks",
+        searchQuery,
+        assistantText: "",
+        relatedPrompts: buildSearchRelatedPrompts("tasks", searchQuery || "tasks", locale),
+      } satisfies AgentResponse);
+    }
+
+    const fallbackQuery = (lastUser || "").trim();
     return NextResponse.json({
-      action: fallbackAction,
-      intent: fallbackIntent,
-      searchQuery: fallbackAction === "search" ? fallbackQuery || "jobs" : "",
-      assistantText: fallbackAction === "chat" ? buildChatFallbackReply(locale, lastUser) : "",
-      relatedPrompts:
-        fallbackAction === "chat"
-          ? buildChatRelatedPrompts(locale, lastUser)
-          : buildSearchRelatedPrompts(fallbackIntent, fallbackQuery || "jobs", locale),
+      action: "search",
+      intent: "jobs",
+      searchQuery: fallbackQuery || "jobs",
+      assistantText: "",
+      relatedPrompts: buildSearchRelatedPrompts("jobs", fallbackQuery || "jobs", locale),
     } satisfies AgentResponse);
   } catch (err: any) {
     return NextResponse.json(
