@@ -746,31 +746,69 @@ function formatServiceResultsReply(
   return `I found ${count} relevant services${topTitle ? ` (top: ${topTitle})` : ""}.`;
 }
 
-function buildJobSearchExplanation(locale: string, params: { count: number; query: string; topTitle?: string }): string {
+function buildJobSearchExplanation(
+  locale: string,
+  params: {
+    count: number;
+    query: string;
+    topTitle?: string;
+    filters?: Record<string, unknown>;
+    topScores?: { semanticScore?: number; overlapScore?: number; recencyScore?: number };
+  },
+): string {
   const normalized = normalizeLocale(locale);
   if (params.count === 0) return formatJobResultsReply(locale, 0);
+  const city = typeof params.filters?.city === "string" ? params.filters.city : null;
+  const scoreHint =
+    params.topScores &&
+    typeof params.topScores.semanticScore === "number" &&
+    typeof params.topScores.overlapScore === "number" &&
+    typeof params.topScores.recencyScore === "number"
+      ? ` semantic=${params.topScores.semanticScore.toFixed(2)}, overlap=${params.topScores.overlapScore.toFixed(2)}, recency=${params.topScores.recencyScore.toFixed(2)}`
+      : "";
   if (normalized === "fr") {
-    return `J'ai trouvé ${params.count} offres pertinentes pour "${params.query}". Meilleur match: ${params.topTitle ?? "sans titre"}.`;
+    return `J'ai trouvé ${params.count} offres pertinentes pour "${params.query}". Meilleur match: ${params.topTitle ?? "sans titre"}. Choix basé sur la similarité sémantique, le chevauchement des compétences et la récence${city ? `, avec filtre ville: ${city}` : ""}.${scoreHint}`;
   }
   if (normalized === "ar") {
-    return `لقيت ${params.count} وظائف مناسبة لـ "${params.query}". أفضل نتيجة: ${params.topTitle ?? "بدون عنوان"}.`;
+    return `لقيت ${params.count} وظائف مناسبة لـ "${params.query}". أفضل نتيجة: ${params.topTitle ?? "بدون عنوان"}. الاختيار مبني على التشابه الدلالي وتطابق المهارات وحداثة الإعلان${city ? ` مع فلتر المدينة: ${city}` : ""}.${scoreHint}`;
   }
-  return `I found ${params.count} relevant jobs for "${params.query}". Top match: ${params.topTitle ?? "untitled"}.`;
+  return `I found ${params.count} relevant jobs for "${params.query}". Top match: ${params.topTitle ?? "untitled"}. Ranking used semantic similarity, skill overlap, and recency${city ? ` with city filter: ${city}` : ""}.${scoreHint}`;
 }
 
 function buildServiceSearchExplanation(
   locale: string,
-  params: { count: number; query: string; topTitle?: string },
+  params: {
+    count: number;
+    query: string;
+    topTitle?: string;
+    filters?: Record<string, unknown>;
+    topScores?: {
+      semanticScore?: number;
+      ratingScore?: number;
+      reviewsScore?: number;
+      locationScore?: number;
+      priceScore?: number;
+    };
+  },
 ): string {
   const normalized = normalizeLocale(locale);
   if (params.count === 0) return formatServiceResultsReply(locale, 0);
+  const city = typeof params.filters?.city === "string" ? params.filters.city : null;
+  const scoreHint =
+    params.topScores &&
+    typeof params.topScores.ratingScore === "number" &&
+    typeof params.topScores.reviewsScore === "number" &&
+    typeof params.topScores.locationScore === "number" &&
+    typeof params.topScores.priceScore === "number"
+      ? ` rating=${params.topScores.ratingScore.toFixed(2)}, reviews=${params.topScores.reviewsScore.toFixed(2)}, location=${params.topScores.locationScore.toFixed(2)}, price=${params.topScores.priceScore.toFixed(2)}`
+      : "";
   if (normalized === "fr") {
-    return `J'ai trouvé ${params.count} services pertinents pour "${params.query}". Meilleur choix: ${params.topTitle ?? "sans titre"}.`;
+    return `J'ai trouvé ${params.count} services pertinents pour "${params.query}". Meilleur choix: ${params.topTitle ?? "sans titre"}. Classement basé sur note, avis, proximité et prix${city ? `, avec filtre ville: ${city}` : ""}.${scoreHint}`;
   }
   if (normalized === "ar") {
-    return `لقيت ${params.count} خدمات مناسبة لـ "${params.query}". أفضل اختيار: ${params.topTitle ?? "بدون عنوان"}.`;
+    return `لقيت ${params.count} خدمات مناسبة لـ "${params.query}". أفضل اختيار: ${params.topTitle ?? "بدون عنوان"}. الترتيب مبني على التقييم والمراجعات والقرب والسعر${city ? ` مع فلتر المدينة: ${city}` : ""}.${scoreHint}`;
   }
-  return `I found ${params.count} relevant services for "${params.query}". Top choice: ${params.topTitle ?? "untitled"}.`;
+  return `I found ${params.count} relevant services for "${params.query}". Top choice: ${params.topTitle ?? "untitled"}. Ranking used rating, reviews, location proximity, and price fit${city ? ` with city filter: ${city}` : ""}.${scoreHint}`;
 }
 
 function mapJobCards(items: any[]): any[] {
@@ -814,7 +852,7 @@ function logChatDebug(step: string, payload: unknown): void {
 
 export async function POST(req: Request) {
   try {
-    const includeDebug = process.env.NODE_ENV !== "production";
+    const includeDebug = process.env.CHAT_DEBUG === "true" || process.env.NODE_ENV !== "production";
     const body = (await req.json()) as ChatRequestBody;
     const messages = Array.isArray(body?.messages) ? body.messages : [];
 
@@ -928,13 +966,17 @@ export async function POST(req: Request) {
         action: "search",
         intent: "jobs",
         searchQuery,
-        assistantText:
-          aiResult.reply?.trim() ||
-          buildJobSearchExplanation(locale, {
-            count: cards.length,
-            query: searchQuery,
-            topTitle: cards[0]?.title,
-          }),
+        assistantText: buildJobSearchExplanation(locale, {
+          count: cards.length,
+          query: searchQuery,
+          topTitle: cards[0]?.title,
+          filters: searchResult.filtersApplied,
+          topScores: {
+            semanticScore: searchResult.topResults[0]?.semanticScore,
+            overlapScore: searchResult.topResults[0]?.overlapScore,
+            recencyScore: searchResult.topResults[0]?.recencyScore,
+          },
+        }),
         results: {
           type: "jobs",
           items: cards,
@@ -980,13 +1022,19 @@ export async function POST(req: Request) {
         action: "search",
         intent: "services",
         searchQuery,
-        assistantText:
-          aiResult.reply?.trim() ||
-          buildServiceSearchExplanation(locale, {
-            count: cards.length,
-            query: searchQuery,
-            topTitle: cards[0]?.title,
-          }),
+        assistantText: buildServiceSearchExplanation(locale, {
+          count: cards.length,
+          query: searchQuery,
+          topTitle: cards[0]?.title,
+          filters: searchResult.filtersApplied,
+          topScores: {
+            semanticScore: searchResult.topResults[0]?.semanticScore,
+            ratingScore: searchResult.topResults[0]?.ratingScore,
+            reviewsScore: searchResult.topResults[0]?.reviewsScore,
+            locationScore: searchResult.topResults[0]?.locationScore,
+            priceScore: searchResult.topResults[0]?.priceScore,
+          },
+        }),
         results: {
           type: "services",
           items: cards,
