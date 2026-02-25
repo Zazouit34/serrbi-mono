@@ -75,6 +75,7 @@ type AgentResponse = {
     type: TabType;
     items: any[];
   };
+  debug?: Record<string, unknown>;
   planLimitReached?: boolean;
   upgradeUrl?: string;
 };
@@ -341,6 +342,7 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
       resultType: json?.results?.type,
       resultCount: Array.isArray(json?.results?.items) ? json.results.items.length : 0,
       relatedPromptsCount: Array.isArray(json?.relatedPrompts) ? json.relatedPrompts.length : 0,
+      debug: json?.debug ?? null,
     });
     if (!json || (json.action !== "chat" && json.action !== "search") || !Array.isArray(json.relatedPrompts)) {
       throw new Error("Chat API returned invalid payload.");

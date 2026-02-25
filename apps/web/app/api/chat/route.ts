@@ -46,6 +46,7 @@ type AgentResponse = {
     type: AgentIntent;
     items: any[];
   };
+  debug?: Record<string, unknown>;
   planLimitReached?: boolean;
   upgradeUrl?: string;
 };
@@ -813,6 +814,7 @@ function logChatDebug(step: string, payload: unknown): void {
 
 export async function POST(req: Request) {
   try {
+    const includeDebug = process.env.NODE_ENV !== "production";
     const body = (await req.json()) as ChatRequestBody;
     const messages = Array.isArray(body?.messages) ? body.messages : [];
 
@@ -883,6 +885,12 @@ export async function POST(req: Request) {
         searchQuery: "",
         assistantText: aiResult.reply || buildChatFallbackReply(locale, lastUser),
         relatedPrompts: buildChatRelatedPrompts(locale, lastUser),
+        debug: includeDebug
+          ? {
+              stage: "conversation",
+              extracted_intent: aiResult,
+            }
+          : undefined,
       } satisfies AgentResponse);
     }
 
@@ -899,6 +907,23 @@ export async function POST(req: Request) {
         result_count: cards.length,
         top_ids: cards.map((card) => card.id),
       });
+      const jobDebug =
+        includeDebug
+          ? {
+              stage: "search_job",
+              extracted_intent: aiResult,
+              extracted_query: searchQuery,
+              filters_applied: searchResult.filtersApplied,
+              ranking_top3: searchResult.topResults.map((item) => ({
+                id: item.id,
+                title: item.title,
+                finalScore: item.finalScore,
+                semanticScore: item.semanticScore,
+                overlapScore: item.overlapScore,
+                recencyScore: item.recencyScore,
+              })),
+            }
+          : undefined;
       return NextResponse.json({
         action: "search",
         intent: "jobs",
@@ -914,6 +939,7 @@ export async function POST(req: Request) {
           type: "jobs",
           items: cards,
         },
+        debug: jobDebug,
         relatedPrompts: buildSearchRelatedPrompts("jobs", searchQuery || "jobs", locale),
       } satisfies AgentResponse);
     }
@@ -931,6 +957,25 @@ export async function POST(req: Request) {
         result_count: cards.length,
         top_ids: cards.map((card) => card.id),
       });
+      const serviceDebug =
+        includeDebug
+          ? {
+              stage: "search_service",
+              extracted_intent: aiResult,
+              extracted_query: searchQuery,
+              filters_applied: searchResult.filtersApplied,
+              ranking_top3: searchResult.topResults.map((item) => ({
+                id: item.id,
+                title: item.title,
+                finalScore: item.finalScore,
+                semanticScore: item.semanticScore,
+                ratingScore: item.ratingScore,
+                reviewsScore: item.reviewsScore,
+                locationScore: item.locationScore,
+                priceScore: item.priceScore,
+              })),
+            }
+          : undefined;
       return NextResponse.json({
         action: "search",
         intent: "services",
@@ -946,6 +991,7 @@ export async function POST(req: Request) {
           type: "services",
           items: cards,
         },
+        debug: serviceDebug,
         relatedPrompts: buildSearchRelatedPrompts("services", searchQuery || "services", locale),
       } satisfies AgentResponse);
     }
@@ -967,6 +1013,12 @@ export async function POST(req: Request) {
       intent: "jobs",
       searchQuery: fallbackQuery || "jobs",
       assistantText: "",
+      debug: includeDebug
+        ? {
+            stage: "fallback",
+            extracted_intent: aiResult,
+          }
+        : undefined,
       relatedPrompts: buildSearchRelatedPrompts("jobs", fallbackQuery || "jobs", locale),
     } satisfies AgentResponse);
   } catch (err: any) {
