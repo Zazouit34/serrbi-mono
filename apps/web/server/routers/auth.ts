@@ -29,6 +29,8 @@ import {
 } from "../services/verification";
 import { inngest } from "@/functions/inngest/client";
 import { embedText } from "@/lib/embedding";
+import { buildResumeEmbeddingText } from "@/lib/embedding-text";
+import { extractResumeProfileFromRawText } from "@/app/api/chat/agent/intentExtractor";
 
 export const authRouter = router({
   // Keep login for compatibility with existing UI
@@ -231,8 +233,11 @@ export const authRouter = router({
       const db = ctx.prisma as PrismaClient;
       const user = (ctx as any).user;
 
-      // Compute embedding using shared embedding helper
-      const embedding = await embedText(input.resumeText);
+      const profile = await extractResumeProfileFromRawText({
+        resumeText: input.resumeText,
+      });
+      const standardizedText = buildResumeEmbeddingText(profile);
+      const embedding = await embedText(standardizedText);
 
       await (db.user.update as any)({
         where: { id: user.id },

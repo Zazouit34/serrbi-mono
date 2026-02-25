@@ -35,7 +35,11 @@ Rules:
 
 Field map:
 - search_job intent_data: query, category, locationRequirement (in_office|hybrid|remote), experienceLevel (junior|mid_level|senior), type (internship|part_time|full_time), city, stateAbbreviation, countryIso2, minWage, maxWage, skills[]
+- For job category, prefer exact enum value if clear:
+  Tech | Finance | Hospitality | Health | Legal | Construction | Education | CallCenter | Auto | Cleaning | Other
 - search_service intent_data: query, serviceCategory, type, city, stateAbbreviation, minPrice, maxPrice, minAverageRating, minNumberOfReviews
+- For serviceCategory, prefer exact enum value if clear:
+  Lawyer | Doctor | Education | Architect | Plumber | Electrician | Mason | Mechanic | Accountant | Esthetician | Cleaning
 - search_task intent_data: query, category, city, stateAbbreviation, minBudget, maxBudget
 
 Return JSON only.

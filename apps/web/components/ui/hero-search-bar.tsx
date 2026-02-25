@@ -15,6 +15,7 @@ import { serviceCategoryValues } from "@workspace/ui/lib/service-enum";
 import { taskCategoryValues } from "@workspace/ui/lib/task-enum";
 import { ActionButton } from "@/components/ui/action-button";
 import { AgentChatContainer } from "@/components/ui/agent-chat-container";
+import { parsePDF } from "@/app/utils/pdf/prase-pdf";
 
 type TabType = "jobs" | "services" | "tasks";
 type ScopeOverride = "auto" | TabType;
@@ -293,9 +294,123 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
   const [chatExpanded, setChatExpanded] = useState(false);
   const [placeholder, setPlaceholder] = useState("");
   const [pendingRelatedByKey, setPendingRelatedByKey] = useState<Record<string, string[]>>({});
+  const [resumeAttachStatusText, setResumeAttachStatusText] = useState<string>("");
   const nextMessageIdRef = useRef(1);
   const placeholderIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const chatInputRef = useRef<HTMLInputElement | null>(null);
+  const updateResumeUrl = trpc.auth.updateResume.useMutation();
+  const updateResumeEmbedding = trpc.auth.updateResumeEmbedding.useMutation();
+
+  const handleResumeAttach = async (file: File) => {
+    if (!isLoggedIn) {
+      const callback = pathname || "/";
+      router.push(`/login?callbackUrl=${encodeURIComponent(callback)}`);
+      return;
+    }
+
+    if (!(file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf"))) {
+      setResumeAttachStatusText(
+        locale === "fr"
+          ? "Veuillez joindre un fichier PDF."
+          : locale === "ar"
+            ? "المرجو إرفاق ملف PDF."
+            : "Please attach a PDF file.",
+      );
+      return;
+    }
+
+    setChatExpanded(true);
+    const statusMessageId = nextMessageIdRef.current++;
+    const setStatusBubble = (text: string, thinking = true) => {
+      setMessages((prev) => {
+        const exists = prev.some((m) => m.id === statusMessageId);
+        if (!exists) {
+          return [
+            ...prev,
+            {
+              id: statusMessageId,
+              role: "assistant",
+              kind: "text",
+              content: text,
+              thinking,
+            },
+          ];
+        }
+        return prev.map((m) =>
+          m.id === statusMessageId
+            ? {
+                ...m,
+                content: text,
+                thinking,
+                kind: "text",
+              }
+            : m,
+        );
+      });
+    };
+
+    try {
+      const uploadText =
+        locale === "fr"
+          ? "Upload du CV en cours..."
+          : locale === "ar"
+            ? "جاري رفع السيرة الذاتية..."
+            : "Uploading resume...";
+      setResumeAttachStatusText(uploadText);
+      setStatusBubble(uploadText, true);
+
+      const presignedRes = await fetch("/api/upload/presigned-url", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          filename: file.name,
+          contentType: file.type || "application/pdf",
+          fileType: "resume",
+        }),
+      });
+      if (!presignedRes.ok) throw new Error("Failed to get presigned URL");
+      const uploadData = await presignedRes.json();
+
+      const uploadRes = await fetch(uploadData.presignedUrl, {
+        method: "PUT",
+        headers: { "Content-Type": file.type || "application/pdf" },
+        body: file,
+      });
+      if (!uploadRes.ok) throw new Error("Failed to upload resume file");
+
+      await updateResumeUrl.mutateAsync({ resumeUrl: uploadData.publicUrl });
+
+      const analyzeText =
+        locale === "fr"
+          ? "Analyse du CV..."
+          : locale === "ar"
+            ? "جاري تحليل السيرة الذاتية..."
+            : "Analyzing resume...";
+      setResumeAttachStatusText(analyzeText);
+      setStatusBubble(analyzeText, true);
+      const resumeText = await parsePDF(file);
+      await updateResumeEmbedding.mutateAsync({ resumeText });
+
+      const doneText =
+        locale === "fr"
+          ? "CV joint et profil mis a jour. Vos prochaines recherches seront plus pertinentes grace au matching CV."
+          : locale === "ar"
+            ? "تم إرفاق السيرة الذاتية وتحديث الملف. عمليات البحث القادمة ستكون أدق بفضل المطابقة مع السيرة الذاتية."
+            : "Resume attached and profile updated. Your next searches will be more relevant thanks to resume matching.";
+      setResumeAttachStatusText(doneText);
+      setStatusBubble(doneText, false);
+    } catch (error) {
+      console.error("Resume attach flow failed", error);
+      const errorText =
+        locale === "fr"
+          ? "Impossible d'ajouter le CV pour le moment."
+          : locale === "ar"
+            ? "تعذر إضافة السيرة الذاتية حاليا."
+            : "Failed to attach resume right now.";
+      setResumeAttachStatusText(errorText);
+      setStatusBubble(errorText, false);
+    }
+  };
 
   const callSearchAgent = async (opts: {
     query: string;
@@ -1037,6 +1152,15 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
               setSelectedCategory(undefined);
             }}
             onSuggestionSelect={handlePromptSelection}
+            onResumeAttach={handleResumeAttach}
+            resumeAttachLabel={
+              locale === "fr"
+                ? "Joindre un CV (PDF)"
+                : locale === "ar"
+                  ? "إرفاق السيرة الذاتية (PDF)"
+                  : "Attach resume (PDF)"
+            }
+            resumeAttachStatusText={resumeAttachStatusText}
           />
 
           {/* Prompt shortcuts (like before) */}

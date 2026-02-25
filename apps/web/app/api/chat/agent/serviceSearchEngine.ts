@@ -41,10 +41,43 @@ function parseEnumValue<TEnum extends Record<string, string>>(
   enumObj: TEnum,
 ): TEnum[keyof TEnum] | null {
   if (!value) return null;
-  const normalized = value.trim().toLowerCase();
+  const normalized = value
+    .trim()
+    .toLowerCase()
+    .replace(/[_\-\s]/g, "");
   for (const item of Object.values(enumObj)) {
-    if (item.toLowerCase() === normalized) return item as TEnum[keyof TEnum];
+    const enumNormalized = item.toLowerCase().replace(/[_\-\s]/g, "");
+    if (enumNormalized === normalized) return item as TEnum[keyof TEnum];
   }
+  return null;
+}
+
+function inferServiceCategoryFromText(text: string): ServiceCategory | null {
+  const normalized = text
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+
+  const rules: Array<{ category: ServiceCategory; keywords: string[] }> = [
+    { category: ServiceCategory.Lawyer, keywords: ["lawyer", "avocat", "legal", "juridique"] },
+    { category: ServiceCategory.Doctor, keywords: ["doctor", "medecin", "medical", "health"] },
+    { category: ServiceCategory.Education, keywords: ["teacher", "prof", "education", "cours", "tutor"] },
+    { category: ServiceCategory.Architect, keywords: ["architect", "architecture"] },
+    { category: ServiceCategory.Plumber, keywords: ["plumber", "plombier", "plomberie"] },
+    { category: ServiceCategory.Electrician, keywords: ["electrician", "electricien", "electricite"] },
+    { category: ServiceCategory.Mason, keywords: ["mason", "maçon", "brique", "construction"] },
+    { category: ServiceCategory.Mechanic, keywords: ["mechanic", "mecanicien", "garage", "auto"] },
+    { category: ServiceCategory.Accountant, keywords: ["accountant", "comptable", "finance", "tax"] },
+    { category: ServiceCategory.Esthetician, keywords: ["esthetician", "beauty", "beaute", "coiffure", "spa"] },
+    { category: ServiceCategory.Cleaning, keywords: ["cleaning", "nettoyage", "menage", "cleaner"] },
+  ];
+
+  for (const rule of rules) {
+    if (rule.keywords.some((keyword) => normalized.includes(keyword))) {
+      return rule.category;
+    }
+  }
+
   return null;
 }
 
@@ -63,7 +96,11 @@ export async function serviceSearchEngine(
     minAverageRating?: number | null;
     minNumberOfReviews?: number | null;
   };
-  const serviceCategory = parseEnumValue(intentData.serviceCategory, ServiceCategory);
+  const parsedServiceCategory = parseEnumValue(intentData.serviceCategory, ServiceCategory);
+  const inferredServiceCategory = inferServiceCategoryFromText(
+    `${intentData.query} ${intentData.type ?? ""}`,
+  );
+  const serviceCategory = parsedServiceCategory ?? inferredServiceCategory;
   const priceRange = parseRange(intentData.minPrice, intentData.maxPrice);
   const minAverageRating =
     typeof normalizedIntent.minAverageRating === "number" &&

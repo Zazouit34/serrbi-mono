@@ -75,8 +75,6 @@ function buildServiceText(service: {
     service.city ?? "",
     service.stateAbbreviation ?? "",
     service.price != null ? `price:${service.price}` : "",
-    service.averageRating != null ? `rating:${service.averageRating.toFixed(2)}` : "",
-    Number.isFinite(service.numberOfReviews) ? `reviews:${service.numberOfReviews}` : "",
   ];
   return parts.filter((p) => p && p.trim().length > 0).join(" | ");
 }
@@ -84,13 +82,12 @@ function buildServiceText(service: {
 async function main() {
   const BATCH_SIZE = 50;
   const EMBEDDING_BATCH_LIMIT = 10; // DashScope max batch size
+  const forceReembed = process.env.FORCE_REEMBED === "true";
   let totalUpdated = 0;
 
   while (true) {
     const services = await prisma.service.findMany({
-      where: {
-        embedding: { isEmpty: true },
-      },
+      where: forceReembed ? undefined : { embedding: { isEmpty: true } },
       select: {
         id: true,
         title: true,
@@ -105,6 +102,7 @@ async function main() {
         numberOfReviews: true,
       },
       orderBy: { createdAt: "asc" },
+      skip: forceReembed ? totalUpdated : 0,
       take: BATCH_SIZE,
     });
 

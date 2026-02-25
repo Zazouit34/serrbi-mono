@@ -9,7 +9,9 @@
         "db:studio": "prisma studio",
         "db:seed": "tsx src/seed.ts",
         "seed": "tsx src/seed.ts",
-        "db:backfill-embeddings": "tsx src/backfill-job-embeddings.ts"
+        "db:backfill-job-embeddings": "tsx src/backfill-job-embeddings.ts",
+        "db:backfill-service-embeddings": "tsx src/backfill-service-embeddings.ts",
+        "db:backfill-resume-embeddings": "tsx src/backfill-resume-embeddings.ts"
     },
     "prisma": {
         "seed": "tsx src/seed.ts"
@@ -20,7 +22,8 @@
     },
     "dependencies": {
         "@prisma/client": "^6.15.0",
-        "@vigillabs/timescale-db-core": "^0.0.22"
+        "@vigillabs/timescale-db-core": "^0.0.22",
+        "pdf-parse": "^2.4.5"
     },
     "exports": {
         ".": "./src/index.ts"

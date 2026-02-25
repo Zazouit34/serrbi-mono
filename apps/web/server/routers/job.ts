@@ -17,6 +17,7 @@ import { headers } from "next/headers";
 import { getTenantFromHost } from "@/lib/domain";
 import maStates from "@workspace/ui/lib/states.json" assert { type: "json" };
 import { embedText, embedBatch } from "@/lib/embedding";
+import { buildJobEmbeddingText } from "@/lib/embedding-text";
 
 type ExperienceLevelFilter = "junior" | "mid_level" | "senior";
 
@@ -61,32 +62,6 @@ function inferExperienceLevelFromText(text: string): ExperienceLevelFilter | nul
   return null;
 }
 
-function buildJobEmbeddingText(input: {
-  title?: string | null;
-  description?: string | null;
-  tags?: string[] | null;
-  city?: string | null;
-  locationRequirement?: string | null;
-  experienceLevel?: string | null;
-  type?: string | null;
-  wage?: number | null;
-  companyName?: string | null;
-}): string {
-  const parts = [
-    input.title ?? "",
-    input.companyName ?? "",
-    input.description ?? "",
-    input.city ?? "",
-    input.locationRequirement ? `location:${input.locationRequirement}` : "",
-    input.experienceLevel ? `experience:${input.experienceLevel}` : "",
-    input.type ? `type:${input.type}` : "",
-    input.wage != null ? `wage:${input.wage}` : "",
-    ...((input.tags ?? []).filter(Boolean) as string[]),
-  ];
-  return parts.filter((p) => p && p.trim().length > 0).join(" | ");
-}
-
-
 export const jobRouter = router({
   createJob: protectedProcedure
     .input(jobListingFormSchema)
@@ -109,6 +84,7 @@ export const jobRouter = router({
               type: input.type,
               wage: input.wage || null,
               companyName: input.companyName || null,
+              category: input.category,
             }),
           );
         } catch (err) {
@@ -859,6 +835,7 @@ bulkCreate: adminProcedure
         type: r.type ?? null,
         wage: r.wage ?? null,
         companyName: r.companyName ?? null,
+        category: r.category ?? null,
       });
     });
     const embeddings = await embedBatch(texts);

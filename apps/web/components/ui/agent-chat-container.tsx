@@ -4,6 +4,7 @@ import type { RefObject } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Search, X } from "lucide-react";
+import { FiPaperclip } from "react-icons/fi";
 import { Input } from "@workspace/ui/components/input";
 import { ChatContainerRoot, ChatContainerContent } from "@/components/ui/chat-container";
 import { Message, MessageAvatar } from "@/components/ui/message";
@@ -58,6 +59,9 @@ type AgentChatContainerProps = {
   onSubmit: () => void;
   onPinnedIntentClear: () => void;
   onSuggestionSelect: (prompt: string, upgradeUrl?: string) => void;
+  onResumeAttach: (file: File) => void;
+  resumeAttachLabel?: string;
+  resumeAttachStatusText?: string;
 };
 
 function SuggestionList({
@@ -112,7 +116,17 @@ export function AgentChatContainer({
   onSubmit,
   onPinnedIntentClear,
   onSuggestionSelect,
+  onResumeAttach,
+  resumeAttachLabel,
+  resumeAttachStatusText,
 }: AgentChatContainerProps) {
+  const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    onResumeAttach(file);
+    e.currentTarget.value = "";
+  };
+
   return (
     <div
       className={`relative flex w-full flex-col overflow-hidden rounded-2xl bg-white transition-all duration-300 ${
@@ -156,7 +170,39 @@ export function AgentChatContainer({
                           <div className="mt-3 grid grid-cols-1 gap-6 text-left md:grid-cols-3">
                             {message.results.items.map((item: any) => {
                               if (message.results?.type === "jobs") {
-                                return <JobCard key={item.id} className="h-full" job={item} compact />;
+                                const percent =
+                                  item?.resumeMatch && typeof item.resumeMatch.percent === "number"
+                                    ? item.resumeMatch.percent
+                                    : null;
+                                const badgeTone =
+                                  percent == null
+                                    ? "bg-slate-100 text-slate-700"
+                                    : percent >= 80
+                                      ? "bg-emerald-100 text-emerald-700"
+                                      : percent >= 60
+                                        ? "bg-amber-100 text-amber-700"
+                                        : "bg-rose-100 text-rose-700";
+                                return (
+                                  <div key={item.id} className="space-y-2">
+                                    <JobCard className="h-full" job={item} compact />
+                                    {percent != null ? (
+                                      <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-left">
+                                        <div className="flex items-center justify-between">
+                                          <span className="text-xs font-semibold text-slate-600">Matching score</span>
+                                          <span className={`rounded-full px-2 py-0.5 text-sm font-bold ${badgeTone}`}>
+                                            {percent}%
+                                          </span>
+                                        </div>
+                                        {typeof item?.resumeMatch?.explanation === "string" &&
+                                        item.resumeMatch.explanation.trim() ? (
+                                          <p className="mt-1 text-xs leading-5 text-slate-700">
+                                            {item.resumeMatch.explanation}
+                                          </p>
+                                        ) : null}
+                                      </div>
+                                    ) : null}
+                                  </div>
+                                );
                               }
                               if (message.results?.type === "services") {
                                 return (
@@ -212,7 +258,20 @@ export function AgentChatContainer({
             />
           </div>
           <div className="mt-3 flex items-center justify-between gap-2">
-            <div className="flex min-h-8 items-center">
+            <div className="flex min-h-8 items-center gap-2">
+              <label
+                className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-gray-200 text-slate-600 transition hover:bg-slate-50 hover:text-slate-900"
+                title={resumeAttachLabel || "Attach resume PDF"}
+                aria-label={resumeAttachLabel || "Attach resume PDF"}
+              >
+                <input
+                  type="file"
+                  accept=".pdf,application/pdf"
+                  className="hidden"
+                  onChange={onFileChange}
+                />
+                <FiPaperclip className="h-4 w-4" />
+              </label>
               {pinnedIntent ? (
                 <span
                   className={`group inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium ${
@@ -250,6 +309,9 @@ export function AgentChatContainer({
               />
             </button>
           </div>
+          {resumeAttachStatusText ? (
+            <div className="mt-2 text-xs text-slate-600">{resumeAttachStatusText}</div>
+          ) : null}
         </div>
       </div>
     </div>

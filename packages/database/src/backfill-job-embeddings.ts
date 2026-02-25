@@ -78,6 +78,9 @@ function buildJobText(job: {
   title: string;
   companyName: string | null;
   city: string | null;
+  stateAbbreviation: string | null;
+  countryIso2: string | null;
+  category: string | null;
   description: string;
   tags: string[];
   locationRequirement: string | null;
@@ -88,8 +91,11 @@ function buildJobText(job: {
   const parts: string[] = [
     job.title,
     job.companyName ?? "",
-    job.city ?? "",
     job.description,
+    job.category ?? "",
+    job.city ?? "",
+    job.stateAbbreviation ?? "",
+    job.countryIso2 ?? "",
     job.locationRequirement ? `location:${job.locationRequirement}` : "",
     job.experienceLevel ? `experience:${job.experienceLevel}` : "",
     job.type ? `type:${job.type}` : "",
@@ -102,22 +108,28 @@ function buildJobText(job: {
 async function main() {
   const BATCH_SIZE = 50;
   const EMBEDDING_BATCH_LIMIT = 10; // DashScope max batch size
+  const forceReembed = process.env.FORCE_REEMBED === "true";
   let totalUpdated = 0;
 
   // Keep backfilling in batches until there are no jobs left with empty embeddings.
   // Uses the scalar list filter `isEmpty` on the Float[] field.
   while (true) {
     const jobs = await prisma.job.findMany({
-      where: {
-        embedding: {
-          isEmpty: true,
-        },
-      },
+      where: forceReembed
+        ? undefined
+        : {
+            embedding: {
+              isEmpty: true,
+            },
+          },
       select: {
         id: true,
         title: true,
         companyName: true,
         city: true,
+        stateAbbreviation: true,
+        countryIso2: true,
+        category: true,
         description: true,
         tags: true,
         locationRequirement: true,
@@ -128,6 +140,7 @@ async function main() {
       orderBy: {
         createdAt: "asc",
       },
+      skip: forceReembed ? totalUpdated : 0,
       take: BATCH_SIZE,
     });
 
@@ -144,6 +157,9 @@ async function main() {
         title: job.title,
         companyName: job.companyName ?? null,
         city: job.city ?? null,
+        stateAbbreviation: job.stateAbbreviation ?? null,
+        countryIso2: job.countryIso2 ?? null,
+        category: job.category ?? null,
         description: job.description,
         tags: job.tags ?? [],
         locationRequirement: job.locationRequirement ?? null,

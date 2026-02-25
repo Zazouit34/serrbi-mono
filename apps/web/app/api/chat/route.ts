@@ -10,6 +10,7 @@ import {
 } from "./agent/intentExtractor";
 import { jobSearchEngine } from "./agent/jobSearchEngine";
 import { serviceSearchEngine } from "./agent/serviceSearchEngine";
+import { rankJobsWithResumeMatch } from "./agent/scoreEngine";
 
 export const runtime = "nodejs";
 
@@ -811,7 +812,57 @@ function buildServiceSearchExplanation(
   return `I found ${params.count} relevant services for "${params.query}". Top choice: ${params.topTitle ?? "untitled"}. Ranking used rating, reviews, location proximity, and price fit${city ? ` with city filter: ${city}` : ""}.${scoreHint}`;
 }
 
-function mapJobCards(items: any[]): any[] {
+function buildResumeUploadHint(locale: string): string {
+  const normalized = normalizeLocale(locale);
+  if (normalized === "fr") {
+    return "Voici les meilleurs matchs trouvés pour votre recherche. Pour des résultats encore plus pertinents, joignez votre CV via l'icône trombone afin d'activer le matching personnalisé.";
+  }
+  if (normalized === "ar") {
+    return "هذو أفضل النتائج حسب بحثك. إذا بغيتي نتائج أدق، حمّل السيرة الذاتية عبر أيقونة المشبك لتفعيل المطابقة الذكية.";
+  }
+  return "Here are the best matches for your search. For more relevant results, attach your resume using the paperclip icon to enable personalized matching.";
+}
+
+function buildResumeOptimizedHint(locale: string): string {
+  const normalized = normalizeLocale(locale);
+  if (normalized === "fr") {
+    return "Résultats optimisés avec votre CV: score basé sur similarité sémantique, compétences, et niveau d'expérience.";
+  }
+  if (normalized === "ar") {
+    return "تم تحسين النتائج باستخدام سيرتك الذاتية: الدرجة مبنية على التشابه الدلالي والمهارات ومستوى الخبرة.";
+  }
+  return "Results optimized using your resume: score is based on semantic similarity, skills overlap, and experience alignment.";
+}
+
+function buildJobResumeMatchExplanation(locale: string, input: {
+  matchedSkillsCount: number;
+  requiredSkillsCount: number;
+  matchedSkills: string[];
+}): string {
+  const matched = input.matchedSkillsCount;
+  const required = input.requiredSkillsCount;
+  const sampleSkills = input.matchedSkills.slice(0, 3).join(", ");
+  if (normalizeLocale(locale) === "fr") {
+    if (required > 0) {
+      return `Correspondance competences: ${matched}/${required}${sampleSkills ? ` (ex: ${sampleSkills})` : ""}.`;
+    }
+    return "Correspondance semantique et niveau d'experience alignes avec votre CV.";
+  }
+  if (normalizeLocale(locale) === "ar") {
+    if (required > 0) {
+      return `تطابق المهارات: ${matched}/${required}${sampleSkills ? ` (مثل: ${sampleSkills})` : ""}.`;
+    }
+    return "التطابق مبني على التشابه الدلالي وملاءمة مستوى الخبرة مع السيرة الذاتية.";
+  }
+  if (required > 0) {
+    return `Skill overlap: ${matched}/${required}${sampleSkills ? ` (e.g. ${sampleSkills})` : ""}.`;
+  }
+  return "Match is based on semantic similarity and experience alignment with your resume.";
+}
+
+function mapJobCards(items: any[], opts?: { locale?: string; includeResumeMatch?: boolean }): any[] {
+  const locale = opts?.locale ?? "en";
+  const includeResumeMatch = opts?.includeResumeMatch ?? false;
   return items.map((item) => ({
     id: item.id,
     title: item.title,
@@ -826,6 +877,18 @@ function mapJobCards(items: any[]): any[] {
     category: item.category,
     createdAt: item.createdAt,
     description: item.description ?? "",
+    resumeMatch: includeResumeMatch
+      ? {
+          percent: typeof item.matchPercent === "number" ? item.matchPercent : null,
+          explanation: buildJobResumeMatchExplanation(locale, {
+            matchedSkillsCount:
+              typeof item.matchedSkillsCount === "number" ? item.matchedSkillsCount : 0,
+            requiredSkillsCount:
+              typeof item.requiredSkillsCount === "number" ? item.requiredSkillsCount : 0,
+            matchedSkills: Array.isArray(item.matchedSkills) ? item.matchedSkills : [],
+          }),
+        }
+      : null,
   }));
 }
 
@@ -938,12 +1001,37 @@ export async function POST(req: Request) {
         aiResult.intent_data as JobIntentData,
       );
       const searchQuery = aiResult.intent_data.query?.trim() || lastUser.trim();
-      const cards = mapJobCards(searchResult.topResults);
+      const userResumeData =
+        userId
+          ? await (prisma as any).user.findUnique({
+              where: { id: userId },
+              select: {
+                resumeEmbedding: true,
+                autoApplyKeywords: true,
+              },
+            })
+          : null;
+
+      const hasResumeEmbedding =
+        Array.isArray(userResumeData?.resumeEmbedding) && userResumeData.resumeEmbedding.length > 0;
+
+      const personalizedRanked = hasResumeEmbedding
+        ? rankJobsWithResumeMatch(searchResult.topResults as any, {
+            resumeEmbedding: userResumeData.resumeEmbedding as number[],
+            resumeSkills: (userResumeData?.autoApplyKeywords as string[] | undefined) ?? [],
+          })
+        : searchResult.topResults;
+
+      const cards = mapJobCards(personalizedRanked.slice(0, 3), {
+        locale,
+        includeResumeMatch: hasResumeEmbedding,
+      });
       logChatDebug("job_search_pipeline", {
         extracted_query: searchQuery,
         filters_applied: searchResult.filtersApplied,
         result_count: cards.length,
         top_ids: cards.map((card) => card.id),
+        used_resume_matching: hasResumeEmbedding,
       });
       const jobDebug =
         includeDebug
@@ -952,31 +1040,36 @@ export async function POST(req: Request) {
               extracted_intent: aiResult,
               extracted_query: searchQuery,
               filters_applied: searchResult.filtersApplied,
-              ranking_top3: searchResult.topResults.map((item) => ({
+              ranking_top3: personalizedRanked.slice(0, 3).map((item: any) => ({
                 id: item.id,
                 title: item.title,
                 finalScore: item.finalScore,
                 semanticScore: item.semanticScore,
                 overlapScore: item.overlapScore,
                 recencyScore: item.recencyScore,
+                resumeMatchScore: item.resumeMatchScore,
+                blendedScore: item.blendedScore,
               })),
+              used_resume_matching: hasResumeEmbedding,
             }
           : undefined;
       return NextResponse.json({
         action: "search",
         intent: "jobs",
         searchQuery,
-        assistantText: buildJobSearchExplanation(locale, {
-          count: cards.length,
-          query: searchQuery,
-          topTitle: cards[0]?.title,
-          filters: searchResult.filtersApplied,
-          topScores: {
-            semanticScore: searchResult.topResults[0]?.semanticScore,
-            overlapScore: searchResult.topResults[0]?.overlapScore,
-            recencyScore: searchResult.topResults[0]?.recencyScore,
-          },
-        }),
+        assistantText: hasResumeEmbedding
+          ? `${buildResumeOptimizedHint(locale)} ${buildJobSearchExplanation(locale, {
+              count: cards.length,
+              query: searchQuery,
+              topTitle: cards[0]?.title,
+              filters: searchResult.filtersApplied,
+              topScores: {
+                semanticScore: (personalizedRanked[0] as any)?.semanticScore,
+                overlapScore: (personalizedRanked[0] as any)?.overlapScore,
+                recencyScore: (personalizedRanked[0] as any)?.recencyScore,
+              },
+            })}`
+          : buildResumeUploadHint(locale),
         results: {
           type: "jobs",
           items: cards,

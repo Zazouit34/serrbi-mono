@@ -47,10 +47,84 @@ function parseEnumValue<TEnum extends Record<string, string>>(
   enumObj: TEnum,
 ): TEnum[keyof TEnum] | null {
   if (!value) return null;
-  const normalized = value.trim().toLowerCase();
+  const normalized = value
+    .trim()
+    .toLowerCase()
+    .replace(/[_\-\s]/g, "");
   for (const item of Object.values(enumObj)) {
-    if (item.toLowerCase() === normalized) return item as TEnum[keyof TEnum];
+    const enumNormalized = item.toLowerCase().replace(/[_\-\s]/g, "");
+    if (enumNormalized === normalized) return item as TEnum[keyof TEnum];
   }
+  return null;
+}
+
+function inferJobCategoryFromText(text: string): JobCategory | null {
+  const normalized = text
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+
+  const rules: Array<{ category: JobCategory; keywords: string[] }> = [
+    {
+      category: JobCategory.Tech,
+      keywords: [
+        "developer",
+        "developpeur",
+        "dev",
+        "software",
+        "frontend",
+        "backend",
+        "fullstack",
+        "data",
+        "engineer",
+        "it",
+        "tech",
+      ],
+    },
+    {
+      category: JobCategory.Finance,
+      keywords: ["finance", "accountant", "accounting", "comptable", "audit", "bank"],
+    },
+    {
+      category: JobCategory.Health,
+      keywords: ["doctor", "nurse", "medical", "sante", "health", "pharmac"],
+    },
+    {
+      category: JobCategory.Legal,
+      keywords: ["lawyer", "legal", "juridique", "avocat"],
+    },
+    {
+      category: JobCategory.Education,
+      keywords: ["teacher", "prof", "education", "educat", "formateur", "instructor"],
+    },
+    {
+      category: JobCategory.Construction,
+      keywords: ["construction", "chantier", "builder", "maçon", "mason", "plumbing", "electric"],
+    },
+    {
+      category: JobCategory.Hospitality,
+      keywords: ["hotel", "restaurant", "hospitality", "serveur", "waiter", "cuisine"],
+    },
+    {
+      category: JobCategory.CallCenter,
+      keywords: ["call center", "customer support", "teleconseiller", "televendeur", "centre d'appel"],
+    },
+    {
+      category: JobCategory.Auto,
+      keywords: ["mechanic", "garage", "automotive", "auto", "car repair"],
+    },
+    {
+      category: JobCategory.Cleaning,
+      keywords: ["cleaning", "cleaner", "menage", "nettoyage"],
+    },
+  ];
+
+  for (const rule of rules) {
+    if (rule.keywords.some((keyword) => normalized.includes(keyword))) {
+      return rule.category;
+    }
+  }
+
   return null;
 }
 
@@ -62,7 +136,11 @@ function parseRange(minValue: number | null | undefined, maxValue: number | null
 }
 
 export async function jobSearchEngine(db: PrismaClient, intentData: JobIntentData): Promise<JobSearchResult> {
-  const category = parseEnumValue(intentData.category, JobCategory);
+  const parsedCategory = parseEnumValue(intentData.category, JobCategory);
+  const inferredCategory = inferJobCategoryFromText(
+    `${intentData.query} ${(intentData.skills ?? []).join(" ")}`,
+  );
+  const category = parsedCategory ?? inferredCategory;
   const experienceLevel = parseEnumValue(intentData.experienceLevel, ExperienceLevel);
   const locationRequirement = parseEnumValue(intentData.locationRequirement, LocationRequirement);
   const type = parseEnumValue(intentData.type, JobListingType);
@@ -150,6 +228,6 @@ export async function jobSearchEngine(db: PrismaClient, intentData: JobIntentDat
       minWage: wageRange?.min ?? null,
       maxWage: wageRange?.max ?? null,
     },
-    topResults: ranked.slice(0, 3),
+    topResults: ranked.slice(0, 30),
   };
 }

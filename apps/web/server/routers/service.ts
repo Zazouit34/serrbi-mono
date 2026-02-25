@@ -10,6 +10,7 @@ import {
 import { TRPCError } from "@trpc/server";
 import type { PrismaClient } from "@workspace/db";
 import { embedText } from "@/lib/embedding";
+import { buildServiceEmbeddingText } from "@/lib/embedding-text";
 
 export const serviceRouter = router({
   createService: protectedProcedure
@@ -23,7 +24,16 @@ export const serviceRouter = router({
         let serviceEmbedding: number[] = [];
         try {
           serviceEmbedding = await embedText(
-            `${input.title ?? ""} ${input.displayName ?? ""} ${input.description ?? ""} ${input.serviceCategory ?? ""} ${input.type ?? ""} ${input.city ?? ""} ${input.stateAbbreviation ?? ""} price:${input.price ?? ""}`,
+            buildServiceEmbeddingText({
+              title: input.title,
+              displayName: input.displayName ?? null,
+              description: input.description,
+              serviceCategory: input.serviceCategory,
+              type: input.type ?? null,
+              city: input.city ?? null,
+              stateAbbreviation: input.stateAbbreviation ?? null,
+              price: input.price ?? null,
+            }),
           );
         } catch (err) {
           console.error("Failed to compute service embedding", err);
