@@ -286,7 +286,7 @@ function fallbackExtractor(input: ExtractIntentInput): AgentResponse {
   if (!q) {
     return {
       type: "conversation",
-      reply: "How can I help you today?",
+      reply: "Hey 👋 Tell me what you need and I will help you right away.",
       intent_data: null,
     };
   }
@@ -296,7 +296,7 @@ function fallbackExtractor(input: ExtractIntentInput): AgentResponse {
   if (greetingLike && q.split(/\s+/).length <= 5) {
     return {
       type: "conversation",
-      reply: "How can I help you today?",
+      reply: "Hi 👋 Great to see you. Want to find a job, service, or task?",
       intent_data: null,
     };
   }

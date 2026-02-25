@@ -1,11 +1,12 @@
 "use client";
 
-import type { RefObject } from "react";
+import { useRef, type ChangeEvent, type RefObject } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Search, X } from "lucide-react";
+import { AlertTriangle, FileCheck2, Search, X } from "lucide-react";
 import { FiPaperclip } from "react-icons/fi";
 import { Input } from "@workspace/ui/components/input";
+import { Progress } from "@workspace/ui/components/progress";
 import { ChatContainerRoot, ChatContainerContent } from "@/components/ui/chat-container";
 import { Message, MessageAvatar } from "@/components/ui/message";
 import { Markdown } from "@/components/ui/markdown";
@@ -33,6 +34,11 @@ type ChatMessage = {
   relatedPrompts?: string[];
   suggestionsForKey?: string;
   upgradeUrl?: string;
+  resumeUploadCta?: {
+    title: string;
+    description: string;
+    buttonLabel: string;
+  };
 };
 
 type AgentChatContainerProps = {
@@ -62,6 +68,10 @@ type AgentChatContainerProps = {
   onResumeAttach: (file: File) => void;
   resumeAttachLabel?: string;
   resumeAttachStatusText?: string;
+  resumeAttachProgress?: number | null;
+  resumeAttachFileName?: string;
+  hasResumeAttached?: boolean;
+  resumeAttachedLabel?: string;
 };
 
 function SuggestionList({
@@ -119,12 +129,20 @@ export function AgentChatContainer({
   onResumeAttach,
   resumeAttachLabel,
   resumeAttachStatusText,
+  resumeAttachProgress,
+  resumeAttachFileName,
+  hasResumeAttached,
+  resumeAttachedLabel,
 }: AgentChatContainerProps) {
-  const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const resumeInputRef = useRef<HTMLInputElement | null>(null);
+  const onFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     onResumeAttach(file);
     e.currentTarget.value = "";
+  };
+  const openResumePicker = () => {
+    resumeInputRef.current?.click();
   };
 
   return (
@@ -170,37 +188,9 @@ export function AgentChatContainer({
                           <div className="mt-3 grid grid-cols-1 gap-6 text-left md:grid-cols-3">
                             {message.results.items.map((item: any) => {
                               if (message.results?.type === "jobs") {
-                                const percent =
-                                  item?.resumeMatch && typeof item.resumeMatch.percent === "number"
-                                    ? item.resumeMatch.percent
-                                    : null;
-                                const badgeTone =
-                                  percent == null
-                                    ? "bg-slate-100 text-slate-700"
-                                    : percent >= 80
-                                      ? "bg-emerald-100 text-emerald-700"
-                                      : percent >= 60
-                                        ? "bg-amber-100 text-amber-700"
-                                        : "bg-rose-100 text-rose-700";
                                 return (
-                                  <div key={item.id} className="space-y-2">
+                                  <div key={item.id}>
                                     <JobCard className="h-full" job={item} compact />
-                                    {percent != null ? (
-                                      <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-left">
-                                        <div className="flex items-center justify-between">
-                                          <span className="text-xs font-semibold text-slate-600">Matching score</span>
-                                          <span className={`rounded-full px-2 py-0.5 text-sm font-bold ${badgeTone}`}>
-                                            {percent}%
-                                          </span>
-                                        </div>
-                                        {typeof item?.resumeMatch?.explanation === "string" &&
-                                        item.resumeMatch.explanation.trim() ? (
-                                          <p className="mt-1 text-xs leading-5 text-slate-700">
-                                            {item.resumeMatch.explanation}
-                                          </p>
-                                        ) : null}
-                                      </div>
-                                    ) : null}
                                   </div>
                                 );
                               }
@@ -222,6 +212,27 @@ export function AgentChatContainer({
                         {!message.results.isLoading && (message.content ?? "").trim() ? (
                           <div className="mt-4 text-left text-slate-900 leading-6">
                             <Markdown>{message.content ?? ""}</Markdown>
+                          </div>
+                        ) : null}
+                        {!message.results.isLoading && message.resumeUploadCta ? (
+                          <div className="mt-4 rounded-xl border border-amber-300 bg-amber-50 p-4">
+                            <div className="flex items-start gap-3">
+                              <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
+                              <div className="min-w-0 flex-1">
+                                <p className="text-sm font-extrabold tracking-tight text-amber-900">
+                                  {message.resumeUploadCta.title}
+                                </p>
+                                <p className="mt-1 text-sm leading-6 text-amber-800">
+                                  {message.resumeUploadCta.description}
+                                </p>
+                                <a
+                                  onClick={openResumePicker}
+                                  className="mt-3 inline-block cursor-pointer text-sm font-bold text-amber-900 underline transition hover:text-amber-700"
+                                >
+                                  {message.resumeUploadCta.buttonLabel}
+                                </a>
+                              </div>
+                            </div>
                           </div>
                         ) : null}
                       </div>
@@ -259,19 +270,21 @@ export function AgentChatContainer({
           </div>
           <div className="mt-3 flex items-center justify-between gap-2">
             <div className="flex min-h-8 items-center gap-2">
-              <label
-                className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-gray-200 text-slate-600 transition hover:bg-slate-50 hover:text-slate-900"
+              <button
+                type="button"
+                onClick={openResumePicker}
+                className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-gray-200 text-slate-600 transition hover:bg-slate-50 hover:text-slate-900"
                 title={resumeAttachLabel || "Attach resume PDF"}
                 aria-label={resumeAttachLabel || "Attach resume PDF"}
               >
-                <input
-                  type="file"
-                  accept=".pdf,application/pdf"
-                  className="hidden"
-                  onChange={onFileChange}
-                />
                 <FiPaperclip className="h-4 w-4" />
-              </label>
+              </button>
+              {hasResumeAttached ? (
+                <span className="inline-flex items-center gap-1 rounded-full border border-violet-200 bg-violet-50 px-2.5 py-1 text-xs font-semibold text-violet-700">
+                  <FileCheck2 className="h-3.5 w-3.5" />
+                  {resumeAttachedLabel || "CV"}
+                </span>
+              ) : null}
               {pinnedIntent ? (
                 <span
                   className={`group inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium ${
@@ -309,9 +322,27 @@ export function AgentChatContainer({
               />
             </button>
           </div>
-          {resumeAttachStatusText ? (
-            <div className="mt-2 text-xs text-slate-600">{resumeAttachStatusText}</div>
+          {(typeof resumeAttachProgress === "number" || (!!resumeAttachStatusText && !hasResumeAttached)) ? (
+            <div className="mt-2 space-y-2">
+              <div className="text-xs text-slate-600">{resumeAttachStatusText}</div>
+              {typeof resumeAttachProgress === "number" ? (
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between text-[11px] font-medium text-slate-500">
+                    <span className="truncate">{resumeAttachFileName || "resume.pdf"}</span>
+                    <span>{resumeAttachProgress}%</span>
+                  </div>
+                  <Progress value={resumeAttachProgress} className="h-2 bg-slate-200 [&>[data-slot=progress-indicator]]:bg-slate-900" />
+                </div>
+              ) : null}
+            </div>
           ) : null}
+          <input
+            ref={resumeInputRef}
+            type="file"
+            accept=".pdf,application/pdf"
+            className="hidden"
+            onChange={onFileChange}
+          />
         </div>
       </div>
     </div>

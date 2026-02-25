@@ -237,6 +237,11 @@ export const authRouter = router({
         resumeText: input.resumeText,
       });
       const standardizedText = buildResumeEmbeddingText(profile);
+      const includeDebug = process.env.CHAT_DEBUG === "true" || process.env.NODE_ENV !== "production";
+      if (includeDebug) {
+        console.log("[resume-debug] extracted_profile", profile);
+        console.log("[resume-debug] standardized_text", standardizedText);
+      }
       const embedding = await embedText(standardizedText);
 
       await (db.user.update as any)({
@@ -244,7 +249,15 @@ export const authRouter = router({
         data: { resumeEmbedding: embedding },
       });
 
-      return { success: true };
+      return {
+        success: true,
+        debug: includeDebug
+          ? {
+              extracted_profile: profile,
+              standardized_text: standardizedText,
+            }
+          : null,
+      };
     }),
   // clear resume
   clearResume: protectedProcedure.mutation(async ({ ctx }) => {

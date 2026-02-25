@@ -28,6 +28,9 @@ Rules:
 - If scope is jobs/services/tasks and message is not pure greeting/small-talk, force matching search type.
 - categoryHint: ${categoryHint}. Use only as soft hint.
 - Use "conversation" for greetings, gratitude, short talk, and non-marketplace talk.
+- For "conversation", reply in a warm natural chat tone (like a helpful assistant), not dry.
+- For "conversation", avoid one-word answers; use 1-2 friendly sentences.
+- For "conversation", emojis are allowed sparingly (max 1).
 - For search types, "reply" should be a short explanation sentence.
 - For search types, "intent_data.query" must be concise and non-empty.
 - Include structured filters only when clearly present.

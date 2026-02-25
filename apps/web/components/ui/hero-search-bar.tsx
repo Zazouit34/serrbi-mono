@@ -43,6 +43,11 @@ type ChatMessage = {
   relatedPrompts?: string[];
   suggestionsForKey?: string;
   upgradeUrl?: string;
+  resumeUploadCta?: {
+    title: string;
+    description: string;
+    buttonLabel: string;
+  };
 };
 
 export type HeroPreviewData = {
@@ -75,6 +80,11 @@ type AgentResponse = {
   results?: {
     type: TabType;
     items: any[];
+  };
+  resumeUploadCta?: {
+    title: string;
+    description: string;
+    buttonLabel: string;
   };
   debug?: Record<string, unknown>;
   planLimitReached?: boolean;
@@ -195,6 +205,7 @@ function buildResultsSummary(params: {
     const first = items[0];
     const cities = Array.from(new Set(items.map((i) => i.city).filter(Boolean)));
     const prices = items.map((i) => Number(i.price)).filter((v) => Number.isFinite(v));
+    const ratings = items.map((i) => Number(i.averageRating)).filter((v) => Number.isFinite(v));
     const priceInfo =
       prices.length > 0
         ? `${Math.min(...prices)} - ${Math.max(...prices)} MAD`
@@ -210,6 +221,8 @@ function buildResultsSummary(params: {
         `- **Categorie:** ${first?.serviceCategory ?? "Non precise"}.`,
         `- **Prix:** ${priceInfo}.`,
         `- **Ville(s):** ${cities.length ? cities.join(", ") : "Non precise"}.`,
+        `- **Rating:** ${ratings.length ? `${Math.max(...ratings).toFixed(1)}/5` : "Non precise"}.`,
+        `- **Prochaine etape:** ouvre le service le mieux note dans ta ville et verifie les details.`,
       ].join("\n");
     }
     if (l === "ar") {
@@ -219,6 +232,8 @@ function buildResultsSummary(params: {
         `- **الفئة:** ${first?.serviceCategory ?? "غير محدد"}.`,
         `- **السعر:** ${priceInfo}.`,
         `- **المدينة/المدن:** ${cities.length ? cities.join("، ") : "غير محدد"}.`,
+        `- **التقييم:** ${ratings.length ? `${Math.max(...ratings).toFixed(1)}/5` : "غير محدد"}.`,
+        `- **الخطوة التالية:** افتح أفضل خدمة في مدينتك وراجع التفاصيل قبل التواصل.`,
       ].join("\n");
     }
     return [
@@ -227,6 +242,8 @@ function buildResultsSummary(params: {
       `- **Category:** ${first?.serviceCategory ?? "Not specified"}.`,
       `- **Price signal:** ${priceInfo}.`,
       `- **City coverage:** ${cities.length ? cities.join(", ") : "Not specified"}.`,
+      `- **Rating:** ${ratings.length ? `${Math.max(...ratings).toFixed(1)}/5` : "Not specified"}.`,
+      `- **Next step:** open the top-rated option in your city and review the offer details.`,
     ].join("\n");
   }
 
@@ -248,6 +265,8 @@ function buildResultsSummary(params: {
       `- **Categorie:** ${first?.category ?? "Non precise"}.`,
       `- **Budget:** ${budgetInfo}.`,
       `- **Ville(s):** ${cities.length ? cities.join(", ") : "Non precise"}.`,
+      `- **Statut:** ${first?.status ?? "Non precise"}.`,
+      `- **Prochaine etape:** ouvre la tache la plus claire et confirme le budget avant de postuler.`,
     ].join("\n");
   }
   if (l === "ar") {
@@ -257,6 +276,8 @@ function buildResultsSummary(params: {
       `- **الفئة:** ${first?.category ?? "غير محدد"}.`,
       `- **الميزانية:** ${budgetInfo}.`,
       `- **المدينة/المدن:** ${cities.length ? cities.join("، ") : "غير محدد"}.`,
+      `- **الحالة:** ${first?.status ?? "غير محدد"}.`,
+      `- **الخطوة التالية:** افتح المهمة الأنسب وتأكد من الميزانية قبل المتابعة.`,
     ].join("\n");
   }
   return [
@@ -265,6 +286,8 @@ function buildResultsSummary(params: {
     `- **Category:** ${first?.category ?? "Not specified"}.`,
     `- **Budget signal:** ${budgetInfo}.`,
     `- **City coverage:** ${cities.length ? cities.join(", ") : "Not specified"}.`,
+    `- **Status:** ${first?.status ?? "Not specified"}.`,
+    `- **Next step:** open the best-fit task and validate budget/status before applying.`,
   ].join("\n");
 }
 
@@ -295,11 +318,40 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
   const [placeholder, setPlaceholder] = useState("");
   const [pendingRelatedByKey, setPendingRelatedByKey] = useState<Record<string, string[]>>({});
   const [resumeAttachStatusText, setResumeAttachStatusText] = useState<string>("");
+  const [resumeAttachProgress, setResumeAttachProgress] = useState<number | null>(null);
+  const [resumeAttachFileName, setResumeAttachFileName] = useState<string>("");
+  const [hasResumeAttached, setHasResumeAttached] = useState(false);
   const nextMessageIdRef = useRef(1);
   const placeholderIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const chatInputRef = useRef<HTMLInputElement | null>(null);
   const updateResumeUrl = trpc.auth.updateResume.useMutation();
   const updateResumeEmbedding = trpc.auth.updateResumeEmbedding.useMutation();
+
+  const uploadFileWithProgress = async (
+    url: string,
+    file: File,
+    onProgress: (value: number) => void,
+  ): Promise<void> => {
+    await new Promise<void>((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open("PUT", url);
+      xhr.setRequestHeader("Content-Type", file.type || "application/pdf");
+      xhr.upload.onprogress = (event) => {
+        if (!event.lengthComputable) return;
+        const value = Math.max(0, Math.min(100, Math.round((event.loaded / event.total) * 100)));
+        onProgress(value);
+      };
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          resolve();
+          return;
+        }
+        reject(new Error("Failed to upload resume file"));
+      };
+      xhr.onerror = () => reject(new Error("Failed to upload resume file"));
+      xhr.send(file);
+    });
+  };
 
   const handleResumeAttach = async (file: File) => {
     if (!isLoggedIn) {
@@ -320,6 +372,9 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
     }
 
     setChatExpanded(true);
+    setResumeAttachFileName(file.name);
+    setResumeAttachProgress(0);
+    setHasResumeAttached(false);
     const statusMessageId = nextMessageIdRef.current++;
     const setStatusBubble = (text: string, thinking = true) => {
       setMessages((prev) => {
@@ -371,12 +426,10 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
       if (!presignedRes.ok) throw new Error("Failed to get presigned URL");
       const uploadData = await presignedRes.json();
 
-      const uploadRes = await fetch(uploadData.presignedUrl, {
-        method: "PUT",
-        headers: { "Content-Type": file.type || "application/pdf" },
-        body: file,
+      await uploadFileWithProgress(uploadData.presignedUrl, file, (value) => {
+        setResumeAttachProgress(value);
       });
-      if (!uploadRes.ok) throw new Error("Failed to upload resume file");
+      setResumeAttachProgress(100);
 
       await updateResumeUrl.mutateAsync({ resumeUrl: uploadData.publicUrl });
 
@@ -389,7 +442,8 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
       setResumeAttachStatusText(analyzeText);
       setStatusBubble(analyzeText, true);
       const resumeText = await parsePDF(file);
-      await updateResumeEmbedding.mutateAsync({ resumeText });
+      const embeddingResult = await updateResumeEmbedding.mutateAsync({ resumeText });
+      console.log("[chat-ui] resume embedding debug", embeddingResult?.debug ?? null);
 
       const doneText =
         locale === "fr"
@@ -397,8 +451,10 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
           : locale === "ar"
             ? "تم إرفاق السيرة الذاتية وتحديث الملف. عمليات البحث القادمة ستكون أدق بفضل المطابقة مع السيرة الذاتية."
             : "Resume attached and profile updated. Your next searches will be more relevant thanks to resume matching.";
-      setResumeAttachStatusText(doneText);
+      setResumeAttachStatusText("");
       setStatusBubble(doneText, false);
+      setResumeAttachProgress(null);
+      setHasResumeAttached(true);
     } catch (error) {
       console.error("Resume attach flow failed", error);
       const errorText =
@@ -409,6 +465,8 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
             : "Failed to attach resume right now.";
       setResumeAttachStatusText(errorText);
       setStatusBubble(errorText, false);
+      setResumeAttachProgress(null);
+      setHasResumeAttached(false);
     }
   };
 
@@ -975,6 +1033,7 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
                   thinking: false,
                   kind: "results",
                   content: agent.assistantText ?? "",
+                  resumeUploadCta: agent.resumeUploadCta,
                   results: {
                     key: resultsKey,
                     query: q,
@@ -1023,6 +1082,7 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
                 thinking: false,
                 kind: "results",
                 content: agent.assistantText ?? "",
+                resumeUploadCta: agent.resumeUploadCta,
                 results: {
                   key: resultsKey,
                   query: q,
@@ -1161,6 +1221,16 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
                   : "Attach resume (PDF)"
             }
             resumeAttachStatusText={resumeAttachStatusText}
+            resumeAttachProgress={resumeAttachProgress}
+            resumeAttachFileName={resumeAttachFileName}
+            hasResumeAttached={hasResumeAttached}
+            resumeAttachedLabel={
+              locale === "fr"
+                ? "CV actif"
+                : locale === "ar"
+                  ? "السيرة مرفقة"
+                  : "CV attached"
+            }
           />
 
           {/* Prompt shortcuts (like before) */}
