@@ -27,6 +27,7 @@ export default function JobsImportPage() {
         <ImporterField name="companyName" label="Company Name" />
         <ImporterField name="companyImage" label="Company Image" optional />
         <ImporterField name="description" label="Description" />
+        <ImporterField name="tags" label="Skills / Tags (comma-separated)" optional />
         <ImporterField name="category" label="Category" />
         <ImporterField name="type" label="Type" />
         <ImporterField name="locationRequirement" label="Location Requirement" />

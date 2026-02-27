@@ -809,7 +809,7 @@ bulkCreate: adminProcedure
       locationRequirement: r.locationRequirement,
       experienceLevel: r.experienceLevel,
       type: r.type,
-      tags: [],
+      tags: (r as any).tags ?? [],
       wage: r.wage ?? null,
       countryIso2: row.countryIso2 ?? null,
       stateAbbreviation: r.stateAbbreviation ?? row.stateAbbr ?? null,
@@ -828,7 +828,7 @@ bulkCreate: adminProcedure
       return buildJobEmbeddingText({
         title: r.title ?? "",
         description,
-        tags: row.tags ?? [],
+        tags: (r as any).tags ?? row.tags ?? [],
         city: r.city ?? null,
         locationRequirement: r.locationRequirement ?? null,
         experienceLevel: r.experienceLevel ?? null,
