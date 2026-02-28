@@ -146,26 +146,26 @@ export async function jobSearchEngine(db: PrismaClient, intentData: JobIntentDat
   const type = parseEnumValue(intentData.type, JobListingType);
   const wageRange = parseRange(intentData.minWage, intentData.maxWage);
 
-  const where: Record<string, unknown> = {
+  const strictWhere: Record<string, unknown> = {
     status: JobListingStatus.published,
   };
 
-  if (category) where.category = category;
-  if (experienceLevel) where.experienceLevel = experienceLevel;
-  if (locationRequirement) where.locationRequirement = locationRequirement;
-  if (type) where.type = type;
-  if (intentData.city) where.city = { contains: intentData.city.trim(), mode: "insensitive" };
-  if (intentData.stateAbbreviation) where.stateAbbreviation = intentData.stateAbbreviation.trim();
-  if (intentData.countryIso2) where.countryIso2 = intentData.countryIso2.trim().toUpperCase();
+  if (category) strictWhere.category = category;
+  if (experienceLevel) strictWhere.experienceLevel = experienceLevel;
+  if (locationRequirement) strictWhere.locationRequirement = locationRequirement;
+  if (type) strictWhere.type = type;
+  if (intentData.city) strictWhere.city = { contains: intentData.city.trim(), mode: "insensitive" };
+  if (intentData.stateAbbreviation) strictWhere.stateAbbreviation = intentData.stateAbbreviation.trim();
+  if (intentData.countryIso2) strictWhere.countryIso2 = intentData.countryIso2.trim().toUpperCase();
   if (wageRange) {
     const wageFilter: Record<string, number> = {};
     if (wageRange.min != null) wageFilter.gte = wageRange.min;
     if (wageRange.max != null) wageFilter.lte = wageRange.max;
-    where.wage = wageFilter;
+    strictWhere.wage = wageFilter;
   }
 
-  const pool = (await db.job.findMany({
-    where,
+  let pool = (await db.job.findMany({
+    where: strictWhere,
     take: 120,
     orderBy: [{ createdAt: "desc" }, { id: "desc" }],
     select: {
@@ -188,6 +188,44 @@ export async function jobSearchEngine(db: PrismaClient, intentData: JobIntentDat
     },
   })) as JobCandidate[];
 
+  let fallbackApplied = false;
+  if (pool.length === 0) {
+    // Graceful fallback: if strict filters produce 0 rows, widen criteria while
+    // preserving semantic + overlap ranking so we still return relevant jobs.
+    const relaxedWhere: Record<string, unknown> = {
+      status: JobListingStatus.published,
+    };
+    if (category) {
+      // Keep category when inferred/provided to avoid totally off-domain results.
+      relaxedWhere.category = category;
+    }
+
+    pool = (await db.job.findMany({
+      where: relaxedWhere,
+      take: 120,
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      select: {
+        id: true,
+        title: true,
+        companyName: true,
+        companyImage: true,
+        description: true,
+        tags: true,
+        city: true,
+        stateAbbreviation: true,
+        countryIso2: true,
+        category: true,
+        type: true,
+        locationRequirement: true,
+        experienceLevel: true,
+        wage: true,
+        createdAt: true,
+        embedding: true,
+      },
+    })) as JobCandidate[];
+    fallbackApplied = true;
+  }
+
   if (pool.length === 0) {
     return {
       query: intentData.query,
@@ -198,12 +236,20 @@ export async function jobSearchEngine(db: PrismaClient, intentData: JobIntentDat
         type,
         city: intentData.city ?? null,
       },
-      topResults: [],
+      topResults: [], // No published jobs available in DB.
     };
   }
 
   const shouldRunSemantic = pool.some((job) => Array.isArray(job.embedding) && job.embedding.length > 0);
-  const queryEmbedding = shouldRunSemantic ? await embedText(intentData.query) : null;
+  let queryEmbedding: number[] | null = null;
+  if (shouldRunSemantic) {
+    try {
+      queryEmbedding = await embedText(intentData.query);
+    } catch (error) {
+      console.error("jobSearchEngine: failed to embed query, using lexical ranking fallback", error);
+      queryEmbedding = null;
+    }
+  }
 
   const queryTokens = tokenize(intentData.query);
   const skillTokens = (intentData.skills ?? []).flatMap((skill) => tokenize(skill));
@@ -227,6 +273,7 @@ export async function jobSearchEngine(db: PrismaClient, intentData: JobIntentDat
       countryIso2: intentData.countryIso2 ?? null,
       minWage: wageRange?.min ?? null,
       maxWage: wageRange?.max ?? null,
+      fallbackApplied,
     },
     topResults: ranked.slice(0, 30),
   };

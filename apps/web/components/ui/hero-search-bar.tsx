@@ -326,6 +326,25 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
   const chatInputRef = useRef<HTMLInputElement | null>(null);
   const updateResumeUrl = trpc.auth.updateResume.useMutation();
   const updateResumeEmbedding = trpc.auth.updateResumeEmbedding.useMutation();
+  const userDataQuery = trpc.auth.userData.useQuery(undefined, {
+    enabled: isLoggedIn,
+    refetchOnWindowFocus: false,
+  });
+
+  useEffect(() => {
+    if (!isLoggedIn) {
+      setHasResumeAttached(false);
+      return;
+    }
+    const hasSavedResume = Boolean((userDataQuery.data as any)?.user?.resumeUrl);
+    if (hasSavedResume) {
+      setHasResumeAttached(true);
+      return;
+    }
+    if (!resumeAttachStatusText && resumeAttachProgress == null) {
+      setHasResumeAttached(false);
+    }
+  }, [isLoggedIn, userDataQuery.data, resumeAttachStatusText, resumeAttachProgress]);
 
   const uploadFileWithProgress = async (
     url: string,
@@ -374,7 +393,6 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
     setChatExpanded(true);
     setResumeAttachFileName(file.name);
     setResumeAttachProgress(0);
-    setHasResumeAttached(false);
     const statusMessageId = nextMessageIdRef.current++;
     const setStatusBubble = (text: string, thinking = true) => {
       setMessages((prev) => {
@@ -455,6 +473,7 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
       setStatusBubble(doneText, false);
       setResumeAttachProgress(null);
       setHasResumeAttached(true);
+      await userDataQuery.refetch();
     } catch (error) {
       console.error("Resume attach flow failed", error);
       const errorText =
@@ -466,7 +485,8 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
       setResumeAttachStatusText(errorText);
       setStatusBubble(errorText, false);
       setResumeAttachProgress(null);
-      setHasResumeAttached(false);
+      const hasSavedResume = Boolean((userDataQuery.data as any)?.user?.resumeUrl);
+      setHasResumeAttached(hasSavedResume);
     }
   };
 

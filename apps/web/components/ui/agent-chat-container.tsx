@@ -215,19 +215,19 @@ export function AgentChatContainer({
                           </div>
                         ) : null}
                         {!message.results.isLoading && message.resumeUploadCta ? (
-                          <div className="mt-4 rounded-xl border border-amber-300 bg-amber-50 p-4">
+                          <div className="mt-4 rounded-xl border border-slate-300 bg-slate-50 p-4">
                             <div className="flex items-start gap-3">
-                              <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
+                              <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-slate-600" />
                               <div className="min-w-0 flex-1">
-                                <p className="text-sm font-extrabold tracking-tight text-amber-900">
+                                <p className="text-sm font-extrabold tracking-tight text-slate-900">
                                   {message.resumeUploadCta.title}
                                 </p>
-                                <p className="mt-1 text-sm leading-6 text-amber-800">
+                                <p className="mt-1 text-sm leading-6 text-slate-700">
                                   {message.resumeUploadCta.description}
                                 </p>
                                 <a
                                   onClick={openResumePicker}
-                                  className="mt-3 inline-block cursor-pointer text-sm font-bold text-amber-900 underline transition hover:text-amber-700"
+                                  className="mt-3 inline-block cursor-pointer text-sm font-bold text-slate-900 underline transition hover:text-slate-700"
                                 >
                                   {message.resumeUploadCta.buttonLabel}
                                 </a>

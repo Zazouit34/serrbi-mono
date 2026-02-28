@@ -182,7 +182,34 @@ export const authRouter = router({
     }),
 
   userData: protectedProcedure.query(async ({ ctx }) => {
-    // ctx.user is injected by protectedProcedure
+    const db = ctx.prisma as PrismaClient;
+    const sessionUser = (ctx as any).user as { id: string };
+    const dbUser = await db.user.findUnique({
+      where: { id: sessionUser.id },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        role: true,
+        image: true,
+        resumeUrl: true,
+        resumeEmbedding: true,
+      },
+    });
+
+    if (dbUser) {
+      const { resumeEmbedding, ...safeUser } = dbUser as any;
+      return {
+        user: {
+          ...safeUser,
+          hasResumeEmbedding:
+            Array.isArray(resumeEmbedding) && resumeEmbedding.length > 0,
+        },
+        session: ctx.session,
+      };
+    }
+
     return { user: (ctx as any).user, session: ctx.session };
   }),
 

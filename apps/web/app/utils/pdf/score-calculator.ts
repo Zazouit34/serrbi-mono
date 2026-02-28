@@ -218,15 +218,12 @@ function scoreResumeHeuristic(textInput: string): ResumeScore {
 }
 
 async function callLLMForResume(textInput: string, locale?: string): Promise<LLMResumeAnalysis | null> {
-  const response = await fetch("/api/ai/analyze", {
+  const response = await fetch("/api/chat/resume-insight", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({
-      action: "resumeAnalysis",
-      payload: { text: textInput, locale },
-    }),
+    body: JSON.stringify({ text: textInput, locale }),
   });
 
   if (!response.ok) {
