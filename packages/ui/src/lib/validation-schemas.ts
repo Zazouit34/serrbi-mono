@@ -449,6 +449,34 @@ export type ResumeEmbeddingUpdateValues = z.infer<typeof resumeEmbeddingUpdateSc
 
 
 //Job bulk Import Schema
+const parseImportTags = (val: unknown): string[] => {
+  if (val === undefined || val === null) return [];
+  if (Array.isArray(val)) return val.filter((s): s is string => typeof s === "string");
+  if (typeof val === "string") {
+    const trimmed = val.trim();
+    if (!trimmed) return [];
+    // JSON array support
+    if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
+      try {
+        const parsed = JSON.parse(trimmed);
+        if (Array.isArray(parsed)) return parsed.filter((s: unknown) => typeof s === "string");
+      } catch {}
+      try {
+        const parsedSingleQuoted = JSON.parse(trimmed.replace(/'/g, '"'));
+        if (Array.isArray(parsedSingleQuoted)) {
+          return parsedSingleQuoted.filter((s: unknown) => typeof s === "string");
+        }
+      } catch {}
+    }
+    // CSV / pipe / semicolon
+    return trimmed
+      .split(/[,\|;]+/g)
+      .map((s) => s.trim().replace(/^['"]|['"]$/g, ""))
+      .filter(Boolean);
+  }
+  return [];
+};
+
 export const jobImportRowSchema = z.object({
   title: z.string().min(1),
   companyName: z.string().min(1),
@@ -467,31 +495,12 @@ export const jobImportRowSchema = z.object({
   description: z.string().min(1),
   // Skill tags (CSV cell can be: "React, Next.js, Docker" or '["React","Docker"]')
   tags: z
-    .preprocess((val) => {
-      if (val === undefined || val === null) return [];
-      if (Array.isArray(val)) return val;
-      if (typeof val === "string") {
-        const trimmed = val.trim();
-        if (!trimmed) return [];
-        // JSON array support
-        if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
-          try {
-            const parsed = JSON.parse(trimmed);
-            if (Array.isArray(parsed)) return parsed;
-          } catch {}
-          try {
-            const parsedSingleQuoted = JSON.parse(trimmed.replace(/'/g, '"'));
-            if (Array.isArray(parsedSingleQuoted)) return parsedSingleQuoted;
-          } catch {}
-        }
-        // CSV / pipe / semicolon
-        return trimmed
-          .split(/[,\|;]+/g)
-          .map((s) => s.trim().replace(/^['"]|['"]$/g, ""))
-          .filter(Boolean);
-      }
-      return [];
-    }, z.array(z.string()))
+    .preprocess((val) => parseImportTags(val), z.array(z.string()))
+    .optional()
+    .nullable(),
+  // Alias accepted for external CSVs that use `skills` as the column name.
+  skills: z
+    .preprocess((val) => parseImportTags(val), z.array(z.string()))
     .optional()
     .nullable(),
   category: z.preprocess((val) => {
@@ -533,9 +542,16 @@ export const jobImportRowSchema = z.object({
   applicationUrl: z.union([z.string().url(), emptyToUndefined]).optional().nullable(),
 });
 
-export const jobImportSchema = z.object({
-  rows: z.array(jobImportRowSchema).min(1),
-});
+export const jobImportSchema = z
+  .object({
+    rows: z.array(jobImportRowSchema).min(1),
+  })
+  .transform((payload) => ({
+    rows: payload.rows.map((row) => ({
+      ...row,
+      tags: (row.tags && row.tags.length > 0 ? row.tags : row.skills) ?? [],
+    })),
+  }));
 
 export const serviceImportRowSchema = z.object({
   title: z.string().min(1),

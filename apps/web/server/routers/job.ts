@@ -842,7 +842,8 @@ bulkCreate: adminProcedure
       locationRequirement: r.locationRequirement,
       experienceLevel: r.experienceLevel,
       type: r.type,
-      tags: normalizeTags((r as any).tags ?? row.tags),
+      // Accept both `tags` and legacy/external `skills` CSV columns.
+      tags: normalizeTags((r as any).tags ?? row.tags ?? row.skills),
       wage: r.wage ?? null,
       countryIso2: row.countryIso2 ?? null,
       stateAbbreviation: r.stateAbbreviation ?? row.stateAbbr ?? null,
