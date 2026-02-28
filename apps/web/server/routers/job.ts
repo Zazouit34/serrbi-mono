@@ -133,6 +133,18 @@ export const jobRouter = router({
           },
         });
 
+        // Sync pgvector column used for semantic search (Prisma only writes "embedding" Float[]).
+        if (jobEmbedding.length === 1024) {
+          try {
+            await (db as any).$executeRawUnsafe(
+              `UPDATE "Job" SET embedding_vector = embedding::vector WHERE id = $1`,
+              job.id,
+            );
+          } catch (err) {
+            console.error("Failed to sync embedding_vector for new job", err);
+          }
+        }
+
         return {
           success: true,
           message: "Job listing created successfully",
@@ -796,6 +808,27 @@ bulkCreate: adminProcedure
     }
   }
 
+  // Normalize tags: CSV often sends a single string like "CNC, GMAO, électromécanique"
+  const normalizeTags = (val: unknown): string[] => {
+    if (val === undefined || val === null) return [];
+    if (Array.isArray(val)) return val.filter((s): s is string => typeof s === "string");
+    if (typeof val === "string") {
+      const trimmed = val.trim();
+      if (!trimmed) return [];
+      if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
+        try {
+          const parsed = JSON.parse(trimmed);
+          if (Array.isArray(parsed)) return parsed.filter((s: unknown) => typeof s === "string");
+        } catch {}
+      }
+      return trimmed
+        .split(/[,\|;]+/g)
+        .map((s) => s.trim().replace(/^['"]|['"]$/g, ""))
+        .filter(Boolean);
+    }
+    return [];
+  };
+
   const data = input.rows.map((r) => {
     const row = r as any;
     const description = r.description || row.description_rewritten || r.description || "";
@@ -809,7 +842,7 @@ bulkCreate: adminProcedure
       locationRequirement: r.locationRequirement,
       experienceLevel: r.experienceLevel,
       type: r.type,
-      tags: (r as any).tags ?? [],
+      tags: normalizeTags((r as any).tags ?? row.tags),
       wage: r.wage ?? null,
       countryIso2: row.countryIso2 ?? null,
       stateAbbreviation: r.stateAbbreviation ?? row.stateAbbr ?? null,
@@ -822,13 +855,14 @@ bulkCreate: adminProcedure
 
   // Compute embeddings for imported jobs so they participate in semantic ranking.
   try {
-    const texts = input.rows.map((r) => {
+    const texts = input.rows.map((r, idx) => {
       const row = r as any;
       const description = r.description || row.description_rewritten || "";
+      const tags = (data[idx] as any).tags as string[];
       return buildJobEmbeddingText({
         title: r.title ?? "",
         description,
-        tags: (r as any).tags ?? row.tags ?? [],
+        tags: tags ?? [],
         city: r.city ?? null,
         locationRequirement: r.locationRequirement ?? null,
         experienceLevel: r.experienceLevel ?? null,
@@ -847,6 +881,22 @@ bulkCreate: adminProcedure
   }
 
   await db.job.createMany({ data });
+
+  // Prisma only writes to the "embedding" Float[] column. The pgvector column
+  // "embedding_vector" is used for semantic search and is not set by createMany.
+  // Sync it from embedding so new jobs participate in vector search.
+  try {
+    await (db as any).$executeRawUnsafe(`
+      UPDATE "Job"
+      SET embedding_vector = embedding::vector
+      WHERE embedding_vector IS NULL
+        AND embedding IS NOT NULL
+        AND array_length(embedding, 1) = 1024
+    `);
+  } catch (err) {
+    console.error("Failed to sync embedding_vector from embedding", err);
+  }
+
   return { success: true, count: data.length };
 }),
 });

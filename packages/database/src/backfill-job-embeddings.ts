@@ -185,6 +185,14 @@ async function main() {
           data: { embedding },
         });
 
+        // Keep pgvector column in sync for semantic search.
+        if (embedding.length === 1024) {
+          await (prisma as any).$executeRawUnsafe(
+            `UPDATE "Job" SET embedding_vector = embedding::vector WHERE id = $1`,
+            job.id,
+          );
+        }
+
         totalUpdated += 1;
       }
 
