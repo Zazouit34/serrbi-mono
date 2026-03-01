@@ -18,6 +18,7 @@ import { getTenantFromHost } from "@/lib/domain";
 import maStates from "@workspace/ui/lib/states.json" assert { type: "json" };
 import { embedText, embedBatch } from "@/lib/embedding";
 import { buildJobEmbeddingText } from "@/lib/embedding-text";
+import { scoreAutoApplyJob } from "@/lib/auto-apply-ranking";
 
 type ExperienceLevelFilter = "junior" | "mid_level" | "senior";
 
@@ -555,90 +556,37 @@ export const jobRouter = router({
             });
       const appliedSet = new Set(existingApps.map((a) => a.jobId));
 
-      // Simple relevance scoring based on category + keywords (tags/text) & roles (title/description),
-      // enhanced with semantic similarity between the user's resume and each job embedding.
-      const tokenize = (text: string): Set<string> =>
-        new Set(
-          text
-            .toLowerCase()
-            .split(/[^a-z0-9+.#]/i)
-            .filter((token): token is string => Boolean(token)),
-        );
-
       const userEmbedding: number[] | null =
         (fullUser as any)?.resumeEmbedding && Array.isArray((fullUser as any).resumeEmbedding)
           ? ((fullUser as any).resumeEmbedding as number[])
           : null;
 
-      const norm = (vec: number[] | null): number =>
-        !vec || !vec.length
-          ? 0
-          : Math.sqrt(vec.reduce((sum, v) => sum + v * v, 0));
-
-      const dot = (a: number[], b: number[]): number => {
-        const len = Math.min(a.length, b.length);
-        let acc = 0;
-        for (let i = 0; i < len; i += 1) {
-          acc += a[i]! * b[i]!;
-        }
-        return acc;
-      };
-
-      const userNorm = norm(userEmbedding);
-      const usedResumeEmbedding = !!(userEmbedding && userNorm > 0);
+      const usedResumeEmbedding = !!(
+        userEmbedding &&
+        Array.isArray(userEmbedding) &&
+        userEmbedding.length > 0
+      );
 
       const scoredItems = jobs.map((job: any) => {
-        const textTokens = tokenize(
-          `${job.title ?? ""} ${job.description ?? ""}`
-        );
-        const tagTokens = new Set<string>(
-          (job.tags ?? []).map((t: string) => t.toLowerCase()),
-        );
-        const jobTokens = new Set<string>([
-          ...tagTokens,
-          ...Array.from(textTokens),
-        ]);
-
-        let keywordMatches = 0;
-        for (const kw of effectiveKeywords || []) {
-          if (jobTokens.has(kw.toLowerCase())) {
-            keywordMatches += 1;
-          }
-        }
-
-        let roleMatches = 0;
-        for (const role of effectiveRoles || []) {
-          const roleToken = role.toLowerCase();
-          // Match roles against both title and description tokens
-          if (textTokens.has(roleToken)) {
-            roleMatches += 1;
-          }
-        }
-
-        // Semantic similarity term: cosine(resumeEmbedding, job.embedding)
-        let embeddingScore = 0;
-        if (userEmbedding && userNorm > 0 && Array.isArray(job.embedding) && job.embedding.length) {
-          const jobEmbedding = job.embedding as number[];
-          const jobNorm = norm(jobEmbedding);
-          if (jobNorm > 0) {
-            embeddingScore = dot(userEmbedding, jobEmbedding) / (userNorm * jobNorm);
-          }
-        }
-
-        // Combine semantic + keyword/role signals into a single score.
-        // Weights can be tuned; start with semantic dominant.
-        const wEmbedding = 0.7;
-        const wKeyword = 0.2;
-        const wRole = 0.1;
-        const score =
-          wEmbedding * embeddingScore +
-          wKeyword * keywordMatches +
-          wRole * roleMatches;
-
+        const scored = scoreAutoApplyJob({
+          job,
+          keywords: effectiveKeywords || [],
+          roles: effectiveRoles || [],
+          resumeEmbedding: userEmbedding,
+          maxReasons: 3,
+        });
         return {
           ...job,
           alreadyApplied: appliedSet.has(job.id),
-          _score: score,
+          matchPercent: scored.matchPercent,
+          matchReasons: scored.reasons,
+          matchDebug: {
+            semanticScore: scored.semanticScore,
+            keywordScore: scored.keywordScore,
+            roleScore: scored.roleScore,
+            recencyScore: scored.recencyScore,
+          },
+          _score: scored.finalScore,
         };
       });
 

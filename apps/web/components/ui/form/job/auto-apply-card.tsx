@@ -33,6 +33,7 @@ type AutoApplyCardProps = {
   onApply: () => Promise<{ message: string }>;
   confidence?: { level: "very-strong" | "strong" | "potential"; label: string };
   reasons?: string[];
+  matchPercent?: number | null;
   postedAgo?: string;
 };
 
@@ -63,6 +64,7 @@ export function AutoApplyCard({
   onApply,
   confidence,
   reasons = [],
+  matchPercent,
   postedAgo,
 }: AutoApplyCardProps) {
   const [status, setStatus] = useState<Status>(alreadyApplied ? "applied" : "idle");
@@ -160,6 +162,11 @@ export function AutoApplyCard({
                 <Sparkles className="h-3 w-3 mr-1" />
                 {confidence.label}
               </Badge>
+            )}
+            {typeof matchPercent === "number" && (
+              <p className="text-[11px] font-medium text-slate-600">
+                Match: {Math.max(0, Math.min(100, Math.round(matchPercent)))}%
+              </p>
             )}
 
             {status === "applied" ? (

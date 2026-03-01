@@ -29,6 +29,17 @@ type AutoApplyListingGridProps = {
   roles: string[];
 };
 
+type MatchReason = {
+  code:
+    | "resume-semantic"
+    | "keyword-hit"
+    | "role-hit"
+    | "fresh-post"
+    | "location-context"
+    | "worktype-context";
+  value?: string;
+};
+
 export function AutoApplyListingGrid({
   enabled,
   category,
@@ -82,49 +93,36 @@ export function AutoApplyListingGrid({
     return tA("listing.time.days", { count: diffDays });
   };
 
-  const buildMatch = (job: any) => {
-    const text = `${job.title ?? ""} ${job.description ?? ""}`.toLowerCase();
-    const kwMatches = (keywords || []).filter((kw) => text.includes(kw.toLowerCase()));
-    const roleMatches = (roles || []).filter((r) => text.includes(r.toLowerCase()));
-    const recencyHours = job.createdAt ? (Date.now() - new Date(job.createdAt).getTime()) / (1000 * 60 * 60) : 999;
+  const buildReasonLabel = (job: any, reason: MatchReason): string | null => {
+    switch (reason.code) {
+      case "resume-semantic":
+        return tA("listing.reasons.resume");
+      case "keyword-hit":
+        return reason.value ? tA("listing.reasons.keyword", { keyword: reason.value }) : null;
+      case "role-hit":
+        return reason.value ? tA("listing.reasons.role", { role: reason.value }) : null;
+      case "fresh-post":
+        return tA("listing.reasons.recency", { time: formatTimeAgo(job.createdAt) });
+      case "location-context":
+        return reason.value ? tA("listing.reasons.location", { location: reason.value }) : null;
+      case "worktype-context":
+        return reason.value ? tA("listing.reasons.type", { type: reason.value }) : null;
+      default:
+        return null;
+    }
+  };
 
-    let score = 0;
-    score += usedResumeEmbedding ? 2 : 0;
-    score += Math.min(kwMatches.length, 2);
-    score += Math.min(roleMatches.length, 2);
-    if (recencyHours <= 72) score += 1;
-
-    let level: "very-strong" | "strong" | "potential" = "potential";
-    if (score >= 4) level = "very-strong";
-    else if (score >= 2) level = "strong";
-
-    const levelLabel =
+  const buildConfidence = (matchPercent: number | null | undefined) => {
+    const pct = typeof matchPercent === "number" ? matchPercent : 0;
+    const level: "very-strong" | "strong" | "potential" =
+      pct >= 80 ? "very-strong" : pct >= 60 ? "strong" : "potential";
+    const label =
       level === "very-strong"
         ? tA("listing.matchLevels.veryStrong")
         : level === "strong"
           ? tA("listing.matchLevels.strong")
           : tA("listing.matchLevels.potential");
-
-    const reasons: string[] = [];
-    if (usedResumeEmbedding) reasons.push(tA("listing.reasons.resume"));
-    if (kwMatches.length) {
-      const keyword = kwMatches[0] ?? "";
-      reasons.push(tA("listing.reasons.keyword", { keyword }));
-    }
-    if (roleMatches.length) {
-      const role = roleMatches[0] ?? "";
-      reasons.push(tA("listing.reasons.role", { role }));
-    }
-    if (recencyHours <= 72) reasons.push(tA("listing.reasons.recency", { time: formatTimeAgo(job.createdAt) }));
-    if (job.city) reasons.push(tA("listing.reasons.location", { location: job.city }));
-    if (!job.city && job.type) reasons.push(tA("listing.reasons.type", { type: job.type }));
-
-    return {
-      level,
-      levelLabel,
-      reasons: reasons.slice(0, 4),
-      postedAgo: formatTimeAgo(job.createdAt),
-    };
+    return { level, label };
   };
 
   const renderPaginationItems = () => {
@@ -356,15 +354,20 @@ export function AutoApplyListingGrid({
           <>
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
               {data.items.map((job: any) => {
-                const match = buildMatch(job);
+                const reasons = (Array.isArray(job.matchReasons) ? job.matchReasons : [])
+                  .map((reason: MatchReason) => buildReasonLabel(job, reason))
+                  .filter((reason: string | null): reason is string => Boolean(reason))
+                  .slice(0, 3);
+                const confidence = buildConfidence(job.matchPercent);
                 return (
                   <AutoApplyCard
                     key={job.id}
                     job={job}
                     alreadyApplied={job.alreadyApplied}
-                    confidence={{ level: match.level, label: match.levelLabel }}
-                    reasons={match.reasons}
-                    postedAgo={match.postedAgo}
+                    confidence={confidence}
+                    reasons={reasons}
+                    matchPercent={job.matchPercent}
+                    postedAgo={formatTimeAgo(job.createdAt)}
                     onApply={async () => {
                       const res = await applyMutation.mutateAsync({ jobId: job.id });
                       return { message: res.message };

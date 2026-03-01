@@ -2,6 +2,7 @@ import { inngest } from "./client";
 import { prisma, SubscriptionStatus, Role } from "@workspace/db";
 import { PLANS } from "@/lib/plans"
 import { applyAndNotify } from "@/server/services/job-application";
+import { scoreAutoApplyJob } from "@/lib/auto-apply-ranking";
 
 async function getCandidates(category: any) {
   return (prisma.user.findMany as any)({
@@ -23,6 +24,7 @@ async function getCandidates(category: any) {
       email: true,
       autoApplyKeywords: true,
       autoApplyRoles: true,
+      resumeEmbedding: true,
       subscription: {
         select: {
           plan: {
@@ -38,16 +40,14 @@ async function getCandidates(category: any) {
   });
 }
 
-function tokenize(text: string) {
-  return new Set(
-    text
-      .toLowerCase()
-      .split(/[^a-z0-9+.#]/i)
-      .filter(Boolean)
-  );
-}
+const MIN_MATCH_PERCENT_WITH_RESUME = Number(process.env.AUTO_APPLY_MIN_MATCH_WITH_RESUME ?? 62);
+const MIN_MATCH_PERCENT_NO_RESUME = Number(process.env.AUTO_APPLY_MIN_MATCH_NO_RESUME ?? 52);
+const MAX_APPLIES_PER_JOB = Number(process.env.AUTO_APPLY_MAX_APPLIES_PER_JOB ?? 12);
 
-const MIN_MATCHES = 2;
+type RankedCandidate = {
+  user: any;
+  score: ReturnType<typeof scoreUserAgainstJob>;
+};
 
 async function canAutoApplyForUser(user: any): Promise<boolean> {
   const startOfMonth = new Date();
@@ -67,6 +67,47 @@ async function canAutoApplyForUser(user: any): Promise<boolean> {
   return true;
 }
 
+function scoreUserAgainstJob(job: {
+  id: string;
+  title: string;
+  description: string;
+  tags: string[];
+  createdAt: Date;
+  city?: string | null;
+  type?: string | null;
+  embedding?: number[];
+}, user: {
+  autoApplyKeywords?: string[];
+  autoApplyRoles?: string[];
+  resumeEmbedding?: number[];
+}) {
+  const scored = scoreAutoApplyJob({
+    job: {
+      id: job.id,
+      title: job.title ?? "",
+      description: job.description ?? "",
+      tags: job.tags ?? [],
+      city: job.city ?? null,
+      type: job.type ?? null,
+      createdAt: job.createdAt,
+      embedding: Array.isArray(job.embedding) ? job.embedding : [],
+    },
+    keywords: user.autoApplyKeywords ?? [],
+    roles: user.autoApplyRoles ?? [],
+    resumeEmbedding:
+      Array.isArray(user.resumeEmbedding) && user.resumeEmbedding.length > 0
+        ? user.resumeEmbedding
+        : null,
+    maxReasons: 3,
+  });
+
+  return {
+    ...scored,
+    hasResumeEmbedding:
+      Array.isArray(user.resumeEmbedding) && user.resumeEmbedding.length > 0,
+  };
+}
+
 export const autoApplyOnJobCreated = inngest.createFunction(
   { id: "auto-apply-on-job-created" },
   { event: "job/created" },
@@ -79,6 +120,10 @@ export const autoApplyOnJobCreated = inngest.createFunction(
         title: true,
         description: true,
         tags: true,
+        city: true,
+        type: true,
+        embedding: true,
+        createdAt: true,
         user: { select: { role: true } },
       },
     });
@@ -88,26 +133,26 @@ export const autoApplyOnJobCreated = inngest.createFunction(
 
     const users = await getCandidates(job.category);
 
-    // Build tokens from both tags and title+description
-    const titleTokens = tokenize(`${job.title ?? ""}`);
-    const textTokens = tokenize(`${job.title ?? ""} ${job.description ?? ""}`);
-    const tagTokens = new Set((job.tags ?? []).map((t) => t.toLowerCase()));
-    const jobTokens = new Set<string>([...tagTokens, ...textTokens]);
+    const scoredUsers = users
+      .map((u: any) => ({
+        user: u,
+        score: scoreUserAgainstJob(job as any, u),
+      })) as RankedCandidate[];
+      const filteredAndOrdered = scoredUsers
+      .filter(({ score }: RankedCandidate) => {
+        const threshold = score.hasResumeEmbedding
+          ? MIN_MATCH_PERCENT_WITH_RESUME
+          : MIN_MATCH_PERCENT_NO_RESUME;
+        return score.matchPercent >= threshold;
+      })
+      .sort((a: RankedCandidate, b: RankedCandidate) => b.score.finalScore - a.score.finalScore)
+      .slice(0, Math.max(1, MAX_APPLIES_PER_JOB));
 
     let applied = 0;
-    for (const u of users) {
-      const keywordMatches = (u.autoApplyKeywords || []).reduce(
-        (acc: number, kw: string) => acc + (jobTokens.has(kw.toLowerCase()) ? 1 : 0),
-        0
-      );
-      const roleMatches = (u.autoApplyRoles || []).reduce(
-        (acc: number, role: string) => acc + (titleTokens.has(role.toLowerCase()) ? 1 : 0),
-        0
-      );
-      const matches = keywordMatches + roleMatches;
-      if (matches >= MIN_MATCHES && (await canAutoApplyForUser(u))) {
-        await applyAndNotify({ db: prisma, jobId: job.id, userId: u.id, source: "auto" });
-        applied++;
+    for (const candidate of filteredAndOrdered) {
+      if (await canAutoApplyForUser(candidate.user)) {
+        await applyAndNotify({ db: prisma, jobId: job.id, userId: candidate.user.id, source: "auto" });
+        applied += 1;
       }
     }
     return { success: true, applied };
@@ -127,6 +172,10 @@ export const autoApplyOnJobsImported = inngest.createFunction(
         title: true,
         description: true,
         tags: true,
+        city: true,
+        type: true,
+        embedding: true,
+        createdAt: true,
         user: { select: { role: true } },
       },
     });
@@ -139,26 +188,26 @@ export const autoApplyOnJobsImported = inngest.createFunction(
       }
       const users = await getCandidates(job.category);
 
-      // Build tokens from both tags and title+description
-      const titleTokens = tokenize(`${job.title ?? ""}`);
-      const textTokens = tokenize(`${job.title ?? ""} ${job.description ?? ""}`);
-      const tagTokens = new Set((job.tags ?? []).map((t) => t.toLowerCase()));
-      const jobTokens = new Set<string>([...tagTokens, ...textTokens]);
+      const scoredUsers = users
+        .map((u: any) => ({
+          user: u,
+          score: scoreUserAgainstJob(job as any, u),
+        })) as RankedCandidate[];
+      const filteredAndOrdered = scoredUsers
+        .filter(({ score }: RankedCandidate) => {
+          const threshold = score.hasResumeEmbedding
+            ? MIN_MATCH_PERCENT_WITH_RESUME
+            : MIN_MATCH_PERCENT_NO_RESUME;
+          return score.matchPercent >= threshold;
+        })
+        .sort((a: RankedCandidate, b: RankedCandidate) => b.score.finalScore - a.score.finalScore)
+        .slice(0, Math.max(1, MAX_APPLIES_PER_JOB));
 
       let applied = 0;
-      for (const u of users) {
-        const keywordMatches = (u.autoApplyKeywords || []).reduce(
-          (acc: number, kw: string) => acc + (jobTokens.has(kw.toLowerCase()) ? 1 : 0),
-          0
-        );
-        const roleMatches = (u.autoApplyRoles || []).reduce(
-          (acc: number, role: string) => acc + (titleTokens.has(role.toLowerCase()) ? 1 : 0),
-          0
-        );
-        const matches = keywordMatches + roleMatches;
-        if (matches >= MIN_MATCHES && (await canAutoApplyForUser(u))) {
-          await applyAndNotify({ db: prisma, jobId: job.id, userId: u.id, source: "auto" });
-          applied++;
+      for (const candidate of filteredAndOrdered) {
+        if (await canAutoApplyForUser(candidate.user)) {
+          await applyAndNotify({ db: prisma, jobId: job.id, userId: candidate.user.id, source: "auto" });
+          applied += 1;
         }
       }
       totalApplied += applied;
