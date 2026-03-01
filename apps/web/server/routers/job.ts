@@ -811,7 +811,16 @@ bulkCreate: adminProcedure
   // Normalize tags: CSV often sends a single string like "CNC, GMAO, électromécanique"
   const normalizeTags = (val: unknown): string[] => {
     if (val === undefined || val === null) return [];
-    if (Array.isArray(val)) return val.filter((s): s is string => typeof s === "string");
+    if (Array.isArray(val)) {
+      return val
+        .flatMap((entry) => {
+          if (typeof entry !== "string") return [];
+          return entry
+            .split(/[,\|;]+/g)
+            .map((s) => s.trim().replace(/^['"]|['"]$/g, ""));
+        })
+        .filter(Boolean);
+    }
     if (typeof val === "string") {
       const trimmed = val.trim();
       if (!trimmed) return [];
@@ -842,8 +851,7 @@ bulkCreate: adminProcedure
       locationRequirement: r.locationRequirement,
       experienceLevel: r.experienceLevel,
       type: r.type,
-      // Accept both `tags` and legacy/external `skills` CSV columns.
-      tags: normalizeTags((r as any).tags ?? row.tags ?? row.skills),
+      tags: normalizeTags((r as any).tags ?? row.tags),
       wage: r.wage ?? null,
       countryIso2: row.countryIso2 ?? null,
       stateAbbreviation: r.stateAbbreviation ?? row.stateAbbr ?? null,

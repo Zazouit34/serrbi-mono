@@ -451,7 +451,16 @@ export type ResumeEmbeddingUpdateValues = z.infer<typeof resumeEmbeddingUpdateSc
 //Job bulk Import Schema
 const parseImportTags = (val: unknown): string[] => {
   if (val === undefined || val === null) return [];
-  if (Array.isArray(val)) return val.filter((s): s is string => typeof s === "string");
+  if (Array.isArray(val)) {
+    return val
+      .flatMap((entry) => {
+        if (typeof entry !== "string") return [];
+        return entry
+          .split(/[,\|;]+/g)
+          .map((s) => s.trim().replace(/^['"]|['"]$/g, ""));
+      })
+      .filter(Boolean);
+  }
   if (typeof val === "string") {
     const trimmed = val.trim();
     if (!trimmed) return [];
@@ -495,11 +504,6 @@ export const jobImportRowSchema = z.object({
   description: z.string().min(1),
   // Skill tags (CSV cell can be: "React, Next.js, Docker" or '["React","Docker"]')
   tags: z
-    .preprocess((val) => parseImportTags(val), z.array(z.string()))
-    .optional()
-    .nullable(),
-  // Alias accepted for external CSVs that use `skills` as the column name.
-  skills: z
     .preprocess((val) => parseImportTags(val), z.array(z.string()))
     .optional()
     .nullable(),
@@ -549,7 +553,7 @@ export const jobImportSchema = z
   .transform((payload) => ({
     rows: payload.rows.map((row) => ({
       ...row,
-      tags: (row.tags && row.tags.length > 0 ? row.tags : row.skills) ?? [],
+      tags: row.tags ?? [],
     })),
   }));
 
