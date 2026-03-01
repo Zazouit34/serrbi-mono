@@ -507,6 +507,11 @@ export const jobImportRowSchema = z.object({
     .preprocess((val) => parseImportTags(val), z.array(z.string()))
     .optional()
     .nullable(),
+  // Import-only alias for external CSVs that still use `skills` column.
+  skills: z
+    .preprocess((val) => parseImportTags(val), z.array(z.string()))
+    .optional()
+    .nullable(),
   category: z.preprocess((val) => {
     if (typeof val === "string") {
       const normalized = val.trim();
@@ -553,7 +558,7 @@ export const jobImportSchema = z
   .transform((payload) => ({
     rows: payload.rows.map((row) => ({
       ...row,
-      tags: row.tags ?? [],
+      tags: (row.tags && row.tags.length > 0 ? row.tags : row.skills) ?? [],
     })),
   }));
 

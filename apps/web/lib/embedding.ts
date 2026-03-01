@@ -144,19 +144,29 @@ export async function embedBatch(texts: string[]): Promise<number[][]> {
     throw new Error("Cannot embed empty text in batch");
   }
 
-  const body: EmbeddingApiRequest = {
-    model: EMBEDDING_MODEL,
-    input: cleaned,
-  };
+  const configuredChunkSize = Number(process.env.EMBEDDING_BATCH_LIMIT ?? 10);
+  const chunkSize = Number.isFinite(configuredChunkSize) && configuredChunkSize > 0
+    ? Math.floor(configuredChunkSize)
+    : 10;
 
-  const result = await callEmbeddingApi(body);
-  if (result.data.length !== cleaned.length) {
-    throw new Error(
-      `Embedding API returned ${result.data.length} vectors for ${cleaned.length} inputs`,
-    );
+  const vectors: number[][] = [];
+
+  for (let i = 0; i < cleaned.length; i += chunkSize) {
+    const chunk = cleaned.slice(i, i + chunkSize);
+    const body: EmbeddingApiRequest = {
+      model: EMBEDDING_MODEL,
+      input: chunk,
+    };
+    const result = await callEmbeddingApi(body);
+    if (result.data.length !== chunk.length) {
+      throw new Error(
+        `Embedding API returned ${result.data.length} vectors for ${chunk.length} inputs`,
+      );
+    }
+    vectors.push(...result.data.map((v) => v.embedding));
   }
 
-  return result.data.map((v) => v.embedding);
+  return vectors;
 }
 
  

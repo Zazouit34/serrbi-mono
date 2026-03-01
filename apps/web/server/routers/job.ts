@@ -851,7 +851,8 @@ bulkCreate: adminProcedure
       locationRequirement: r.locationRequirement,
       experienceLevel: r.experienceLevel,
       type: r.type,
-      tags: normalizeTags((r as any).tags ?? row.tags),
+      // Keep compatibility with CSVs that still expose `skills` column.
+      tags: normalizeTags((r as any).tags ?? row.tags ?? (r as any).skills ?? row.skills),
       wage: r.wage ?? null,
       countryIso2: row.countryIso2 ?? null,
       stateAbbreviation: r.stateAbbreviation ?? row.stateAbbr ?? null,
