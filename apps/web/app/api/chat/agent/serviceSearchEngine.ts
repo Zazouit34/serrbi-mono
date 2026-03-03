@@ -9,6 +9,7 @@ type ServiceCandidate = {
   title: string;
   description: string;
   displayImage: string | null;
+  images: string;
   phoneNumber: string | null;
   serviceCategory: string;
   type: string | null;
@@ -150,6 +151,7 @@ export async function serviceSearchEngine(
       title: true,
       description: true,
       displayImage: true,
+      images: true,
       phoneNumber: true,
       serviceCategory: true,
       type: true,

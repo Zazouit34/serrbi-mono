@@ -15,6 +15,8 @@ export function ServiceCard({
   service,
   className,
   compact,
+  disableCarousel,
+  disableFallbackImages,
 }: {
   service: {
     id: string;
@@ -32,6 +34,8 @@ export function ServiceCard({
   };
   className?: string;
   compact?: boolean;
+  disableCarousel?: boolean;
+  disableFallbackImages?: boolean;
 }) {
   const t = useTranslations();
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -56,21 +60,23 @@ export function ServiceCard({
   const imagesToShow = (() => {
     if (service.displayImage) return [service.displayImage];
     if (service.images && service.images.length > 0) return service.images;
+    if (disableFallbackImages) return [];
     return fallbackImages;
   })();
+  const activeImages = disableCarousel ? imagesToShow.slice(0, 1) : imagesToShow;
 
   const [imageLoaded, setImageLoaded] = useState(false);
 
   const nextImage = (e?: React.MouseEvent) => {
     e?.stopPropagation();
-    setCurrentIndex((prev) => (prev + 1) % imagesToShow.length);
+    setCurrentIndex((prev) => (prev + 1) % activeImages.length);
     setImageLoaded(false);
   };
 
   const prevImage = (e?: React.MouseEvent) => {
     e?.stopPropagation();
     setCurrentIndex(
-      (prev) => (prev - 1 + imagesToShow.length) % imagesToShow.length
+      (prev) => (prev - 1 + activeImages.length) % activeImages.length
     );
     setImageLoaded(false);
   };
@@ -110,19 +116,25 @@ export function ServiceCard({
             compact && "aspect-[4/3]"
           )}
         >
-          {!imageLoaded && (
+          {activeImages.length > 0 && !imageLoaded && (
             <div className="absolute inset-0 z-0">
               <Skeleton className="w-full h-full" />
             </div>
           )}
-          <Image
-            src={imagesToShow[currentIndex] || ""}
-            alt={service.title}
-            fill
-            className={`object-cover transition-opacity duration-200 ${imageLoaded ? "opacity-100" : "opacity-0"}`}
-            sizes="(max-width: 768px) 100vw, 25vw"
-            onLoadingComplete={() => setImageLoaded(true)}
-          />
+          {activeImages.length > 0 ? (
+            <Image
+              src={activeImages[currentIndex] || ""}
+              alt={service.title}
+              fill
+              className={`object-cover transition-opacity duration-200 ${imageLoaded ? "opacity-100" : "opacity-0"}`}
+              sizes="(max-width: 768px) 100vw, 25vw"
+              onLoadingComplete={() => setImageLoaded(true)}
+            />
+          ) : (
+            <div className="absolute inset-0 z-0 flex items-center justify-center bg-slate-100 text-slate-500 text-xs font-medium">
+              No image
+            </div>
+          )}
 
           {/* Category badge - top left */}
           <div
@@ -145,7 +157,7 @@ export function ServiceCard({
           </div>
 
           {/* Navigation arrows */}
-          {imagesToShow.length > 1 && (
+          {activeImages.length > 1 && (
             <>
               <button
                 onClick={(e) => {
@@ -169,12 +181,12 @@ export function ServiceCard({
           )}
 
           {/* Dots */}
-          {imagesToShow.length > 1 && (
+          {activeImages.length > 1 && (
             <div
               className="flex absolute bottom-2 left-1/2 z-10 gap-1 -translate-x-1/2"
               onClick={(e) => e.stopPropagation()}
             >
-              {imagesToShow.map((_, i) => (
+              {activeImages.map((_, i) => (
                 <span
                   key={i}
                   className={cn(

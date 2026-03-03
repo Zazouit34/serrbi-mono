@@ -185,6 +185,14 @@ export function AgentChatContainer({
                       </div>
                     ) : message.results ? (
                       <div className="w-full min-w-0 text-left text-slate-900">
+                        {!message.results.isLoading &&
+                        message.results.type === "services" &&
+                        (message.content ?? "").trim() ? (
+                          <div className="mb-4 text-left text-slate-900 leading-6">
+                            <Markdown>{message.content ?? ""}</Markdown>
+                          </div>
+                        ) : null}
+
                         {message.results.isLoading ? <ThinkingBar text={labels.searching} /> : null}
 
                         {!message.results.isLoading && message.results.items.length === 0 ? (
@@ -213,9 +221,15 @@ export function AgentChatContainer({
                                     <Link
                                       href={`/services?serviceCategory=${encodeURIComponent(item.serviceCategory ?? "")}`}
                                     >
-                                      <ServiceCard service={item} className="h-full" />
+                                      <ServiceCard
+                                        service={item}
+                                        className="h-full"
+                                        compact
+                                        disableCarousel
+                                        disableFallbackImages
+                                      />
                                     </Link>
-                                    <div className="space-y-1 px-1">
+                                    <div className="rounded-lg border border-slate-100 bg-slate-50/70 px-2 py-1.5 space-y-1">
                                       {reasons.length > 0 ? (
                                         <p className="text-[11px] text-slate-600 leading-relaxed">
                                           {whyPickedLabel}: {reasons.join(" · ")}
@@ -235,7 +249,9 @@ export function AgentChatContainer({
                           </div>
                         )}
 
-                        {!message.results.isLoading && (message.content ?? "").trim() ? (
+                        {!message.results.isLoading &&
+                        message.results.type !== "services" &&
+                        (message.content ?? "").trim() ? (
                           <div className="mt-4 text-left text-slate-900 leading-6">
                             <Markdown>{message.content ?? ""}</Markdown>
                           </div>

@@ -1077,7 +1077,19 @@ function mapServiceCards(items: any[]): any[] {
     id: item.id,
     title: item.title,
     displayImage: item.displayImage ?? null,
-    images: [],
+    images:
+      Array.isArray(item.images)
+        ? item.images
+        : typeof item.images === "string"
+          ? (() => {
+              try {
+                const parsed = JSON.parse(item.images);
+                return Array.isArray(parsed) ? parsed.filter((x) => typeof x === "string") : [];
+              } catch {
+                return [];
+              }
+            })()
+          : [],
     serviceCategory: item.serviceCategory,
     price: item.price,
     currency: "MAD",
