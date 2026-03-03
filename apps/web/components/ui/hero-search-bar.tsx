@@ -324,6 +324,7 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
   const nextMessageIdRef = useRef(1);
   const placeholderIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const chatInputRef = useRef<HTMLInputElement | null>(null);
+  const agentSessionIdRef = useRef<string | null>(null);
   const updateResumeUrl = trpc.auth.updateResume.useMutation();
   const updateResumeEmbedding = trpc.auth.updateResumeEmbedding.useMutation();
   const userDataQuery = trpc.auth.userData.useQuery(undefined, {
@@ -490,12 +491,36 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
     }
   };
 
+  const getOrCreateAgentSessionId = (): string => {
+    if (agentSessionIdRef.current) return agentSessionIdRef.current;
+    const storageKey = "serrbi:agent-session-id";
+    try {
+      const existing = localStorage.getItem(storageKey)?.trim();
+      if (existing) {
+        agentSessionIdRef.current = existing;
+        return existing;
+      }
+      const next =
+        typeof crypto !== "undefined" && "randomUUID" in crypto
+          ? crypto.randomUUID()
+          : `agent-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+      localStorage.setItem(storageKey, next);
+      agentSessionIdRef.current = next;
+      return next;
+    } catch {
+      const fallback = `agent-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+      agentSessionIdRef.current = fallback;
+      return fallback;
+    }
+  };
+
   const callSearchAgent = async (opts: {
     query: string;
     locale: string;
     scope: ScopeOverride;
     categoryHint?: string;
   }): Promise<AgentResponse> => {
+    const sessionId = getOrCreateAgentSessionId();
     const history = messages
       .filter((m) => typeof m.content === "string" && m.content.trim())
       .slice(-12)
@@ -518,6 +543,7 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
           scope: opts.scope,
           query: opts.query,
           categoryHint: opts.categoryHint,
+          sessionId,
         },
       }),
     });
@@ -1222,6 +1248,18 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
               jobs: t("tabs.jobs"),
               services: t("tabs.services"),
               tasks: t("tabs.tasks"),
+              whyPicked:
+                locale === "fr"
+                  ? "Pourquoi ce choix"
+                  : locale === "ar"
+                    ? "سبب الاختيار"
+                    : "Why picked",
+              confidence:
+                locale === "fr"
+                  ? "Niveau de confiance"
+                  : locale === "ar"
+                    ? "طبقة الثقة"
+                    : "Confidence",
             }}
             onInputChange={setChatInput}
             onSubmit={() => {

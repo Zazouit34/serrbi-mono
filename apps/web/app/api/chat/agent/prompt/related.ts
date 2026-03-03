@@ -28,6 +28,11 @@ Coverage requirements:
 3) Suggest a related next step in the same domain.
 4) Include useful filter refinement when relevant (city, budget, level, timeline).
 5) Keep domain continuity (jobs with jobs, services with services, tasks with tasks).
+6) When intent is services, include refinement-oriented suggestions first:
+   - "Show different options"
+   - "Refine by price"
+   - "Urgent only" / fastest availability
+7) For service refinements, concise emoji prefixes are allowed (e.g. ✨ 💸 ⚡ ⭐) when natural.
 
 Quality constraints:
 - Avoid generic suggestions ("Tell me more", "Any other options?").

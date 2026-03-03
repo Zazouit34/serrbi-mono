@@ -60,6 +60,8 @@ type AgentChatContainerProps = {
     jobs: string;
     services: string;
     tasks: string;
+    whyPicked?: string;
+    confidence?: string;
   };
   onInputChange: (value: string) => void;
   onSubmit: () => void;
@@ -134,6 +136,11 @@ export function AgentChatContainer({
   hasResumeAttached,
   resumeAttachedLabel,
 }: AgentChatContainerProps) {
+  const whyPickedLabel =
+    labels.whyPicked || (dir === "rtl" ? "سبب الاختيار" : "Why picked");
+  const confidenceLabel =
+    labels.confidence || (dir === "rtl" ? "طبقة الثقة" : "Confidence");
+
   const resumeInputRef = useRef<HTMLInputElement | null>(null);
   const onFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -195,13 +202,32 @@ export function AgentChatContainer({
                                 );
                               }
                               if (message.results?.type === "services") {
+                                const reasons: string[] = Array.isArray(item.selectionReasons)
+                                  ? item.selectionReasons.slice(0, 2)
+                                  : [];
+                                const confidenceSignals: string[] = Array.isArray(item.confidenceSignals)
+                                  ? item.confidenceSignals.slice(0, 2)
+                                  : [];
                                 return (
-                                  <Link
-                                    key={item.id}
-                                    href={`/services?serviceCategory=${encodeURIComponent(item.serviceCategory ?? "")}`}
-                                  >
-                                    <ServiceCard service={item} className="h-full" />
-                                  </Link>
+                                  <div key={item.id} className="space-y-2">
+                                    <Link
+                                      href={`/services?serviceCategory=${encodeURIComponent(item.serviceCategory ?? "")}`}
+                                    >
+                                      <ServiceCard service={item} className="h-full" />
+                                    </Link>
+                                    <div className="space-y-1 px-1">
+                                      {reasons.length > 0 ? (
+                                        <p className="text-[11px] text-slate-600 leading-relaxed">
+                                          {whyPickedLabel}: {reasons.join(" · ")}
+                                        </p>
+                                      ) : null}
+                                      {confidenceSignals.length > 0 ? (
+                                        <p className="text-[11px] text-slate-500 leading-relaxed">
+                                          {confidenceLabel}: {confidenceSignals.join(" · ")}
+                                        </p>
+                                      ) : null}
+                                    </div>
+                                  </div>
                                 );
                               }
                               return <TaskCard key={item.id} task={item} className="h-full" />;

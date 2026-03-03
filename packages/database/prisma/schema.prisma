@@ -41,6 +41,7 @@ model User {
   autoApplyKeywords    String[]      // user-selected tags
   autoApplyRoles       String[]      @default([]) // user-selected roles per category
   aiChatUsages         AiChatUsage[]
+  events               Event[]
  
 
 
@@ -66,6 +67,24 @@ model AiChatUsage {
   @@unique([userId, dayBucket])
   @@index([userId])
   @@index([dayBucket])
+}
+
+model Event {
+  id        String          @id @default(uuid())
+  userId    String
+  sessionId String
+  name      EventName
+  intent    AgentIntentType?
+  source    EventSource     @default(agent_chat)
+  data      Json?
+  createdAt DateTime        @default(now())
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([sessionId, createdAt])
+  @@index([name, createdAt])
+  @@index([intent, createdAt])
+  @@index([source, createdAt])
 }
 
 model Account {
@@ -596,4 +615,20 @@ enum WebhookEventType {
   PAYMENT_REFUNDED
   INVOICE_PAYMENT_SUCCEEDED
   INVOICE_PAYMENT_FAILED
+}
+
+enum EventName {
+  AGENT_INTENT_TRIGGERED
+  AGENT_SEARCH_RESULTS_RETURNED
+}
+
+enum AgentIntentType {
+  conversation
+  search_job
+  search_service
+  search_task
+}
+
+enum EventSource {
+  agent_chat
 }

@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import type { LLMResumeAnalysis } from "@/app/utils/pdf/score-calculator";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@workspace/ui/components/collapsible";
+import { ChevronDown } from "lucide-react";
+import { Badge } from "@workspace/ui/components/badge";
 import { cn } from "@workspace/ui/lib/utils";
 
 type BreakdownItem = {
@@ -14,7 +15,7 @@ type BreakdownItem = {
 };
 
 type Props = {
-  score: number; // 0–100
+  score: number;
   breakdown: BreakdownItem[];
   loading?: boolean;
   llm?: LLMResumeAnalysis | null;
@@ -39,136 +40,104 @@ type SectionGroup = {
 };
 
 const sectionColors = {
-  green: "bg-emerald-50 text-emerald-700",
-  amber: "bg-[#fff7ed] text-[#f59e0b]",
-  red: "bg-[#fee2e2] text-[#ef4444]",
+  green: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  amber: "bg-amber-50 text-amber-700 border-amber-200",
+  red: "bg-rose-50 text-rose-700 border-rose-200",
 } as const;
-
-const circleColor = "#f59e0b";
 
 function HalfArc({ value, issuesLabel }: { value: number; issuesLabel: string }) {
   const pct = Math.max(0, Math.min(100, value));
-  const radius = 70;
+  const radius = 60;
   const circumference = Math.PI * radius;
   const progress = (pct / 100) * circumference;
+  const strokeColor = pct >= 80 ? "#10b981" : pct >= 60 ? "#f59e0b" : "#ef4444";
   return (
-    <div className="relative w-full max-w-[260px] mx-auto">
-      <svg viewBox="0 0 200 120" className="w-full">
+    <div className="relative w-full max-w-[200px] mx-auto">
+      <svg viewBox="0 0 180 100" className="w-full">
         <path
-          d="M30 100 A70 70 0 0 1 170 100"
+          d="M30 90 A60 60 0 0 1 150 90"
           fill="none"
           stroke="#e5e7eb"
-          strokeWidth="14"
+          strokeWidth="12"
           strokeLinecap="round"
-          strokeDasharray={`${circumference} ${circumference}`}
         />
         <path
-          d="M30 100 A70 70 0 0 1 170 100"
+          d="M30 90 A60 60 0 0 1 150 90"
           fill="none"
-          stroke={circleColor}
-          strokeWidth="14"
+          stroke={strokeColor}
+          strokeWidth="12"
           strokeLinecap="round"
           strokeDasharray={`${progress} ${circumference}`}
-          style={{ transition: "stroke-dasharray 0.9s ease" }}
+          style={{ transition: "stroke-dasharray 0.6s ease" }}
         />
       </svg>
-      <div className="flex absolute inset-0 flex-col justify-end items-center pb-1 pointer-events-none">
-        <div className="text-[30px] font-bold text-[#f59e0b] leading-none">{pct}/100</div>
-        <p className="text-xs text-[#6b7280]">{issuesLabel}</p>
+      <div className="absolute inset-0 flex flex-col items-center justify-end pb-2 pointer-events-none">
+        <div className="text-3xl font-bold text-slate-900 leading-none">{pct}</div>
+        <p className="text-[11px] text-slate-500 mt-0.5">{issuesLabel}</p>
       </div>
     </div>
   );
 }
 
-function Row({ label, status, badge }: RowItem) {
-  return (
-    <div className="flex justify-between items-center py-2">
-      <div className="flex gap-3 items-center">
-        {status === "success" ? <Check /> : <Cross />}
-        <span className="text-[20px] font-medium text-[#1f2937]">{label}</span>
-      </div>
-      <span
-        className={cn(
-          "text-sm px-3 py-1 rounded-full font-medium",
-          status === "success" ? "bg-[#ecfdf5] text-[#0f9f74]" : "bg-[#f3f4f6] text-[#374151]",
-        )}
-      >
-        {badge}
-      </span>
-    </div>
-  );
-}
-
-function SectionHeader({ title, score }: { title: string; score: string }) {
-  return (
-    <div className="flex justify-between items-center py-1">
-      <span className="text-[18px] font-medium tracking-wide text-[#4b5563]">{title}</span>
-      <div className="flex gap-2 items-center">
-        <span className="text-[14px] font-semibold text-[#f59e0b] bg-[#fff7ed] px-3 py-1 rounded-full">{score}</span>
-        <Chevron size={18} />
-      </div>
-    </div>
-  );
-}
-
-function CollapsedSection({
+function SectionRow({
   title,
   score,
-  scoreColor = "bg-[#fff7ed] text-[#f59e0b]",
-  children,
-}: {
-  title: string;
-  score: string;
-  scoreColor?: string;
-  children?: React.ReactNode;
-}) {
+  scoreTone,
+  rows,
+}: SectionGroup) {
+  const [open, setOpen] = useState(false);
   return (
-    <Collapsible defaultOpen={false}>
-      <CollapsibleTrigger className="flex justify-between items-center py-2 w-full">
-        <span className="text-[18px] font-medium tracking-wide text-[#4b5563]">{title}</span>
-        <div className="flex gap-2 items-center">
-          <span className={cn("px-3 py-1 font-semibold rounded-full text-[14px]", scoreColor)}>{score}</span>
-          <Chevron size={18} />
+    <div className="space-y-2">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="flex items-center justify-between w-full text-left"
+      >
+        <span className="text-sm font-medium text-slate-700">{title}</span>
+        <div className="flex items-center gap-2">
+          <Badge
+            className={cn(
+              "text-[11px] px-2 py-0.5 rounded-full border",
+              scoreTone ? sectionColors[scoreTone] : sectionColors.amber
+            )}
+          >
+            {score}
+          </Badge>
+          <ChevronDown
+            className={cn(
+              "h-3.5 w-3.5 text-slate-500 transition-transform",
+              open && "rotate-180"
+            )}
+          />
         </div>
-      </CollapsibleTrigger>
-      {children && (
-        <CollapsibleContent className="mt-2 space-y-3">
-          {children}
-        </CollapsibleContent>
+      </button>
+      {open && (
+        <div className="space-y-1.5 pl-1">
+          {(rows ?? []).map((row) => (
+            <div
+              key={row.label}
+              className="flex items-center justify-between text-[12px] text-slate-600 py-1"
+            >
+              <span>{row.label}</span>
+              <Badge
+                variant="outline"
+                className={cn(
+                  "text-[10px] px-2 py-0 border",
+                  row.status === "success"
+                    ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                    : "bg-slate-50 text-slate-600 border-slate-200"
+                )}
+              >
+                {row.badge}
+              </Badge>
+            </div>
+          ))}
+        </div>
       )}
-    </Collapsible>
+    </div>
   );
 }
 
-function Check() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-      <path d="M5 13l4 4L19 7" stroke="#10b981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-function Cross() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-      <path d="M6 6l12 12M18 6l-12 12" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-function Chevron({ size = 16 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <path d="M6 9l6 6 6-6" stroke="#6b7280" strokeWidth="2.25" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-export function ResumeScoreCard({
-  score,
-  breakdown,
-  llm,
-}: Props) {
+export function ResumeScoreCard({ score, breakdown }: Props) {
   const tAll = useTranslations();
   const tr = (key: string, fallback: string) =>
     (tAll as any).has?.(key) ? (tAll as any)(key) : fallback;
@@ -196,7 +165,7 @@ export function ResumeScoreCard({
           issueCount,
         };
       }),
-    [breakdown],
+    [breakdown]
   );
 
   const issues = rows.reduce((sum, r) => sum + (r.issueCount ?? 0), 0);
@@ -213,9 +182,7 @@ export function ResumeScoreCard({
       val >= 80 ? "green" : val >= 65 ? "amber" : "red";
     const avg = (list: RowItem[]) =>
       list.length
-        ? Math.round(
-            list.reduce((s, r) => s + (r.scorePct ?? 0), 0) / list.length,
-          )
+        ? Math.round(list.reduce((s, r) => s + (r.scorePct ?? 0), 0) / list.length)
         : Math.round(score);
     return [
       {
@@ -246,33 +213,22 @@ export function ResumeScoreCard({
   }, [rows, score]);
 
   return (
-    <div className="w-full max-w-[380px] bg-white rounded-2xl shadow-sm border border-[#e6ebf1] px-6 py-7">
+    <div className="w-full max-w-[360px] bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
       <div className="text-center">
-        <h2 className="text-[22px] font-semibold text-[#1f2937]">
+        <h2 className="text-lg font-semibold text-slate-900">
           {tr("ResumeInsight.yourScore", "Your Score")}
         </h2>
       </div>
 
-      <div className="mt-4">
+      <div className="mt-3">
         <HalfArc value={score} issuesLabel={issuesLabel} />
       </div>
 
-      <div className="my-6 h-px bg-[#e5e7eb]" />
+      <div className="my-4 h-px bg-slate-100" />
 
-      <div className="mt-6 space-y-3">
+      <div className="space-y-3">
         {groupedSections.map((group, idx) => (
-          <CollapsedSection
-            key={`${group.title}-${idx}`}
-            title={group.title}
-            score={group.score}
-            scoreColor={
-              group.scoreTone ? sectionColors[group.scoreTone] : sectionColors.amber
-            }
-          >
-            {(group.rows ?? []).map((row) => (
-              <Row key={row.label} {...row} />
-            ))}
-          </CollapsedSection>
+          <SectionRow key={`${group.title}-${idx}`} {...group} />
         ))}
       </div>
     </div>

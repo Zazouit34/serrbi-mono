@@ -218,7 +218,7 @@ export const serviceRouter = router({
 
           const [rawItems, countRowsRaw] = await Promise.all([
             db.$queryRawUnsafe(itemsSql, ...params, embeddingLiteral, limit, offset),
-            db.$queryRawUnsafe(countSql, ...params, embeddingLiteral),
+            db.$queryRawUnsafe(countSql, ...params),
           ]);
 
           const countRows = countRowsRaw as { count: number }[];

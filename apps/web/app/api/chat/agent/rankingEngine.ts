@@ -156,11 +156,14 @@ export function rankServices<T extends ServiceRankable>(args: {
 }): Array<
   T & {
     finalScore: number;
+    matchPercent: number;
     semanticScore: number;
     ratingScore: number;
     reviewsScore: number;
     locationScore: number;
     priceScore: number;
+    selectionReasons: string[];
+    confidenceSignals: string[];
   }
 > {
   const { items, queryEmbedding, queryTokens, preferredCity, minPrice, maxPrice } = args;
@@ -190,14 +193,32 @@ export function rankServices<T extends ServiceRankable>(args: {
       0.15 * locationScore +
       0.15 * priceScore;
 
+    const selectionReasons: string[] = [];
+    if (ratingScore >= 0.8) selectionReasons.push("Top-rated provider");
+    if (reviewsScore >= 0.55) selectionReasons.push("Strong customer review volume");
+    if (locationScore >= 0.8) selectionReasons.push("Close to your preferred location");
+    if (priceScore >= 0.8) selectionReasons.push("Price aligns with your budget");
+    if (semanticScore >= 0.7) selectionReasons.push("Strong relevance to your request");
+
+    const confidenceSignals: string[] = [];
+    if (typeof item.averageRating === "number" && item.numberOfReviews > 0) {
+      confidenceSignals.push(`Rated ${item.averageRating.toFixed(1)}/5 (${item.numberOfReviews} reviews)`);
+    }
+    if (item.price > 0) confidenceSignals.push(`Price: ${Math.round(item.price)} MAD`);
+    if (item.city) confidenceSignals.push(`Location: ${item.city}`);
+    if (item.numberOfReviews >= 25) confidenceSignals.push("Frequently booked");
+
     return {
       ...item,
+      matchPercent: Math.round(clamp01(finalScore) * 100),
       semanticScore,
       ratingScore,
       reviewsScore,
       locationScore,
       priceScore,
       finalScore,
+      selectionReasons: selectionReasons.slice(0, 3),
+      confidenceSignals: confidenceSignals.slice(0, 3),
     };
   });
 

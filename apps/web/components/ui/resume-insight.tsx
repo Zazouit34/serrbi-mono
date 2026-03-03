@@ -21,15 +21,9 @@ import {
   Settings2,
   Target,
   Box,
-  Sparkles,
-  TrendingUp,
-  CircleDot,
+  ChevronDown,
 } from "lucide-react";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@workspace/ui/components/collapsible";
+import { Badge } from "@workspace/ui/components/badge";
 import { cn } from "@workspace/ui/lib/utils";
 
 type ResumeInsightProps = {
@@ -484,7 +478,7 @@ function mapToInsightData(
 }
 
 function renderIcon(key?: string) {
-  const base = "w-5 h-5";
+  const base = "w-4 h-4";
   switch (key) {
     case "content":
       return <FileText className={base + " text-indigo-500"} />;
@@ -499,36 +493,10 @@ function renderIcon(key?: string) {
   }
 }
 
-function statusColor(status: "success" | "error") {
-  return status === "success"
-    ? "bg-emerald-50 text-emerald-700 border border-emerald-100"
-    : "bg-amber-50 text-amber-800 border border-amber-100";
-}
-
 function issueTagColor(count: number) {
-  if (count <= 1) return "bg-slate-100 text-slate-700";
-  if (count <= 3) return "bg-amber-100 text-amber-800";
-  return "bg-rose-100 text-rose-800";
-}
-
-function Chevron({ className }: { className?: string }) {
-  return (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 24 24"
-      fill="none"
-      className={cn("transition-transform duration-300", className)}
-    >
-      <path
-        d="M6 9l6 6 6-6"
-        stroke="#374151"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
+  if (count === 0) return "bg-emerald-50 text-emerald-700 border-emerald-200";
+  if (count <= 2) return "bg-amber-50 text-amber-700 border-amber-200";
+  return "bg-rose-50 text-rose-700 border-rose-200";
 }
 
 function InsightLayout({
@@ -542,129 +510,126 @@ function InsightLayout({
 }) {
   const groups = data.groups;
   return (
-    <div className="flex flex-col gap-6 w-full">
+    <div className="space-y-4 w-full">
       {groups.map((group) => {
         const issues = group.rows.reduce(
           (sum, r) => sum + (r.issueCount ?? (r.status === "error" ? 1 : 0)),
           0
         );
         return (
-          <div
+          <GroupCard
             key={group.title}
-            className="rounded-2xl border border-[#e6ebf1] bg-white p-5 shadow-sm"
-          >
-            <div className="flex gap-3 justify-between items-center">
-              <div className="flex gap-3 items-center text-slate-800">
-                <div className="w-8 h-8 rounded-lg bg-[#eef2ff] flex items-center justify-center">
-                  {renderIcon(group.icon)}
-                </div>
-                <h3 className="text-[18px] font-semibold tracking-wide text-slate-900">
-                  {group.title}
-                </h3>
-              </div>
-              <Tag
-                className={cn(
-                  "px-4 py-1 text-sm font-medium rounded-full shadow-sm",
-                  issueTagColor(issues)
-                )}
-              >
-                {formatIssuesFound(issues)}
-              </Tag>
-            </div>
-            
-            <div className="mt-4 space-y-4">
-              {group.rows.map((row) => (
-                <Collapsible key={row.label} defaultOpen={false}>
-                  <CollapsibleTrigger className="w-full group">
-                    <div className="flex items-center justify-between gap-3 rounded-2xl bg-white px-6 py-5 shadow-sm border border-[#e5e7eb] transition hover:shadow-md">
-                      <div className="flex gap-3 items-center">
-                        <div className="flex justify-center items-center w-7 h-7 bg-gradient-to-br rounded-full from-indigo-500/15 to-sky-400/20">
-                          <Sparkles className="w-4 h-4 text-indigo-500" />
-                        </div>
-                        <div className="flex flex-col gap-1">
-                          <span className="text-[15px] font-semibold tracking-wide text-[#111827]">
-                            {row.label.toUpperCase()}
-                          </span>
-                          <span className="text-[13px] text-[#475467] line-clamp-2">
-                            {row.details?.[0] ?? ""}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="flex gap-2 items-center">
-                        <span
-                          className={cn(
-                            "text-xs font-semibold px-2.5 py-1 rounded-full",
-                            statusColor(row.status)
-                          )}
-                        >
-                          {row.badge}
-                        </span>
-                        <Chevron className="transition-transform duration-300 group-data-[state=open]:rotate-180" />
-                      </div>
-                    </div>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent className="px-1 pt-2 pb-1">
-                    <div className="rounded-2xl bg-white shadow-sm border border-[#e5e7eb] px-6 py-5 space-y-4">
-                      <div className="flex gap-3 justify-between items-center">
-                        <div className="flex gap-2 items-center text-sm text-slate-700">
-                          <TrendingUp className="w-4 h-4 text-indigo-500" />
-                          <span>
-                            {tr(
-                              "ResumeInsight.strengthIndicator",
-                              "Strength indicator"
-                            )}
-                          </span>
-                        </div>
-                        <span className="text-xs font-semibold text-slate-600">
-                          {row.scorePct ?? 0}%
-                        </span>
-                      </div>
-                      <div className="overflow-hidden relative h-2 rounded-full bg-slate-100">
-                        <div
-                          className={cn(
-                            "absolute left-0 top-0 h-full rounded-full transition-all duration-700",
-                            row.status === "success"
-                              ? "bg-gradient-to-r from-emerald-400 via-emerald-500 to-sky-400"
-                              : "bg-gradient-to-r from-amber-400 via-rose-400 to-rose-500"
-                          )}
-                          style={{
-                            width: `${Math.min(100, Math.max(10, row.scorePct ?? 40))}%`,
-                          }}
-                        />
-                      </div>
-                      <div className="flex flex-wrap gap-2 items-center">
-                        <span
-                          className={cn(
-                            "text-xs font-semibold px-2.5 py-1 rounded-full",
-                            statusColor(row.status)
-                          )}
-                        >
-                          {row.badge}
-                        </span>
-                      </div>
-                      <div className="grid gap-3 sm:grid-cols-2">
-                        {(
-                          row.details ?? ["Add more measurable outcomes here."]
-                        ).map((detail, idx) => (
-                          <div
-                            key={`${row.label}-${idx}`}
-                            className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-4 text-[15px] text-[#374151] leading-relaxed min-h-[160px] shadow-[0_8px_30px_rgb(0,0,0,0.02)]"
-                          >
-                            <div className="flex gap-2 items-start">
-                              <CircleDot className="mt-1 w-4 h-4 text-indigo-500" />
-                              <span>{detail}</span>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </CollapsibleContent>
-                </Collapsible>
-              ))}
-            </div>
-          </div>
+            group={group}
+            issues={issues}
+            formatIssuesFound={formatIssuesFound}
+            tr={tr}
+          />
         );
       })}
+    </div>
+  );
+}
+
+function GroupCard({
+  group,
+  issues,
+  formatIssuesFound,
+  tr,
+}: {
+  group: InsightGroup;
+  issues: number;
+  formatIssuesFound: (count: number) => string;
+  tr: (key: string, fallback: string) => string;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-4">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="flex items-center justify-between w-full text-left"
+      >
+        <div className="flex items-center gap-2.5">
+          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
+            {renderIcon(group.icon)}
+          </div>
+          <h3 className="text-sm font-semibold text-slate-900">{group.title}</h3>
+        </div>
+        <div className="flex items-center gap-2">
+          <Badge
+            variant="outline"
+            className={cn(
+              "text-[10px] px-2 py-0.5 rounded-full border",
+              issueTagColor(issues)
+            )}
+          >
+            {formatIssuesFound(issues)}
+          </Badge>
+          <ChevronDown
+            className={cn(
+              "h-3.5 w-3.5 text-slate-500 transition-transform",
+              open && "rotate-180"
+            )}
+          />
+        </div>
+      </button>
+      {open && (
+        <div className="mt-3 space-y-2 pl-1">
+          {group.rows.map((row) => (
+            <RowDetail key={row.label} row={row} tr={tr} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function RowDetail({
+  row,
+  tr,
+}: {
+  row: DetailRow;
+  tr: (key: string, fallback: string) => string;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="space-y-1.5">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="flex items-center justify-between w-full text-left py-1.5 px-2 rounded-lg hover:bg-slate-50 transition"
+      >
+        <span className="text-[12px] font-medium text-slate-700">{row.label}</span>
+        <div className="flex items-center gap-1.5">
+          <Badge
+            variant="outline"
+            className={cn(
+              "text-[10px] px-2 py-0 border",
+              row.status === "success"
+                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                : "bg-amber-50 text-amber-700 border-amber-200"
+            )}
+          >
+            {row.badge}
+          </Badge>
+          <ChevronDown
+            className={cn(
+              "h-3 w-3 text-slate-400 transition-transform",
+              open && "rotate-180"
+            )}
+          />
+        </div>
+      </button>
+      {open && (
+        <div className="pl-3 space-y-1.5">
+          {(row.details ?? []).map((detail, idx) => (
+            <p
+              key={`${row.label}-${idx}`}
+              className="text-[11px] text-slate-600 leading-relaxed"
+            >
+              {detail}
+            </p>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

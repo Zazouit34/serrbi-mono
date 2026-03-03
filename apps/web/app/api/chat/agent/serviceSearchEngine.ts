@@ -23,11 +23,14 @@ type ServiceCandidate = {
 
 type RankedService = ServiceCandidate & {
   finalScore: number;
+  matchPercent: number;
   semanticScore: number;
   ratingScore: number;
   reviewsScore: number;
   locationScore: number;
   priceScore: number;
+  selectionReasons: string[];
+  confidenceSignals: string[];
 };
 
 export type ServiceSearchResult = {
@@ -130,9 +133,17 @@ export async function serviceSearchEngine(
     where.price = priceFilter;
   }
 
+  const shouldEmbedQuery = intentData.query.trim().length >= 4;
+  const queryEmbeddingPromise = shouldEmbedQuery
+    ? embedText(intentData.query).catch((error) => {
+        console.error("serviceSearchEngine: failed to embed query, using lexical fallback", error);
+        return null;
+      })
+    : Promise.resolve(null);
+
   const pool = (await db.service.findMany({
     where,
-    take: 120,
+    take: 90,
     orderBy: [{ createdAt: "desc" }, { id: "desc" }],
     select: {
       id: true,
@@ -167,7 +178,7 @@ export async function serviceSearchEngine(
   const shouldRunSemantic = pool.some(
     (service) => Array.isArray(service.embedding) && service.embedding.length > 0,
   );
-  const queryEmbedding = shouldRunSemantic ? await embedText(intentData.query) : null;
+  const queryEmbedding = shouldRunSemantic ? await queryEmbeddingPromise : null;
   const queryTokens = tokenize(intentData.query);
 
   const ranked = rankServices({

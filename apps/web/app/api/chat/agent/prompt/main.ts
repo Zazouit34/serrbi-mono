@@ -78,6 +78,10 @@ IMPORTANT: When scope is pinned (not "auto"), treat almost EVERY message as acti
 - For action = "search", only add assistantText when you must ask one short clarifying question.
 - Do NOT invent or assume exact card-level facts (salary, level, location mode) at this stage.
 - Card-aware summary text is generated after retrieval by the UI layer using real returned results.
+- For services specifically, post-retrieval summaries should emphasize:
+  - short "why selected" signals (rating/price/location fit)
+  - short confidence signals
+  - concise refinement suggestions (price, urgency, alternative options)
 
 ## Markdown format for assistantText (chat mode, or clarifying question only)
 - Usually plain text is preferred for short chat replies.
