@@ -136,11 +136,6 @@ export function AgentChatContainer({
   hasResumeAttached,
   resumeAttachedLabel,
 }: AgentChatContainerProps) {
-  const whyPickedLabel =
-    labels.whyPicked || (dir === "rtl" ? "سبب الاختيار" : "Why picked");
-  const confidenceLabel =
-    labels.confidence || (dir === "rtl" ? "طبقة الثقة" : "Confidence");
-
   const resumeInputRef = useRef<HTMLInputElement | null>(null);
   const onFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -185,14 +180,6 @@ export function AgentChatContainer({
                       </div>
                     ) : message.results ? (
                       <div className="w-full min-w-0 text-left text-slate-900">
-                        {!message.results.isLoading &&
-                        message.results.type === "services" &&
-                        (message.content ?? "").trim() ? (
-                          <div className="mb-4 text-left text-slate-900 leading-6">
-                            <Markdown>{message.content ?? ""}</Markdown>
-                          </div>
-                        ) : null}
-
                         {message.results.isLoading ? <ThinkingBar text={labels.searching} /> : null}
 
                         {!message.results.isLoading && message.results.items.length === 0 ? (
@@ -210,37 +197,13 @@ export function AgentChatContainer({
                                 );
                               }
                               if (message.results?.type === "services") {
-                                const reasons: string[] = Array.isArray(item.selectionReasons)
-                                  ? item.selectionReasons.slice(0, 2)
-                                  : [];
-                                const confidenceSignals: string[] = Array.isArray(item.confidenceSignals)
-                                  ? item.confidenceSignals.slice(0, 2)
-                                  : [];
                                 return (
-                                  <div key={item.id} className="space-y-2">
+                                  <div key={item.id}>
                                     <Link
                                       href={`/services?serviceCategory=${encodeURIComponent(item.serviceCategory ?? "")}`}
                                     >
-                                      <ServiceCard
-                                        service={item}
-                                        className="h-full"
-                                        compact
-                                        disableCarousel
-                                        disableFallbackImages
-                                      />
+                                      <ServiceCard service={item} className="h-full" />
                                     </Link>
-                                    <div className="rounded-lg border border-slate-100 bg-slate-50/70 px-2 py-1.5 space-y-1">
-                                      {reasons.length > 0 ? (
-                                        <p className="text-[11px] text-slate-600 leading-relaxed">
-                                          {whyPickedLabel}: {reasons.join(" · ")}
-                                        </p>
-                                      ) : null}
-                                      {confidenceSignals.length > 0 ? (
-                                        <p className="text-[11px] text-slate-500 leading-relaxed">
-                                          {confidenceLabel}: {confidenceSignals.join(" · ")}
-                                        </p>
-                                      ) : null}
-                                    </div>
                                   </div>
                                 );
                               }
@@ -249,9 +212,7 @@ export function AgentChatContainer({
                           </div>
                         )}
 
-                        {!message.results.isLoading &&
-                        message.results.type !== "services" &&
-                        (message.content ?? "").trim() ? (
+                        {!message.results.isLoading && (message.content ?? "").trim() ? (
                           <div className="mt-4 text-left text-slate-900 leading-6">
                             <Markdown>{message.content ?? ""}</Markdown>
                           </div>
