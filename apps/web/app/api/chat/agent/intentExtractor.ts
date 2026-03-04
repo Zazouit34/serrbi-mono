@@ -1,4 +1,4 @@
-import { buildIntentExtractorPrompt } from "./prompt";
+import { buildIntentExtractorPrompt } from "./prompt/intent";
 
 type ChatRole = "system" | "user" | "assistant";
 
@@ -323,7 +323,6 @@ function fallbackExtractor(input: ExtractIntentInput): AgentResponse {
 
 export async function extractIntent(input: ExtractIntentInput): Promise<AgentResponse> {
   const systemPrompt = buildIntentExtractorPrompt({
-    locale: input.locale,
     scope: input.scope,
     categoryHint: input.categoryHint,
   });

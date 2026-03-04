@@ -35,6 +35,7 @@ type ChatRequestBody = {
 };
 
 type AgentIntent = "jobs" | "services" | "tasks";
+type ConfidenceMode = "strong" | "moderate" | "weak";
 
 type AgentAction = "chat" | "search";
 
@@ -154,21 +155,6 @@ async function callDashScope(body: {
     throw new Error("DashScope returned an unexpected payload shape.");
   }
   return text;
-}
-
-function asNonEmptyString(value: unknown): string | null {
-  if (typeof value !== "string") return null;
-  const trimmed = value.trim();
-  return trimmed ? trimmed : null;
-}
-
-function asStringArray(value: unknown): string[] {
-  if (!Array.isArray(value)) return [];
-  return value
-    .filter((v): v is string => typeof v === "string")
-    .map((s) => s.trim())
-    .filter(Boolean)
-    .slice(0, 8);
 }
 
 function normalizeForIntent(text: string): string {
@@ -507,63 +493,6 @@ function buildCharismaticConversationReply(locale: string, lastUser: string, mod
     : "Awesome 👋 I’m here to help. Tell me what you need and I’ll guide you step by step.";
 }
 
-function buildChatRelatedPrompts(locale: string, query = ""): string[] {
-  const normalizedLocale = normalizeLocale(locale);
-  const q = normalizeForIntent(query);
-  if (normalizedLocale === "fr") {
-    if (q.includes("ca va") || q.includes("salut") || q.includes("bonjour")) {
-      return [
-        "Trouve-moi des jobs remote a Casablanca",
-        "Je cherche un service fiable avec budget precis",
-        "Montre-moi des taches urgentes cette semaine",
-        "Aide-moi a formuler une recherche plus precise",
-      ];
-    }
-    return [
-      "Trouve-moi des jobs marketing a Casablanca",
-      "Je cherche un service de plomberie a Rabat",
-      "Montre-moi des taches freelance a distance",
-      "Aide-moi a preciser ma recherche",
-    ];
-  }
-  if (normalizedLocale === "ar") {
-    if (q.includes("مرحبا") || q.includes("كيف حالك")) {
-      return [
-        "بغيت وظائف عن بعد فـ الدار البيضاء",
-        "كنقلب على خدمة بثمن محدد وفمدينة قريبة",
-        "ورّيني مهام مستعجلة متاحة هاد الأسبوع",
-        "عاونّي نصاوب بحث أدق للنتائج",
-      ];
-    }
-    return [
-      "بغيت وظائف تسويق فـ الدار البيضاء",
-      "كنقلب على خدمة سباك فـ الرباط",
-      "ورّيني مهام فريلانس عن بُعد",
-      "عاونّي نحدد البحث ديالي",
-    ];
-  }
-  return [
-    "Find me marketing jobs in Casablanca",
-    "I need a plumbing service in Rabat",
-    "Show remote freelance tasks",
-    "Help me refine my search",
-  ];
-}
-
-function dedupePrompts(prompts: string[]): string[] {
-  const seen = new Set<string>();
-  const out: string[] = [];
-  for (const p of prompts) {
-    const trimmed = p.trim();
-    if (!trimmed) continue;
-    const key = normalizeForIntent(trimmed);
-    if (!key || seen.has(key)) continue;
-    seen.add(key);
-    out.push(trimmed);
-  }
-  return out;
-}
-
 function normalizeSessionId(raw: unknown): string | null {
   if (typeof raw !== "string") return null;
   const cleaned = raw.trim().slice(0, 120);
@@ -605,251 +534,6 @@ function buildPlanLimitMessage(locale: string): string {
   }
   return "You reached the free AI limit of 20 requests today. To continue, please upgrade from the Plans page.";
 }
-
-function buildPlanLimitPrompts(locale: string): string[] {
-  const normalizedLocale = normalizeLocale(locale);
-  if (normalizedLocale === "fr") {
-    return ["Plans", "Que contient le plan Basic ?", "Puis-je reprendre demain ?"];
-  }
-  if (normalizedLocale === "ar") {
-    return ["Plans", "شنو فيه Plan Basic؟", "واش نقدر نكمل غدا؟"];
-  }
-  return ["Plans", "What is included in Basic?", "Can I continue tomorrow?"];
-}
-
-function tokenizeForRelevance(text: string): string[] {
-  const normalized = normalizeForIntent(text);
-  const stopwords = new Set([
-    "the",
-    "a",
-    "an",
-    "for",
-    "to",
-    "of",
-    "in",
-    "on",
-    "with",
-    "je",
-    "tu",
-    "le",
-    "la",
-    "les",
-    "des",
-    "de",
-    "dans",
-    "pour",
-    "بغيت",
-    "في",
-    "من",
-    "على",
-    "and",
-    "or",
-  ]);
-  return normalized
-    .split(" ")
-    .map((t) => t.trim())
-    .filter((t) => t.length >= 3 && !stopwords.has(t));
-}
-
-function buildSearchRelatedPrompts(intent: AgentIntent, query: string, locale: string): string[] {
-  const normalizedLocale = normalizeLocale(locale);
-  const q = query.trim();
-
-  if (normalizedLocale === "fr") {
-    if (intent === "jobs") {
-      return [
-        `Montre-moi des postes ${q} en remote`,
-        `Trouve des roles ${q} junior`,
-        `Jobs ${q} a Casablanca`,
-        `Quelles competences sont demandees pour ${q} ?`,
-      ];
-    }
-    if (intent === "services") {
-      return [
-        `✨ Montre-moi d'autres options de services ${q}`,
-        `💸 Affine les services ${q} par prix`,
-        `⚡ Affiche les prestataires ${q} disponibles en urgence`,
-        `⭐ Garde seulement les services ${q} les mieux notes`,
-      ];
-    }
-    return [
-      `Taches ${q} a distance`,
-      `Taches ${q} avec budget plus eleve`,
-      `Missions similaires a ${q}`,
-      `Taches ${q} disponibles cette semaine`,
-    ];
-  }
-
-  if (normalizedLocale === "ar") {
-    if (intent === "jobs") {
-      return [
-        `ورّيني وظائف ${q} عن بُعد`,
-        `لقّى ليا وظائف ${q} للمبتدئين`,
-        `وظائف ${q} فالدار البيضاء`,
-        `شنو المهارات المطلوبة فـ ${q}؟`,
-      ];
-    }
-    if (intent === "services") {
-      return [
-        `✨ ورّيني خيارات أخرى لخدمات ${q}`,
-        `💸 صفي خدمات ${q} حسب السعر`,
-        `⚡ ورّيني مزودين ${q} المتاحين بشكل مستعجل`,
-        `⭐ خلي غير خدمات ${q} الأعلى تقييماً`,
-      ];
-    }
-    return [
-      `مهام ${q} عن بُعد`,
-      `مهام ${q} بميزانية أكبر`,
-      `مهام مشابهة لـ ${q}`,
-      `مهام ${q} المتاحة هاد الأسبوع`,
-    ];
-  }
-
-  if (intent === "jobs") {
-    return [
-      `Show remote ${q} jobs`,
-      `Find junior ${q} jobs`,
-      `${q} jobs in Casablanca`,
-      `What skills are most requested for ${q}?`,
-    ];
-  }
-  if (intent === "services") {
-    return [
-      `✨ Show different ${q} service options`,
-      `💸 Refine ${q} results by price range`,
-      `⚡ Show ${q} providers available urgently`,
-      `⭐ Keep only top-rated ${q} providers`,
-    ];
-  }
-  return [
-    `Show remote ${q} tasks`,
-    `Find ${q} tasks with higher budget`,
-    `Show tasks similar to ${q}`,
-    `What ${q} tasks are available this week?`,
-  ];
-}
-
-function chooseRelevantPrompts(input: {
-  action: AgentAction;
-  intent: AgentIntent;
-  query: string;
-  locale: string;
-  prompts: string[];
-}): string[] {
-  if (input.action === "chat") {
-    const base = input.prompts.length > 0 ? input.prompts : buildChatRelatedPrompts(input.locale, input.query);
-    const cleaned = dedupePrompts(base);
-    return (cleaned.length > 0 ? cleaned : buildChatRelatedPrompts(input.locale, input.query)).slice(0, 6);
-  }
-
-  const queryTokens = tokenizeForRelevance(input.query);
-  const intentTokens: Record<AgentIntent, string[]> = {
-    jobs: ["job", "jobs", "emploi", "travail", "وظيفة", "وظائف"],
-    services: ["service", "services", "خدمة", "خدمات"],
-    tasks: ["task", "tasks", "mission", "tache", "taches", "مهمة", "مهام"],
-  };
-
-  const filtered = input.prompts.filter((prompt) => {
-    const p = normalizeForIntent(prompt);
-    const overlap = queryTokens.length > 0 && queryTokens.some((token) => p.includes(token));
-    const sameDomain = intentTokens[input.intent].some((token) => p.includes(token));
-    return overlap || sameDomain;
-  });
-
-  if (filtered.length >= 3) return dedupePrompts(filtered).slice(0, 6);
-  return dedupePrompts(buildSearchRelatedPrompts(input.intent, input.query, input.locale)).slice(0, 6);
-}
-
-function safeParseAgentJson(text: string): AgentResponse | null {
-  const firstBrace = text.indexOf("{");
-  const lastBrace = text.lastIndexOf("}");
-  const jsonSlice =
-    firstBrace !== -1 && lastBrace !== -1 ? text.slice(firstBrace, lastBrace + 1) : text;
-
-  let parsed: any;
-  try {
-    parsed = JSON.parse(jsonSlice);
-  } catch {
-    return null;
-  }
-
-  const action = parsed?.action;
-  if (action !== "chat" && action !== "search") return null;
-
-  const intent = parsed?.intent;
-  if (intent !== "jobs" && intent !== "services" && intent !== "tasks") return null;
-
-  const rawSearchQuery = typeof parsed?.searchQuery === "string" ? parsed.searchQuery : "";
-  const searchQuery = rawSearchQuery.trim();
-  if (action === "search" && !searchQuery) return null;
-
-  const assistantText = typeof parsed?.assistantText === "string" ? parsed.assistantText.trim() : "";
-  const relatedPrompts = asStringArray(parsed?.relatedPrompts).slice(0, 6);
-
-  return {
-    action,
-    intent,
-    searchQuery,
-    assistantText,
-    relatedPrompts,
-  };
-}
-
-function formatServiceResultsReply(
-  locale: string,
-  count: number,
-  topTitle?: string,
-): string {
-  if (count === 0) {
-    if (normalizeLocale(locale) === "fr") return "Aucun service pertinent trouve avec ces filtres.";
-    if (normalizeLocale(locale) === "ar") return "ملقيناش خدمات مناسبة بهاد المعايير.";
-    return "No relevant services found for these filters.";
-  }
-  if (normalizeLocale(locale) === "fr") {
-    return `J'ai trouve ${count} services pertinents${topTitle ? ` (top: ${topTitle})` : ""}.`;
-  }
-  if (normalizeLocale(locale) === "ar") {
-    return `لقيت ${count} خدمات مناسبة${topTitle ? ` (الأول: ${topTitle})` : ""}.`;
-  }
-  return `I found ${count} relevant services${topTitle ? ` (top: ${topTitle})` : ""}.`;
-}
-
-function buildServiceSearchExplanation(
-  locale: string,
-  params: {
-    count: number;
-    query: string;
-    topTitle?: string;
-    filters?: Record<string, unknown>;
-    topScores?: {
-      semanticScore?: number;
-      ratingScore?: number;
-      reviewsScore?: number;
-      locationScore?: number;
-      priceScore?: number;
-    };
-  },
-): string {
-  const normalized = normalizeLocale(locale);
-  if (params.count === 0) return formatServiceResultsReply(locale, 0);
-  const city = typeof params.filters?.city === "string" ? params.filters.city : null;
-  const scoreHint =
-    params.topScores &&
-    typeof params.topScores.ratingScore === "number" &&
-    typeof params.topScores.reviewsScore === "number" &&
-    typeof params.topScores.locationScore === "number" &&
-    typeof params.topScores.priceScore === "number"
-      ? ` rating=${params.topScores.ratingScore.toFixed(2)}, reviews=${params.topScores.reviewsScore.toFixed(2)}, location=${params.topScores.locationScore.toFixed(2)}, price=${params.topScores.priceScore.toFixed(2)}`
-      : "";
-  if (normalized === "fr") {
-    return `J'ai trouvé ${params.count} services pertinents pour "${params.query}". Meilleur choix: ${params.topTitle ?? "sans titre"}. Classement basé sur note, avis, proximité et prix${city ? `, avec filtre ville: ${city}` : ""}.${scoreHint}`;
-  }
-  if (normalized === "ar") {
-    return `لقيت ${params.count} خدمات مناسبة لـ "${params.query}". أفضل اختيار: ${params.topTitle ?? "بدون عنوان"}. الترتيب مبني على التقييم والمراجعات والقرب والسعر${city ? ` مع فلتر المدينة: ${city}` : ""}.${scoreHint}`;
-  }
-  return `I found ${params.count} relevant services for "${params.query}". Top choice: ${params.topTitle ?? "untitled"}. Ranking used rating, reviews, location proximity, and price fit${city ? ` with city filter: ${city}` : ""}.${scoreHint}`;
-}
-
 function buildResumeUploadHint(locale: string): string {
   const normalized = normalizeLocale(locale);
   if (normalized === "fr") {
@@ -913,11 +597,22 @@ function buildJobResumeMatchExplanation(locale: string, input: {
   return "Match is based on semantic similarity and experience alignment with your resume.";
 }
 
-function matchToneIcon(percent: number | null | undefined): string {
-  if (typeof percent !== "number") return "⚪";
-  if (percent >= 80) return "🟢";
-  if (percent >= 60) return "🟡";
-  return "🔴";
+function toNumberOrNull(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string" && value.trim()) {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
+}
+
+function evaluateConfidenceMode(items: Array<{ matchScore?: number | null }>): ConfidenceMode {
+  const topScore = toNumberOrNull(items[0]?.matchScore) ?? 0;
+  const secondScore = toNumberOrNull(items[1]?.matchScore) ?? 0;
+  const scoreGap = topScore - secondScore;
+  if (topScore >= 75 && scoreGap >= 10) return "strong";
+  if (topScore >= 55) return "moderate";
+  return "weak";
 }
 
 function formatLocationRequirement(locale: string, value: unknown): string {
@@ -952,7 +647,12 @@ function formatLocationRequirement(locale: string, value: unknown): string {
   return labels.en[key as keyof typeof labels.en] ?? key;
 }
 
-function buildResumeJobMatchMarkdownSummary(locale: string, query: string, cards: any[]): string {
+function buildResumeJobMatchMarkdownSummary(
+  locale: string,
+  query: string,
+  cards: any[],
+  confidenceMode: ConfidenceMode,
+): string {
   const normalized = normalizeLocale(locale);
   const top = cards[0];
   if (!top) {
@@ -961,43 +661,103 @@ function buildResumeJobMatchMarkdownSummary(locale: string, query: string, cards
     return "## Results\n- **No match:** no jobs found.\n- **Next step:** widen your filters.";
   }
 
-  const topPercent = top?.resumeMatch?.percent ?? null;
-  const topIcon = matchToneIcon(topPercent);
+  const topPercent = top?.resumeMatch?.percent ?? top?.matchScore ?? null;
   const matched = top?.resumeMatch?.matchedSkillsCount ?? 0;
   const required = top?.resumeMatch?.requiredSkillsCount ?? 0;
   const skills = Array.isArray(top?.resumeMatch?.matchedSkills)
     ? top.resumeMatch.matchedSkills.slice(0, 3).join(", ")
     : "";
-  const locationRequirement = formatLocationRequirement(locale, top?.locationRequirement);
+
+  const alternatives = cards.slice(1, 3).map((c) => c?.title).filter(Boolean);
+  const alternativesText = alternatives.length ? alternatives.join(", ") : null;
 
   if (normalized === "fr") {
+    if (confidenceMode === "strong") {
+      return [
+        `## Recommandation principale pour "${query}"`,
+        `- **Choix recommande:** ${top.title ?? "Poste"}${typeof topPercent === "number" ? ` (${topPercent}%)` : ""}.`,
+        `- **Pourquoi il se distingue:** alignement competences **${matched}/${required || 0}**${skills ? ` (${skills})` : ""}.`,
+        `- **Alternatives utiles:** ${alternativesText ?? "Aucune alternative proche disponible."}`,
+        `- **Action:** voulez-vous contacter cette offre maintenant ?`,
+      ].join("\n");
+    }
+    if (confidenceMode === "moderate") {
+      return [
+        `## Options comparees pour "${query}"`,
+        `- **Top 1:** ${cards[0]?.title ?? "Poste 1"}${cards[0]?.city ? ` (${cards[0].city})` : ""}.`,
+        `- **Top 2:** ${cards[1]?.title ?? "Poste 2"}${cards[1]?.city ? ` (${cards[1].city})` : ""}.`,
+        `- **Top 3:** ${cards[2]?.title ?? "Poste 3"}${cards[2]?.city ? ` (${cards[2].city})` : ""}.`,
+        `- **Action:** voulez-vous affiner par ville, salaire ou niveau ?`,
+      ].join("\n");
+    }
     return [
-      `## Matchs optimises pour "${query}"`,
-      `- **Top score:** ${topIcon} **${topPercent ?? 0}%** sur **${top.title ?? "ce poste"}**.`,
-      `- **Pourquoi ce score:** competences alignees **${matched}/${required || 0}**${skills ? ` (${skills})` : ""}.`,
-      `- **Contexte poste:** ${top.city ?? "ville non precisee"} · ${locationRequirement} · ${top.wage != null ? `${top.wage} MAD` : "salaire non precise"}.`,
-      `- **Prochaine etape:** ouvrez une carte pour verifier les details et postuler vite.`,
+      `## Correspondances les plus proches pour "${query}"`,
+      `- **Etat de confiance:** les correspondances restent partielles pour l'instant.`,
+      `- **Option 1:** ${cards[0]?.title ?? "Poste 1"} · ${cards[0]?.city ?? "ville non precisee"} · ${formatLocationRequirement(locale, cards[0]?.locationRequirement)}.`,
+      `- **Option 2:** ${cards[1]?.title ?? "Poste 2"}${cards[1]?.city ? ` · ${cards[1].city}` : ""}.`,
+      `- **Action:** voulez-vous clarifier votre contrainte principale (ville, salaire ou role) ?`,
     ].join("\n");
   }
   if (normalized === "ar") {
+    if (confidenceMode === "strong") {
+      return [
+        `## التوصية الأساسية لـ "${query}"`,
+        `- **الخيار الموصى به:** ${top.title ?? "وظيفة"}${typeof topPercent === "number" ? ` (${topPercent}%)` : ""}.`,
+        `- **سبب التميز:** تطابق المهارات **${matched}/${required || 0}**${skills ? ` (${skills})` : ""}.`,
+        `- **بدائل ثانوية:** ${alternativesText ?? "لا توجد بدائل قريبة حالياً."}.`,
+        `- **الإجراء:** هل تريد التواصل مع هذا العرض الآن؟`,
+      ].join("\n");
+    }
+    if (confidenceMode === "moderate") {
+      return [
+        `## مقارنة الخيارات لـ "${query}"`,
+        `- **الخيار 1:** ${cards[0]?.title ?? "الخيار 1"}${cards[0]?.city ? ` (${cards[0].city})` : ""}.`,
+        `- **الخيار 2:** ${cards[1]?.title ?? "الخيار 2"}${cards[1]?.city ? ` (${cards[1].city})` : ""}.`,
+        `- **الخيار 3:** ${cards[2]?.title ?? "الخيار 3"}${cards[2]?.city ? ` (${cards[2].city})` : ""}.`,
+        `- **الإجراء:** هل تريد تضييق النتائج حسب المدينة أو الراتب أو المستوى؟`,
+      ].join("\n");
+    }
     return [
-      `## نتائج مطابقة محسنة لـ "${query}"`,
-      `- **أفضل درجة:** ${topIcon} **${topPercent ?? 0}%** في **${top.title ?? "هذه الوظيفة"}**.`,
-      `- **سبب النتيجة:** تطابق المهارات **${matched}/${required || 0}**${skills ? ` (${skills})` : ""}.`,
-      `- **تفاصيل الوظيفة:** ${top.city ?? "المدينة غير محددة"} · ${locationRequirement} · ${top.wage != null ? `${top.wage} MAD` : "الأجر غير محدد"}.`,
-      `- **الخطوة التالية:** افتح البطاقة المناسبة وابدأ التقديم مباشرة.`,
+      `## أقرب النتائج الحالية لـ "${query}"`,
+      `- **مستوى الثقة:** التطابق ما يزال محدوداً حالياً.`,
+      `- **الخيار 1:** ${cards[0]?.title ?? "الخيار 1"} · ${cards[0]?.city ?? "مدينة غير محددة"} · ${formatLocationRequirement(locale, cards[0]?.locationRequirement)}.`,
+      `- **الخيار 2:** ${cards[1]?.title ?? "الخيار 2"}${cards[1]?.city ? ` · ${cards[1].city}` : ""}.`,
+      `- **الإجراء:** هل تريد توضيح الشرط الأهم لديك (مدينة، راتب، أو تخصص)؟`,
+    ].join("\n");
+  }
+  if (confidenceMode === "strong") {
+    return [
+      `## Primary Recommendation for "${query}"`,
+      `- **Recommended option:** ${top.title ?? "Role"}${typeof topPercent === "number" ? ` (${topPercent}%)` : ""}.`,
+      `- **Why it stands out:** skill alignment is **${matched}/${required || 0}**${skills ? ` (${skills})` : ""}.`,
+      `- **Secondary alternatives:** ${alternativesText ?? "No close alternatives available."}.`,
+      `- **Action:** do you want to contact this role now?`,
+    ].join("\n");
+  }
+  if (confidenceMode === "moderate") {
+    return [
+      `## Structured Options for "${query}"`,
+      `- **Top 1:** ${cards[0]?.title ?? "Option 1"}${cards[0]?.city ? ` (${cards[0].city})` : ""}.`,
+      `- **Top 2:** ${cards[1]?.title ?? "Option 2"}${cards[1]?.city ? ` (${cards[1].city})` : ""}.`,
+      `- **Top 3:** ${cards[2]?.title ?? "Option 3"}${cards[2]?.city ? ` (${cards[2].city})` : ""}.`,
+      `- **Action:** would you like to refine by city, wage, or level?`,
     ].join("\n");
   }
   return [
-    `## Optimized Matches for "${query}"`,
-    `- **Top score:** ${topIcon} **${topPercent ?? 0}%** on **${top.title ?? "this role"}**.`,
-    `- **Why this score:** skill overlap is **${matched}/${required || 0}**${skills ? ` (${skills})` : ""}.`,
-    `- **Job context:** ${top.city ?? "city n/a"} · ${locationRequirement} · ${top.wage != null ? `${top.wage} MAD` : "wage n/a"}.`,
-    `- **Next step:** open the best-fit card and apply while it is fresh.`,
+    `## Closest Matches So Far for "${query}"`,
+    `- **Confidence status:** alignment is currently limited.`,
+    `- **Option 1:** ${cards[0]?.title ?? "Option 1"} · ${cards[0]?.city ?? "city n/a"} · ${formatLocationRequirement(locale, cards[0]?.locationRequirement)}.`,
+    `- **Option 2:** ${cards[1]?.title ?? "Option 2"}${cards[1]?.city ? ` · ${cards[1].city}` : ""}.`,
+    `- **Action:** would you like to clarify your main constraint (city, wage, or role)?`,
   ].join("\n");
 }
 
-function buildServiceMarkdownSummary(locale: string, query: string, cards: any[]): string {
+function buildServiceMarkdownSummary(
+  locale: string,
+  query: string,
+  cards: any[],
+  confidenceMode: ConfidenceMode,
+): string {
   const normalized = normalizeLocale(locale);
   const top = cards[0];
   if (!top) {
@@ -1007,31 +767,86 @@ function buildServiceMarkdownSummary(locale: string, query: string, cards: any[]
   }
 
   const topReasons = Array.isArray(top.selectionReasons) ? top.selectionReasons.slice(0, 2) : [];
-  const topSignals = Array.isArray(top.confidenceSignals) ? top.confidenceSignals.slice(0, 2) : [];
+  const alternatives = cards.slice(1, 3).map((c) => c?.title).filter(Boolean);
+  const alternativesText = alternatives.length ? alternatives.join(", ") : null;
   if (normalized === "fr") {
+    if (confidenceMode === "strong") {
+      return [
+        `## Recommandation principale pour "${query}"`,
+        `- **Choix recommande:** ${top.title ?? "Service"}${typeof top.matchScore === "number" ? ` (${top.matchScore}%)` : ""}.`,
+        `- **Pourquoi il se distingue:** ${topReasons.length ? topReasons.join(" · ") : "equilibre solide entre qualite, prix et localisation"}.`,
+        `- **Alternatives secondaires:** ${alternativesText ?? "Aucune alternative proche disponible."}.`,
+        `- **Action:** voulez-vous contacter ce prestataire maintenant ?`,
+      ].join("\n");
+    }
+    if (confidenceMode === "moderate") {
+      return [
+        `## Comparatif des services pour "${query}"`,
+        `- **Option 1:** ${cards[0]?.title ?? "Service 1"}${cards[0]?.city ? ` (${cards[0].city})` : ""}.`,
+        `- **Option 2:** ${cards[1]?.title ?? "Service 2"}${cards[1]?.city ? ` (${cards[1].city})` : ""}.`,
+        `- **Option 3:** ${cards[2]?.title ?? "Service 3"}${cards[2]?.city ? ` (${cards[2].city})` : ""}.`,
+        `- **Action:** voulez-vous affiner par prix, ville ou niveau de note ?`,
+      ].join("\n");
+    }
     return [
-      `## Services trouves pour "${query}"`,
-      `- **Top option:** ${top.title ?? "Service"} (${top.serviceCategory ?? "categorie non precisee"}).`,
-      `- **Pourquoi selectionne:** ${topReasons.length ? topReasons.join(" · ") : "bon equilibre note, prix et localisation"}.`,
-      `- **Confiance:** ${topSignals.length ? topSignals.join(" · ") : "donnees de note/prix/localisation verifiees"}.`,
-      `- **Prochaine etape:** ouvre une carte pour comparer 2-3 options rapidement.`,
+      `## Correspondances les plus proches pour "${query}"`,
+      `- **Niveau de confiance:** les correspondances restent limites pour l'instant.`,
+      `- **Option 1:** ${cards[0]?.title ?? "Service 1"}${cards[0]?.city ? ` (${cards[0].city})` : ""}.`,
+      `- **Option 2:** ${cards[1]?.title ?? "Service 2"}${cards[1]?.city ? ` (${cards[1].city})` : ""}.`,
+      `- **Action:** voulez-vous preciser davantage votre besoin principal ?`,
     ].join("\n");
   }
   if (normalized === "ar") {
+    if (confidenceMode === "strong") {
+      return [
+        `## التوصية الأساسية لـ "${query}"`,
+        `- **الخيار الموصى به:** ${top.title ?? "خدمة"}${typeof top.matchScore === "number" ? ` (${top.matchScore}%)` : ""}.`,
+        `- **سبب التميز:** ${topReasons.length ? topReasons.join(" · ") : "توازن قوي بين الجودة والسعر والموقع"}.`,
+        `- **بدائل ثانوية:** ${alternativesText ?? "لا توجد بدائل قريبة حالياً."}.`,
+        `- **الإجراء:** هل تريد التواصل مع هذا المزود الآن؟`,
+      ].join("\n");
+    }
+    if (confidenceMode === "moderate") {
+      return [
+        `## مقارنة الخدمات لـ "${query}"`,
+        `- **الخيار 1:** ${cards[0]?.title ?? "الخيار 1"}${cards[0]?.city ? ` (${cards[0].city})` : ""}.`,
+        `- **الخيار 2:** ${cards[1]?.title ?? "الخيار 2"}${cards[1]?.city ? ` (${cards[1].city})` : ""}.`,
+        `- **الخيار 3:** ${cards[2]?.title ?? "الخيار 3"}${cards[2]?.city ? ` (${cards[2].city})` : ""}.`,
+        `- **الإجراء:** هل تريد تضييق النتائج حسب السعر أو المدينة أو التقييم؟`,
+      ].join("\n");
+    }
     return [
-      `## خدمات مقترحة لـ "${query}"`,
-      `- **أفضل خيار:** ${top.title ?? "خدمة"} (${top.serviceCategory ?? "فئة غير محددة"}).`,
-      `- **سبب الاختيار:** ${topReasons.length ? topReasons.join(" · ") : "توازن جيد بين التقييم والسعر والموقع"}.`,
-      `- **طبقة الثقة:** ${topSignals.length ? topSignals.join(" · ") : "بيانات التقييم/السعر/الموقع متاحة"}.`,
-      `- **الخطوة التالية:** افتح البطاقات وقارن أفضل 2 أو 3 خيارات.`,
+      `## أقرب النتائج الحالية لـ "${query}"`,
+      `- **مستوى الثقة:** التطابق ما يزال محدوداً حالياً.`,
+      `- **الخيار 1:** ${cards[0]?.title ?? "الخيار 1"}${cards[0]?.city ? ` (${cards[0].city})` : ""}.`,
+      `- **الخيار 2:** ${cards[1]?.title ?? "الخيار 2"}${cards[1]?.city ? ` (${cards[1].city})` : ""}.`,
+      `- **الإجراء:** هل تريد توضيح متطلباتك أكثر؟`,
+    ].join("\n");
+  }
+  if (confidenceMode === "strong") {
+    return [
+      `## Primary Recommendation for "${query}"`,
+      `- **Recommended option:** ${top.title ?? "Service"}${typeof top.matchScore === "number" ? ` (${top.matchScore}%)` : ""}.`,
+      `- **Why it stands out:** ${topReasons.length ? topReasons.join(" · ") : "strong balance of quality, price, and location"}.`,
+      `- **Secondary alternatives:** ${alternativesText ?? "No close alternatives available."}.`,
+      `- **Action:** do you want to contact this provider now?`,
+    ].join("\n");
+  }
+  if (confidenceMode === "moderate") {
+    return [
+      `## Structured Options for "${query}"`,
+      `- **Option 1:** ${cards[0]?.title ?? "Option 1"}${cards[0]?.city ? ` (${cards[0].city})` : ""}.`,
+      `- **Option 2:** ${cards[1]?.title ?? "Option 2"}${cards[1]?.city ? ` (${cards[1].city})` : ""}.`,
+      `- **Option 3:** ${cards[2]?.title ?? "Option 3"}${cards[2]?.city ? ` (${cards[2].city})` : ""}.`,
+      `- **Action:** would you like to refine by price, city, or rating?`,
     ].join("\n");
   }
   return [
-    `## Service Matches for "${query}"`,
-    `- **Top option:** ${top.title ?? "Service"} (${top.serviceCategory ?? "category n/a"}).`,
-    `- **Why selected:** ${topReasons.length ? topReasons.join(" · ") : "balanced rating, price, and location fit"}.`,
-    `- **Confidence layer:** ${topSignals.length ? topSignals.join(" · ") : "rating, price, and location signals available"}.`,
-    `- **Next step:** open the cards and compare 2-3 providers quickly.`,
+    `## Closest Matches So Far for "${query}"`,
+    `- **Confidence status:** alignment is currently limited.`,
+    `- **Option 1:** ${cards[0]?.title ?? "Option 1"}${cards[0]?.city ? ` (${cards[0].city})` : ""}.`,
+    `- **Option 2:** ${cards[1]?.title ?? "Option 2"}${cards[1]?.city ? ` (${cards[1].city})` : ""}.`,
+    `- **Action:** would you like to clarify your main service requirement?`,
   ].join("\n");
 }
 
@@ -1050,6 +865,14 @@ function mapJobCards(items: any[], opts?: { locale?: string; includeResumeMatch?
     experienceLevel: item.experienceLevel,
     locationRequirement: item.locationRequirement,
     category: item.category,
+    matchScore:
+      typeof item.matchPercent === "number"
+        ? Math.round(item.matchPercent)
+        : typeof item.blendedScore === "number"
+          ? Math.round(Math.max(0, Math.min(1, item.blendedScore)) * 100)
+          : typeof item.finalScore === "number"
+            ? Math.round(Math.max(0, Math.min(1, item.finalScore)) * 100)
+            : null,
     createdAt: item.createdAt,
     description: item.description ?? "",
     resumeMatch: includeResumeMatch
@@ -1099,6 +922,12 @@ function mapServiceCards(items: any[]): any[] {
     averageRating: item.averageRating ?? null,
     numberOfReviews: item.numberOfReviews ?? 0,
     matchPercent: typeof item.matchPercent === "number" ? item.matchPercent : null,
+    matchScore:
+      typeof item.matchPercent === "number"
+        ? Math.round(item.matchPercent)
+        : typeof item.finalScore === "number"
+          ? Math.round(Math.max(0, Math.min(1, item.finalScore)) * 100)
+          : null,
     selectionReasons: Array.isArray(item.selectionReasons) ? item.selectionReasons.slice(0, 3) : [],
     confidenceSignals: Array.isArray(item.confidenceSignals) ? item.confidenceSignals.slice(0, 3) : [],
   }));
@@ -1144,7 +973,7 @@ export async function POST(req: Request) {
             intent: "jobs",
             searchQuery: "",
             assistantText: buildPlanLimitMessage(locale),
-            relatedPrompts: buildPlanLimitPrompts(locale),
+            relatedPrompts: [],
             planLimitReached: true,
             upgradeUrl: "/subscription",
           } satisfies AgentResponse);
@@ -1213,7 +1042,7 @@ export async function POST(req: Request) {
           lastUser,
           aiResult.reply || buildChatFallbackReply(locale, lastUser),
         ),
-        relatedPrompts: buildChatRelatedPrompts(locale, lastUser),
+        relatedPrompts: [],
         debug: includeDebug
           ? {
               stage: "conversation",
@@ -1254,6 +1083,7 @@ export async function POST(req: Request) {
         locale,
         includeResumeMatch: hasResumeEmbedding,
       });
+      const confidenceMode = evaluateConfidenceMode(cards);
       await trackAgentEvent({
         userId,
         sessionId,
@@ -1262,6 +1092,7 @@ export async function POST(req: Request) {
         data: {
           query: searchQuery,
           resultsCount: cards.length,
+          confidenceMode,
           hasResumeEmbedding,
           filtersApplied: searchResult.filtersApplied,
           topIds: cards.map((item) => item.id),
@@ -1299,7 +1130,7 @@ export async function POST(req: Request) {
         intent: "jobs",
         searchQuery,
         assistantText: hasResumeEmbedding
-          ? buildResumeJobMatchMarkdownSummary(locale, searchQuery, cards)
+          ? buildResumeJobMatchMarkdownSummary(locale, searchQuery, cards, confidenceMode)
           : buildResumeUploadHint(locale),
         results: {
           type: "jobs",
@@ -1307,7 +1138,7 @@ export async function POST(req: Request) {
         },
         resumeUploadCta: hasResumeEmbedding ? undefined : buildResumeUploadCta(locale),
         debug: jobDebug,
-        relatedPrompts: buildSearchRelatedPrompts("jobs", searchQuery || "jobs", locale),
+        relatedPrompts: [],
       } satisfies AgentResponse);
     }
 
@@ -1318,6 +1149,7 @@ export async function POST(req: Request) {
       );
       const searchQuery = aiResult.intent_data.query?.trim() || lastUser.trim();
       const cards = mapServiceCards(searchResult.topResults);
+      const confidenceMode = evaluateConfidenceMode(cards);
       await trackAgentEvent({
         userId,
         sessionId,
@@ -1326,6 +1158,7 @@ export async function POST(req: Request) {
         data: {
           query: searchQuery,
           resultsCount: cards.length,
+          confidenceMode,
           filtersApplied: searchResult.filtersApplied,
           topIds: cards.map((item) => item.id),
         },
@@ -1359,13 +1192,13 @@ export async function POST(req: Request) {
         action: "search",
         intent: "services",
         searchQuery,
-        assistantText: buildServiceMarkdownSummary(locale, searchQuery, cards),
+        assistantText: buildServiceMarkdownSummary(locale, searchQuery, cards, confidenceMode),
         results: {
           type: "services",
           items: cards,
         },
         debug: serviceDebug,
-        relatedPrompts: buildSearchRelatedPrompts("services", searchQuery || "services", locale),
+        relatedPrompts: [],
       } satisfies AgentResponse);
     }
 
@@ -1387,7 +1220,7 @@ export async function POST(req: Request) {
         intent: "tasks",
         searchQuery,
         assistantText: "",
-        relatedPrompts: buildSearchRelatedPrompts("tasks", searchQuery || "tasks", locale),
+        relatedPrompts: [],
       } satisfies AgentResponse);
     }
 
@@ -1403,7 +1236,7 @@ export async function POST(req: Request) {
             extracted_intent: aiResult,
           }
         : undefined,
-      relatedPrompts: buildSearchRelatedPrompts("jobs", fallbackQuery || "jobs", locale),
+      relatedPrompts: [],
     } satisfies AgentResponse);
   } catch (err: any) {
     return NextResponse.json(

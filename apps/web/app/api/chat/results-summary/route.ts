@@ -5,11 +5,13 @@ import { buildResultsSummaryPrompt } from "../agent/prompt/results";
 export const runtime = "nodejs";
 
 type Intent = "jobs" | "services" | "tasks";
+type ConfidenceMode = "strong" | "moderate" | "weak";
 
 type ResultsSummaryRequest = {
   locale?: string;
   intent?: Intent;
   query?: string;
+  confidenceMode?: ConfidenceMode;
   items?: unknown[];
 };
 
@@ -35,6 +37,35 @@ function extractAssistantText(json: any): string | null {
     json?.choices?.[0]?.message?.content,
     json?.choices?.[0]?.text,
   );
+}
+
+function detectUserLanguage(text: string): "ar" | "fr" | "en" {
+  const raw = (text || "").trim();
+  if (!raw) return "en";
+  if (/[\u0600-\u06ff]/.test(raw)) return "ar";
+  const lower = raw.toLowerCase();
+  const frenchSignals = ["bonjour", "merci", "cherche", "travail", "service", "ville", "avec", "pour"];
+  if (frenchSignals.some((token) => lower.includes(token))) return "fr";
+  return "en";
+}
+
+function toNumberOrNull(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string" && value.trim()) {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
+}
+
+function evaluateConfidenceMode(items: unknown[]): ConfidenceMode {
+  const list = Array.isArray(items) ? items : [];
+  const topScore = toNumberOrNull((list[0] as any)?.matchScore) ?? 0;
+  const secondScore = toNumberOrNull((list[1] as any)?.matchScore) ?? 0;
+  const scoreGap = topScore - secondScore;
+  if (topScore >= 75 && scoreGap >= 10) return "strong";
+  if (topScore >= 55) return "moderate";
+  return "weak";
 }
 
 async function callDashScope(messages: { role: "system" | "user"; content: string }[]): Promise<string> {
@@ -106,6 +137,13 @@ export async function POST(req: Request) {
     const query = typeof body.query === "string" ? body.query.trim() : "";
     const locale = typeof body.locale === "string" ? body.locale : "en";
     const items = Array.isArray(body.items) ? body.items.slice(0, 3) : [];
+    const userLanguage = detectUserLanguage(query || locale);
+    const confidenceMode: ConfidenceMode =
+      body.confidenceMode === "strong" ||
+      body.confidenceMode === "moderate" ||
+      body.confidenceMode === "weak"
+        ? body.confidenceMode
+        : evaluateConfidenceMode(items);
 
     if (!intent || !["jobs", "services", "tasks"].includes(intent)) {
       return NextResponse.json({ error: "Invalid intent" }, { status: 400 });
@@ -117,8 +155,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ summary: "" });
     }
 
-    const prompt = buildResultsSummaryPrompt({ locale, intent });
-    const payload = JSON.stringify({ query, intent, items });
+    const prompt = buildResultsSummaryPrompt({ userLanguage, intent });
+    const payload = JSON.stringify({ query, intent, confidenceMode, items });
     const summary = await callDashScope([
       { role: "system", content: prompt },
       { role: "user", content: payload },

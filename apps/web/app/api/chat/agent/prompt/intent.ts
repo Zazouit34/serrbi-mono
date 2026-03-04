@@ -1,11 +1,9 @@
 type PromptContext = {
-  locale?: string;
   scope?: "auto" | "jobs" | "services" | "tasks";
   categoryHint?: string;
 };
 
 export function buildIntentExtractorPrompt(context?: PromptContext): string {
-  const locale = context?.locale ?? "en";
   const scope = context?.scope ?? "auto";
   const categoryHint = context?.categoryHint?.trim() || "(none)";
 
@@ -23,7 +21,8 @@ Schema:
 }
 
 Rules:
-- Language for "reply" must match user language (${locale}).
+- Infer language from the latest user message itself and mirror it in "reply".
+- Do not rely on locale metadata for reply language.
 - scope is "${scope}".
 - If scope is jobs/services/tasks and message is not pure greeting/small-talk, force matching search type.
 - categoryHint: ${categoryHint}. Use only as soft hint.
@@ -35,6 +34,9 @@ Rules:
 - For search types, "intent_data.query" must be concise and non-empty.
 - Include structured filters only when clearly present.
 - Never invent constraints not stated by user.
+- Keep extraction deterministic and conservative.
+- If uncertain between two filters, leave unknown fields null.
+- Never change enum values; use exact allowed enum strings only.
 
 Field map:
 - search_job intent_data: query, category, locationRequirement (in_office|hybrid|remote), experienceLevel (junior|mid_level|senior), type (internship|part_time|full_time), city, stateAbbreviation, countryIso2, minWage, maxWage, skills[]

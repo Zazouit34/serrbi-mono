@@ -94,6 +94,7 @@ type AgentResponse = {
 type ResultsSummaryResponse = {
   summary: string;
 };
+type ConfidenceMode = "strong" | "moderate" | "weak";
 
 function normalizeLocaleForSummary(locale: string): "en" | "fr" | "ar" {
   const lower = locale.toLowerCase();
@@ -316,7 +317,6 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
   const [isAgentWorking, setIsAgentWorking] = useState(false);
   const [chatExpanded, setChatExpanded] = useState(false);
   const [placeholder, setPlaceholder] = useState("");
-  const [pendingRelatedByKey, setPendingRelatedByKey] = useState<Record<string, string[]>>({});
   const [resumeAttachStatusText, setResumeAttachStatusText] = useState<string>("");
   const [resumeAttachProgress, setResumeAttachProgress] = useState<number | null>(null);
   const [resumeAttachFileName, setResumeAttachFileName] = useState<string>("");
@@ -589,7 +589,21 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
     query: string;
     items: any[];
   }): Promise<string> => {
+    const toScore = (value: unknown): number | null => {
+      if (typeof value === "number" && Number.isFinite(value)) return value;
+      if (typeof value === "string" && value.trim()) {
+        const parsed = Number(value);
+        return Number.isFinite(parsed) ? parsed : null;
+      }
+      return null;
+    };
+
     const compactItems = opts.items.slice(0, SEARCH_PAGE_SIZE).map((item: any) => {
+      const matchScore =
+        toScore(item?.matchScore) ??
+        toScore(item?.matchPercent) ??
+        (typeof item?.finalScore === "number" ? Math.round(item.finalScore * 100) : null) ??
+        (typeof item?._score === "number" ? Math.round(item._score * 100) : null);
       if (opts.intent === "jobs") {
         return {
           title: item?.title ?? null,
@@ -599,6 +613,7 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
           locationRequirement: item?.locationRequirement ?? null,
           wage: item?.wage ?? null,
           type: item?.type ?? null,
+          matchScore,
         };
       }
       if (opts.intent === "services") {
@@ -610,6 +625,7 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
           type: item?.type ?? null,
           averageRating: item?.averageRating ?? null,
           numberOfReviews: item?.numberOfReviews ?? null,
+          matchScore,
         };
       }
       return {
@@ -618,8 +634,15 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
         city: item?.city ?? null,
         budget: item?.budget ?? null,
         status: item?.status ?? null,
+        matchScore,
       };
     });
+
+    const topScore = toScore(compactItems[0]?.matchScore) ?? 0;
+    const secondScore = toScore(compactItems[1]?.matchScore) ?? 0;
+    const scoreGap = topScore - secondScore;
+    const confidenceMode: ConfidenceMode =
+      topScore >= 75 && scoreGap >= 10 ? "strong" : topScore >= 55 ? "moderate" : "weak";
 
     const res = await fetch("/api/chat/results-summary", {
       method: "POST",
@@ -628,6 +651,7 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
         locale: opts.locale,
         intent: opts.intent,
         query: opts.query,
+        confidenceMode,
         items: compactItems,
       }),
     });
@@ -912,40 +936,6 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
     };
   }, [hasSearched, submittedQuery, submittedResultsKey, topSearchLoading, topSearchItems, locale, activeTab]);
 
-  // After a search finishes, append suggestions as their own assistant bubble.
-  useEffect(() => {
-    if (!submittedResultsKey) return;
-    if (!hasSearched) return;
-    if (topSearchLoading) return;
-
-    const prompts = pendingRelatedByKey[submittedResultsKey];
-    if (!Array.isArray(prompts) || prompts.length === 0) return;
-
-    setMessages((prev) => {
-      if (prev.some((m) => m.kind === "suggestions" && m.suggestionsForKey === submittedResultsKey)) {
-        return prev;
-      }
-      const id = nextMessageIdRef.current++;
-      return [
-        ...prev,
-        {
-          id,
-          role: "assistant",
-          kind: "suggestions",
-          content: t("labels.related"),
-          relatedPrompts: prompts,
-          suggestionsForKey: submittedResultsKey,
-        },
-      ];
-    });
-
-    setPendingRelatedByKey((prev) => {
-      const next = { ...prev };
-      delete next[submittedResultsKey];
-      return next;
-    });
-  }, [submittedResultsKey, hasSearched, topSearchLoading, pendingRelatedByKey, locale]);
-
   const handleSearch = async (overrideQuery?: string) => {
     const effectiveQuery = (overrideQuery ?? chatInput).trim();
 
@@ -1020,20 +1010,6 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
           ),
         );
 
-        if (Array.isArray(agent.relatedPrompts) && agent.relatedPrompts.length > 0) {
-          const suggestionsId = nextMessageIdRef.current++;
-          setMessages((prev) => [
-            ...prev,
-            {
-              id: suggestionsId,
-              role: "assistant",
-              kind: "suggestions",
-              content: t("labels.related"),
-              relatedPrompts: agent.relatedPrompts,
-              upgradeUrl: agent.upgradeUrl,
-            },
-          ]);
-        }
         return;
       }
 
@@ -1092,20 +1068,6 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
           ),
         );
 
-        if (Array.isArray(agent.relatedPrompts) && agent.relatedPrompts.length > 0) {
-          const suggestionsId = nextMessageIdRef.current++;
-          setMessages((prev) => [
-            ...prev,
-            {
-              id: suggestionsId,
-              role: "assistant",
-              kind: "suggestions",
-              content: t("labels.related"),
-              relatedPrompts: agent.relatedPrompts,
-              suggestionsForKey: resultsKey,
-            },
-          ]);
-        }
         return;
       }
 
@@ -1114,10 +1076,6 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
       if (!pinnedIntent) setSelectedCategory(undefined);
       setPreviewPageSize(12);
       setHasSearched(true);
-
-      if (Array.isArray(agent.relatedPrompts) && agent.relatedPrompts.length > 0) {
-        setPendingRelatedByKey((prev) => ({ ...prev, [resultsKey]: agent.relatedPrompts.slice(0, 6) }));
-      }
 
       // Turn the assistant bubble into the results bubble (cards only).
       setMessages((prev) =>
