@@ -44,7 +44,7 @@ Field map:
   Tech | Finance | Hospitality | Health | Legal | Construction | Education | CallCenter | Auto | Cleaning | Other
 - search_service intent_data: query, serviceCategory, type, city, stateAbbreviation, minPrice, maxPrice, minAverageRating, minNumberOfReviews
 - For serviceCategory, prefer exact enum value if clear:
-  Lawyer | Doctor | Education | Architect | Plumber | Electrician | Mason | Mechanic | Accountant | Esthetician | Cleaning
+  HomeMaintenance | ConstructionInstallation | HealthWellness | BeautyPersonalCare | EventsMedia | FoodCatering | DigitalCreative | LegalFinance | EducationCoaching | AutomotiveTransport | Other
 - search_task intent_data: query, category, city, stateAbbreviation, minBudget, maxBudget
 
 Return JSON only.

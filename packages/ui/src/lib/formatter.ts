@@ -10,15 +10,10 @@ import {
 } from "../../../database/generated/prisma/client.js";
 import {
   Briefcase,
-  Stethoscope,
   BookOpen,
-  Ruler,
-  Wrench,
-  Zap,
-  Hammer,
   Car,
+  CarFront,
   Calculator,
-  Scissors,
   WashingMachine,
   Building,
   Laptop,
@@ -26,6 +21,13 @@ import {
   Gavel,
   Utensils,
   Users,
+  Home,
+  HardHat,
+  Sparkles,
+  Camera,
+  Monitor,
+  Scale,
+  GraduationCap,
 } from "lucide-react";
 
 // ------------------------
@@ -193,60 +195,60 @@ export const serviceCategoryStyles: Record<
     icon: React.ComponentType<{ className?: string }>;
   }
 > = {
-  Lawyer: {
-    label: "Lawyer",
-    color: "bg-purple-100 text-purple-700 border-purple-300",
-    icon: Gavel,
-  },
-  Doctor: {
-    label: "Doctor",
-    color: "bg-red-100 text-red-700 border-red-300",
-    icon: Stethoscope,
-  },
-  Education: {
-    label: "Education",
-    color: "bg-blue-100 text-blue-700 border-blue-300",
-    icon: BookOpen,
-  },
-  Architect: {
-    label: "Architect",
-    color: "bg-indigo-100 text-indigo-700 border-indigo-300",
-    icon: Ruler,
-  },
-  Plumber: {
-    label: "Plumber",
+  HomeMaintenance: {
+    label: "Home & Maintenance",
     color: "bg-cyan-100 text-cyan-700 border-cyan-300",
-    icon: Wrench,
+    icon: Home,
   },
-  Electrician: {
-    label: "Electrician",
-    color: "bg-yellow-100 text-yellow-700 border-yellow-300",
-    icon: Zap,
-  },
-  Mason: {
-    label: "Mason",
-    color: "bg-orange-100 text-orange-700 border-orange-300",
-    icon: Hammer,
-  },
-  Mechanic: {
-    label: "Mechanic",
-    color: "bg-gray-100 text-gray-700 border-gray-300",
-    icon: Car,
-  },
-  Accountant: {
-    label: "Accountant",
+  ConstructionInstallation: {
+    label: "Construction & Installation",
     color: "bg-amber-100 text-amber-700 border-amber-300",
-    icon: Calculator,
+    icon: HardHat,
   },
-  Esthetician: {
-    label: "Esthetician",
+  HealthWellness: {
+    label: "Health & Wellness",
+    color: "bg-red-100 text-red-700 border-red-300",
+    icon: HeartPulse,
+  },
+  BeautyPersonalCare: {
+    label: "Beauty & Personal Care",
     color: "bg-pink-100 text-pink-700 border-pink-300",
-    icon: Scissors,
+    icon: Sparkles,
   },
-  Cleaning: {
-    label: "Cleaning",
-    color: "bg-teal-50 text-teal-800 border-teal-200",
-    icon: WashingMachine,
+  EventsMedia: {
+    label: "Events & Media",
+    color: "bg-violet-100 text-violet-700 border-violet-300",
+    icon: Camera,
+  },
+  FoodCatering: {
+    label: "Food & Catering",
+    color: "bg-orange-100 text-orange-700 border-orange-300",
+    icon: Utensils,
+  },
+  DigitalCreative: {
+    label: "Digital & Creative",
+    color: "bg-blue-100 text-blue-700 border-blue-300",
+    icon: Monitor,
+  },
+  LegalFinance: {
+    label: "Legal & Finance",
+    color: "bg-purple-100 text-purple-700 border-purple-300",
+    icon: Scale,
+  },
+  EducationCoaching: {
+    label: "Education & Coaching",
+    color: "bg-indigo-100 text-indigo-700 border-indigo-300",
+    icon: GraduationCap,
+  },
+  AutomotiveTransport: {
+    label: "Automotive & Transport",
+    color: "bg-gray-100 text-gray-700 border-gray-300",
+    icon: CarFront,
+  },
+  Other: {
+    label: "Other Services",
+    color: "bg-slate-100 text-slate-700 border-slate-300",
+    icon: Briefcase,
   },
 };
 export function formatServiceCategory(category: ServiceCategory) {

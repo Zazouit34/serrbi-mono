@@ -63,17 +63,57 @@ function inferServiceCategoryFromText(text: string): ServiceCategory | null {
     .toLowerCase();
 
   const rules: Array<{ category: ServiceCategory; keywords: string[] }> = [
-    { category: ServiceCategory.Lawyer, keywords: ["lawyer", "avocat", "legal", "juridique"] },
-    { category: ServiceCategory.Doctor, keywords: ["doctor", "medecin", "medical", "health"] },
-    { category: ServiceCategory.Education, keywords: ["teacher", "prof", "education", "cours", "tutor"] },
-    { category: ServiceCategory.Architect, keywords: ["architect", "architecture"] },
-    { category: ServiceCategory.Plumber, keywords: ["plumber", "plombier", "plomberie"] },
-    { category: ServiceCategory.Electrician, keywords: ["electrician", "electricien", "electricite"] },
-    { category: ServiceCategory.Mason, keywords: ["mason", "maçon", "brique", "construction"] },
-    { category: ServiceCategory.Mechanic, keywords: ["mechanic", "mecanicien", "garage", "auto"] },
-    { category: ServiceCategory.Accountant, keywords: ["accountant", "comptable", "finance", "tax"] },
-    { category: ServiceCategory.Esthetician, keywords: ["esthetician", "beauty", "beaute", "coiffure", "spa"] },
-    { category: ServiceCategory.Cleaning, keywords: ["cleaning", "nettoyage", "menage", "cleaner"] },
+    {
+      category: ServiceCategory.HomeMaintenance,
+      keywords: [
+        "plumber",
+        "plombier",
+        "electrician",
+        "electricien",
+        "painter",
+        "carpenter",
+        "locksmith",
+        "cleaning",
+        "nettoyage",
+        "maintenance",
+      ],
+    },
+    {
+      category: ServiceCategory.ConstructionInstallation,
+      keywords: ["construction", "architect", "architecture", "pool", "elevator", "security system", "renovation"],
+    },
+    {
+      category: ServiceCategory.HealthWellness,
+      keywords: ["doctor", "medecin", "medical", "health", "nurse", "therapist", "nutrition", "fitness", "clinic"],
+    },
+    {
+      category: ServiceCategory.BeautyPersonalCare,
+      keywords: ["beauty", "beaute", "hairstylist", "makeup", "esthetician", "spa", "coiffure", "barber"],
+    },
+    {
+      category: ServiceCategory.EventsMedia,
+      keywords: ["event", "wedding", "decoration", "photographer", "videographer", "dj", "music"],
+    },
+    {
+      category: ServiceCategory.FoodCatering,
+      keywords: ["food", "catering", "chef", "bakery", "restaurant", "traiteur"],
+    },
+    {
+      category: ServiceCategory.DigitalCreative,
+      keywords: ["design", "graphic", "digital", "developer", "marketing", "social media", "content creator", "seo"],
+    },
+    {
+      category: ServiceCategory.LegalFinance,
+      keywords: ["lawyer", "avocat", "legal", "juridique", "accountant", "comptable", "finance", "tax"],
+    },
+    {
+      category: ServiceCategory.EducationCoaching,
+      keywords: ["teacher", "prof", "education", "cours", "tutor", "coach", "training"],
+    },
+    {
+      category: ServiceCategory.AutomotiveTransport,
+      keywords: ["mechanic", "mecanicien", "garage", "auto", "car", "transport", "driver"],
+    },
   ];
 
   for (const rule of rules) {

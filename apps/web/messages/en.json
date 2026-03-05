@@ -1355,19 +1355,17 @@
       "full_time": "Full Time"
     },
     "ServiceCategory": {
-      "Lawyer": "Lawyer",
-      "Doctor": "Doctor",
-      "Education": "Education",
-      "Architect": "Architect",
-      "Plumber": "Plumber",
-      "Electrician": "Electrician",
-      "Mason": "Mason",
-      "Mechanic": "Mechanic",
-      "Accountant": "Accountant",
-      "Esthetician": "Esthetician",
-      "Cleaning": "Cleaner",
-      "Teacher": "Teacher",
-      "Dentist": "Dentist"
+      "HomeMaintenance": "Home & Maintenance",
+      "ConstructionInstallation": "Construction & Installation",
+      "HealthWellness": "Health & Wellness",
+      "BeautyPersonalCare": "Beauty & Personal Care",
+      "EventsMedia": "Events & Media",
+      "FoodCatering": "Food & Catering",
+      "DigitalCreative": "Digital & Creative",
+      "LegalFinance": "Legal & Finance",
+      "EducationCoaching": "Education & Coaching",
+      "AutomotiveTransport": "Automotive & Transport",
+      "Other": "Other"
     },
     "TaskCategory": {
       "MultiSector": "Multi Sector",

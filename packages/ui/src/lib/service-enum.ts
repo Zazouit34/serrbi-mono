@@ -1,15 +1,15 @@
 export const serviceCategoryValues = [
-    "Lawyer",
-    "Doctor",
-    "Education",
-    "Architect",
-    "Plumber",
-    "Electrician",    
-    "Mason",
-    "Mechanic",
-    "Accountant",
-    "Esthetician",
-    "Cleaning",
+    "HomeMaintenance",
+    "ConstructionInstallation",
+    "HealthWellness",
+    "BeautyPersonalCare",
+    "EventsMedia",
+    "FoodCatering",
+    "DigitalCreative",
+    "LegalFinance",
+    "EducationCoaching",
+    "AutomotiveTransport",
+    "Other",
     ] as const
     export type ServiceCategoryValue = (typeof serviceCategoryValues)[number]
 

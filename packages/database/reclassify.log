@@ -1,0 +1,80 @@
+
+> @workspace/db@0.0.1 db:reclassify-service-categories /Users/zazouit/Desktop/serrbi/serrbi-monorepo/serrbi/packages/database
+> tsx src/reclassify-service-categories-with-llm.ts
+
+prisma:warn In production, we recommend using `prisma generate --no-engine` (See: `prisma generate --help`)
+[service-category-reclassify] scanned=10 updated=0
+[service-category-reclassify] scanned=20 updated=2
+[service-category-reclassify] scanned=30 updated=2
+[service-category-reclassify] scanned=40 updated=2
+[service-category-reclassify] scanned=50 updated=2
+[service-category-reclassify] scanned=60 updated=2
+[service-category-reclassify] scanned=70 updated=2
+[service-category-reclassify] scanned=80 updated=2
+[service-category-reclassify] scanned=90 updated=4
+[service-category-reclassify] scanned=100 updated=4
+[service-category-reclassify] scanned=110 updated=4
+[service-category-reclassify] scanned=120 updated=4
+[service-category-reclassify] scanned=130 updated=4
+[service-category-reclassify] scanned=140 updated=4
+[service-category-reclassify] scanned=150 updated=4
+[service-category-reclassify] scanned=160 updated=4
+[service-category-reclassify] scanned=170 updated=4
+[service-category-reclassify] scanned=180 updated=5
+[service-category-reclassify] scanned=190 updated=7
+[service-category-reclassify] scanned=200 updated=9
+[service-category-reclassify] scanned=210 updated=9
+[service-category-reclassify] scanned=220 updated=9
+[service-category-reclassify] scanned=230 updated=9
+[service-category-reclassify] scanned=240 updated=9
+[service-category-reclassify] scanned=250 updated=13
+[service-category-reclassify] scanned=260 updated=16
+[service-category-reclassify] scanned=270 updated=19
+[service-category-reclassify] scanned=280 updated=23
+[service-category-reclassify] scanned=290 updated=25
+[service-category-reclassify] scanned=300 updated=26
+[service-category-reclassify] scanned=310 updated=26
+[service-category-reclassify] scanned=320 updated=26
+[service-category-reclassify] scanned=330 updated=29
+[service-category-reclassify] scanned=340 updated=31
+[service-category-reclassify] scanned=350 updated=32
+[service-category-reclassify] scanned=360 updated=35
+[service-category-reclassify] scanned=370 updated=35
+[service-category-reclassify] scanned=380 updated=37
+[service-category-reclassify] scanned=390 updated=37
+[service-category-reclassify] scanned=400 updated=39
+[service-category-reclassify] scanned=410 updated=40
+[service-category-reclassify] scanned=420 updated=43
+[service-category-reclassify] scanned=430 updated=44
+[service-category-reclassify] scanned=440 updated=47
+[service-category-reclassify] scanned=450 updated=49
+[service-category-reclassify] scanned=460 updated=50
+[service-category-reclassify] scanned=470 updated=52
+[service-category-reclassify] scanned=480 updated=58
+[service-category-reclassify] scanned=490 updated=58
+[service-category-reclassify] scanned=500 updated=60
+[service-category-reclassify] scanned=510 updated=61
+[service-category-reclassify] scanned=520 updated=63
+[service-category-reclassify] scanned=530 updated=68
+[service-category-reclassify] scanned=540 updated=69
+[service-category-reclassify] scanned=550 updated=70
+[service-category-reclassify] scanned=560 updated=70
+[service-category-reclassify] scanned=570 updated=72
+[service-category-reclassify] scanned=580 updated=74
+[service-category-reclassify] LLM batch failed, fallback only TypeError: fetch failed
+    at node:internal/deps/undici/undici:13502:13
+    at async callClassifierLlm (/Users/zazouit/Desktop/serrbi/serrbi-monorepo/serrbi/packages/database/src/reclassify-service-categories-with-llm.ts:161:18)
+    at async classifyBatchWithLlm (/Users/zazouit/Desktop/serrbi/serrbi-monorepo/serrbi/packages/database/src/reclassify-service-categories-with-llm.ts:286:15)
+    at async main (/Users/zazouit/Desktop/serrbi/serrbi-monorepo/serrbi/packages/database/src/reclassify-service-categories-with-llm.ts:367:18) {
+  [cause]: Error: read ECONNRESET
+      at TLSWrap.onStreamRead (node:internal/stream_base_commons:216:20) {
+    errno: -54,
+    code: 'ECONNRESET',
+    syscall: 'read'
+  }
+}
+[service-category-reclassify] scanned=590 updated=74
+[service-category-reclassify] scanned=600 updated=75
+[service-category-reclassify] scanned=610 updated=77
+[service-category-reclassify] scanned=620 updated=80
+[service-category-reclassify] scanned=630 updated=82

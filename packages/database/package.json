@@ -11,6 +11,7 @@
         "seed": "tsx src/seed.ts",
         "db:backfill-job-embeddings": "tsx src/backfill-job-embeddings.ts",
         "db:backfill-service-embeddings": "tsx src/backfill-service-embeddings.ts",
+        "db:reclassify-service-categories": "tsx src/reclassify-service-categories-with-llm.ts",
         "db:backfill-resume-embeddings": "tsx src/backfill-resume-embeddings.ts",
         "db:repair-job-tags-from-csv": "tsx src/repair-job-tags-from-csv.ts"
        

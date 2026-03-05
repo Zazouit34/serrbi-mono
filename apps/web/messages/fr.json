@@ -1345,19 +1345,17 @@
       "full_time": "Temps plein"
     },
     "ServiceCategory": {
-      "Lawyer": "Avocat",
-      "Doctor": "Médecin",
-      "Education": "Éducation",
-      "Architect": "Architecte",
-      "Plumber": "Plombier",
-      "Electrician": "Électricien",
-      "Mason": "Maçon",
-      "Mechanic": "Mécanicien",
-      "Accountant": "Comptable",
-      "Esthetician": "Esthéticien(ne)",
-      "Cleaning": "Nettoyage",
-      "Teacher": "Enseignant(e)",
-      "Dentist": "Dentiste"
+      "HomeMaintenance": "Maison & Maintenance",
+      "ConstructionInstallation": "Construction & Installation",
+      "HealthWellness": "Santé & Bien-être",
+      "BeautyPersonalCare": "Beauté & Soins personnels",
+      "EventsMedia": "Événements & Médias",
+      "FoodCatering": "Restauration & Traiteur",
+      "DigitalCreative": "Digital & Créatif",
+      "LegalFinance": "Juridique & Finance",
+      "EducationCoaching": "Éducation & Coaching",
+      "AutomotiveTransport": "Automobile & Transport",
+      "Other": "Autre"
     },
     "TaskCategory": {
       "MultiSector": "Multi-secteur",

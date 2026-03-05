@@ -1,5 +1,19 @@
 import { prisma } from "./client";
 
+const CATEGORY_CONTEXT: Record<string, string> = {
+  HomeMaintenance: "home maintenance repairs electrician plumber cleaning locksmith carpenter painter",
+  ConstructionInstallation: "construction installation architecture renovation masonry pool elevator security systems",
+  HealthWellness: "health wellness doctor nurse therapist nutrition fitness clinic care",
+  BeautyPersonalCare: "beauty personal care hairstylist barber makeup esthetician spa",
+  EventsMedia: "events media planner wedding decoration photographer videographer dj",
+  FoodCatering: "food catering chef meal prep bakery restaurant",
+  DigitalCreative: "digital creative graphic design web developer social media marketing content",
+  LegalFinance: "legal finance lawyer accounting tax advisory",
+  EducationCoaching: "education coaching teacher tutor trainer learning",
+  AutomotiveTransport: "automotive transport mechanic garage car service driver",
+  Other: "miscellaneous services",
+};
+
 function getRequiredEnv(name: string): string {
   const value = process.env[name];
   if (!value) {
@@ -66,15 +80,20 @@ function buildServiceText(service: {
   averageRating: number | null;
   numberOfReviews: number;
 }): string {
+  const normalizedCategory = service.serviceCategory ?? "Other";
+  const categoryContext = CATEGORY_CONTEXT[normalizedCategory] ?? CATEGORY_CONTEXT.Other;
   const parts: string[] = [
-    service.title,
-    service.displayName ?? "",
-    service.description,
-    service.serviceCategory ?? "",
-    service.type ?? "",
-    service.city ?? "",
-    service.stateAbbreviation ?? "",
+    `title:${service.title}`,
+    service.displayName ? `provider:${service.displayName}` : "",
+    `description:${service.description}`,
+    `service_category:${normalizedCategory}`,
+    `category_context:${categoryContext}`,
+    service.type ? `service_type:${service.type}` : "",
+    service.city ? `city:${service.city}` : "",
+    service.stateAbbreviation ? `state:${service.stateAbbreviation}` : "",
     service.price != null ? `price:${service.price}` : "",
+    service.averageRating != null ? `rating:${service.averageRating}` : "",
+    service.numberOfReviews > 0 ? `reviews:${service.numberOfReviews}` : "",
   ];
   return parts.filter((p) => p && p.trim().length > 0).join(" | ");
 }
@@ -142,6 +161,14 @@ async function main() {
             embedding,
           },
         });
+
+        // Keep pgvector column in sync for semantic search.
+        if (embedding.length === 1024) {
+          await (prisma as any).$executeRawUnsafe(
+            `UPDATE "Service" SET embedding_vector = embedding::vector WHERE id = $1`,
+            service.id,
+          );
+        }
 
         totalUpdated += 1;
       }

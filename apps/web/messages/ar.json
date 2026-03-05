@@ -1353,19 +1353,17 @@
       "full_time": "دوام كامل"
     },
     "ServiceCategory": {
-      "Lawyer": "محامٍ",
-      "Doctor": "طبيب",
-      "Education": "تعليم",
-      "Architect": "مهندس معماري",
-      "Plumber": "سبّاك",
-      "Electrician": "كهربائي",
-      "Mason": "بنّاء",
-      "Mechanic": "ميكانيكي",
-      "Accountant": "محاسب",
-      "Esthetician": "خبير تجميل",
-      "Cleaning": "منظّف",
-      "Teacher": "معلّم",
-      "Dentist": "طبيب أسنان"
+      "HomeMaintenance": "المنزل والصيانة",
+      "ConstructionInstallation": "الإنشاءات والتركيبات",
+      "HealthWellness": "الصحة والعافية",
+      "BeautyPersonalCare": "الجمال والعناية الشخصية",
+      "EventsMedia": "الفعاليات والإعلام",
+      "FoodCatering": "الطعام والتموين",
+      "DigitalCreative": "الرقمي والإبداعي",
+      "LegalFinance": "القانون والمالية",
+      "EducationCoaching": "التعليم والتدريب",
+      "AutomotiveTransport": "السيارات والنقل",
+      "Other": "أخرى"
     },
     "TaskCategory": {
       "MultiSector": "متعدّد القطاعات",
