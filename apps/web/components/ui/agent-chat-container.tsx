@@ -137,6 +137,7 @@ export function AgentChatContainer({
   resumeAttachedLabel,
 }: AgentChatContainerProps) {
   const resumeInputRef = useRef<HTMLInputElement | null>(null);
+  const showCvBadge = Boolean(hasResumeAttached) && (!pinnedIntent || pinnedIntent === "jobs");
   const onFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -303,8 +304,8 @@ export function AgentChatContainer({
               >
                 <FiPaperclip className="h-4 w-4" />
               </button>
-              {hasResumeAttached ? (
-                <span className="inline-flex items-center gap-1 rounded-full border border-violet-200 bg-violet-50 px-2.5 py-1 text-xs font-semibold text-violet-700">
+              {showCvBadge ? (
+                <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
                   <FileCheck2 className="h-3.5 w-3.5" />
                   {resumeAttachedLabel || "CV"}
                 </span>
@@ -315,7 +316,7 @@ export function AgentChatContainer({
                     pinnedIntent === "jobs"
                       ? "border-blue-200 bg-blue-50 text-blue-700"
                       : pinnedIntent === "services"
-                        ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                        ? "border-cyan-200 bg-cyan-50 text-cyan-700"
                         : "border-amber-200 bg-amber-50 text-amber-700"
                   }`}
                 >

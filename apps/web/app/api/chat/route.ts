@@ -647,6 +647,27 @@ function formatLocationRequirement(locale: string, value: unknown): string {
   return labels.en[key as keyof typeof labels.en] ?? key;
 }
 
+function isComparisonQuery(query: string): boolean {
+  const q = normalizeForIntent(query);
+  const hints = [
+    "compare",
+    "comparison",
+    "which one",
+    "better",
+    "best",
+    "vs",
+    "comparer",
+    "comparatif",
+    "meilleur",
+    "plus",
+    "قارن",
+    "مقارنة",
+    "الأفضل",
+    "احسن",
+  ];
+  return hints.some((h) => q.includes(h));
+}
+
 function buildResumeJobMatchMarkdownSummary(
   locale: string,
   query: string,
@@ -667,88 +688,127 @@ function buildResumeJobMatchMarkdownSummary(
   const skills = Array.isArray(top?.resumeMatch?.matchedSkills)
     ? top.resumeMatch.matchedSkills.slice(0, 3).join(", ")
     : "";
+  const style: "recommendation" | "comparison" | "natural" =
+    confidenceMode === "strong"
+      ? "recommendation"
+      : isComparisonQuery(query)
+        ? "comparison"
+        : "natural";
 
-  const alternatives = cards.slice(1, 3).map((c) => c?.title).filter(Boolean);
+  const alternatives = cards
+    .slice(1, 3)
+    .map((c) => c?.title)
+    .filter(Boolean);
   const alternativesText = alternatives.length ? alternatives.join(", ") : null;
 
   if (normalized === "fr") {
-    if (confidenceMode === "strong") {
+    if (style === "recommendation") {
       return [
-        `## Recommandation principale pour "${query}"`,
-        `- **Choix recommande:** ${top.title ?? "Poste"}${typeof topPercent === "number" ? ` (${topPercent}%)` : ""}.`,
-        `- **Pourquoi il se distingue:** alignement competences **${matched}/${required || 0}**${skills ? ` (${skills})` : ""}.`,
-        `- **Alternatives utiles:** ${alternativesText ?? "Aucune alternative proche disponible."}`,
-        `- **Action:** voulez-vous contacter cette offre maintenant ?`,
+        `## Recommandation pour "${query}"`,
+        `- ${top.title ?? "Poste"}${top?.city ? ` — ${top.city}` : ""}${top?.type ? ` — ${top.type}` : ""}.`,
+        `- Cette offre semble bien alignee avec votre recherche${typeof topPercent === "number" ? ` (${topPercent}% de match)` : ""}${skills ? `, notamment sur ${skills}` : ""}.`,
+        `- Je peux aussi vous montrer d'autres offres proches${alternativesText ? ` (${alternativesText})` : ""} si vous voulez comparer.`,
+        `- Souhaitez-vous voir des offres similaires ?`,
       ].join("\n");
     }
-    if (confidenceMode === "moderate") {
+    if (style === "comparison") {
       return [
-        `## Options comparees pour "${query}"`,
-        `- **Top 1:** ${cards[0]?.title ?? "Poste 1"}${cards[0]?.city ? ` (${cards[0].city})` : ""}.`,
-        `- **Top 2:** ${cards[1]?.title ?? "Poste 2"}${cards[1]?.city ? ` (${cards[1].city})` : ""}.`,
-        `- **Top 3:** ${cards[2]?.title ?? "Poste 3"}${cards[2]?.city ? ` (${cards[2].city})` : ""}.`,
-        `- **Action:** voulez-vous affiner par ville, salaire ou niveau ?`,
+        `## Comparaison rapide pour "${query}"`,
+        `- ${cards[0]?.title ?? "Offre 1"}${cards[0]?.city ? ` — ${cards[0].city}` : ""}${cards[0]?.wage ? ` — ${cards[0].wage} MAD` : ""}.`,
+        `- ${cards[1]?.title ?? "Offre 2"}${cards[1]?.city ? ` — ${cards[1].city}` : ""}${cards[1]?.wage ? ` — ${cards[1].wage} MAD` : ""}.`,
+        `- ${cards[2]?.title ?? "Offre 3"}${cards[2]?.city ? ` — ${cards[2].city}` : ""}${cards[2]?.wage ? ` — ${cards[2].wage} MAD` : ""}.`,
+        `- Souhaitez-vous comparer en priorite le salaire, la ville ou le teletravail ?`,
+      ].join("\n");
+    }
+    if (confidenceMode === "weak") {
+      return [
+        `## Offres les plus proches pour "${query}"`,
+        `- ${cards[0]?.title ?? "Offre 1"}${cards[0]?.city ? ` — ${cards[0].city}` : ""}.`,
+        `- ${cards[1]?.title ?? "Offre 2"}${cards[1]?.city ? ` — ${cards[1].city}` : ""}.`,
+        `- ${cards[2]?.title ?? "Offre 3"}${cards[2]?.city ? ` — ${cards[2].city}` : ""}.`,
+        `- Voulez-vous que j'affine avec un critere plus precis ?`,
       ].join("\n");
     }
     return [
-      `## Correspondances les plus proches pour "${query}"`,
-      `- **Etat de confiance:** les correspondances restent partielles pour l'instant.`,
-      `- **Option 1:** ${cards[0]?.title ?? "Poste 1"} · ${cards[0]?.city ?? "ville non precisee"} · ${formatLocationRequirement(locale, cards[0]?.locationRequirement)}.`,
-      `- **Option 2:** ${cards[1]?.title ?? "Poste 2"}${cards[1]?.city ? ` · ${cards[1].city}` : ""}.`,
-      `- **Action:** voulez-vous clarifier votre contrainte principale (ville, salaire ou role) ?`,
+      `## Offres pour "${query}"`,
+      `- ${cards[0]?.title ?? "Offre 1"}${cards[0]?.city ? ` — ${cards[0].city}` : ""}${cards[0]?.type ? ` — ${cards[0].type}` : ""}.`,
+      `- ${cards[1]?.title ?? "Offre 2"}${cards[1]?.city ? ` — ${cards[1].city}` : ""}${cards[1]?.type ? ` — ${cards[1].type}` : ""}.`,
+      `- ${cards[2]?.title ?? "Offre 3"}${cards[2]?.city ? ` — ${cards[2].city}` : ""}${cards[2]?.type ? ` — ${cards[2].type}` : ""}.`,
+      `- Je peux aussi filtrer par salaire, ville, teletravail, ou niveau d'experience.`,
+      `- Souhaitez-vous que je fasse ce filtre maintenant ?`,
     ].join("\n");
   }
   if (normalized === "ar") {
-    if (confidenceMode === "strong") {
+    if (style === "recommendation") {
       return [
-        `## التوصية الأساسية لـ "${query}"`,
-        `- **الخيار الموصى به:** ${top.title ?? "وظيفة"}${typeof topPercent === "number" ? ` (${topPercent}%)` : ""}.`,
-        `- **سبب التميز:** تطابق المهارات **${matched}/${required || 0}**${skills ? ` (${skills})` : ""}.`,
-        `- **بدائل ثانوية:** ${alternativesText ?? "لا توجد بدائل قريبة حالياً."}.`,
-        `- **الإجراء:** هل تريد التواصل مع هذا العرض الآن؟`,
+        `## توصية لـ "${query}"`,
+        `- ${top.title ?? "وظيفة"}${top?.city ? ` — ${top.city}` : ""}${top?.type ? ` — ${top.type}` : ""}.`,
+        `- هذا العرض يبدو مناسباً لطلبك${typeof topPercent === "number" ? ` (${topPercent}% مطابقة)` : ""}${skills ? ` خاصة في ${skills}` : ""}.`,
+        `- أقدر أيضاً أعرض لك بدائل مشابهة${alternativesText ? ` (${alternativesText})` : ""} إذا رغبت بالمقارنة.`,
+        `- هل تريد رؤية وظائف مشابهة؟`,
       ].join("\n");
     }
-    if (confidenceMode === "moderate") {
+    if (style === "comparison") {
       return [
-        `## مقارنة الخيارات لـ "${query}"`,
-        `- **الخيار 1:** ${cards[0]?.title ?? "الخيار 1"}${cards[0]?.city ? ` (${cards[0].city})` : ""}.`,
-        `- **الخيار 2:** ${cards[1]?.title ?? "الخيار 2"}${cards[1]?.city ? ` (${cards[1].city})` : ""}.`,
-        `- **الخيار 3:** ${cards[2]?.title ?? "الخيار 3"}${cards[2]?.city ? ` (${cards[2].city})` : ""}.`,
-        `- **الإجراء:** هل تريد تضييق النتائج حسب المدينة أو الراتب أو المستوى؟`,
+        `## مقارنة سريعة لـ "${query}"`,
+        `- ${cards[0]?.title ?? "الخيار 1"}${cards[0]?.city ? ` — ${cards[0].city}` : ""}${cards[0]?.wage ? ` — ${cards[0].wage} MAD` : ""}.`,
+        `- ${cards[1]?.title ?? "الخيار 2"}${cards[1]?.city ? ` — ${cards[1].city}` : ""}${cards[1]?.wage ? ` — ${cards[1].wage} MAD` : ""}.`,
+        `- ${cards[2]?.title ?? "الخيار 3"}${cards[2]?.city ? ` — ${cards[2].city}` : ""}${cards[2]?.wage ? ` — ${cards[2].wage} MAD` : ""}.`,
+        `- هل تريد مقارنة الراتب أو المدينة أو نمط العمل؟`,
+      ].join("\n");
+    }
+    if (confidenceMode === "weak") {
+      return [
+        `## أقرب الوظائف الحالية لـ "${query}"`,
+        `- ${cards[0]?.title ?? "الخيار 1"}${cards[0]?.city ? ` — ${cards[0].city}` : ""}.`,
+        `- ${cards[1]?.title ?? "الخيار 2"}${cards[1]?.city ? ` — ${cards[1].city}` : ""}.`,
+        `- ${cards[2]?.title ?? "الخيار 3"}${cards[2]?.city ? ` — ${cards[2].city}` : ""}.`,
+        `- هل تريد أن أحدد النتائج أكثر حسب شرط واحد واضح؟`,
       ].join("\n");
     }
     return [
-      `## أقرب النتائج الحالية لـ "${query}"`,
-      `- **مستوى الثقة:** التطابق ما يزال محدوداً حالياً.`,
-      `- **الخيار 1:** ${cards[0]?.title ?? "الخيار 1"} · ${cards[0]?.city ?? "مدينة غير محددة"} · ${formatLocationRequirement(locale, cards[0]?.locationRequirement)}.`,
-      `- **الخيار 2:** ${cards[1]?.title ?? "الخيار 2"}${cards[1]?.city ? ` · ${cards[1].city}` : ""}.`,
-      `- **الإجراء:** هل تريد توضيح الشرط الأهم لديك (مدينة، راتب، أو تخصص)؟`,
+      `## وظائف "${query}"`,
+      `- ${cards[0]?.title ?? "الخيار 1"}${cards[0]?.city ? ` — ${cards[0].city}` : ""}${cards[0]?.type ? ` — ${cards[0].type}` : ""}.`,
+      `- ${cards[1]?.title ?? "الخيار 2"}${cards[1]?.city ? ` — ${cards[1].city}` : ""}${cards[1]?.type ? ` — ${cards[1].type}` : ""}.`,
+      `- ${cards[2]?.title ?? "الخيار 3"}${cards[2]?.city ? ` — ${cards[2].city}` : ""}${cards[2]?.type ? ` — ${cards[2].type}` : ""}.`,
+      `- أقدر أفلتر لك حسب الراتب أو المدينة أو العمل عن بُعد.`,
+      `- هل تريد تطبيق هذا الفلتر الآن؟`,
     ].join("\n");
   }
-  if (confidenceMode === "strong") {
+  if (style === "recommendation") {
     return [
-      `## Primary Recommendation for "${query}"`,
-      `- **Recommended option:** ${top.title ?? "Role"}${typeof topPercent === "number" ? ` (${topPercent}%)` : ""}.`,
-      `- **Why it stands out:** skill alignment is **${matched}/${required || 0}**${skills ? ` (${skills})` : ""}.`,
-      `- **Secondary alternatives:** ${alternativesText ?? "No close alternatives available."}.`,
-      `- **Action:** do you want to contact this role now?`,
+      `## Recommendation for "${query}"`,
+      `- ${top.title ?? "Role"}${top?.city ? ` — ${top.city}` : ""}${top?.type ? ` — ${top.type}` : ""}.`,
+      `- This role looks like a strong fit${typeof topPercent === "number" ? ` (${topPercent}% match)` : ""}${skills ? `, especially for ${skills}` : ""}.`,
+      `- I can also show similar alternatives${alternativesText ? ` (${alternativesText})` : ""} if you want to compare.`,
+      `- Would you like to see similar jobs?`,
     ].join("\n");
   }
-  if (confidenceMode === "moderate") {
+  if (style === "comparison") {
     return [
-      `## Structured Options for "${query}"`,
-      `- **Top 1:** ${cards[0]?.title ?? "Option 1"}${cards[0]?.city ? ` (${cards[0].city})` : ""}.`,
-      `- **Top 2:** ${cards[1]?.title ?? "Option 2"}${cards[1]?.city ? ` (${cards[1].city})` : ""}.`,
-      `- **Top 3:** ${cards[2]?.title ?? "Option 3"}${cards[2]?.city ? ` (${cards[2].city})` : ""}.`,
-      `- **Action:** would you like to refine by city, wage, or level?`,
+      `## Quick Comparison for "${query}"`,
+      `- ${cards[0]?.title ?? "Option 1"}${cards[0]?.city ? ` — ${cards[0].city}` : ""}${cards[0]?.wage ? ` — ${cards[0].wage} MAD` : ""}.`,
+      `- ${cards[1]?.title ?? "Option 2"}${cards[1]?.city ? ` — ${cards[1].city}` : ""}${cards[1]?.wage ? ` — ${cards[1].wage} MAD` : ""}.`,
+      `- ${cards[2]?.title ?? "Option 3"}${cards[2]?.city ? ` — ${cards[2].city}` : ""}${cards[2]?.wage ? ` — ${cards[2].wage} MAD` : ""}.`,
+      `- Would you like to compare salary, city, or work mode?`,
+    ].join("\n");
+  }
+  if (confidenceMode === "weak") {
+    return [
+      `## Closest Matches So Far for "${query}"`,
+      `- ${cards[0]?.title ?? "Option 1"}${cards[0]?.city ? ` — ${cards[0].city}` : ""}.`,
+      `- ${cards[1]?.title ?? "Option 2"}${cards[1]?.city ? ` — ${cards[1].city}` : ""}.`,
+      `- ${cards[2]?.title ?? "Option 3"}${cards[2]?.city ? ` — ${cards[2].city}` : ""}.`,
+      `- Would you like me to narrow this with one clear constraint?`,
     ].join("\n");
   }
   return [
-    `## Closest Matches So Far for "${query}"`,
-    `- **Confidence status:** alignment is currently limited.`,
-    `- **Option 1:** ${cards[0]?.title ?? "Option 1"} · ${cards[0]?.city ?? "city n/a"} · ${formatLocationRequirement(locale, cards[0]?.locationRequirement)}.`,
-    `- **Option 2:** ${cards[1]?.title ?? "Option 2"}${cards[1]?.city ? ` · ${cards[1].city}` : ""}.`,
-    `- **Action:** would you like to clarify your main constraint (city, wage, or role)?`,
+    `## Jobs for "${query}"`,
+    `- ${cards[0]?.title ?? "Option 1"}${cards[0]?.city ? ` — ${cards[0].city}` : ""}${cards[0]?.type ? ` — ${cards[0].type}` : ""}.`,
+    `- ${cards[1]?.title ?? "Option 2"}${cards[1]?.city ? ` — ${cards[1].city}` : ""}${cards[1]?.type ? ` — ${cards[1].type}` : ""}.`,
+    `- ${cards[2]?.title ?? "Option 3"}${cards[2]?.city ? ` — ${cards[2].city}` : ""}${cards[2]?.type ? ` — ${cards[2].type}` : ""}.`,
+    `- I can filter by salary, city, remote, or experience.`,
+    `- Want me to apply one of these filters now?`,
   ].join("\n");
 }
 
@@ -767,86 +827,122 @@ function buildServiceMarkdownSummary(
   }
 
   const topReasons = Array.isArray(top.selectionReasons) ? top.selectionReasons.slice(0, 2) : [];
+  const style: "recommendation" | "comparison" | "natural" =
+    confidenceMode === "strong"
+      ? "recommendation"
+      : isComparisonQuery(query)
+        ? "comparison"
+        : "natural";
   const alternatives = cards.slice(1, 3).map((c) => c?.title).filter(Boolean);
   const alternativesText = alternatives.length ? alternatives.join(", ") : null;
   if (normalized === "fr") {
-    if (confidenceMode === "strong") {
+    if (style === "recommendation") {
       return [
         `## Recommandation principale pour "${query}"`,
-        `- **Choix recommande:** ${top.title ?? "Service"}${typeof top.matchScore === "number" ? ` (${top.matchScore}%)` : ""}.`,
-        `- **Pourquoi il se distingue:** ${topReasons.length ? topReasons.join(" · ") : "equilibre solide entre qualite, prix et localisation"}.`,
-        `- **Alternatives secondaires:** ${alternativesText ?? "Aucune alternative proche disponible."}.`,
-        `- **Action:** voulez-vous contacter ce prestataire maintenant ?`,
+        `- ${top.title ?? "Service"}${top?.city ? ` — ${top.city}` : ""}.`,
+        `- Ce cabinet semble etre une bonne option${typeof top.matchScore === "number" ? ` (${top.matchScore}% de confiance)` : ""}${topReasons.length ? `: ${topReasons.join(" · ")}` : ""}.`,
+        `- Je peux aussi vous montrer d'autres cabinets similaires${alternativesText ? ` (${alternativesText})` : ""} si vous voulez comparer.`,
+        `- Voulez-vous que je vous montre des options similaires ?`,
       ].join("\n");
     }
-    if (confidenceMode === "moderate") {
+    if (style === "comparison") {
       return [
-        `## Comparatif des services pour "${query}"`,
-        `- **Option 1:** ${cards[0]?.title ?? "Service 1"}${cards[0]?.city ? ` (${cards[0].city})` : ""}.`,
-        `- **Option 2:** ${cards[1]?.title ?? "Service 2"}${cards[1]?.city ? ` (${cards[1].city})` : ""}.`,
-        `- **Option 3:** ${cards[2]?.title ?? "Service 3"}${cards[2]?.city ? ` (${cards[2].city})` : ""}.`,
-        `- **Action:** voulez-vous affiner par prix, ville ou niveau de note ?`,
+        `## Comparaison des services pour "${query}"`,
+        `- ${cards[0]?.title ?? "Service 1"}${cards[0]?.city ? ` — ${cards[0].city}` : ""}.`,
+        `- ${cards[1]?.title ?? "Service 2"}${cards[1]?.city ? ` — ${cards[1].city}` : ""}.`,
+        `- ${cards[2]?.title ?? "Service 3"}${cards[2]?.city ? ` — ${cards[2].city}` : ""}.`,
+        `- Voulez-vous comparer les prix, les avis clients, ou la specialite ?`,
+      ].join("\n");
+    }
+    if (confidenceMode === "weak") {
+      return [
+        `## Services les plus proches pour "${query}"`,
+        `- ${cards[0]?.title ?? "Service 1"}${cards[0]?.city ? ` — ${cards[0].city}` : ""}.`,
+        `- ${cards[1]?.title ?? "Service 2"}${cards[1]?.city ? ` — ${cards[1].city}` : ""}.`,
+        `- ${cards[2]?.title ?? "Service 3"}${cards[2]?.city ? ` — ${cards[2].city}` : ""}.`,
+        `- Voulez-vous preciser votre besoin pour des resultats plus pertinents ?`,
       ].join("\n");
     }
     return [
-      `## Correspondances les plus proches pour "${query}"`,
-      `- **Niveau de confiance:** les correspondances restent limites pour l'instant.`,
-      `- **Option 1:** ${cards[0]?.title ?? "Service 1"}${cards[0]?.city ? ` (${cards[0].city})` : ""}.`,
-      `- **Option 2:** ${cards[1]?.title ?? "Service 2"}${cards[1]?.city ? ` (${cards[1].city})` : ""}.`,
-      `- **Action:** voulez-vous preciser davantage votre besoin principal ?`,
+      `## Services trouves pour "${query}"`,
+      `- ${cards[0]?.title ?? "Service 1"}${cards[0]?.city ? ` — ${cards[0].city}` : ""}.`,
+      `- ${cards[1]?.title ?? "Service 2"}${cards[1]?.city ? ` — ${cards[1].city}` : ""}.`,
+      `- ${cards[2]?.title ?? "Service 3"}${cards[2]?.city ? ` — ${cards[2].city}` : ""}.`,
+      `- Si vous voulez, je peux filtrer les moins chers, les mieux notes, ou seulement votre quartier.`,
+      `- Souhaitez-vous que je fasse ce filtre ?`,
     ].join("\n");
   }
   if (normalized === "ar") {
-    if (confidenceMode === "strong") {
+    if (style === "recommendation") {
       return [
         `## التوصية الأساسية لـ "${query}"`,
-        `- **الخيار الموصى به:** ${top.title ?? "خدمة"}${typeof top.matchScore === "number" ? ` (${top.matchScore}%)` : ""}.`,
-        `- **سبب التميز:** ${topReasons.length ? topReasons.join(" · ") : "توازن قوي بين الجودة والسعر والموقع"}.`,
-        `- **بدائل ثانوية:** ${alternativesText ?? "لا توجد بدائل قريبة حالياً."}.`,
-        `- **الإجراء:** هل تريد التواصل مع هذا المزود الآن؟`,
+        `- ${top.title ?? "خدمة"}${top?.city ? ` — ${top.city}` : ""}.`,
+        `- يبدو خياراً جيداً${typeof top.matchScore === "number" ? ` (${top.matchScore}% ثقة)` : ""}${topReasons.length ? `: ${topReasons.join(" · ")}` : ""}.`,
+        `- أقدر أيضاً أعرض لك مزودين مشابهين${alternativesText ? ` (${alternativesText})` : ""} إذا رغبت بالمقارنة.`,
+        `- هل تريد رؤية خيارات مشابهة؟`,
       ].join("\n");
     }
-    if (confidenceMode === "moderate") {
+    if (style === "comparison") {
       return [
         `## مقارنة الخدمات لـ "${query}"`,
-        `- **الخيار 1:** ${cards[0]?.title ?? "الخيار 1"}${cards[0]?.city ? ` (${cards[0].city})` : ""}.`,
-        `- **الخيار 2:** ${cards[1]?.title ?? "الخيار 2"}${cards[1]?.city ? ` (${cards[1].city})` : ""}.`,
-        `- **الخيار 3:** ${cards[2]?.title ?? "الخيار 3"}${cards[2]?.city ? ` (${cards[2].city})` : ""}.`,
-        `- **الإجراء:** هل تريد تضييق النتائج حسب السعر أو المدينة أو التقييم؟`,
+        `- ${cards[0]?.title ?? "الخيار 1"}${cards[0]?.city ? ` — ${cards[0].city}` : ""}.`,
+        `- ${cards[1]?.title ?? "الخيار 2"}${cards[1]?.city ? ` — ${cards[1].city}` : ""}.`,
+        `- ${cards[2]?.title ?? "الخيار 3"}${cards[2]?.city ? ` — ${cards[2].city}` : ""}.`,
+        `- هل تريد مقارنة السعر، التقييم، أم التخصص؟`,
+      ].join("\n");
+    }
+    if (confidenceMode === "weak") {
+      return [
+        `## أقرب الخدمات الحالية لـ "${query}"`,
+        `- ${cards[0]?.title ?? "الخيار 1"}${cards[0]?.city ? ` — ${cards[0].city}` : ""}.`,
+        `- ${cards[1]?.title ?? "الخيار 2"}${cards[1]?.city ? ` — ${cards[1].city}` : ""}.`,
+        `- ${cards[2]?.title ?? "الخيار 3"}${cards[2]?.city ? ` — ${cards[2].city}` : ""}.`,
+        `- هل تريد توضيح طلبك أكثر لتحسين النتائج؟`,
       ].join("\n");
     }
     return [
-      `## أقرب النتائج الحالية لـ "${query}"`,
-      `- **مستوى الثقة:** التطابق ما يزال محدوداً حالياً.`,
-      `- **الخيار 1:** ${cards[0]?.title ?? "الخيار 1"}${cards[0]?.city ? ` (${cards[0].city})` : ""}.`,
-      `- **الخيار 2:** ${cards[1]?.title ?? "الخيار 2"}${cards[1]?.city ? ` (${cards[1].city})` : ""}.`,
-      `- **الإجراء:** هل تريد توضيح متطلباتك أكثر؟`,
+      `## خدمات "${query}"`,
+      `- ${cards[0]?.title ?? "الخيار 1"}${cards[0]?.city ? ` — ${cards[0].city}` : ""}.`,
+      `- ${cards[1]?.title ?? "الخيار 2"}${cards[1]?.city ? ` — ${cards[1].city}` : ""}.`,
+      `- ${cards[2]?.title ?? "الخيار 3"}${cards[2]?.city ? ` — ${cards[2].city}` : ""}.`,
+      `- أقدر أفلتر الأقل سعراً، الأعلى تقييماً، أو الأقرب منك.`,
+      `- هل تريد تطبيق هذا الفلتر؟`,
     ].join("\n");
   }
-  if (confidenceMode === "strong") {
+  if (style === "recommendation") {
     return [
       `## Primary Recommendation for "${query}"`,
-      `- **Recommended option:** ${top.title ?? "Service"}${typeof top.matchScore === "number" ? ` (${top.matchScore}%)` : ""}.`,
-      `- **Why it stands out:** ${topReasons.length ? topReasons.join(" · ") : "strong balance of quality, price, and location"}.`,
-      `- **Secondary alternatives:** ${alternativesText ?? "No close alternatives available."}.`,
-      `- **Action:** do you want to contact this provider now?`,
+      `- ${top.title ?? "Service"}${top?.city ? ` — ${top.city}` : ""}.`,
+      `- It looks like a strong choice${typeof top.matchScore === "number" ? ` (${top.matchScore}% confidence)` : ""}${topReasons.length ? `: ${topReasons.join(" · ")}` : ""}.`,
+      `- I can also show similar providers${alternativesText ? ` (${alternativesText})` : ""} if you want to compare.`,
+      `- Do you want to see similar providers?`,
     ].join("\n");
   }
-  if (confidenceMode === "moderate") {
+  if (style === "comparison") {
     return [
-      `## Structured Options for "${query}"`,
-      `- **Option 1:** ${cards[0]?.title ?? "Option 1"}${cards[0]?.city ? ` (${cards[0].city})` : ""}.`,
-      `- **Option 2:** ${cards[1]?.title ?? "Option 2"}${cards[1]?.city ? ` (${cards[1].city})` : ""}.`,
-      `- **Option 3:** ${cards[2]?.title ?? "Option 3"}${cards[2]?.city ? ` (${cards[2].city})` : ""}.`,
-      `- **Action:** would you like to refine by price, city, or rating?`,
+      `## Service Comparison for "${query}"`,
+      `- ${cards[0]?.title ?? "Option 1"}${cards[0]?.city ? ` — ${cards[0].city}` : ""}.`,
+      `- ${cards[1]?.title ?? "Option 2"}${cards[1]?.city ? ` — ${cards[1].city}` : ""}.`,
+      `- ${cards[2]?.title ?? "Option 3"}${cards[2]?.city ? ` — ${cards[2].city}` : ""}.`,
+      `- Do you want to compare price, reviews, or specialty?`,
+    ].join("\n");
+  }
+  if (confidenceMode === "weak") {
+    return [
+      `## Closest Matches So Far for "${query}"`,
+      `- ${cards[0]?.title ?? "Option 1"}${cards[0]?.city ? ` — ${cards[0].city}` : ""}.`,
+      `- ${cards[1]?.title ?? "Option 2"}${cards[1]?.city ? ` — ${cards[1].city}` : ""}.`,
+      `- ${cards[2]?.title ?? "Option 3"}${cards[2]?.city ? ` — ${cards[2].city}` : ""}.`,
+      `- Would you like to clarify your request for a better match?`,
     ].join("\n");
   }
   return [
-    `## Closest Matches So Far for "${query}"`,
-    `- **Confidence status:** alignment is currently limited.`,
-    `- **Option 1:** ${cards[0]?.title ?? "Option 1"}${cards[0]?.city ? ` (${cards[0].city})` : ""}.`,
-    `- **Option 2:** ${cards[1]?.title ?? "Option 2"}${cards[1]?.city ? ` (${cards[1].city})` : ""}.`,
-    `- **Action:** would you like to clarify your main service requirement?`,
+    `## Services for "${query}"`,
+    `- ${cards[0]?.title ?? "Option 1"}${cards[0]?.city ? ` — ${cards[0].city}` : ""}.`,
+    `- ${cards[1]?.title ?? "Option 2"}${cards[1]?.city ? ` — ${cards[1].city}` : ""}.`,
+    `- ${cards[2]?.title ?? "Option 3"}${cards[2]?.city ? ` — ${cards[2].city}` : ""}.`,
+    `- I can filter by price, top-rated, or nearby only.`,
+    `- Want me to apply one of these filters now?`,
   ].join("\n");
 }
 
