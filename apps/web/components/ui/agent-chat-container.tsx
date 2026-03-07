@@ -2,7 +2,7 @@
 
 import { useRef, type ChangeEvent, type RefObject } from "react";
 import Image from "next/image";
-import Link from "next/link";
+
 import { AlertTriangle, FileCheck2, Search, X } from "lucide-react";
 import { FiPaperclip } from "react-icons/fi";
 import { Input } from "@workspace/ui/components/input";
@@ -200,11 +200,7 @@ export function AgentChatContainer({
                               if (message.results?.type === "services") {
                                 return (
                                   <div key={item.id}>
-                                    <Link
-                                      href={`/services?serviceCategory=${encodeURIComponent(item.serviceCategory ?? "")}`}
-                                    >
-                                      <ServiceCard service={item} className="h-full" />
-                                    </Link>
+                                    <ServiceCard service={item} className="h-full" />
                                   </div>
                                 );
                               }

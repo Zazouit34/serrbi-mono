@@ -266,7 +266,7 @@ export function ServiceCard({
                 )}
                 aria-hidden={!contactOpen}
               >
-                <div className="flex items-center justify-center gap-4">
+                <div className="flex items-center justify-center gap-3">
                   {/* WhatsApp */}
                   <button
                     onClick={(e) => {
@@ -275,7 +275,7 @@ export function ServiceCard({
                         window.open(`https://wa.me/${service.phoneNumber}`, "_blank");
                       }
                     }}
-                    className="flex items-center justify-center w-9 h-9 rounded-full transition hover:scale-110"
+                    className="flex items-center justify-center w-9 h-9 rounded-lg transition hover:scale-110"
                     style={{ backgroundColor: "#25D366" }}
                     aria-label="WhatsApp"
                   >
@@ -291,7 +291,7 @@ export function ServiceCard({
                         window.open(url, "_blank");
                       }
                     }}
-                    className="flex items-center justify-center w-9 h-9 rounded-full transition hover:scale-110"
+                    className="flex items-center justify-center w-9 h-9 rounded-lg transition hover:scale-110"
                     style={{
                       background: "linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888)",
                     }}
@@ -308,7 +308,7 @@ export function ServiceCard({
                         window.location.href = `tel:${service.phoneNumber}`;
                       }
                     }}
-                    className="flex items-center justify-center w-9 h-9 rounded-full bg-white/95 transition hover:scale-110"
+                    className="flex items-center justify-center w-9 h-9 rounded-lg bg-white/95 transition hover:scale-110"
                     aria-label="Call"
                   >
                     <Phone className="size-4 text-gray-900" />

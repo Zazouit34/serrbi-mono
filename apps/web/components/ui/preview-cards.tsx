@@ -193,9 +193,7 @@ export function PreviewCards({
           >
             {(servicesQuery.data?.items ?? []).map((item: any) => (
               <div key={item.id} className="min-w-[260px] max-w-[260px] sm:min-w-[300px] sm:max-w-[300px]">
-                <Link href={`/services?serviceCategory=${encodeURIComponent(item.serviceCategory ?? "")}`}>
-                  <ServiceCard service={item} className="h-full" />
-                </Link>
+                <ServiceCard service={item} className="h-full" />
               </div>
             ))}
             {servicesQuery.isLoading ? (
@@ -215,13 +213,7 @@ export function PreviewCards({
           {servicesQuery.isLoading ? (
             <div className="px-1 py-2 text-sm text-slate-500">{tHero("searching")}</div>
           ) : getMobileItem(servicesItems, servicesIndex) ? (
-            <Link
-              href={`/services?serviceCategory=${encodeURIComponent(
-                getMobileItem(servicesItems, servicesIndex)?.serviceCategory ?? "",
-              )}`}
-            >
-              <ServiceCard service={getMobileItem(servicesItems, servicesIndex)} className="h-full" />
-            </Link>
+            <ServiceCard service={getMobileItem(servicesItems, servicesIndex)} className="h-full" />
           ) : null}
         </div>
       </section>
