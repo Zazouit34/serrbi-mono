@@ -2,14 +2,32 @@
 
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Star, ChevronLeft, ChevronRight, Phone } from "lucide-react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faWhatsapp } from "@fortawesome/free-brands-svg-icons";
+import { faWhatsapp, faInstagram } from "@fortawesome/free-brands-svg-icons";
 import { cn } from "@workspace/ui/lib/utils";
 import { CategoryBadge } from "@/components/ui/category-badge";
 import { FavoriteButton } from "@/components/ui/favorite-button";
 import { useTranslations } from "next-intl";
 import { Skeleton } from "@workspace/ui/components/skeleton";
+
+function buildServiceHref(service: {
+  id: string;
+  serviceCategory: string;
+  city: string | null;
+  title: string;
+}) {
+  const slug = (s: string) =>
+    s
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "");
+  const cat = slug(service.serviceCategory || "other");
+  const city = slug(service.city || "all");
+  const title = slug(service.title || "service");
+  return `/services/${cat}/${city}/${title}/${service.id}`;
+}
 
 export function ServiceCard({
   service,
@@ -29,6 +47,7 @@ export function ServiceCard({
     stateAbbreviation: string | null;
     city: string | null;
     phoneNumber: string | null;
+    website?: string | null;
     averageRating: number | null;
     numberOfReviews: number;
   };
@@ -38,6 +57,7 @@ export function ServiceCard({
   disableFallbackImages?: boolean;
 }) {
   const t = useTranslations();
+  const router = useRouter();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [contactOpen, setContactOpen] = useState(false);
   const overlayRef = useRef<HTMLDivElement | null>(null);
@@ -103,11 +123,15 @@ export function ServiceCard({
     };
   }, [contactOpen]);
 
-  // If there is no phone, just render the card (contact will be inactive anyway)
+  const handleCardClick = () => {
+    if (!contactOpen) {
+      router.push(buildServiceHref(service));
+    }
+  };
+
   return (
-    <div className={cn("w-full", className)}>
-      {/* Entire card is clickable if you want; clicking outside closes the contact expanded state (handled above) */}
-      <div onClick={() => contactOpen && setContactOpen(false)}>
+    <div className={cn("w-full cursor-pointer", className)}>
+      <div onClick={handleCardClick}>
         {/* Image Section with carousel */}
         <div
           ref={containerRef}
@@ -242,7 +266,7 @@ export function ServiceCard({
                 )}
                 aria-hidden={!contactOpen}
               >
-                <div className="grid grid-cols-2 gap-2 items-center">
+                <div className="flex items-center justify-center gap-4">
                   {/* WhatsApp */}
                   <button
                     onClick={(e) => {
@@ -251,14 +275,32 @@ export function ServiceCard({
                         window.open(`https://wa.me/${service.phoneNumber}`, "_blank");
                       }
                     }}
-                    className="flex items-center justify-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-md transition"
-                    style={{ backgroundColor: "#25D366", color: "white" }}
+                    className="flex items-center justify-center w-9 h-9 rounded-full transition hover:scale-110"
+                    style={{ backgroundColor: "#25D366" }}
+                    aria-label="WhatsApp"
                   >
-                    <FontAwesomeIcon icon={faWhatsapp} className="size-3.5" />
-                    <span className="truncate">{t("Common.whatsapp")}</span>
+                    <FontAwesomeIcon icon={faWhatsapp} className="size-5 text-white" />
                   </button>
 
-                  {/* Call */}
+                  {/* Website (Instagram icon) */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (service.website) {
+                        const url = service.website.startsWith("http") ? service.website : `https://${service.website}`;
+                        window.open(url, "_blank");
+                      }
+                    }}
+                    className="flex items-center justify-center w-9 h-9 rounded-full transition hover:scale-110"
+                    style={{
+                      background: "linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888)",
+                    }}
+                    aria-label="Website"
+                  >
+                    <FontAwesomeIcon icon={faInstagram} className="size-5 text-white" />
+                  </button>
+
+                  {/* Phone */}
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -266,10 +308,10 @@ export function ServiceCard({
                         window.location.href = `tel:${service.phoneNumber}`;
                       }
                     }}
-                    className="flex items-center justify-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-md bg-white/95 text-gray-900 transition"
+                    className="flex items-center justify-center w-9 h-9 rounded-full bg-white/95 transition hover:scale-110"
+                    aria-label="Call"
                   >
-                    <Phone className="size-3.5" />
-                    <span className="truncate">{t("Common.call")}</span>
+                    <Phone className="size-4 text-gray-900" />
                   </button>
                 </div>
               </div>

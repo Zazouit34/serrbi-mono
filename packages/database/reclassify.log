@@ -78,3 +78,20 @@ prisma:warn In production, we recommend using `prisma generate --no-engine` (See
 [service-category-reclassify] scanned=610 updated=77
 [service-category-reclassify] scanned=620 updated=80
 [service-category-reclassify] scanned=630 updated=82
+[service-category-reclassify] scanned=640 updated=83
+[service-category-reclassify] scanned=650 updated=86
+[service-category-reclassify] scanned=660 updated=88
+[service-category-reclassify] scanned=670 updated=92
+[service-category-reclassify] scanned=680 updated=93
+[service-category-reclassify] scanned=690 updated=93
+[service-category-reclassify] scanned=700 updated=96
+[service-category-reclassify] scanned=710 updated=99
+[service-category-reclassify] scanned=720 updated=99
+[service-category-reclassify] scanned=730 updated=101
+[service-category-reclassify] scanned=740 updated=102
+[service-category-reclassify] scanned=750 updated=103
+[service-category-reclassify] scanned=760 updated=103
+[service-category-reclassify] scanned=770 updated=108
+[service-category-reclassify] scanned=780 updated=109
+[service-category-reclassify] scanned=785 updated=109
+[service-category-reclassify] done scanned=785 updated=109 dryRun=false

@@ -23,37 +23,37 @@ type ShowcaseItem = {
 const servicesDefs = [
   {
     id: "construction",
-    category: "Construction",
+    category: "ConstructionInstallation",
     image:
       "https://images.unsplash.com/photo-1485083269755-a7b559a4fe5e?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8Y29uc3RydWN0aW9ufGVufDB8fDB8fHwy&auto=format&fit=crop&q=60&w=400",
   },
   {
     id: "architect",
-    category: "Architect",
+    category: "ConstructionInstallation",
     image:
       "https://images.unsplash.com/photo-1487958449943-2429e8be8625?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D?q=80&w=1200&auto=format&fit=crop",
   },
   {
     id: "lawyer",
-    category: "Lawyer",
+    category: "LegalFinance",
     image:
       "https://images.unsplash.com/photo-1662104935883-e9dd0619eaba?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTV8fGxhd3llcnxlbnwwfHwwfHx8MA%3D%3D&auto=format&fit=crop&q=60&w=400",
   },
   {
     id: "dentist",
-    category: "Doctor",
+    category: "HealthWellness",
     image:
       "https://images.unsplash.com/photo-1629909613654-28e377c37b09?q=80&w=1200&auto=format&fit=crop",
   },
   {
     id: "esthetician",
-    category: "Esthetician",
+    category: "BeautyPersonalCare",
     image:
       "https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTB8fGJlYXV0eXxlbnwwfHwwfHx8Mg%3D%3D&auto=format&fit=crop&q=60&w=400",
   },
   {
     id: "mechanic",
-    category: "Mechanic",
+    category: "AutomotiveTransport",
     image:
       "https://images.unsplash.com/photo-1711386689622-1cda23e10217?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8Z2FyYWdlJTIwbWVjaGFuaWN8ZW58MHx8MHx8fDI%3D&auto=format&fit=crop&q=60&w=400",
   },
@@ -219,7 +219,8 @@ export function ShowcaseSwitcher() {
 
   const handleClick = (item: ShowcaseItem) => {
     const params = new URLSearchParams();
-    params.set("category", item.category);
+    const paramKey = effectiveTab === "services" ? "serviceCategory" : "category";
+    params.set(paramKey, item.category);
     router.push(`${meta.path}?${params.toString()}`);
   };
 
