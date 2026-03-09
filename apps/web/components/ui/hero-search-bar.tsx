@@ -1184,9 +1184,8 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
 
   return (
     <div className={`mx-auto w-full max-w-none text-left md:max-w-4xl ${chatExpanded ? "h-full min-h-0" : ""}`}>
-      {/* Search Content - Chat interface */}
-      <div className={`px-0 md:px-6 md:pb-0 ${chatExpanded ? "h-full min-h-0" : ""}`}>
-        <div className={`mx-auto flex w-full flex-col gap-4 ${chatExpanded ? "h-full min-h-0" : ""}`}>
+      <div className={`md:px-6 md:pb-0 ${chatExpanded ? "h-full min-h-0" : ""}`}>
+        <div className={`mx-auto flex w-full flex-col gap-3 md:gap-4 ${chatExpanded ? "h-full min-h-0" : ""}`}>
           <AgentChatContainer
             chatExpanded={chatExpanded}
             messages={messages}
@@ -1206,6 +1205,10 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
               jobs: t("tabs.jobs"),
               services: t("tabs.services"),
               tasks: t("tabs.tasks"),
+              jobsShort: locale === "fr" ? "Emplois" : locale === "ar" ? "وظائف" : "Jobs",
+              servicesShort: locale === "fr" ? "Services" : locale === "ar" ? "خدمات" : "Services",
+              tasksShort: locale === "fr" ? "Tâches" : locale === "ar" ? "مهام" : "Tasks",
+              cvShort: "CV",
               whyPicked:
                 locale === "fr"
                   ? "Pourquoi ce choix"

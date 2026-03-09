@@ -7,6 +7,7 @@ import { Star, ChevronLeft, ChevronRight, Phone } from "lucide-react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faWhatsapp, faInstagram } from "@fortawesome/free-brands-svg-icons";
 import { cn } from "@workspace/ui/lib/utils";
+import { serviceCategoryStyles } from "@workspace/ui/lib/formatter";
 import { CategoryBadge } from "@/components/ui/category-badge";
 import { FavoriteButton } from "@/components/ui/favorite-button";
 import { useTranslations } from "next-intl";
@@ -48,6 +49,7 @@ export function ServiceCard({
     city: string | null;
     phoneNumber: string | null;
     website?: string | null;
+    type?: string | null;
     averageRating: number | null;
     numberOfReviews: number;
   };
@@ -160,12 +162,22 @@ export function ServiceCard({
             </div>
           )}
 
-          {/* Category badge - top left */}
+          {/* Type badge - top left (specific profession, colored by parent category) */}
           <div
             className="absolute top-2 left-2 z-10"
             onClick={(e) => e.stopPropagation()}
           >
-            <CategoryBadge category={service.serviceCategory} type="service" />
+            {service.type ? (
+              <span className={cn(
+                "inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-medium",
+                serviceCategoryStyles[service.serviceCategory as keyof typeof serviceCategoryStyles]?.color
+                  ?? "bg-slate-100 text-slate-700 border-slate-300",
+              )}>
+                {service.type}
+              </span>
+            ) : (
+              <CategoryBadge category={service.serviceCategory} type="service" />
+            )}
           </div>
 
           {/* Favorite button - top right */}
@@ -261,13 +273,12 @@ export function ServiceCard({
                 className={cn(
                   "transition-[opacity,max-height,margin] duration-300 overflow-hidden",
                   contactOpen
-                    ? "mt-2 max-h-40 opacity-100 pointer-events-auto"
+                    ? "mt-2.5 max-h-40 opacity-100 pointer-events-auto"
                     : "mt-0 max-h-0 opacity-0 pointer-events-none",
                 )}
                 aria-hidden={!contactOpen}
               >
-                <div className="flex items-center justify-center gap-3">
-                  {/* WhatsApp */}
+                <div className="flex items-stretch gap-1.5">
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -275,32 +286,32 @@ export function ServiceCard({
                         window.open(`https://wa.me/${service.phoneNumber}`, "_blank");
                       }
                     }}
-                    className="flex items-center justify-center w-9 h-9 rounded-lg transition hover:scale-110"
+                    className="flex flex-1 items-center justify-center gap-1.5 rounded-md py-2 text-white transition active:scale-95"
                     style={{ backgroundColor: "#25D366" }}
                     aria-label="WhatsApp"
                   >
-                    <FontAwesomeIcon icon={faWhatsapp} className="size-5 text-white" />
+                    <FontAwesomeIcon icon={faWhatsapp} className="size-4" />
+                    <span className="text-[11px] font-semibold">WhatsApp</span>
                   </button>
 
-                  {/* Website (Instagram icon) */}
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (service.website) {
-                        const url = service.website.startsWith("http") ? service.website : `https://${service.website}`;
+                  {service.website && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const url = service.website!.startsWith("http") ? service.website! : `https://${service.website}`;
                         window.open(url, "_blank");
-                      }
-                    }}
-                    className="flex items-center justify-center w-9 h-9 rounded-lg transition hover:scale-110"
-                    style={{
-                      background: "linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888)",
-                    }}
-                    aria-label="Website"
-                  >
-                    <FontAwesomeIcon icon={faInstagram} className="size-5 text-white" />
-                  </button>
+                      }}
+                      className="flex flex-1 items-center justify-center gap-1.5 rounded-md py-2 text-white transition active:scale-95"
+                      style={{
+                        background: "linear-gradient(135deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888)",
+                      }}
+                      aria-label="Website"
+                    >
+                      <FontAwesomeIcon icon={faInstagram} className="size-4" />
+                      <span className="text-[11px] font-semibold">Site</span>
+                    </button>
+                  )}
 
-                  {/* Phone */}
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -308,10 +319,11 @@ export function ServiceCard({
                         window.location.href = `tel:${service.phoneNumber}`;
                       }
                     }}
-                    className="flex items-center justify-center w-9 h-9 rounded-lg bg-white/95 transition hover:scale-110"
+                    className="flex flex-1 items-center justify-center gap-1.5 rounded-md bg-white/90 py-2 text-gray-900 transition active:scale-95 hover:bg-white"
                     aria-label="Call"
                   >
-                    <Phone className="size-4 text-gray-900" />
+                    <Phone className="size-3.5" />
+                    <span className="text-[11px] font-semibold">{t("Common.call")}</span>
                   </button>
                 </div>
               </div>

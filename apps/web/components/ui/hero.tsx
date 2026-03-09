@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { cn } from "@workspace/ui/lib/utils";
 import { HeroSearchBar, type HeroPreviewData } from "@/components/ui/hero-search-bar";
 import { LettersPullUp } from "@/components/ui/letters-pull-up";
 
@@ -37,16 +38,17 @@ export default function Hero() {
   }, [chatExpanded, rotatingHeadings.length]);
 
   return (
-    <div className="flex flex-col">
+    <div className={cn("flex flex-col", chatExpanded && "-mx-4 md:mx-0")}>
       <div
-        className={`mx-auto flex w-full flex-col items-center px-4 md:px-0 ${
+        className={cn(
+          "mx-auto flex w-full flex-col items-center",
           chatExpanded
-            ? "h-[calc(100svh-7.5rem)] justify-start gap-3 pt-3 pb-2 md:h-[calc(100svh-5rem)] md:py-3"
-            : "justify-start gap-6 pt-10 pb-4 md:min-h-0 md:justify-center md:py-28 lg:py-32"
-        }`}
+            ? "h-[calc(100svh-7.5rem)] justify-start gap-2 px-2 pt-1 pb-1 md:h-[calc(100svh-5rem)] md:px-0 md:py-3"
+            : "justify-start gap-5 pt-6 pb-4 md:min-h-0 md:justify-center md:py-28 lg:py-32",
+        )}
       >
         {!chatExpanded && (
-          <h2 className="font-libre-baskerville mb-0 text-balance text-center text-[28px] md:text-[40px] leading-tight">
+          <h2 className="font-libre-baskerville mb-0 text-balance text-center text-[26px] leading-tight md:text-[40px]">
             <LettersPullUp
               key={`${headingIndex}-${rotatingHeadings[headingIndex] ?? ""}`}
               text={rotatingHeadings[headingIndex] ?? t("headingLine1")}
@@ -63,7 +65,7 @@ export default function Hero() {
       </div>
 
       {!chatExpanded && (
-        <div className="mt-0 w-full px-4 md:mt-3 md:px-0">
+        <div className="mt-0 w-full md:mt-3">
           <HeroSearchBar.Preview {...previewData} />
         </div>
       )}

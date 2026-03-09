@@ -60,6 +60,10 @@ type AgentChatContainerProps = {
     jobs: string;
     services: string;
     tasks: string;
+    jobsShort?: string;
+    servicesShort?: string;
+    tasksShort?: string;
+    cvShort?: string;
     whyPicked?: string;
     confidence?: string;
   };
@@ -150,24 +154,24 @@ export function AgentChatContainer({
 
   return (
     <div
-      className={`relative flex w-full flex-col overflow-hidden rounded-2xl bg-white transition-all duration-300 ${
+      className={`relative flex w-full flex-col overflow-hidden rounded-xl bg-white transition-all duration-300 md:rounded-2xl ${
         chatExpanded ? "min-h-0 flex-1" : "min-h-[120px]"
       }`}
     >
       {chatExpanded && (
-        <ChatContainerRoot className="min-h-0 flex-1 px-3 pt-3">
-          <ChatContainerContent className="space-y-3">
+        <ChatContainerRoot className="min-h-0 flex-1 px-2 pt-2 md:px-3 md:pt-3">
+          <ChatContainerContent className="space-y-2 md:space-y-3">
             {messages.map((message) => {
               const isAssistant = message.role === "assistant";
               return (
                 <Message
                   key={message.id}
-                  className={`min-w-0 justify-start ${isAssistant ? "pl-8 md:pl-10" : "items-center"}`}
+                  className={`min-w-0 justify-start ${isAssistant ? "pl-1 md:pl-10" : "items-center"}`}
                 >
                   {message.role === "user" ? (
                     <MessageAvatar
                       fallback={userInitial || "U"}
-                      className="h-6 w-6 bg-slate-100 text-[10px] text-slate-700"
+                      className="h-5 w-5 bg-slate-100 text-[9px] text-slate-700 md:h-6 md:w-6 md:text-[10px]"
                     />
                   ) : null}
                   {isAssistant ? (
@@ -180,15 +184,15 @@ export function AgentChatContainer({
                         />
                       </div>
                     ) : message.results ? (
-                      <div className="w-full min-w-0 text-left text-slate-900">
+                      <div className="w-full min-w-0 text-left text-sm text-slate-900 md:text-base">
                         {message.results.isLoading ? <ThinkingBar text={labels.searching} /> : null}
 
                         {!message.results.isLoading && message.results.items.length === 0 ? (
-                          <div className="text-sm text-slate-700">{labels.noResults}</div>
+                          <div className="text-xs text-slate-700 md:text-sm">{labels.noResults}</div>
                         ) : null}
 
                         {!message.results.isLoading && message.results.items.length > 0 && (
-                          <div className="mt-3 grid grid-cols-1 gap-6 text-left md:grid-cols-3">
+                          <div className="mt-2 grid grid-cols-1 gap-3 text-left md:mt-3 md:grid-cols-3 md:gap-6">
                             {message.results.items.map((item: any) => {
                               if (message.results?.type === "jobs") {
                                 return (
@@ -200,7 +204,7 @@ export function AgentChatContainer({
                               if (message.results?.type === "services") {
                                 return (
                                   <div key={item.id}>
-                                    <ServiceCard service={item} className="h-full" />
+                                    <ServiceCard service={item} className="h-full" compact />
                                   </div>
                                 );
                               }
@@ -210,7 +214,7 @@ export function AgentChatContainer({
                         )}
 
                         {!message.results.isLoading && (message.content ?? "").trim() ? (
-                          <div className="mt-4 text-left text-slate-900 leading-6">
+                          <div className="mt-3 text-left text-xs leading-5 text-slate-900 md:mt-4 md:text-sm md:leading-6">
                             <Markdown>{message.content ?? ""}</Markdown>
                           </div>
                         ) : null}
@@ -237,12 +241,12 @@ export function AgentChatContainer({
                         ) : null}
                       </div>
                     ) : (
-                      <div className="w-full min-w-0 text-left text-slate-900 leading-6">
+                      <div className="w-full min-w-0 text-left text-xs leading-5 text-slate-900 md:text-sm md:leading-6">
                         {message.thinking ? <ThinkingBar text={labels.thinking} /> : <Markdown>{message.content ?? ""}</Markdown>}
                       </div>
                     )
                   ) : (
-                    <div className="w-full min-w-0 text-left text-sm text-slate-900 leading-6">{message.content}</div>
+                    <div className="w-full min-w-0 text-left text-xs leading-5 text-slate-900 md:text-sm md:leading-6">{message.content}</div>
                   )}
                 </Message>
               );
@@ -272,8 +276,8 @@ export function AgentChatContainer({
         </ChatContainerRoot>
       )}
 
-      <div className="sticky bottom-0 z-10 shrink-0 bg-white p-3">
-        <div className="rounded-2xl border border-gray-200 bg-white p-3 shadow-sm">
+      <div className="sticky bottom-0 z-10 shrink-0 bg-white px-2 py-2 md:p-3">
+        <div className="rounded-xl border border-gray-200 bg-white p-2 shadow-sm md:rounded-2xl md:p-3">
           <div className="flex items-center">
             <Input
               ref={chatInputRef}
@@ -289,8 +293,8 @@ export function AgentChatContainer({
               className="flex-1 border-none bg-transparent px-0 text-sm text-gray-900 shadow-none outline-none placeholder:text-gray-400 focus-visible:ring-0 focus-visible:ring-offset-0"
             />
           </div>
-          <div className="mt-3 flex items-center justify-between gap-2">
-            <div className="flex min-h-8 items-center gap-2">
+          <div className="mt-2 flex items-center justify-between gap-2 md:mt-3">
+            <div className="flex min-h-7 items-center gap-1.5 md:min-h-8 md:gap-2">
               <button
                 type="button"
                 onClick={openResumePicker}
@@ -301,14 +305,15 @@ export function AgentChatContainer({
                 <FiPaperclip className="h-4 w-4" />
               </button>
               {showCvBadge ? (
-                <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
-                  <FileCheck2 className="h-3.5 w-3.5" />
-                  {resumeAttachedLabel || "CV"}
+                <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 md:px-2.5 md:py-1 md:text-xs">
+                  <FileCheck2 className="h-3 w-3 md:h-3.5 md:w-3.5" />
+                  <span className="md:hidden">{labels.cvShort || "CV"}</span>
+                  <span className="hidden md:inline">{resumeAttachedLabel || "CV"}</span>
                 </span>
               ) : null}
               {pinnedIntent ? (
                 <span
-                  className={`group inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium ${
+                  className={`group inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium md:px-2.5 md:py-1 md:text-xs ${
                     pinnedIntent === "jobs"
                       ? "border-blue-200 bg-blue-50 text-blue-700"
                       : pinnedIntent === "services"
@@ -316,7 +321,16 @@ export function AgentChatContainer({
                         : "border-amber-200 bg-amber-50 text-amber-700"
                   }`}
                 >
-                  {pinnedIntent === "jobs" ? labels.jobs : pinnedIntent === "services" ? labels.services : labels.tasks}
+                  <span className="md:hidden">
+                    {pinnedIntent === "jobs"
+                      ? (labels.jobsShort || labels.jobs)
+                      : pinnedIntent === "services"
+                        ? (labels.servicesShort || labels.services)
+                        : (labels.tasksShort || labels.tasks)}
+                  </span>
+                  <span className="hidden md:inline">
+                    {pinnedIntent === "jobs" ? labels.jobs : pinnedIntent === "services" ? labels.services : labels.tasks}
+                  </span>
                   <button
                     type="button"
                     onClick={onPinnedIntentClear}
@@ -332,7 +346,7 @@ export function AgentChatContainer({
               type="button"
               onClick={onSubmit}
               disabled={isSearching || isAgentWorking}
-              className="flex h-8 w-12 items-center justify-center rounded-lg border border-gray-200 disabled:opacity-60"
+              className="flex h-7 w-10 items-center justify-center rounded-lg border border-gray-200 disabled:opacity-60 md:h-8 md:w-12"
             >
               <Image
                 src="/icons/arrow.svg"

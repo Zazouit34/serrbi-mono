@@ -182,39 +182,52 @@ export async function serviceSearchEngine(
       })
     : Promise.resolve(null);
 
-  const pool = (await db.service.findMany({
+  const selectFields = {
+    id: true,
+    title: true,
+    description: true,
+    displayImage: true,
+    images: true,
+    phoneNumber: true,
+    serviceCategory: true,
+    type: true,
+    city: true,
+    stateAbbreviation: true,
+    price: true,
+    averageRating: true,
+    numberOfReviews: true,
+    createdAt: true,
+    embedding: true,
+  } as const;
+
+  let pool = (await db.service.findMany({
     where,
     take: 90,
     orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-    select: {
-      id: true,
-      title: true,
-      description: true,
-      displayImage: true,
-      images: true,
-      phoneNumber: true,
-      serviceCategory: true,
-      type: true,
-      city: true,
-      stateAbbreviation: true,
-      price: true,
-      averageRating: true,
-      numberOfReviews: true,
-      createdAt: true,
-      embedding: true,
-    },
+    select: selectFields,
   })) as ServiceCandidate[];
 
+  // Progressive filter relaxation: drop filters one by one until we get results
   if (pool.length === 0) {
-    return {
-      query: intentData.query,
-      filtersApplied: {
-        serviceCategory,
-        type: intentData.type ?? null,
-        city: intentData.city ?? null,
-      },
-      topResults: [],
-    };
+    const relaxSteps: Array<() => void> = [
+      () => { delete where.type; },
+      () => { delete where.city; },
+      () => { delete where.stateAbbreviation; },
+      () => { delete where.price; },
+      () => { delete where.averageRating; },
+      () => { delete where.numberOfReviews; },
+      () => { delete where.serviceCategory; },
+    ];
+    for (const relax of relaxSteps) {
+      relax();
+      pool = (await db.service.findMany({
+        where,
+        take: 90,
+        orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+        select: selectFields,
+      })) as ServiceCandidate[];
+      if (pool.length > 0) break;
+    }
   }
 
   const shouldRunSemantic = pool.some(

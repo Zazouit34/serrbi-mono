@@ -677,9 +677,9 @@ function buildResumeJobMatchMarkdownSummary(
   const normalized = normalizeLocale(locale);
   const top = cards[0];
   if (!top) {
-    if (normalized === "fr") return "## Resultats\n- **Aucun match:** aucun job trouve.\n- **Prochaine etape:** elargissez les filtres.";
-    if (normalized === "ar") return "## النتائج\n- **لا يوجد تطابق:** لم نجد وظائف حاليا.\n- **الخطوة التالية:** وسّع معايير البحث.";
-    return "## Results\n- **No match:** no jobs found.\n- **Next step:** widen your filters.";
+    if (normalized === "fr") return "## Emplois\n- Nous recherchons les meilleures offres pour vous.\n- Pouvez-vous preciser le poste ou la ville souhaitee ?";
+    if (normalized === "ar") return "## الوظائف\n- نبحث عن أفضل العروض لك.\n- هل يمكنك توضيح المنصب أو المدينة المطلوبة؟";
+    return "## Jobs\n- We're looking for the best offers for you.\n- Could you specify the role or preferred city?";
   }
 
   const topPercent = top?.resumeMatch?.percent ?? top?.matchScore ?? null;
@@ -821,9 +821,9 @@ function buildServiceMarkdownSummary(
   const normalized = normalizeLocale(locale);
   const top = cards[0];
   if (!top) {
-    if (normalized === "fr") return "## Resultats services\n- **Aucun resultat:** aucun service pertinent trouve.\n- **Prochaine etape:** essayez une autre ville ou categorie.";
-    if (normalized === "ar") return "## نتائج الخدمات\n- **لا توجد نتائج:** لم نجد خدمات مناسبة حاليا.\n- **الخطوة التالية:** جرّب مدينة أو فئة أخرى.";
-    return "## Service Results\n- **No results:** no relevant services found.\n- **Next step:** try another city or category.";
+    if (normalized === "fr") return "## Services\n- Nous recherchons les meilleures options pour vous.\n- Pouvez-vous preciser votre besoin ou la ville souhaitee ?";
+    if (normalized === "ar") return "## الخدمات\n- نبحث عن أفضل الخيارات لك.\n- هل يمكنك توضيح حاجتك أو المدينة المطلوبة؟";
+    return "## Services\n- We're looking for the best options for you.\n- Could you specify your need or preferred city?";
   }
 
   const topReasons = Array.isArray(top.selectionReasons) ? top.selectionReasons.slice(0, 2) : [];
