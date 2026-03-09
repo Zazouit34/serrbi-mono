@@ -32,6 +32,7 @@ export default function JobsCreation() {
         <ImporterField name="locationRequirement" label="Location Requirement" />
         <ImporterField name="experienceLevel" label="Experience Level" />
         <ImporterField name="tags" label="Tags (e.g. adobe, react, javascript)" optional />
+        <ImporterField name="skills" label="Skills (fallback for tags)" optional />
         <ImporterField name="wage" label="Wage" optional />
         <ImporterField name="stateAbbreviation" label="State (e.g. CA)" optional />
         <ImporterField name="countryIso2" label="Country ISO2" optional />
