@@ -19,7 +19,10 @@
     "plans": "Plans",
     "autoApply": "AI Serrbi",
     "careerSwitch": "Career Switch",
-    "resumeAnalyzer": "Resume Analyzer"
+    "resumeAnalyzer": "Resume Analyzer",
+    "home": "Home",
+    "explore": "Explore",
+    "favorites": "Favorites"
   },
   "Blog": {
     "title": "Blog",

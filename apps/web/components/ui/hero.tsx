@@ -50,8 +50,8 @@ export default function Hero() {
         className={cn(
           "mx-auto flex w-full flex-col items-center",
           chatExpanded
-            ? "h-[calc(100dvh-11rem)] justify-start gap-2 px-2 pt-1 pb-1 md:h-[calc(100dvh-5rem)] md:px-0 md:py-3"
-            : "justify-start gap-5 pt-12 pb-4 md:min-h-0 md:justify-center md:py-28 lg:py-32",
+            ? "h-[calc(100dvh-14.5rem)] justify-start gap-2 px-2 pt-1 pb-1 md:h-[calc(100dvh-5rem)] md:px-0 md:py-3"
+            : "min-h-[calc(100dvh-12rem)] justify-center gap-5 pb-4 md:min-h-0 md:py-28 lg:py-32",
         )}
       >
         {!chatExpanded && (
@@ -72,7 +72,7 @@ export default function Hero() {
       </div>
 
       {!chatExpanded && (
-        <div className="mt-0 w-full md:mt-3">
+        <div className="mt-8 w-full border-t border-gray-100 pt-8 md:mt-3 md:border-0 md:pt-0">
           <HeroSearchBar.Preview {...previewData} />
         </div>
       )}

@@ -19,7 +19,10 @@
     "plans": "الباقات",
     "autoApply": "AI Serrbi",
     "careerSwitch": "توجيه مهني",
-    "resumeAnalyzer": "محلل السيرة الذاتية"
+    "resumeAnalyzer": "محلل السيرة الذاتية",
+    "home": "الرئيسية",
+    "explore": "استكشف",
+    "favorites": "المفضلة"
   },
   "Blog": {
     "title": "مدونة",

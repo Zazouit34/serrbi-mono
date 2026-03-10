@@ -703,7 +703,7 @@ function buildResumeJobMatchMarkdownSummary(
 
   if (normalized === "fr") {
     if (style === "recommendation") {
-      return [
+    return [
         `## Recommandation pour "${query}"`,
         `- ${top.title ?? "Poste"}${top?.city ? ` — ${top.city}` : ""}${top?.type ? ` — ${top.type}` : ""}.`,
         `- Cette offre semble bien alignee avec votre recherche${typeof topPercent === "number" ? ` (${topPercent}% de match)` : ""}${skills ? `, notamment sur ${skills}` : ""}.`,
@@ -740,16 +740,16 @@ function buildResumeJobMatchMarkdownSummary(
   }
   if (normalized === "ar") {
     if (style === "recommendation") {
-      return [
+    return [
         `## توصية لـ "${query}"`,
         `- ${top.title ?? "وظيفة"}${top?.city ? ` — ${top.city}` : ""}${top?.type ? ` — ${top.type}` : ""}.`,
         `- هذا العرض يبدو مناسباً لطلبك${typeof topPercent === "number" ? ` (${topPercent}% مطابقة)` : ""}${skills ? ` خاصة في ${skills}` : ""}.`,
         `- أقدر أيضاً أعرض لك بدائل مشابهة${alternativesText ? ` (${alternativesText})` : ""} إذا رغبت بالمقارنة.`,
         `- هل تريد رؤية وظائف مشابهة؟`,
-      ].join("\n");
-    }
+    ].join("\n");
+  }
     if (style === "comparison") {
-      return [
+  return [
         `## مقارنة سريعة لـ "${query}"`,
         `- ${cards[0]?.title ?? "الخيار 1"}${cards[0]?.city ? ` — ${cards[0].city}` : ""}${cards[0]?.wage ? ` — ${cards[0].wage} MAD` : ""}.`,
         `- ${cards[1]?.title ?? "الخيار 2"}${cards[1]?.city ? ` — ${cards[1].city}` : ""}${cards[1]?.wage ? ` — ${cards[1].wage} MAD` : ""}.`,
@@ -874,16 +874,16 @@ function buildServiceMarkdownSummary(
   }
   if (normalized === "ar") {
     if (style === "recommendation") {
-      return [
+    return [
         `## التوصية الأساسية لـ "${query}"`,
         `- ${top.title ?? "خدمة"}${top?.city ? ` — ${top.city}` : ""}.`,
         `- يبدو خياراً جيداً${typeof top.matchScore === "number" ? ` (${top.matchScore}% ثقة)` : ""}${topReasons.length ? `: ${topReasons.join(" · ")}` : ""}.`,
         `- أقدر أيضاً أعرض لك مزودين مشابهين${alternativesText ? ` (${alternativesText})` : ""} إذا رغبت بالمقارنة.`,
         `- هل تريد رؤية خيارات مشابهة؟`,
-      ].join("\n");
-    }
+    ].join("\n");
+  }
     if (style === "comparison") {
-      return [
+  return [
         `## مقارنة الخدمات لـ "${query}"`,
         `- ${cards[0]?.title ?? "الخيار 1"}${cards[0]?.city ? ` — ${cards[0].city}` : ""}.`,
         `- ${cards[1]?.title ?? "الخيار 2"}${cards[1]?.city ? ` — ${cards[1].city}` : ""}.`,
@@ -1102,12 +1102,12 @@ export async function POST(req: Request) {
           ? { type: "search_task", reply: "", intent_data: { query: quickQuery } }
           : { type: "search_job", reply: "", intent_data: { query: quickQuery } }
       : await extractIntent({
-          locale,
+      locale,
           scope,
-          categoryHint: body.context?.categoryHint,
-          message: lastUser,
-          history: extractorHistory,
-        });
+      categoryHint: body.context?.categoryHint,
+      message: lastUser,
+      history: extractorHistory,
+    });
     logChatDebug("intent_extracted", {
       message: lastUser,
       type: aiResult.type,

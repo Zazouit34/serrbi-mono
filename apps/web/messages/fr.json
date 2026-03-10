@@ -19,7 +19,10 @@
     "plans": "Plans",
     "autoApply": "AI Serrbi",
     "careerSwitch": "Carrière IA",
-    "resumeAnalyzer": "Analyseur de CV"
+    "resumeAnalyzer": "Analyseur de CV",
+    "home": "Accueil",
+    "explore": "Explorer",
+    "favorites": "Favoris"
   },
   "Blog": {
     "title": "Blog",
