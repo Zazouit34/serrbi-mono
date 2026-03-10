@@ -192,23 +192,28 @@ export function AgentChatContainer({
                         ) : null}
 
                         {!message.results.isLoading && message.results.items.length > 0 && (
-                          <div className="mt-2 grid grid-cols-1 gap-3 text-left md:mt-3 md:grid-cols-3 md:gap-6">
+                          <div className="mt-2 flex gap-2.5 overflow-x-auto snap-x snap-mandatory pb-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden md:mt-3 md:grid md:grid-cols-3 md:gap-4 md:overflow-visible md:snap-none md:pb-0">
                             {message.results.items.map((item: any) => {
+                              const cardWrap = "w-[72vw] min-w-[72vw] shrink-0 snap-start md:w-auto md:min-w-0 md:shrink";
                               if (message.results?.type === "jobs") {
                                 return (
-                                  <div key={item.id}>
+                                  <div key={item.id} className={cardWrap}>
                                     <JobCard className="h-full" job={item} compact />
                                   </div>
                                 );
                               }
                               if (message.results?.type === "services") {
                                 return (
-                                  <div key={item.id}>
+                                  <div key={item.id} className={cardWrap}>
                                     <ServiceCard service={item} className="h-full" compact />
                                   </div>
                                 );
                               }
-                              return <TaskCard key={item.id} task={item} className="h-full" />;
+                              return (
+                                <div key={item.id} className={cardWrap}>
+                                  <TaskCard task={item} className="h-full" />
+                                </div>
+                              );
                             })}
                           </div>
                         )}

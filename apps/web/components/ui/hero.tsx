@@ -23,7 +23,6 @@ export default function Hero() {
   });
   const [chatExpanded, setChatExpanded] = useState(false);
   const [headingIndex, setHeadingIndex] = useState(0);
-  // avatars removed on mobile for better UX
 
   useEffect(() => {
     setHeadingIndex(0);
@@ -37,14 +36,22 @@ export default function Hero() {
     return () => clearInterval(interval);
   }, [chatExpanded, rotatingHeadings.length]);
 
+  useEffect(() => {
+    if (!chatExpanded) return;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [chatExpanded]);
+
   return (
     <div className={cn("flex flex-col", chatExpanded && "-mx-4 md:mx-0")}>
       <div
         className={cn(
           "mx-auto flex w-full flex-col items-center",
           chatExpanded
-            ? "h-[calc(100svh-7.5rem)] justify-start gap-2 px-2 pt-1 pb-1 md:h-[calc(100svh-5rem)] md:px-0 md:py-3"
-            : "justify-start gap-5 pt-6 pb-4 md:min-h-0 md:justify-center md:py-28 lg:py-32",
+            ? "h-[calc(100dvh-11rem)] justify-start gap-2 px-2 pt-1 pb-1 md:h-[calc(100dvh-5rem)] md:px-0 md:py-3"
+            : "justify-start gap-5 pt-12 pb-4 md:min-h-0 md:justify-center md:py-28 lg:py-32",
         )}
       >
         {!chatExpanded && (
