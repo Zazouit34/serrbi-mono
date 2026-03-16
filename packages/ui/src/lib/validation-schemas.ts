@@ -563,10 +563,13 @@ export const jobImportSchema = z
   }));
 
 export const serviceImportRowSchema = z.object({
-  title: z.string().min(1),
-  description: z.string().min(1),
-  serviceCategory: z.enum(serviceCategoryValues),
-  type: z.string().min(1),
+  title: z.preprocess((v) => (typeof v === "string" ? v.trim() : v), z.string().min(1)),
+  description: z.preprocess((v) => (typeof v === "string" ? v.trim() : v), z.string().min(1)),
+  serviceCategory: z.preprocess(
+    (v) => (typeof v === "string" ? v.trim().replace(/[\uFEFF\u200B]/g, "") : v),
+    z.enum(serviceCategoryValues),
+  ),
+  type: z.preprocess((v) => (typeof v === "string" ? v.trim() : v), z.string().min(1)),
   price: z.preprocess((val) => {
     if (val === "" || val === null || val === undefined) return null
     if (typeof val === "string" && val.trim() !== "") return Number(val)
