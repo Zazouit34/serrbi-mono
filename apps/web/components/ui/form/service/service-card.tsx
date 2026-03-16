@@ -1,8 +1,8 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
 import { Star, ChevronLeft, ChevronRight, Phone } from "lucide-react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faWhatsapp, faInstagram } from "@fortawesome/free-brands-svg-icons";
@@ -59,7 +59,6 @@ export function ServiceCard({
   disableFallbackImages?: boolean;
 }) {
   const t = useTranslations();
-  const router = useRouter();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [contactOpen, setContactOpen] = useState(false);
   const overlayRef = useRef<HTMLDivElement | null>(null);
@@ -125,15 +124,12 @@ export function ServiceCard({
     };
   }, [contactOpen]);
 
-  const handleCardClick = () => {
-    if (!contactOpen) {
-      router.push(buildServiceHref(service));
-    }
-  };
-
   return (
-    <div className={cn("w-full cursor-pointer", className)}>
-      <div onClick={handleCardClick}>
+    <Link
+      href={buildServiceHref(service)}
+      className={cn("block w-full", className)}
+      onClick={(e) => { if (contactOpen) e.preventDefault(); }}
+    >
         {/* Image Section with carousel */}
         <div
           ref={containerRef}
@@ -165,7 +161,7 @@ export function ServiceCard({
           {/* Type badge - top left (specific profession, colored by parent category) */}
           <div
             className="absolute top-2 left-2 z-10"
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
           >
             {service.type ? (
               <span className={cn(
@@ -183,7 +179,7 @@ export function ServiceCard({
           {/* Favorite button - top right */}
           <div
             className="absolute top-2 right-2 z-10"
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
           >
             <FavoriteButton
               serviceId={service.id}
@@ -197,6 +193,7 @@ export function ServiceCard({
             <>
               <button
                 onClick={(e) => {
+                  e.preventDefault();
                   e.stopPropagation();
                   prevImage(e);
                 }}
@@ -206,6 +203,7 @@ export function ServiceCard({
               </button>
               <button
                 onClick={(e) => {
+                  e.preventDefault();
                   e.stopPropagation();
                   nextImage(e);
                 }}
@@ -220,7 +218,7 @@ export function ServiceCard({
           {activeImages.length > 1 && (
             <div
               className="flex absolute bottom-2 left-1/2 z-10 gap-1 -translate-x-1/2"
-              onClick={(e) => e.stopPropagation()}
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
             >
               {activeImages.map((_, i) => (
                 <span
@@ -245,7 +243,7 @@ export function ServiceCard({
               className={cn(
                 "overflow-hidden absolute right-0 bottom-0 left-0 z-10 px-3 py-2 rounded-t-md backdrop-blur-md bg-black/30",
               )}
-              onClick={(e) => e.stopPropagation()}
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
             >
               {/* Top row inside overlay: price (left) + contact button (right when collapsed) */}
               <div className="flex justify-between items-center">
@@ -257,6 +255,7 @@ export function ServiceCard({
                 {!contactOpen && (
                   <button
                     onClick={(e) => {
+                      e.preventDefault();
                       e.stopPropagation();
                       setContactOpen(true);
                     }}
@@ -359,6 +358,6 @@ export function ServiceCard({
           </div>
         </div>
       </div>
-    </div>
+    </Link>
   );
 }

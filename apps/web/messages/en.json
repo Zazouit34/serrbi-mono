@@ -540,6 +540,22 @@
     "whatsapp": "WhatsApp",
     "call": "Call"
   },
+  "JobApply": {
+    "apply": "Apply",
+    "applyExternal": "Apply",
+    "name": "Name",
+    "namePlaceholder": "Jane Doe",
+    "email": "Email",
+    "emailPlaceholder": "jane@mail.com",
+    "resume": "Resume",
+    "openResume": "Open",
+    "cvUploadLabel": "CV upload (PDF or Word)",
+    "clickToUpload": "Click to upload",
+    "orDragDrop": "or drag and drop",
+    "accepted": "Accepted: PDF • Max 2MB",
+    "submitApplication": "Submit Application",
+    "cancel": "Cancel"
+  },
   "ResumeInsight": {
     "title": "Get your resume checked by AI in seconds",
     "subtitle": "Drop a single PDF below. We'll score it instantly on the right.",

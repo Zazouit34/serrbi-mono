@@ -2,6 +2,7 @@
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
+import { useTranslations } from "next-intl";
 import { trpc } from "@/app/_trpc/client";
 import { useForm } from "react-hook-form";
 import { CloudUpload, Paperclip, ArrowLeft, ExternalLink } from "lucide-react";
@@ -40,6 +41,7 @@ export function JobApplyForm({
   jobTitle: string;
   applicationUrl: string | null;
 }) {
+  const t = useTranslations("JobApply");
   const { data: session } = useSession();
   const isLoggedIn = !!session?.user?.email;
   const [isPending, startTransition] = useTransition();
@@ -169,11 +171,11 @@ export function JobApplyForm({
             <Button className="w-48" onClick={handleApplyClick}>
               {applicationUrl ? (
                 <>
-                  Apply
+                  {t("applyExternal")}
                   <ExternalLink className="ml-2 size-4" />
                 </>
               ) : (
-                "Apply"
+                t("apply")
               )}
             </Button>
           </div>
@@ -192,10 +194,10 @@ export function JobApplyForm({
                   name="name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Name</FormLabel>
+                      <FormLabel>{t("name")}</FormLabel>
                       <FormControl>
                         <Input
-                          placeholder="Jane Doe"
+                          placeholder={t("namePlaceholder")}
                           {...field}
                           disabled={isPending}
                         />
@@ -210,11 +212,11 @@ export function JobApplyForm({
                   name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Email</FormLabel>
+                      <FormLabel>{t("email")}</FormLabel>
                       <FormControl>
                         <Input
                           type="email"
-                          placeholder="jane@mail.com"
+                          placeholder={t("emailPlaceholder")}
                           {...field}
                           disabled={isPending}
                         />
@@ -228,7 +230,7 @@ export function JobApplyForm({
               {/* CV (saved or upload) */}
               {hasSavedResume ? (
                 <div className="space-y-2">
-                  <FormLabel>Resume</FormLabel>
+                  <FormLabel>{t("resume")}</FormLabel>
                   <div className="flex justify-between items-center p-2 rounded-md border">
                     <span className="truncate">
                       {(() => {
@@ -246,7 +248,7 @@ export function JobApplyForm({
                       rel="noreferrer"
                       className="text-sm text-black underline"
                     >
-                      Open
+                      {t("openResume")}
                     </a>
                   </div>
                 </div>
@@ -256,7 +258,7 @@ export function JobApplyForm({
                   name="cv"
                   render={() => (
                     <FormItem>
-                      <FormLabel>CV upload (PDF or Word)</FormLabel>
+                      <FormLabel>{t("cvUploadLabel")}</FormLabel>
                       <FormControl>
                         <FileUploader
                           value={cvFile ? [cvFile] : []}
@@ -274,10 +276,10 @@ export function JobApplyForm({
                             <div className="flex flex-col justify-center items-center p-8 w-full">
                               <CloudUpload className="w-10 h-10 text-gray-500" />
                               <p className="mb-1 text-sm text-gray-500">
-                                <span className="font-semibold">Click to upload</span>{" "}
-                                or drag and drop
+                                <span className="font-semibold">{t("clickToUpload")}</span>{" "}
+                                {t("orDragDrop")}
                               </p>
-                              <p className="text-xs text-gray-500">Accepted: PDF • Max 2MB</p>
+                              <p className="text-xs text-gray-500">{t("accepted")}</p>
                             </div>
                           </FileInput>
                           <FileUploaderContent>
@@ -302,7 +304,7 @@ export function JobApplyForm({
               <div className="flex gap-2">
                 <Button type="submit" disabled={isPending}>
                   <LoadingSwap isLoading={isPending}>
-                    Submit Application
+                    {t("submitApplication")}
                   </LoadingSwap>
                 </Button>
                 <Button
@@ -310,7 +312,7 @@ export function JobApplyForm({
                   variant="ghost"
                   onClick={() => setShowForm(false)}
                 >
-                  Cancel
+                  {t("cancel")}
                 </Button>
               </div>
             </form>

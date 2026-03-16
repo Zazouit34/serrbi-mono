@@ -566,6 +566,22 @@
     "whatsapp": "واتساب",
     "call": "اتصال"
   },
+  "JobApply": {
+    "apply": "تقدّم الآن",
+    "applyExternal": "تقدّم الآن",
+    "name": "الاسم",
+    "namePlaceholder": "محمد أمين",
+    "email": "البريد الإلكتروني",
+    "emailPlaceholder": "mohamed@mail.com",
+    "resume": "السيرة الذاتية",
+    "openResume": "فتح",
+    "cvUploadLabel": "رفع السيرة الذاتية (PDF أو Word)",
+    "clickToUpload": "انقر للرفع",
+    "orDragDrop": "أو اسحب وأفلت",
+    "accepted": "مقبول: PDF • الحد الأقصى 2 ميغابايت",
+    "submitApplication": "إرسال الطلب",
+    "cancel": "إلغاء"
+  },
   "Form": {
     "back": "رجوع",
     "next": "التالي",

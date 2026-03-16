@@ -555,6 +555,22 @@
     "whatsapp": "WhatsApp",
     "call": "Appeler"
   },
+  "JobApply": {
+    "apply": "Postuler",
+    "applyExternal": "Postuler",
+    "name": "Nom",
+    "namePlaceholder": "Jean Dupont",
+    "email": "Email",
+    "emailPlaceholder": "jean@mail.com",
+    "resume": "CV",
+    "openResume": "Ouvrir",
+    "cvUploadLabel": "Télécharger un CV (PDF ou Word)",
+    "clickToUpload": "Cliquez pour télécharger",
+    "orDragDrop": "ou glissez-déposez",
+    "accepted": "Accepté : PDF • Max 2 Mo",
+    "submitApplication": "Envoyer la candidature",
+    "cancel": "Annuler"
+  },
   "Form": {
     "back": "Retour",
     "next": "Suivant",
