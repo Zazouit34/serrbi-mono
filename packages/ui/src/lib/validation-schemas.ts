@@ -581,6 +581,11 @@ export const serviceImportRowSchema = z.object({
     const num = Number(val);
     return Number.isNaN(num) ? 0 : num;
   }, z.number().min(0).max(5).nullable().optional()),
+  numberOfReviews: z.preprocess((val) => {
+    if (val === "" || val === null || val === undefined) return 0;
+    const num = Number(val);
+    return Number.isNaN(num) ? 0 : num;
+  }, z.number().int().min(0).nullable().optional()),
   city: z.string().optional().nullable(),
   address: z.string().optional().nullable(),
   phoneNumber: z.string().optional().nullable(),

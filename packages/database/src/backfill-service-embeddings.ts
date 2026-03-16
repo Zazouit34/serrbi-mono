@@ -1,17 +1,47 @@
 import { prisma } from "./client";
 
 const CATEGORY_CONTEXT: Record<string, string> = {
-  HomeMaintenance: "home maintenance repairs electrician plumber cleaning locksmith carpenter painter",
-  ConstructionInstallation: "construction installation architecture renovation masonry pool elevator security systems",
-  HealthWellness: "health wellness doctor nurse therapist nutrition fitness clinic care",
-  BeautyPersonalCare: "beauty personal care hairstylist barber makeup esthetician spa",
-  EventsMedia: "events media planner wedding decoration photographer videographer dj",
-  FoodCatering: "food catering chef meal prep bakery restaurant",
-  DigitalCreative: "digital creative graphic design web developer social media marketing content",
-  LegalFinance: "legal finance lawyer accounting tax advisory",
-  EducationCoaching: "education coaching teacher tutor trainer learning",
-  AutomotiveTransport: "automotive transport mechanic garage car service driver",
-  Other: "miscellaneous services",
+  HomeMaintenance:
+    "home maintenance repairs electrician plumber cleaning locksmith carpenter painter " +
+    "entretien maison réparation électricien plombier nettoyage serrurier menuisier peintre " +
+    "صيانة منزل كهربائي سباك نظافة نجار دهان",
+  ConstructionInstallation:
+    "construction installation architecture renovation masonry pool elevator security systems " +
+    "construction installation architecture rénovation maçonnerie piscine ascenseur sécurité " +
+    "بناء تركيب هندسة ترميم بناء مسبح مصعد أمن",
+  HealthWellness:
+    "health wellness doctor nurse therapist nutrition fitness clinic care " +
+    "santé bien-être médecin infirmier thérapeute nutrition fitness clinique soins " +
+    "صحة عافية طبيب ممرض معالج تغذية لياقة عيادة رعاية",
+  BeautyPersonalCare:
+    "beauty personal care hairstylist barber makeup esthetician spa " +
+    "beauté soins personnels coiffeur barbier maquillage esthéticienne spa " +
+    "جمال عناية شخصية حلاق مكياج تجميل سبا",
+  EventsMedia:
+    "events media planner wedding decoration photographer videographer dj " +
+    "événements médias organisateur mariage décoration photographe vidéaste dj " +
+    "فعاليات إعلام منظم زفاف ديكور مصور فيديو",
+  FoodCatering:
+    "food catering chef meal prep bakery restaurant " +
+    "alimentation traiteur chef préparation repas boulangerie restaurant " +
+    "طعام تموين طباخ وجبات مخبزة مطعم",
+  DigitalCreative:
+    "digital creative graphic design web developer social media marketing content " +
+    "numérique créatif design graphique développeur web réseaux sociaux marketing contenu " +
+    "رقمي إبداعي تصميم جرافيك مطور ويب تسويق محتوى",
+  LegalFinance:
+    "legal finance lawyer accounting tax advisory " +
+    "juridique finance avocat comptabilité fiscalité conseil " +
+    "قانوني مالي محامي محاسبة ضرائب استشارات",
+  EducationCoaching:
+    "education coaching teacher tutor trainer learning " +
+    "éducation coaching professeur tuteur formateur apprentissage cours " +
+    "تعليم تدريب أستاذ مدرس معلم تعلم دروس",
+  AutomotiveTransport:
+    "automotive transport mechanic garage car service driver " +
+    "automobile transport mécanicien garage voiture chauffeur " +
+    "سيارات نقل ميكانيكي كراج سيارة سائق",
+  Other: "miscellaneous services services divers خدمات متنوعة",
 };
 
 function getRequiredEnv(name: string): string {

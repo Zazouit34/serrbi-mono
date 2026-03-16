@@ -185,11 +185,10 @@ export function rankServices<T extends ServiceRankable>(args: {
     const locationScore = computeLocationMatchScore(preferredCity, item.city);
     const priceScore = computePriceFitScore(item.price, minPrice, maxPrice);
 
-    // Service ranking: users mostly care about trust + locality + budget.
     const finalScore =
-      0.15 * semanticScore +
-      0.35 * ratingScore +
-      0.2 * reviewsScore +
+      0.25 * semanticScore +
+      0.28 * ratingScore +
+      0.17 * reviewsScore +
       0.15 * locationScore +
       0.15 * priceScore;
 
@@ -198,7 +197,7 @@ export function rankServices<T extends ServiceRankable>(args: {
     if (reviewsScore >= 0.55) selectionReasons.push("Strong customer review volume");
     if (locationScore >= 0.8) selectionReasons.push("Close to your preferred location");
     if (priceScore >= 0.8) selectionReasons.push("Price aligns with your budget");
-    if (semanticScore >= 0.7) selectionReasons.push("Strong relevance to your request");
+    if (semanticScore >= 0.65) selectionReasons.push("Strong relevance to your request");
 
     const confidenceSignals: string[] = [];
     if (typeof item.averageRating === "number" && item.numberOfReviews > 0) {

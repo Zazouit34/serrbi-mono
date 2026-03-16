@@ -38,6 +38,13 @@ Rules:
 - If uncertain between two filters, leave unknown fields null.
 - Never change enum values; use exact allowed enum strings only.
 
+Query language bridging (IMPORTANT):
+- "intent_data.query" must be bilingual: include the user's original terms AND an English translation.
+- Example: user says "أبحث عن سباك" → query: "سباك plumber سباكة plumbing"
+- Example: user says "je cherche un électricien" → query: "électricien electrician électricité electrical"
+- This ensures embedding-based search works across languages.
+- Keep the query concise; do not add full sentences, only key terms in both languages.
+
 Field map:
 - search_job intent_data: query, category, locationRequirement (in_office|hybrid|remote), experienceLevel (junior|mid_level|senior), type (internship|part_time|full_time), city, stateAbbreviation, countryIso2, minWage, maxWage, skills[]
 - For job category, prefer exact enum value if clear:

@@ -538,6 +538,7 @@ export const serviceRouter = router({
       type: r.type as any,
       price: (r.price ?? 0) as any,
       averageRating: (r.averageRating ?? 0) as any,
+      numberOfReviews: (r.numberOfReviews ?? 0) as any,
       stateAbbreviation: (r.stateAbbreviation ?? null) as any,
       city: (r.city ?? null) as any,
       address: (r.address ?? null) as any,
