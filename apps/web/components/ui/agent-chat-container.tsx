@@ -5,7 +5,6 @@ import Image from "next/image";
 
 import { AlertTriangle, FileCheck2, Search, X } from "lucide-react";
 import { FiPaperclip } from "react-icons/fi";
-import { Input } from "@workspace/ui/components/input";
 import { Progress } from "@workspace/ui/components/progress";
 import { ChatContainerRoot, ChatContainerContent } from "@/components/ui/chat-container";
 import { Message, MessageAvatar } from "@/components/ui/message";
@@ -51,7 +50,7 @@ type AgentChatContainerProps = {
   isAgentWorking: boolean;
   pinnedIntent: TabType | null;
   userInitial?: string;
-  chatInputRef: RefObject<HTMLInputElement | null>;
+  chatInputRef: RefObject<HTMLTextAreaElement | null>;
   labels: {
     searching: string;
     thinking: string;
@@ -283,19 +282,30 @@ export function AgentChatContainer({
 
       <div className="sticky bottom-0 z-10 shrink-0 bg-white px-2 py-2 md:p-3">
         <div className="rounded-xl border border-gray-200 bg-white p-2 shadow-sm md:rounded-2xl md:p-3">
-          <div className="flex items-center">
-            <Input
+          <div className="flex items-end">
+            <textarea
               ref={chatInputRef}
               placeholder={placeholder}
               value={chatInput}
-              onChange={(e) => onInputChange(e.target.value)}
+              rows={1}
+              onChange={(e) => {
+                onInputChange(e.target.value);
+                e.target.style.height = "auto";
+                e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`;
+              }}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey && chatInput.trim()) {
                   e.preventDefault();
                   onSubmit();
+                  requestAnimationFrame(() => {
+                    if (chatInputRef.current) {
+                      chatInputRef.current.style.height = "auto";
+                    }
+                  });
                 }
               }}
-              className="flex-1 border-none bg-transparent px-0 text-sm text-gray-900 shadow-none outline-none placeholder:text-gray-400 focus-visible:ring-0 focus-visible:ring-offset-0"
+              className="flex-1 resize-none border-none bg-transparent px-0 text-sm leading-5 text-gray-900 shadow-none outline-none placeholder:text-gray-400 focus-visible:ring-0 focus-visible:ring-offset-0"
+              style={{ maxHeight: 120 }}
             />
           </div>
           <div className="mt-2 flex items-center justify-between gap-2 md:mt-3">

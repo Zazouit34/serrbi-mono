@@ -323,7 +323,7 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
   const [hasResumeAttached, setHasResumeAttached] = useState(false);
   const nextMessageIdRef = useRef(1);
   const placeholderIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const chatInputRef = useRef<HTMLInputElement | null>(null);
+  const chatInputRef = useRef<HTMLTextAreaElement | null>(null);
   const agentSessionIdRef = useRef<string | null>(null);
   const updateResumeUrl = trpc.auth.updateResume.useMutation();
   const updateResumeEmbedding = trpc.auth.updateResumeEmbedding.useMutation();
