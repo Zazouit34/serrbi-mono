@@ -29,6 +29,9 @@ const SCROLL_CLS =
 const CARD_CLS =
   "w-[72vw] min-w-[72vw] shrink-0 snap-start sm:w-[280px] sm:min-w-[280px]";
 
+const JOB_CARD_CLS =
+  "w-[72vw] min-w-[72vw] shrink-0 snap-start sm:w-[340px] sm:min-w-[340px]";
+
 const ARROW_CLS =
   "absolute top-1/2 z-10 flex -translate-y-1/2 items-center justify-center rounded-full border border-gray-200 bg-white/95 text-gray-600 shadow-sm hover:bg-white h-7 w-7 md:h-8 md:w-8";
 
@@ -102,7 +105,7 @@ export function PreviewCards({ title }: PreviewCardsProps) {
           </button>
           <div ref={jobsRef} className={SCROLL_CLS}>
             {(jobsQuery.data?.items ?? []).map((item: any) => (
-              <div key={item.id} data-card className={CARD_CLS}>
+              <div key={item.id} data-card className={JOB_CARD_CLS}>
                 <JobCard className="h-full" job={item} />
               </div>
             ))}
