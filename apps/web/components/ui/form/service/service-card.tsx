@@ -357,7 +357,6 @@ export function ServiceCard({
             </div>
           </div>
         </div>
-      </div>
     </Link>
   );
 }
