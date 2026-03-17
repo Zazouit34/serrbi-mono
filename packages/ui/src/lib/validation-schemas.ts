@@ -589,13 +589,13 @@ export const serviceImportRowSchema = z.object({
     const num = Number(val);
     return Number.isNaN(num) ? 0 : num;
   }, z.number().int().min(0).nullable().optional()),
-  city: z.string().optional().nullable(),
-  address: z.string().optional().nullable(),
-  phoneNumber: z.string().optional().nullable(),
-  email: z.string().email().optional().nullable(),
-  website: z.string().url().optional().nullable(),
-  displayName: z.string().optional().nullable(),
-  displayImage: z.string().url().optional().nullable(),
+  city: z.preprocess((v) => (v === "" ? null : v), z.string().optional().nullable()),
+  address: z.preprocess((v) => (v === "" ? null : v), z.string().optional().nullable()),
+  phoneNumber: z.preprocess((v) => (v === "" ? null : v), z.string().optional().nullable()),
+  email: z.preprocess((v) => (v === "" ? null : v), z.string().email().optional().nullable()),
+  website: z.preprocess((v) => (v === "" ? null : v), z.string().url().optional().nullable()),
+  displayName: z.preprocess((v) => (v === "" ? null : v), z.string().optional().nullable()),
+  displayImage: z.preprocess((v) => (v === "" ? null : v), z.string().url().optional().nullable()),
   images: z.preprocess((val) => {
     if (val === undefined || val === null) return [];
     if (Array.isArray(val)) return val;

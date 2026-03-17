@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
 
 async function proxy(req: NextRequest) {
-  const webUrl = (process.env.NEXT_PUBLIC_WEB_URL || "").replace(/\/+$/, "");
+  const webUrl = (process.env.NEXT_PUBLIC_WEB_URL || "");
   const adminToken = process.env.ADMIN_API_TOKEN || "";
 
   const jwt = await getToken({
