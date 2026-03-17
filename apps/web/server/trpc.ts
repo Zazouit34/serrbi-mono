@@ -12,6 +12,7 @@ type Ctx = {
   session: Session | null
   prisma: unknown
   adminToken?: string | null
+  adminEmail?: string | null
   user?: unknown
 }
 
@@ -19,7 +20,8 @@ export const createContext = async (): Promise<Ctx> => {
   const session = await auth()
   const hdrs = await headers()
   const adminToken = hdrs.get("x-admin-token")
-  return { session, prisma, adminToken }
+  const adminEmail = hdrs.get("x-admin-email")
+  return { session, prisma, adminToken, adminEmail }
 }
 
 const t = initTRPC.context<Ctx>().create()
@@ -30,6 +32,15 @@ const isAdmin = t.middleware(async ({ ctx, next }) => {
 
   // Service-to-service token path
   if (ctx.adminToken && ctx.adminToken === process.env.ADMIN_API_TOKEN) {
+    if (ctx.adminEmail) {
+      const tokenUser = await db.user.findUnique({
+        where: { email: ctx.adminEmail },
+        select: { id: true, role: true },
+      })
+      if (tokenUser && tokenUser.role === "ADMIN") {
+        return next({ ctx: { ...ctx, user: tokenUser } })
+      }
+    }
     return next({ ctx: { ...ctx, user: { id: "admin-service", role: "ADMIN" } } })
   }
 

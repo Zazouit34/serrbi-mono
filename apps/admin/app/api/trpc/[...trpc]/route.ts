@@ -28,6 +28,7 @@ async function proxy(req: NextRequest) {
   const headers = new Headers();
   headers.set("Content-Type", req.headers.get("Content-Type") || "application/json");
   headers.set("x-admin-token", adminToken);
+  if (jwt.email) headers.set("x-admin-email", jwt.email as string);
 
   try {
     const body =
