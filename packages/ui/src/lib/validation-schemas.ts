@@ -619,14 +619,18 @@ export const serviceImportRowSchema = z.object({
           .map((s) => s.trim().replace(/^['"]|['"]$/g, ""))
           .filter(Boolean);
       }
-      // Case 2: CSV string → split and strip quotes
+      // Case 2: Single URL that happens to contain commas in the path
+      if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+        return [trimmed];
+      }
+      // Case 3: CSV string of multiple URLs → split and strip quotes
       if (trimmed.includes(",")) {
         return trimmed
           .split(",")
           .map((s) => s.trim().replace(/^['"]|['"]$/g, ""))
           .filter(Boolean);
       }
-      // Case 3: Single URL string → strip surrounding quotes if any
+      // Case 4: Single URL string → strip surrounding quotes if any
       return [trimmed.replace(/^['"]|['"]$/g, "")];
     }
     return [];
