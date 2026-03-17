@@ -562,21 +562,11 @@ export const jobImportSchema = z
     })),
   }));
 
-// #region agent log
-console.log("[DEBUG-H1] serviceCategoryValues at schema eval time:", JSON.stringify(serviceCategoryValues));
-// #endregion
-
 export const serviceImportRowSchema = z.object({
   title: z.preprocess((v) => (typeof v === "string" ? v.trim() : v), z.string().min(1)),
   description: z.preprocess((v) => (typeof v === "string" ? v.trim() : v), z.string().min(1)),
   serviceCategory: z.preprocess(
-    (v) => {
-      // #region agent log
-      const cleaned = typeof v === "string" ? v.trim().replace(/[\uFEFF\u200B]/g, "") : v;
-      console.log("[DEBUG-H1H3] serviceCategory preprocess:", JSON.stringify({ raw: v, cleaned, rawCharCodes: typeof v === "string" ? [...v].map(c => c.charCodeAt(0)) : null, accepted: serviceCategoryValues }));
-      return cleaned;
-      // #endregion
-    },
+    (v) => (typeof v === "string" ? v.trim().replace(/[\uFEFF\u200B]/g, "") : v),
     z.enum(serviceCategoryValues),
   ),
   type: z.preprocess((v) => (typeof v === "string" ? v.trim() : v), z.string().min(1)),

@@ -12,12 +12,6 @@ export default function Provider({ children }: { children: React.ReactNode }) {
       links: [
         httpBatchLink({
           url: "/api/trpc",
-          fetch(url, options) {
-            return fetch(url, {
-              ...options,
-              credentials: "include", // send NextAuth cookies to admin origin
-            });
-          },
         }),
       ],
     })
