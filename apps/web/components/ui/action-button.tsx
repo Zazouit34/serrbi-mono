@@ -9,6 +9,7 @@ import { cn } from "@workspace/ui/lib/utils";
 import { jobCategoryValues } from "@workspace/ui/lib/job-enum";
 import { serviceCategoryValues } from "@workspace/ui/lib/service-enum";
 import { taskCategoryValues } from "@workspace/ui/lib/task-enum";
+import { getCategoryPrompts } from "@/lib/smart-prompts";
 
 type ActionKey = "jobs" | "services" | "tasks";
 
@@ -78,27 +79,8 @@ export function ActionButton({
 
   const activeSuggestions = useMemo(() => {
     if (!selectedAction || !selectedCategory) return [];
-    const categoryLabel = getTranslatedCategory(selectedAction, selectedCategory);
-    if (selectedAction === "jobs") {
-      return [
-        t("actionButtons.categorySuggestions.jobs.1", { category: categoryLabel }),
-        t("actionButtons.categorySuggestions.jobs.2", { category: categoryLabel }),
-        t("actionButtons.categorySuggestions.jobs.3", { category: categoryLabel }),
-      ];
-    }
-    if (selectedAction === "services") {
-      return [
-        t("actionButtons.categorySuggestions.services.1", { category: categoryLabel }),
-        t("actionButtons.categorySuggestions.services.2", { category: categoryLabel }),
-        t("actionButtons.categorySuggestions.services.3", { category: categoryLabel }),
-      ];
-    }
-    return [
-      t("actionButtons.categorySuggestions.tasks.1", { category: categoryLabel }),
-      t("actionButtons.categorySuggestions.tasks.2", { category: categoryLabel }),
-      t("actionButtons.categorySuggestions.tasks.3", { category: categoryLabel }),
-    ];
-  }, [selectedAction, selectedCategory, t]);
+    return getCategoryPrompts(selectedAction, selectedCategory, locale);
+  }, [selectedAction, selectedCategory, locale]);
 
   return (
     <div className={cn("relative w-full", className)}>
