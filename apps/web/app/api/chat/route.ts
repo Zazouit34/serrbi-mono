@@ -615,6 +615,71 @@ function evaluateConfidenceMode(items: Array<{ matchScore?: number | null }>): C
   return "weak";
 }
 
+function buildSmartRelatedPrompts(
+  locale: string,
+  intent: AgentIntent,
+  query: string,
+  items: Array<{ title?: string; city?: string; serviceCategory?: string; category?: string; type?: string; matchScore?: number | null }>,
+  confidenceMode: ConfidenceMode,
+): string[] {
+  const lang = normalizeLocale(locale);
+  const topItem = items[0];
+  const city = topItem?.city;
+  const category = topItem?.serviceCategory || topItem?.category || "";
+  const type = topItem?.type || "";
+
+  if (intent === "services") {
+    if (lang === "fr") {
+      const prompts = [
+        city ? `Meilleur ${type || "service"} à ${city}` : `Meilleur ${type || "service"} près de moi`,
+        confidenceMode === "weak" ? "Montre-moi d'autres catégories de services" : `Comparer les prix ${type ? "de " + type : ""}`,
+        "Quel service a les meilleurs avis ?",
+      ];
+      return prompts.slice(0, 3);
+    }
+    if (lang === "ar") {
+      const prompts = [
+        city ? `أفضل ${type || "خدمة"} في ${city}` : `أفضل ${type || "خدمة"} بالقرب مني`,
+        confidenceMode === "weak" ? "اعرض لي فئات خدمات أخرى" : `قارن الأسعار ${type ? "لـ " + type : ""}`,
+        "أي خدمة لديها أفضل تقييمات؟",
+      ];
+      return prompts.slice(0, 3);
+    }
+    const prompts = [
+      city ? `Best ${type || "service"} in ${city}` : `Best ${type || "service"} near me`,
+      confidenceMode === "weak" ? "Show me other service categories" : `Compare ${type || "service"} prices`,
+      "Which one has the best reviews?",
+    ];
+    return prompts.slice(0, 3);
+  }
+
+  if (intent === "jobs") {
+    if (lang === "fr") {
+      return [
+        city ? `Plus d'offres à ${city}` : "Plus d'offres d'emploi",
+        "Offres pour débutants",
+        "Emplois à temps partiel",
+      ];
+    }
+    if (lang === "ar") {
+      return [
+        city ? `المزيد من الوظائف في ${city}` : "المزيد من فرص العمل",
+        "وظائف للمبتدئين",
+        "وظائف بدوام جزئي",
+      ];
+    }
+    return [
+      city ? `More jobs in ${city}` : "More job opportunities",
+      "Entry-level positions",
+      "Part-time jobs",
+    ];
+  }
+
+  if (lang === "fr") return ["Plus de missions disponibles", "Missions urgentes", "Missions à petit budget"];
+  if (lang === "ar") return ["المزيد من المهام المتاحة", "مهام عاجلة", "مهام بميزانية صغيرة"];
+  return ["More available tasks", "Urgent tasks", "Budget-friendly tasks"];
+}
+
 function formatLocationRequirement(locale: string, value: unknown): string {
   const normalizedLocale = normalizeLocale(locale);
   const key = typeof value === "string" ? value.trim().toLowerCase() : "";
@@ -1234,7 +1299,7 @@ export async function POST(req: Request) {
         },
         resumeUploadCta: hasResumeEmbedding ? undefined : buildResumeUploadCta(locale),
         debug: jobDebug,
-        relatedPrompts: [],
+        relatedPrompts: buildSmartRelatedPrompts(locale, "jobs", searchQuery, cards, confidenceMode),
       } satisfies AgentResponse);
     }
 
@@ -1294,7 +1359,7 @@ export async function POST(req: Request) {
           items: cards,
         },
         debug: serviceDebug,
-        relatedPrompts: [],
+        relatedPrompts: buildSmartRelatedPrompts(locale, "services", searchQuery, cards, confidenceMode),
       } satisfies AgentResponse);
     }
 
@@ -1316,7 +1381,7 @@ export async function POST(req: Request) {
         intent: "tasks",
         searchQuery,
         assistantText: "",
-        relatedPrompts: [],
+        relatedPrompts: buildSmartRelatedPrompts(locale, "tasks", searchQuery, [], "weak"),
       } satisfies AgentResponse);
     }
 

@@ -76,7 +76,7 @@ export default function LoginForm() {
       });
 
       if (result?.error) {
-        setError("Invalid credentials");
+        setError(t("invalidCredentials"));
       } else if (result?.ok) {
         // Success - redirect to update session
         window.location.href = callbackUrl;

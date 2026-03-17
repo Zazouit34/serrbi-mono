@@ -222,6 +222,20 @@ export function AgentChatContainer({
                             <Markdown>{message.content ?? ""}</Markdown>
                           </div>
                         ) : null}
+                        {!message.results.isLoading && (message.relatedPrompts ?? []).length > 0 && (
+                          <div className="mt-3 flex flex-wrap gap-1.5 md:mt-4 md:gap-2">
+                            {(message.relatedPrompts ?? []).map((prompt) => (
+                              <button
+                                key={prompt}
+                                onClick={() => onSuggestionSelect(prompt)}
+                                className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-100 active:scale-95 md:text-xs"
+                              >
+                                {prompt}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+
                         {!message.results.isLoading && message.resumeUploadCta ? (
                           <div className="mt-4 rounded-xl border border-slate-300 bg-slate-50 p-4">
                             <div className="flex items-start gap-3">

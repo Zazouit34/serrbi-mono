@@ -701,6 +701,7 @@
       "password": "Mot de passe",
       "forgot": "Mot de passe oublié ?",
       "submit": "Se connecter",
+      "invalidCredentials": "Identifiants invalides",
       "google": "Se connecter avec Google",
       "signUpCta": "S’inscrire",
       "terms": "En continuant, vous acceptez nos",

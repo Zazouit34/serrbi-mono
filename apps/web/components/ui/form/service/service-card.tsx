@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { Star, ChevronLeft, ChevronRight, Phone } from "lucide-react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -12,23 +11,6 @@ import { CategoryBadge } from "@/components/ui/category-badge";
 import { FavoriteButton } from "@/components/ui/favorite-button";
 import { useTranslations } from "next-intl";
 import { Skeleton } from "@workspace/ui/components/skeleton";
-
-function buildServiceHref(service: {
-  id: string;
-  serviceCategory: string;
-  city: string | null;
-  title: string;
-}) {
-  const slug = (s: string) =>
-    s
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-|-$/g, "");
-  const cat = slug(service.serviceCategory || "other");
-  const city = slug(service.city || "all");
-  const title = slug(service.title || "service");
-  return `/services/${cat}/${city}/${title}/${service.id}`;
-}
 
 export function ServiceCard({
   service,
@@ -125,11 +107,7 @@ export function ServiceCard({
   }, [contactOpen]);
 
   return (
-    <Link
-      href={buildServiceHref(service)}
-      className={cn("block w-full", className)}
-      onClick={(e) => { if (contactOpen) e.preventDefault(); }}
-    >
+    <div className={cn("block w-full", className)}>
         {/* Image Section with carousel */}
         <div
           ref={containerRef}
@@ -161,7 +139,7 @@ export function ServiceCard({
           {/* Type badge - top left (specific profession, colored by parent category) */}
           <div
             className="absolute top-2 left-2 z-10"
-            onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+            onClick={(e) => { e.stopPropagation(); }}
           >
             {service.type ? (
               <span className={cn(
@@ -179,7 +157,7 @@ export function ServiceCard({
           {/* Favorite button - top right */}
           <div
             className="absolute top-2 right-2 z-10"
-            onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+            onClick={(e) => { e.stopPropagation(); }}
           >
             <FavoriteButton
               serviceId={service.id}
@@ -193,7 +171,6 @@ export function ServiceCard({
             <>
               <button
                 onClick={(e) => {
-                  e.preventDefault();
                   e.stopPropagation();
                   prevImage(e);
                 }}
@@ -203,7 +180,6 @@ export function ServiceCard({
               </button>
               <button
                 onClick={(e) => {
-                  e.preventDefault();
                   e.stopPropagation();
                   nextImage(e);
                 }}
@@ -218,7 +194,7 @@ export function ServiceCard({
           {activeImages.length > 1 && (
             <div
               className="flex absolute bottom-2 left-1/2 z-10 gap-1 -translate-x-1/2"
-              onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+              onClick={(e) => { e.stopPropagation(); }}
             >
               {activeImages.map((_, i) => (
                 <span
@@ -243,7 +219,7 @@ export function ServiceCard({
               className={cn(
                 "overflow-hidden absolute right-0 bottom-0 left-0 z-10 px-3 py-2 rounded-t-md backdrop-blur-md bg-black/30",
               )}
-              onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+              onClick={(e) => { e.stopPropagation(); }}
             >
               {/* Top row inside overlay: price (left) + contact button (right when collapsed) */}
               <div className="flex justify-between items-center">
@@ -255,7 +231,6 @@ export function ServiceCard({
                 {!contactOpen && (
                   <button
                     onClick={(e) => {
-                      e.preventDefault();
                       e.stopPropagation();
                       setContactOpen(true);
                     }}
@@ -357,6 +332,6 @@ export function ServiceCard({
             </div>
           </div>
         </div>
-    </Link>
+    </div>
   );
 }

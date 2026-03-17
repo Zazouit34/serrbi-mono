@@ -1056,6 +1056,7 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
                   kind: "results",
                   content: agent.assistantText ?? "",
                   resumeUploadCta: agent.resumeUploadCta,
+                  relatedPrompts: agent.relatedPrompts,
                   results: {
                     key: resultsKey,
                     query: q,
@@ -1087,6 +1088,7 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
                 kind: "results",
                 content: agent.assistantText ?? "",
                 resumeUploadCta: agent.resumeUploadCta,
+                relatedPrompts: agent.relatedPrompts,
                 results: {
                   key: resultsKey,
                   query: q,
