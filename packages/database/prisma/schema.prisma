@@ -42,8 +42,7 @@ model User {
   autoApplyRoles       String[]      @default([]) // user-selected roles per category
   aiChatUsages         AiChatUsage[]
   events               Event[]
- 
-
+  chatSessions         ChatSession[]
 
   @@index([email])
   @@index([role])
@@ -631,4 +630,17 @@ enum AgentIntentType {
 
 enum EventSource {
   agent_chat
+}
+
+model ChatSession {
+  id        String   @id @default(uuid())
+  userId    String
+  title     String
+  messages  Json     @default("[]")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([updatedAt])
 }

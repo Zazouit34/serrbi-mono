@@ -5,6 +5,7 @@ import { serviceRouter } from "./routers/service";
 import { taskRouter } from "./routers/task";
 import { favoriteRouter } from "./routers/favorite";
 import { subscriptionRouter } from "./routers/subscription";
+import { chatSessionRouter } from "./routers/chat-session";
 
 export const appRouter = router({
   auth: authRouter,
@@ -13,5 +14,6 @@ export const appRouter = router({
   task: taskRouter,
   favorite: favoriteRouter,
   subscription: subscriptionRouter,
+  chatSession: chatSessionRouter,
 });
 export type AppRouter = typeof appRouter;

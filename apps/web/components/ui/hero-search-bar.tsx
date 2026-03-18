@@ -16,12 +16,6 @@ import { taskCategoryValues } from "@workspace/ui/lib/task-enum";
 import { ActionButton } from "@/components/ui/action-button";
 import { AgentChatContainer } from "@/components/ui/agent-chat-container";
 import { parsePDF } from "@/app/utils/pdf/prase-pdf";
-import {
-  saveCurrentSession,
-  restoreCurrentSession,
-  persistChatToHistory,
-  type SerializedMessage,
-} from "@/lib/chat-history";
 
 type TabType = "jobs" | "services" | "tasks";
 type ScopeOverride = "auto" | TabType;
@@ -33,7 +27,7 @@ type JobCategory = (typeof jobCategoryValues)[number];
 type ServiceCategory = (typeof serviceCategoryValues)[number];
 type TaskCategory = (typeof taskCategoryValues)[number];
 
-type ChatMessage = {
+export type ChatMessage = {
   id: number;
   role: "user" | "assistant";
   content?: string;
@@ -73,6 +67,8 @@ export type HeroPreviewData = {
 type HeroSearchBarProps = {
   onPreviewChange?: (data: HeroPreviewData) => void;
   onChatExpandedChange?: (expanded: boolean) => void;
+  sessionId?: string;
+  initialMessages?: ChatMessage[];
 };
 
 type AgentIntent = TabType;
@@ -298,7 +294,7 @@ function buildResultsSummary(params: {
   ].join("\n");
 }
 
-function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroSearchBarProps) {
+function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange, sessionId: propSessionId, initialMessages }: HeroSearchBarProps) {
   const t = useTranslations("HeroSearchBar");
   const locale = useLocale();
   const dir = locale === "ar" ? "rtl" : "ltr";
@@ -307,7 +303,6 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
   const router = useRouter();
   const pathname = usePathname();
   const [activeTab, setActiveTab] = useState<TabType>("jobs");
-  // Input value used for chatting; separate from the last submitted search.
   const [chatInput, setChatInput] = useState("");
   const [submittedQuery, setSubmittedQuery] = useState("");
   const [hasSearched, setHasSearched] = useState(false);
@@ -319,18 +314,29 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
   const isSecondary = isSecondaryClient();
   
   // Chat state
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const hasInitial = Array.isArray(initialMessages) && initialMessages.length > 0;
+  const [messages, setMessages] = useState<ChatMessage[]>(() => {
+    if (!hasInitial) return [];
+    return initialMessages!.map((m) => ({
+      ...m,
+      thinking: false,
+      results: m.results ? { ...m.results, isLoading: false } : undefined,
+    }));
+  });
   const [isAgentWorking, setIsAgentWorking] = useState(false);
-  const [chatExpanded, setChatExpanded] = useState(false);
+  const [chatExpanded, setChatExpanded] = useState(hasInitial);
   const [placeholder, setPlaceholder] = useState("");
   const [resumeAttachStatusText, setResumeAttachStatusText] = useState<string>("");
   const [resumeAttachProgress, setResumeAttachProgress] = useState<number | null>(null);
   const [resumeAttachFileName, setResumeAttachFileName] = useState<string>("");
   const [hasResumeAttached, setHasResumeAttached] = useState(false);
-  const nextMessageIdRef = useRef(1);
+  const nextMessageIdRef = useRef(
+    hasInitial ? Math.max(...initialMessages!.map((m) => m.id), 0) + 1 : 1,
+  );
   const placeholderIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const chatInputRef = useRef<HTMLTextAreaElement | null>(null);
   const agentSessionIdRef = useRef<string | null>(null);
+  const dbSessionIdRef = useRef<string | null>(propSessionId ?? null);
   const updateResumeUrl = trpc.auth.updateResume.useMutation();
   const updateResumeEmbedding = trpc.auth.updateResumeEmbedding.useMutation();
   const userDataQuery = trpc.auth.userData.useQuery(undefined, {
@@ -338,31 +344,12 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
     refetchOnWindowFocus: false,
   });
 
-  // Restore chat session on mount (preserves state across navigation)
-  const didRestoreRef = useRef(false);
-  useEffect(() => {
-    if (didRestoreRef.current) return;
-    didRestoreRef.current = true;
-    const saved = restoreCurrentSession();
-    if (saved && saved.length > 0) {
-      const restored: ChatMessage[] = saved.map((m) => ({
-        ...m,
-        thinking: false,
-        results: m.results ? { ...m.results, isLoading: false } : undefined,
-      }));
-      setMessages(restored);
-      const maxId = Math.max(...saved.map((m) => m.id), 0);
-      nextMessageIdRef.current = maxId + 1;
-      setChatExpanded(true);
-    }
-  }, []);
+  const createSession = trpc.chatSession.create.useMutation();
+  const updateSession = trpc.chatSession.update.useMutation();
 
-  // Persist chat to sessionStorage + history on every message change
-  useEffect(() => {
-    if (messages.length === 0) return;
-    const hasUserMsg = messages.some((m) => m.role === "user" && m.content?.trim());
-    if (!hasUserMsg) return;
-    const serialized: SerializedMessage[] = messages
+  const saveTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const serializeMessages = (msgs: ChatMessage[]) =>
+    msgs
       .filter((m) => m.content?.trim() || m.results)
       .map((m) => ({
         id: m.id,
@@ -372,11 +359,24 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
         results: m.results ? { ...m.results, isLoading: false } : undefined,
         relatedPrompts: m.relatedPrompts,
       }));
-    saveCurrentSession(serialized);
+
+  // Debounced DB save whenever messages change (only for existing sessions)
+  useEffect(() => {
+    if (!dbSessionIdRef.current) return;
+    if (messages.length === 0) return;
     const anyLoading = messages.some((m) => m.thinking || m.results?.isLoading);
-    if (!anyLoading) {
-      persistChatToHistory(serialized);
-    }
+    if (anyLoading) return;
+
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => {
+      const sid = dbSessionIdRef.current;
+      if (!sid) return;
+      const userMsgs = messages.filter((m) => m.role === "user" && m.content?.trim());
+      const title = userMsgs[0]?.content?.trim().slice(0, 60) || "Chat";
+      updateSession.mutate({ id: sid, title, messages: serializeMessages(messages) });
+    }, 1500);
+
+    return () => { if (saveTimerRef.current) clearTimeout(saveTimerRef.current); };
   }, [messages]);
 
   useEffect(() => {
@@ -1024,6 +1024,18 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
     }
 
     setChatExpanded(true);
+
+    // Create a DB session on the very first message (when on `/`)
+    if (!dbSessionIdRef.current && isLoggedIn) {
+      try {
+        const title = effectiveQuery.slice(0, 60);
+        const res = await createSession.mutateAsync({ title, messages: [] });
+        dbSessionIdRef.current = res.id;
+        router.replace(`/c/${res.id}`);
+      } catch {
+        // Non-blocking — chat still works without persistence for anonymous users
+      }
+    }
 
     const userMessageId = nextMessageIdRef.current++;
     const assistantMessageId = nextMessageIdRef.current++;

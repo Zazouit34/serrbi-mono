@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { useLocale, useTranslations } from "next-intl";
 import { MessageSquare, Trash2, Clock, ArrowLeft, Plus, MoreVertical, Pencil } from "lucide-react";
 import {
@@ -9,18 +10,10 @@ import {
   PopoverTrigger,
   PopoverContent,
 } from "@workspace/ui/components/popover";
-import {
-  getAllChatHistory,
-  deleteChatById,
-  clearAllChatHistory,
-  loadChatSession,
-  startNewChatSession,
-  renameChatById,
-  type ChatHistoryEntry,
-} from "@/lib/chat-history";
+import { trpc } from "@/app/_trpc/client";
 
-function formatRelativeTime(ts: number, locale: string): string {
-  const diff = Date.now() - ts;
+function formatRelativeTime(ts: Date | string, locale: string): string {
+  const diff = Date.now() - new Date(ts).getTime();
   const minutes = Math.floor(diff / 60000);
   const hours = Math.floor(diff / 3600000);
   const days = Math.floor(diff / 86400000);
@@ -53,38 +46,45 @@ export default function ChatsPage() {
   const t = useTranslations("ChatsPage");
   const locale = useLocale();
   const router = useRouter();
-  const [entries, setEntries] = useState<ChatHistoryEntry[]>([]);
-  const [mounted, setMounted] = useState(false);
+  const { data: session, status } = useSession();
+  const isLoggedIn = !!session?.user?.email;
+
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
 
+  const utils = trpc.useUtils();
+  const listQuery = trpc.chatSession.list.useQuery(undefined, {
+    enabled: isLoggedIn,
+  });
+  const deleteMutation = trpc.chatSession.delete.useMutation({
+    onSuccess: () => utils.chatSession.list.invalidate(),
+  });
+  const renameMutation = trpc.chatSession.rename.useMutation({
+    onSuccess: () => utils.chatSession.list.invalidate(),
+  });
+
   useEffect(() => {
-    setEntries(getAllChatHistory());
-    setMounted(true);
-  }, []);
+    if (status === "unauthenticated") {
+      router.replace(`/login?callbackUrl=${encodeURIComponent("/chats")}`);
+    }
+  }, [status, router]);
+
+  const entries = listQuery.data ?? [];
 
   const handleOpen = (id: string) => {
     if (editingId) return;
-    loadChatSession(id);
-    router.push("/");
+    router.push(`/c/${id}`);
   };
 
   const handleDelete = (id: string) => {
-    deleteChatById(id);
-    setEntries(getAllChatHistory());
-  };
-
-  const handleClearAll = () => {
-    clearAllChatHistory();
-    setEntries([]);
+    deleteMutation.mutate({ id });
   };
 
   const handleNewChat = () => {
-    startNewChatSession();
     router.push("/");
   };
 
-  const handleStartRename = (entry: ChatHistoryEntry) => {
+  const handleStartRename = (entry: { id: string; title: string }) => {
     setEditingId(entry.id);
     setEditValue(entry.title);
   };
@@ -92,14 +92,13 @@ export default function ChatsPage() {
   const handleSaveRename = (id: string) => {
     const trimmed = editValue.trim();
     if (trimmed) {
-      renameChatById(id, trimmed);
-      setEntries(getAllChatHistory());
+      renameMutation.mutate({ id, title: trimmed });
     }
     setEditingId(null);
     setEditValue("");
   };
 
-  if (!mounted) {
+  if (status === "loading" || listQuery.isLoading) {
     return (
       <div className="mx-auto max-w-2xl px-4 py-12">
         <div className="animate-pulse space-y-4">
@@ -130,24 +129,13 @@ export default function ChatsPage() {
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleNewChat}
-            className="flex items-center gap-1.5 rounded-full bg-slate-900 px-3.5 py-2 text-xs font-medium text-white transition hover:bg-slate-800"
-          >
-            <Plus className="h-3.5 w-3.5" />
-            {t("newChat")}
-          </button>
-          {entries.length > 0 && (
-            <button
-              onClick={handleClearAll}
-              className="flex items-center gap-1.5 rounded-full border border-red-200 px-3 py-2 text-xs font-medium text-red-600 transition hover:bg-red-50"
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-              {t("clearAll")}
-            </button>
-          )}
-        </div>
+        <button
+          onClick={handleNewChat}
+          className="flex items-center gap-1.5 rounded-full bg-slate-900 px-3.5 py-2 text-xs font-medium text-white transition hover:bg-slate-800"
+        >
+          <Plus className="h-3.5 w-3.5" />
+          {t("newChat")}
+        </button>
       </div>
 
       {entries.length === 0 ? (
@@ -167,7 +155,6 @@ export default function ChatsPage() {
       ) : (
         <div className="space-y-2">
           {entries.map((entry) => {
-            const msgCount = entry.messages.filter((m) => m.role === "user").length;
             const isEditing = editingId === entry.id;
             return (
               <div
@@ -201,10 +188,6 @@ export default function ChatsPage() {
                     <span className="flex items-center gap-1">
                       <Clock className="h-3 w-3" />
                       {formatRelativeTime(entry.updatedAt, locale)}
-                    </span>
-                    <span>·</span>
-                    <span>
-                      {msgCount} {msgCount === 1 ? t("message") : t("messages")}
                     </span>
                   </div>
                 </div>
