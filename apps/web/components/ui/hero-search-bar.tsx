@@ -360,14 +360,32 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange, session
         relatedPrompts: m.relatedPrompts,
       }));
 
-  // Debounced DB save whenever messages change (only for existing sessions)
+  // Create DB session after first agent response, then keep it updated
+  const isCreatingSessionRef = useRef(false);
   useEffect(() => {
-    if (!dbSessionIdRef.current) return;
     if (messages.length === 0) return;
+    const hasUser = messages.some((m) => m.role === "user" && m.content?.trim());
+    if (!hasUser) return;
     const anyLoading = messages.some((m) => m.thinking || m.results?.isLoading);
     if (anyLoading) return;
 
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+
+    // First message round-trip complete: create session if not yet created
+    if (!dbSessionIdRef.current && isLoggedIn && !isCreatingSessionRef.current) {
+      isCreatingSessionRef.current = true;
+      const userMsgs = messages.filter((m) => m.role === "user" && m.content?.trim());
+      const title = userMsgs[0]?.content?.trim().slice(0, 60) || "Chat";
+      createSession.mutateAsync({ title, messages: serializeMessages(messages) }).then((res) => {
+        dbSessionIdRef.current = res.id;
+        router.replace(`/c/${res.id}`);
+      }).catch(() => {
+        isCreatingSessionRef.current = false;
+      });
+      return;
+    }
+
+    // Subsequent messages: debounced update
     saveTimerRef.current = setTimeout(() => {
       const sid = dbSessionIdRef.current;
       if (!sid) return;
@@ -1024,18 +1042,6 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange, session
     }
 
     setChatExpanded(true);
-
-    // Create a DB session on the very first message (when on `/`)
-    if (!dbSessionIdRef.current && isLoggedIn) {
-      try {
-        const title = effectiveQuery.slice(0, 60);
-        const res = await createSession.mutateAsync({ title, messages: [] });
-        dbSessionIdRef.current = res.id;
-        router.replace(`/c/${res.id}`);
-      } catch {
-        // Non-blocking — chat still works without persistence for anonymous users
-      }
-    }
 
     const userMessageId = nextMessageIdRef.current++;
     const assistantMessageId = nextMessageIdRef.current++;
