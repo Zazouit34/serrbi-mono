@@ -16,6 +16,12 @@ import { taskCategoryValues } from "@workspace/ui/lib/task-enum";
 import { ActionButton } from "@/components/ui/action-button";
 import { AgentChatContainer } from "@/components/ui/agent-chat-container";
 import { parsePDF } from "@/app/utils/pdf/prase-pdf";
+import {
+  saveCurrentSession,
+  restoreCurrentSession,
+  persistChatToHistory,
+  type SerializedMessage,
+} from "@/lib/chat-history";
 
 type TabType = "jobs" | "services" | "tasks";
 type ScopeOverride = "auto" | TabType;
@@ -331,6 +337,47 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange }: HeroS
     enabled: isLoggedIn,
     refetchOnWindowFocus: false,
   });
+
+  // Restore chat session on mount (preserves state across navigation)
+  const didRestoreRef = useRef(false);
+  useEffect(() => {
+    if (didRestoreRef.current) return;
+    didRestoreRef.current = true;
+    const saved = restoreCurrentSession();
+    if (saved && saved.length > 0) {
+      const restored: ChatMessage[] = saved.map((m) => ({
+        ...m,
+        thinking: false,
+        results: m.results ? { ...m.results, isLoading: false } : undefined,
+      }));
+      setMessages(restored);
+      const maxId = Math.max(...saved.map((m) => m.id), 0);
+      nextMessageIdRef.current = maxId + 1;
+      setChatExpanded(true);
+    }
+  }, []);
+
+  // Persist chat to sessionStorage + history on every message change
+  useEffect(() => {
+    if (messages.length === 0) return;
+    const hasUserMsg = messages.some((m) => m.role === "user" && m.content?.trim());
+    if (!hasUserMsg) return;
+    const serialized: SerializedMessage[] = messages
+      .filter((m) => m.content?.trim() || m.results)
+      .map((m) => ({
+        id: m.id,
+        role: m.role,
+        content: m.content,
+        kind: m.kind,
+        results: m.results ? { ...m.results, isLoading: false } : undefined,
+        relatedPrompts: m.relatedPrompts,
+      }));
+    saveCurrentSession(serialized);
+    const anyLoading = messages.some((m) => m.thinking || m.results?.isLoading);
+    if (!anyLoading) {
+      persistChatToHistory(serialized);
+    }
+  }, [messages]);
 
   useEffect(() => {
     if (!isLoggedIn) {

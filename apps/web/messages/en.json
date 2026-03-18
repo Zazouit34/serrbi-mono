@@ -22,6 +22,7 @@
     "resumeAnalyzer": "Resume Analyzer",
     "home": "Home",
     "explore": "Explore",
+    "chats": "Chats",
     "favorites": "Favorites"
   },
   "Blog": {
@@ -644,6 +645,7 @@
   },
   "UserMenu": {
     "myAccount": "My Account",
+    "chats": "My Chats",
     "careerSwitch": "Career Switch AI",
     "resumeAnalyzer": "Resume Analyzer",
     "favorites": "Favorites",
@@ -660,6 +662,20 @@
     "billing": "Billing",
     "logout": "Log out",
     "openAria": "Open user menu"
+  },
+  "ChatsPage": {
+    "title": "My Chats",
+    "subtitle": "{count} conversations",
+    "empty": "No conversations yet",
+    "noChats": "No chats yet",
+    "noChatsHint": "Start a conversation from the home page",
+    "startChat": "Start a new chat",
+    "newChat": "New chat",
+    "clearAll": "Clear all",
+    "message": "message",
+    "messages": "messages",
+    "rename": "Rename",
+    "delete": "Delete"
   },
   "FavoritesPage": {
     "title": "My Favorites",

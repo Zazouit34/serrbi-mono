@@ -1,5 +1,5 @@
 "use client";
-import { User, LogOut, LogIn, Heart, Wallet, Zap, FileCog, FileText, TrendingUp } from "lucide-react";
+import { User, LogOut, LogIn, Heart, Wallet, Zap, FileCog, FileText, TrendingUp, MessageSquare } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { buttonVariants } from "@workspace/ui/components/button";
 import { cn } from "@workspace/ui/lib/utils";
@@ -48,6 +48,15 @@ export function UserMenu() {
       <DropdownMenuContent className="w-56" align="center">
         <DropdownMenuLabel>{t("myAccount")}</DropdownMenuLabel>
         <DropdownMenuGroup>
+          <DropdownMenuItem asChild>
+            <Link
+              href="/chats"
+              className="flex items-center w-full cursor-pointer"
+            >
+              <MessageSquare className="mr-2 size-4" />
+              {t("chats")}
+            </Link>
+          </DropdownMenuItem>
         <DropdownMenuItem asChild>
             <Link
               href="/account/auto-apply"

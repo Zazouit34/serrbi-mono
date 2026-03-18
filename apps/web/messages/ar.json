@@ -22,6 +22,7 @@
     "resumeAnalyzer": "محلل السيرة الذاتية",
     "home": "الرئيسية",
     "explore": "استكشف",
+    "chats": "المحادثات",
     "favorites": "المفضلة"
   },
   "Blog": {
@@ -642,6 +643,7 @@
   },
   "UserMenu": {
     "myAccount": "حسابي",
+    "chats": "محادثاتي",
     "careerSwitch": "توجيه مهني",
     "resumeAnalyzer": "محلل السيرة الذاتية",
     "favorites": "المفضلة",
@@ -658,6 +660,20 @@
     "billing": "الفوترة",
     "logout": "تسجيل الخروج",
     "openAria": "فتح قائمة المستخدم"
+  },
+  "ChatsPage": {
+    "title": "محادثاتي",
+    "subtitle": "{count} محادثات",
+    "empty": "لا توجد محادثات بعد",
+    "noChats": "لا توجد محادثات",
+    "noChatsHint": "ابدأ محادثة من الصفحة الرئيسية",
+    "startChat": "ابدأ محادثة جديدة",
+    "newChat": "محادثة جديدة",
+    "clearAll": "مسح الكل",
+    "message": "رسالة",
+    "messages": "رسائل",
+    "rename": "إعادة تسمية",
+    "delete": "حذف"
   },
   "FavoritesPage": {
     "title": "المفضلة لدي",

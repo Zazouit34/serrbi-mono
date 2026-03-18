@@ -22,6 +22,7 @@
     "resumeAnalyzer": "Analyseur de CV",
     "home": "Accueil",
     "explore": "Explorer",
+    "chats": "Chats",
     "favorites": "Favoris"
   },
   "Blog": {
@@ -631,6 +632,7 @@
   },
   "UserMenu": {
     "myAccount": "Mon compte",
+    "chats": "Mes Chats",
     "careerSwitch": "Carrière IA",
     "resumeAnalyzer": "Analyseur de CV",
     "favorites": "Favoris",
@@ -647,6 +649,20 @@
     "billing": "Abonnement",
     "logout": "Se déconnecter",
     "openAria": "Ouvrir le menu utilisateur"
+  },
+  "ChatsPage": {
+    "title": "Mes Chats",
+    "subtitle": "{count} conversations",
+    "empty": "Aucune conversation",
+    "noChats": "Pas encore de chats",
+    "noChatsHint": "Commencez une conversation depuis la page d'accueil",
+    "startChat": "Démarrer un chat",
+    "newChat": "Nouveau chat",
+    "clearAll": "Tout effacer",
+    "message": "message",
+    "messages": "messages",
+    "rename": "Renommer",
+    "delete": "Supprimer"
   },
   "FavoritesPage": {
     "title": "Mes favoris",

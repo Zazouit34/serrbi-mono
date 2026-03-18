@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { HomeIcon, SearchIcon, HeartIcon } from "lucide-react";
+import { HomeIcon, MessageSquareIcon, HeartIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { UserMenuMobile } from "./user-menu-mobile";
@@ -37,9 +37,9 @@ export function MobileNavbar() {
         <span className="text-xs">{t("home")}</span>
       </Link>
 
-      <Link href="/jobs" prefetch={false} className={itemClass}>
-        <SearchIcon className="w-6 h-6" />
-        <span className="text-xs">{t("explore")}</span>
+      <Link href="/chats" prefetch={false} className={itemClass}>
+        <MessageSquareIcon className="w-6 h-6" />
+        <span className="text-xs">{t("chats")}</span>
       </Link>
 
       <Link href="/favorites" prefetch={false} className={itemClass}>
