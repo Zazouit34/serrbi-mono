@@ -348,13 +348,15 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange, session
   const updateSession = trpc.chatSession.update.useMutation();
 
   const saveTimerRef = useRef<NodeJS.Timeout | null>(null);
+  // Keep every completed message — the anyLoading guard already prevents calling
+  // this while anything is still thinking/fetching, so no partial states slip through.
   const serializeMessages = (msgs: ChatMessage[]) =>
     msgs
-      .filter((m) => m.content?.trim() || m.results)
+      .filter((m) => !m.thinking && !m.results?.isLoading)
       .map((m) => ({
         id: m.id,
         role: m.role,
-        content: m.content,
+        content: m.content ?? "",
         kind: m.kind,
         results: m.results ? { ...m.results, isLoading: false } : undefined,
         relatedPrompts: m.relatedPrompts,
@@ -1251,7 +1253,7 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange, session
 
   return (
     <div className={`mx-auto w-full max-w-none text-left md:max-w-4xl ${chatExpanded ? "h-full min-h-0" : ""}`}>
-      <div className={`md:px-6 md:pb-0 ${chatExpanded ? "h-full min-h-0" : ""}`}>
+      <div className={`md:px-6 ${chatExpanded ? "h-full min-h-0" : ""}`}>
         <div className={`mx-auto flex w-full flex-col gap-3 md:gap-4 ${chatExpanded ? "h-full min-h-0" : ""}`}>
           <AgentChatContainer
             chatExpanded={chatExpanded}
