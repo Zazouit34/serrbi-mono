@@ -204,7 +204,7 @@ export function AgentChatContainer({
                               if (message.results?.type === "services") {
                                 return (
                                   <div key={item.id} className={cardWrap}>
-                                    <ServiceCard service={item} className="h-full" compact />
+                                    <ServiceCard service={item} className="h-full" />
                                   </div>
                                 );
                               }
@@ -294,7 +294,7 @@ export function AgentChatContainer({
         </ChatContainerRoot>
       )}
 
-      <div className="sticky bottom-0 z-10 shrink-0 bg-white px-2 py-2 md:px-3 md:pt-3 md:pb-5">
+      <div className="sticky bottom-0 z-10 shrink-0 bg-white px-2 pt-2 pb-2 md:px-4 md:pt-3 md:pb-6">
         <div className="rounded-xl border border-gray-200 bg-white p-2 shadow-sm md:rounded-2xl md:p-3">
           <div className="flex items-end">
             <textarea
