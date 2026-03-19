@@ -47,7 +47,7 @@ export default function ChatSessionPage() {
 
   return (
     <div className={cn("flex flex-col -mx-4 md:mx-0")}>
-      <div className="mx-auto flex w-full flex-col items-center h-[calc(100dvh-7.5rem)] justify-start gap-2 px-2 pt-1 pb-0 md:h-[calc(100dvh-8rem)] md:px-0 md:pt-3 md:pb-0">
+      <div className="mx-auto flex w-full flex-col items-center h-[calc(100dvh-230px)] justify-start gap-2 px-2 pt-1 pb-0 md:h-[calc(100dvh-8rem)] md:px-0 md:pt-3 md:pb-0">
         <div className="w-full flex-1 min-h-0">
           <HeroSearchBar
             onChatExpandedChange={() => {}}
