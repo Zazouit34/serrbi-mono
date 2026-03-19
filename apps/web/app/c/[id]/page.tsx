@@ -35,7 +35,7 @@ export default function ChatSessionPage() {
     return () => { document.body.style.overflow = ""; };
   }, []);
 
-  if (status === "loading" || chatQuery.isLoading || (isLoggedIn && chatQuery.isPending)) {
+  if (status === "loading" || chatQuery.isLoading || chatQuery.isFetching || (isLoggedIn && chatQuery.isPending)) {
     return (
       <div className="mx-auto flex min-h-[60dvh] w-full max-w-3xl items-center justify-center">
         <div className="h-6 w-6 animate-spin rounded-full border-2 border-slate-300 border-t-slate-900" />

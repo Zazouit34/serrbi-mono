@@ -364,6 +364,10 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange, session
 
   // Create DB session after first agent response, then keep it updated
   const isCreatingSessionRef = useRef(false);
+  // Tracks whether the effect has already run once. Used to skip the debounced
+  // save on the very first render when messages come from DB (initialMessages),
+  // preventing overwriting the full history with stale React Query cache.
+  const isFirstEffectRunRef = useRef(true);
   useEffect(() => {
     if (messages.length === 0) return;
     const hasUser = messages.some((m) => m.role === "user" && m.content?.trim());
@@ -372,6 +376,14 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange, session
     if (anyLoading) return;
 
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+
+    // On the very first render of a pre-existing session (loaded from DB),
+    // skip the save — data is already persisted and we must not overwrite it.
+    if (isFirstEffectRunRef.current && dbSessionIdRef.current) {
+      isFirstEffectRunRef.current = false;
+      return;
+    }
+    isFirstEffectRunRef.current = false;
 
     // First message round-trip complete: create session if not yet created
     if (!dbSessionIdRef.current && isLoggedIn && !isCreatingSessionRef.current) {
