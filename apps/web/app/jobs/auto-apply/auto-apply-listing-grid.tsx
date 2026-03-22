@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { SlidersHorizontal, Zap, ChevronLeft, ChevronRight } from "lucide-react";
+import { Zap, ChevronLeft, ChevronRight } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { trpc } from "@/app/_trpc/client";
 import { AutoApplyCard } from "@/components/ui/form/job/auto-apply-card";
@@ -83,7 +83,7 @@ export function AutoApplyListingGrid({
 
   const queryInput = {
     page,
-    pageSize: 5,
+    pageSize: 3,
     enabled,
     category,
     keywords,
@@ -184,16 +184,6 @@ export function AutoApplyListingGrid({
         </div>
         <div className="flex items-center gap-3 shrink-0">
           <Button
-            variant="outline"
-            size="sm"
-            disabled={isFetching || bulkApplyMutation.isPending}
-            onClick={() => refetch()}
-            className="flex items-center gap-2 px-5 py-4 rounded-2xl font-bold text-sm border-slate-200 hover:bg-slate-50"
-          >
-            <SlidersHorizontal className="w-4 h-4" />
-            {tA("listing.refine")}
-          </Button>
-          <Button
             size="sm"
             disabled={
               bulkApplyMutation.isPending ||
@@ -224,7 +214,7 @@ export function AutoApplyListingGrid({
                 toast.error(err?.message || tA("listing.bulkAppliedError"));
               }
             }}
-            className="flex items-center gap-2 px-6 py-4 bg-slate-900 hover:bg-slate-800 text-white font-extrabold rounded-2xl text-sm uppercase tracking-wider shadow-md shadow-slate-900/10 active:scale-95 transition-all"
+            className="flex items-center gap-2 px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-lg text-sm border border-slate-900 active:scale-95 transition-all"
           >
             <Zap className="w-4 h-4" />
             {bulkApplyMutation.isPending ? tA("listing.bulkApplying") : tA("listing.applyPage")}

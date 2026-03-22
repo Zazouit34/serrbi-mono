@@ -594,11 +594,17 @@ export const jobRouter = router({
         };
       });
 
-      // When Strict Match is on, exclude jobs that have no keyword OR role hits.
+      // Strict Match: progressively narrow by roles/keywords only when they are actually set.
+      // Category alone always shows all jobs in that category (like the jobs page filter bar).
+      const hasRoles = (effectiveRoles ?? []).length > 0;
+      const hasKeywords = (effectiveKeywords ?? []).length > 0;
       const filtered = strictMatch
-        ? scoredItems.filter(
-            (j) => j._keywordHits.length > 0 || j._roleHits.length > 0,
-          )
+        ? scoredItems.filter((j) => {
+            if (!hasRoles && !hasKeywords) return true; // category only → show all
+            if (hasRoles && hasKeywords) return j._roleHits.length > 0 || j._keywordHits.length > 0;
+            if (hasRoles) return j._roleHits.length > 0;
+            return j._keywordHits.length > 0;
+          })
         : scoredItems;
 
       // Sort primarily by combined score (semantic + filters), then by recency.

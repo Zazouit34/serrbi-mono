@@ -335,30 +335,30 @@ export default function AutoApplySettingsPage() {
         </p>
       </div>
 
-      {/* ── Row 2: 4 metric cards ── */}
-      <div className="grid grid-cols-2 xl:grid-cols-4 gap-5">
+      {/* ── Row 2: 4 metric cards — always one row ── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Agent Status */}
-        <div className="col-span-2 sm:col-span-1 bg-white p-7 rounded-[2rem] border border-slate-200 shadow-sm flex flex-col justify-between gap-6">
-          <div className="space-y-3">
-            <div className="flex items-center gap-2.5">
-              <span className="flex h-3 w-3 relative shrink-0">
+        <div className="bg-white p-5 rounded-[2rem] border border-slate-200 shadow-sm flex flex-col justify-between gap-4">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <span className="flex h-2.5 w-2.5 relative shrink-0">
                 <span
                   className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
                     enabled ? "bg-emerald-500" : "bg-amber-400"
                   }`}
                 />
                 <span
-                  className={`relative inline-flex rounded-full h-3 w-3 ${
+                  className={`relative inline-flex rounded-full h-2.5 w-2.5 ${
                     enabled ? "bg-emerald-500" : "bg-amber-400"
                   }`}
                 />
               </span>
-              <span className="text-base font-bold text-slate-900">
+              <span className="text-sm font-bold text-slate-900">
                 {enabled ? tA("hero.active") : tA("hero.paused")}
               </span>
             </div>
-            <p className="text-sm text-slate-400 font-medium leading-relaxed">
-              {tA("hero.subtitle")}
+            <p className="text-xs text-slate-400 font-medium leading-relaxed line-clamp-2">
+              {tA("hero.reassurance")}
             </p>
           </div>
           <Button
@@ -379,42 +379,42 @@ export default function AutoApplySettingsPage() {
         </div>
 
         {/* Total Applied */}
-        <div className="bg-white p-7 rounded-[2rem] border border-slate-200 shadow-sm">
+        <div className="bg-white p-5 rounded-[2rem] border border-slate-200 shadow-sm">
           <div className="flex justify-between items-start">
-            <span className="p-3 bg-slate-50 rounded-2xl border border-slate-100 text-slate-700">
-              <Send className="w-5 h-5" />
+            <span className="p-2.5 bg-slate-50 rounded-xl border border-slate-100 text-slate-700">
+              <Send className="w-4 h-4" />
             </span>
             {appliedToday > 0 && (
-              <span className="text-[11px] font-black text-emerald-600 px-3 py-1 bg-emerald-50 rounded-full uppercase tracking-wider">
-                +{appliedToday} {tA("activity.today")}
+              <span className="text-[10px] font-black text-emerald-600 px-2 py-0.5 bg-emerald-50 rounded-full uppercase tracking-wider">
+                +{appliedToday}
               </span>
             )}
           </div>
-          <div className="mt-8">
-            <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">
+          <div className="mt-5">
+            <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">
               {tA("stats.autoApplied")}
             </p>
-            <h3 className="text-4xl font-extrabold mt-1.5 text-slate-900 tracking-tight">
+            <h3 className="text-3xl font-extrabold mt-1 text-slate-900 tracking-tight">
               {appliedCount}
             </h3>
           </div>
         </div>
 
         {/* Last Applied */}
-        <div className="bg-white p-7 rounded-[2rem] border border-slate-200 shadow-sm">
+        <div className="bg-white p-5 rounded-[2rem] border border-slate-200 shadow-sm">
           <div className="flex justify-between items-start">
-            <span className="p-3 bg-slate-50 rounded-2xl border border-slate-100 text-slate-700">
-              <Clock className="w-5 h-5" />
+            <span className="p-2.5 bg-slate-50 rounded-xl border border-slate-100 text-slate-700">
+              <Clock className="w-4 h-4" />
             </span>
-            <span className="text-[11px] font-black text-slate-400 px-3 py-1 bg-slate-50 rounded-full border border-slate-100 uppercase tracking-wider">
+            <span className="text-[10px] font-black text-slate-400 px-2 py-0.5 bg-slate-50 rounded-full border border-slate-100 uppercase tracking-wider">
               {enabled ? tA("activity.alive") : tA("hero.paused")}
             </span>
           </div>
-          <div className="mt-8">
-            <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">
+          <div className="mt-5">
+            <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">
               {tA("activity.lastAppliedLabel")}
             </p>
-            <h3 className="text-2xl font-extrabold mt-1.5 text-slate-900 tracking-tight">
+            <h3 className="text-xl font-extrabold mt-1 text-slate-900 tracking-tight">
               {lastApplied
                 ? lastApplied.toLocaleDateString(undefined, { month: "short", day: "numeric" })
                 : tA("activity.noApplications")}
@@ -423,29 +423,26 @@ export default function AutoApplySettingsPage() {
         </div>
 
         {/* Monthly Limit — dark */}
-        <div className="col-span-2 sm:col-span-1 bg-slate-900 text-white p-7 rounded-[2rem] shadow-2xl relative overflow-hidden flex flex-col justify-between">
+        <div className="bg-slate-900 text-white p-5 rounded-[2rem] relative overflow-hidden flex flex-col justify-between">
           <div className="relative z-10">
-            <div className="flex justify-between items-center mb-8">
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-white/50">
+            <div className="flex justify-between items-center mb-5">
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/50">
                 {cap != null
                   ? tA("stats.progress", { used: appliedCount, cap })
                   : tAll("Billing.unlimited")}
               </p>
-              <Sparkles className="w-5 h-5 text-white/30" />
+              <Sparkles className="w-4 h-4 text-white/30" />
             </div>
-            <h3 className="text-4xl font-extrabold tracking-tight text-white">
+            <h3 className="text-3xl font-extrabold tracking-tight text-white">
               {appliedCount}
               {cap != null && (
-                <span className="text-xl font-medium text-white/30 ml-1.5">/ {cap}</span>
+                <span className="text-base font-medium text-white/30 ml-1.5">/ {cap}</span>
               )}
             </h3>
             <Progress
               value={pct}
-              className="w-full bg-white/10 h-2 rounded-full mt-5 [&>[data-slot=progress-indicator]]:bg-red-500"
+              className="w-full bg-white/10 h-1.5 rounded-full mt-4 [&>[data-slot=progress-indicator]]:bg-red-500"
             />
-          </div>
-          <div className="absolute -right-6 -bottom-6 opacity-10 pointer-events-none">
-            <Sparkles className="w-36 h-36" />
           </div>
         </div>
       </div>
@@ -463,16 +460,12 @@ export default function AutoApplySettingsPage() {
           </div>
 
           <section
-            className={`relative overflow-hidden h-full bg-white p-8 rounded-[2rem] border border-slate-200 shadow-sm flex flex-col ${
+            className={`h-full bg-white p-8 rounded-[2rem] border border-slate-200 shadow-sm flex flex-col ${
               prefsOpen ? "block" : "hidden lg:flex"
             }`}
           >
-            {/* Decorative blobs */}
-            <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/5 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none" />
-            <div className="absolute bottom-0 left-0 w-48 h-48 bg-slate-100 rounded-full blur-3xl -ml-24 -mb-24 pointer-events-none" />
-
             {/* Header */}
-            <div className="relative z-10 flex items-center justify-between pb-6 border-b border-slate-100 mb-8">
+            <div className="flex items-center justify-between pb-6 border-b border-slate-100 mb-8">
               <div className="space-y-0.5">
                 <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">
                   {tA("prefs.title")}
@@ -487,7 +480,7 @@ export default function AutoApplySettingsPage() {
             </div>
 
             {/* Content — flex-grow so Save button stays at bottom */}
-            <div className="relative z-10 flex flex-col flex-grow space-y-8">
+            <div className="flex flex-col flex-grow space-y-8">
               {/* Category */}
               <ChipSection
                 label={tA("category.title")}

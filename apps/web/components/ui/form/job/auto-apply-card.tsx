@@ -99,7 +99,7 @@ export function AutoApplyCard({
   const firstLetter = job.companyName?.trim()?.[0] ?? job.title?.trim()?.[0] ?? "S";
 
   return (
-    <Card className="w-full rounded-2xl border border-slate-100 bg-white shadow-[0_12px_28px_rgba(15,23,42,0.07)]">
+    <Card className="w-full rounded-2xl border border-slate-200 bg-white shadow-none">
       <CardContent className="flex flex-col gap-3 px-4 py-4 w-full">
         <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
           <div className="flex items-start gap-3">
@@ -174,7 +174,7 @@ export function AutoApplyCard({
             ) : (
               <Button
                 size="sm"
-                className="mt-1 h-8 px-3 text-[12px] rounded-full bg-slate-900 text-white hover:bg-slate-900/90 w-full md:w-auto"
+                className="mt-1 h-8 px-3 text-[12px] rounded-lg bg-slate-900 text-white hover:bg-slate-900/90 w-full md:w-auto"
                 onClick={handleApply}
                 disabled={status === "applying"}
               >
