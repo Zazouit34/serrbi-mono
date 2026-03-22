@@ -8,6 +8,11 @@ import { Label } from "@workspace/ui/components/label";
 import { Button } from "@workspace/ui/components/button";
 import { Input } from "@workspace/ui/components/input";
 import { Progress } from "@workspace/ui/components/progress";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@workspace/ui/components/popover";
 import { toast } from "sonner";
 import {
   Loader2,
@@ -17,8 +22,10 @@ import {
   Clock,
   Sparkles,
   Send,
-  SlidersHorizontal,
+  Plus,
   X,
+  ShieldCheck,
+  Brain,
 } from "lucide-react";
 
 import { jobCategoryValues } from "@workspace/ui/lib/job-enum";
@@ -30,6 +37,144 @@ import { AutoApplyListingGrid } from "@/app/jobs/auto-apply/auto-apply-listing-g
 
 type JobCategory = (typeof jobCategoryValues)[number];
 
+// ── Small toggle row for Automation Logic ────────────────────────────
+function ToggleRow({
+  icon: Icon,
+  label,
+  hint,
+  checked,
+  onChange,
+}: {
+  icon: React.ElementType;
+  label: string;
+  hint: string;
+  checked: boolean;
+  onChange: (v: boolean) => void;
+}) {
+  return (
+    <div className="flex items-center justify-between p-5 bg-white border border-slate-200 rounded-[1.5rem] group hover:border-slate-300 transition-all shadow-sm">
+      <div className="flex items-center gap-3">
+        <div className="w-9 h-9 rounded-xl bg-slate-50 flex items-center justify-center shrink-0">
+          <Icon className="w-4 h-4 text-slate-700" />
+        </div>
+        <div>
+          <p className="text-sm font-bold text-slate-900 leading-tight">{label}</p>
+          <p className="text-[11px] text-slate-400 mt-0.5 leading-tight">{hint}</p>
+        </div>
+      </div>
+      <button
+        onClick={() => onChange(!checked)}
+        className={`w-11 h-6 rounded-full relative flex items-center transition-colors shrink-0 ml-4 ${
+          checked ? "bg-slate-900 justify-end" : "bg-slate-200 justify-start"
+        } px-1`}
+        aria-checked={checked}
+        role="switch"
+      >
+        <span className="w-4 h-4 bg-white rounded-full shadow-sm transition-all" />
+      </button>
+    </div>
+  );
+}
+
+// ── Compact chip list with Popover "+" ───────────────────────────────
+function ChipSection({
+  label,
+  dotColor,
+  selected,
+  allOptions,
+  getLabel,
+  onToggle,
+  renderChip,
+}: {
+  label: string;
+  dotColor: "red" | "slate";
+  selected: string[];
+  allOptions: string[];
+  getLabel: (v: string) => string;
+  onToggle: (v: string) => void;
+  renderChip?: (v: string, isSelected: boolean) => React.ReactNode;
+}) {
+  const MAX_VISIBLE = 3;
+  const visibleChips = selected.slice(0, MAX_VISIBLE);
+  const hiddenOptions = allOptions.filter((o) => !selected.includes(o));
+  const extraSelected = selected.slice(MAX_VISIBLE);
+
+  return (
+    <div className="space-y-3">
+      <label className="text-[11px] font-extrabold uppercase tracking-[0.15em] text-slate-400 flex items-center gap-2">
+        <span
+          className={`w-1.5 h-1.5 rounded-full ${
+            dotColor === "red" ? "bg-red-500" : "bg-slate-300"
+          }`}
+        />
+        {label}
+      </label>
+      <div className="flex flex-wrap gap-2">
+        {visibleChips.map((v) =>
+          renderChip ? (
+            renderChip(v, true)
+          ) : (
+            <button
+              key={v}
+              onClick={() => onToggle(v)}
+              className="flex items-center gap-2 pl-4 pr-3 py-2 bg-slate-900 text-white rounded-2xl text-sm font-bold shadow-sm hover:bg-slate-800 transition-all"
+            >
+              {getLabel(v)}
+              <X className="w-3 h-3 opacity-70" />
+            </button>
+          )
+        )}
+
+        {/* Overflow indicator */}
+        {extraSelected.length > 0 && (
+          <span className="flex items-center px-3 py-2 bg-slate-100 text-slate-600 rounded-2xl text-xs font-bold border border-slate-200">
+            +{extraSelected.length}
+          </span>
+        )}
+
+        {/* Add more popover */}
+        {(hiddenOptions.length > 0 || selected.length === 0) && (
+          <Popover>
+            <PopoverTrigger asChild>
+              <button className="w-10 h-10 flex items-center justify-center bg-slate-50 rounded-2xl border border-slate-200 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-all">
+                <Plus className="w-4 h-4" />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent
+              className="w-72 p-4 rounded-2xl shadow-xl border border-slate-100"
+              align="start"
+            >
+              <p className="text-[11px] font-extrabold uppercase tracking-widest text-slate-400 mb-3">
+                {label}
+              </p>
+              <div className="flex flex-wrap gap-2 max-h-52 overflow-y-auto">
+                {allOptions.map((v) => {
+                  const isSelected = selected.includes(v);
+                  return (
+                    <button
+                      key={v}
+                      onClick={() => onToggle(v)}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-sm font-medium transition-colors ${
+                        isSelected
+                          ? "border-slate-900 bg-slate-900 text-white"
+                          : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                      }`}
+                    >
+                      {isSelected && <Check className="w-3 h-3" />}
+                      {getLabel(v)}
+                    </button>
+                  );
+                })}
+              </div>
+            </PopoverContent>
+          </Popover>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ────────────────────────────────────────────────────────────────────
 export default function AutoApplySettingsPage() {
   const router = useRouter();
   const tA = useTranslations("AutoApply");
@@ -59,6 +204,8 @@ export default function AutoApplySettingsPage() {
   const [roles, setRoles] = useState<string[]>([]);
   const [customTag, setCustomTag] = useState("");
   const [prefsOpen, setPrefsOpen] = useState(false);
+  const [strictMatch, setStrictMatch] = useState(false);
+  const [smartOutreach, setSmartOutreach] = useState(true);
 
   useEffect(() => {
     if (data) {
@@ -124,12 +271,20 @@ export default function AutoApplySettingsPage() {
 
   const addKeyword = (value: string) => {
     const next = value.trim();
-    if (!next) return;
-    if (!keywords.includes(next)) {
-      setKeywords((prev) => [...prev, next]);
-    }
+    if (!next || keywords.includes(next)) return;
+    setKeywords((prev) => [...prev, next]);
     setCustomTag("");
   };
+
+  const toggleKeyword = (tag: string) =>
+    setKeywords((prev) =>
+      prev.includes(tag) ? prev.filter((k) => k !== tag) : [...prev, tag]
+    );
+
+  const toggleRole = (r: string) =>
+    setRoles((prev) =>
+      prev.includes(r) ? prev.filter((x) => x !== r) : [...prev, r]
+    );
 
   if (subLoading) {
     return (
@@ -154,307 +309,356 @@ export default function AutoApplySettingsPage() {
     );
   }
 
-  const PreferencesPanel = (
-    <div className="space-y-6">
-      {/* Category */}
-      <div className="space-y-3">
-        <Label className="text-[11px] font-bold uppercase tracking-widest text-slate-400">
-          {tA("category.title")}
-        </Label>
-        <div className="flex flex-wrap gap-2">
-          {jobCategoryValues.map((c) => {
-            const Icon = jobCategoryIcons[c as keyof typeof jobCategoryIcons];
-            const selected = category === c;
-            return (
-              <button
-                key={c}
-                onClick={() => setCategory(c)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-sm font-medium transition-colors ${
-                  selected
-                    ? "border-slate-900 bg-slate-900 text-white shadow-sm"
-                    : "border-slate-100 bg-slate-50 text-slate-600 hover:bg-slate-100"
-                }`}
-              >
-                {Icon && <Icon className="w-3.5 h-3.5" />}
-                {tAll(`Enums.JobCategory.${c}`)}
-                {selected && <Check className="w-3 h-3" />}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Roles */}
-      <div className="space-y-3">
-        <Label className="text-[11px] font-bold uppercase tracking-widest text-slate-400">
-          {tA("roles.title")}
-        </Label>
-        {category ? (
-          <div className="flex flex-wrap gap-2">
-            {roleSuggestions.map((r) => {
-              const selected = roles.includes(r);
-              const slug = r
-                .toLowerCase()
-                .replace(/[^a-z0-9]+/g, "-")
-                .replace(/(^-|-$)/g, "");
-              const label =
-                messages?.AutoApply?.roles && slug in messages.AutoApply.roles
-                  ? tA(`roles.${slug}`)
-                  : r;
-              return (
-                <button
-                  key={r}
-                  onClick={() =>
-                    setRoles((prev) =>
-                      selected ? prev.filter((x) => x !== r) : [...prev, r]
-                    )
-                  }
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-sm font-medium transition-colors ${
-                    selected
-                      ? "border-slate-900 bg-slate-900 text-white shadow-sm"
-                      : "border-slate-100 bg-slate-50 text-slate-600 hover:bg-slate-100"
-                  }`}
-                >
-                  {selected && <Check className="w-3 h-3" />}
-                  {label}
-                </button>
-              );
-            })}
-          </div>
-        ) : (
-          <p className="text-sm text-slate-400">{tA("roles.emptyHint")}</p>
-        )}
-      </div>
-
-      {/* Keywords */}
-      <div className="space-y-3">
-        <Label className="text-[11px] font-bold uppercase tracking-widest text-slate-400">
-          {tA("keywords.title")}
-        </Label>
-        <div className="flex flex-wrap gap-2">
-          {keywords.map((tag) => (
-            <span
-              key={tag}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-800 rounded-lg text-xs font-bold"
-            >
-              {tag}
-              <button
-                onClick={() => setKeywords((prev) => prev.filter((k) => k !== tag))}
-                className="text-slate-400 hover:text-red-500 transition-colors"
-              >
-                <X className="w-3 h-3" />
-              </button>
-            </span>
-          ))}
-        </div>
-        <div className="flex gap-2">
-          <Input
-            value={customTag}
-            onChange={(e) => setCustomTag(e.target.value)}
-            placeholder={tA("keywords.placeholder")}
-            className="flex-1 bg-slate-50 border-slate-100 rounded-xl text-sm"
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                addKeyword(customTag);
-              }
-            }}
-          />
-          <Button
-            variant="secondary"
-            onClick={() => addKeyword(customTag)}
-            className="rounded-xl shrink-0"
-          >
-            {tA("keywords.add")}
-          </Button>
-        </div>
-        {category && suggestions.length > 0 && (
-          <div className="flex flex-wrap gap-2 pt-1">
-            {suggestions.map((tag) => {
-              const selected = keywords.includes(tag);
-              const slug = tag
-                .toLowerCase()
-                .replace(/[^a-z0-9]+/g, "-")
-                .replace(/(^-|-$)/g, "");
-              const label =
-                messages?.AutoApply?.keywords && slug in messages.AutoApply.keywords
-                  ? tA(`keywords.${slug}`)
-                  : tag;
-              return (
-                <button
-                  key={tag}
-                  onClick={() =>
-                    setKeywords((prev) =>
-                      selected ? prev.filter((k) => k !== tag) : [...prev, tag]
-                    )
-                  }
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-medium transition-colors ${
-                    selected
-                      ? "border-slate-900 bg-slate-900 text-white shadow-sm"
-                      : "border-slate-100 bg-slate-50 text-slate-500 hover:bg-slate-100"
-                  }`}
-                >
-                  {selected && <Check className="w-3 h-3" />}
-                  {label}
-                </button>
-              );
-            })}
-          </div>
-        )}
-      </div>
-
-      {/* Save */}
-      <Button
-        onClick={savePrefs}
-        disabled={mutation.isPending}
-        className="w-full bg-slate-900 text-white rounded-2xl py-5 font-bold text-sm hover:bg-slate-800 transition-all active:scale-95"
-      >
-        {mutation.isPending ? (
-          <Loader2 className="w-4 h-4 animate-spin mr-2" />
-        ) : null}
-        {tA("save")}
-      </Button>
-    </div>
-  );
+  const getCategoryLabel = (c: string) => tAll(`Enums.JobCategory.${c}`);
+  const getRoleLabel = (r: string) => {
+    const slug = r.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+    return messages?.AutoApply?.roles && slug in messages.AutoApply.roles
+      ? tA(`roles.${slug}`)
+      : r;
+  };
+  const getKeywordLabel = (tag: string) => {
+    const slug = tag.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+    return messages?.AutoApply?.keywords && slug in messages.AutoApply.keywords
+      ? tA(`keywords.${slug}`)
+      : tag;
+  };
 
   return (
-    <div className="px-4 py-6 md:px-6 lg:px-8 lg:py-10 space-y-6">
+    <div className="px-4 py-10 md:px-8 lg:py-14 space-y-10">
       {/* ── Row 1: Title + subtitle ── */}
-      <div>
-        <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900">
+      <div className="space-y-2">
+        <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-slate-900">
           {tA("hero.title")}
         </h1>
-        <p className="text-slate-500 text-base mt-1">{tA("hero.subtitle")}</p>
+        <p className="text-slate-500 text-lg max-w-2xl font-medium">
+          {tA("hero.subtitle")}
+        </p>
       </div>
 
-      {/* ── Row 2: Agent pill + 3 stat cards ── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Agent status pill — styled as a card */}
-        <div className="col-span-2 sm:col-span-1 flex flex-col justify-between bg-white p-5 rounded-2xl border border-slate-100 shadow-sm gap-4">
-          <div className="flex items-center gap-2">
-            <span className="flex h-2.5 w-2.5 relative">
-              <span
-                className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
-                  enabled ? "bg-emerald-500" : "bg-amber-400"
-                }`}
-              />
-              <span
-                className={`relative inline-flex rounded-full h-2.5 w-2.5 ${
-                  enabled ? "bg-emerald-500" : "bg-amber-400"
-                }`}
-              />
-            </span>
-            <span className="text-sm font-bold text-slate-900">
-              {enabled ? tA("hero.active") : tA("hero.paused")}
-            </span>
+      {/* ── Row 2: 4 metric cards ── */}
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-5">
+        {/* Agent Status */}
+        <div className="col-span-2 sm:col-span-1 bg-white p-7 rounded-[2rem] border border-slate-200 shadow-sm flex flex-col justify-between gap-6">
+          <div className="space-y-3">
+            <div className="flex items-center gap-2.5">
+              <span className="flex h-3 w-3 relative shrink-0">
+                <span
+                  className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
+                    enabled ? "bg-emerald-500" : "bg-amber-400"
+                  }`}
+                />
+                <span
+                  className={`relative inline-flex rounded-full h-3 w-3 ${
+                    enabled ? "bg-emerald-500" : "bg-amber-400"
+                  }`}
+                />
+              </span>
+              <span className="text-base font-bold text-slate-900">
+                {enabled ? tA("hero.active") : tA("hero.paused")}
+              </span>
+            </div>
+            <p className="text-sm text-slate-400 font-medium leading-relaxed">
+              {tA("hero.subtitle")}
+            </p>
           </div>
           <Button
             onClick={() => handleToggle(!enabled)}
             disabled={mutation.isPending}
-            size="sm"
             variant="outline"
-            className="rounded-xl text-sm font-semibold w-full"
+            className="w-full rounded-2xl py-5 font-bold text-sm border-slate-200 hover:bg-slate-50"
           >
             {mutation.isPending ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" />
+              <Loader2 className="w-4 h-4 animate-spin mr-2" />
             ) : enabled ? (
-              <Pause className="w-3.5 h-3.5 mr-1.5" />
+              <Pause className="w-4 h-4 mr-2" />
             ) : (
-              <Play className="w-3.5 h-3.5 mr-1.5" />
+              <Play className="w-4 h-4 mr-2" />
             )}
             {enabled ? tA("hero.pause") : tA("hero.resume")}
           </Button>
         </div>
 
         {/* Total Applied */}
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
-          <div className="flex justify-between items-start mb-3">
-            <span className="p-2 bg-slate-100 rounded-xl text-slate-700">
-              <Send className="w-4 h-4" />
+        <div className="bg-white p-7 rounded-[2rem] border border-slate-200 shadow-sm">
+          <div className="flex justify-between items-start">
+            <span className="p-3 bg-slate-50 rounded-2xl border border-slate-100 text-slate-700">
+              <Send className="w-5 h-5" />
             </span>
             {appliedToday > 0 && (
-              <span className="text-[10px] font-bold text-emerald-600 px-2 py-0.5 bg-emerald-50 rounded-full">
+              <span className="text-[11px] font-black text-emerald-600 px-3 py-1 bg-emerald-50 rounded-full uppercase tracking-wider">
                 +{appliedToday} {tA("activity.today")}
               </span>
             )}
           </div>
-          <p className="text-slate-500 text-xs font-medium">{tA("stats.autoApplied")}</p>
-          <h3 className="text-2xl font-extrabold mt-0.5 text-slate-900">{appliedCount}</h3>
+          <div className="mt-8">
+            <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">
+              {tA("stats.autoApplied")}
+            </p>
+            <h3 className="text-4xl font-extrabold mt-1.5 text-slate-900 tracking-tight">
+              {appliedCount}
+            </h3>
+          </div>
         </div>
 
         {/* Last Applied */}
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
-          <div className="flex justify-between items-start mb-3">
-            <span className="p-2 bg-slate-100 rounded-xl text-slate-700">
-              <Clock className="w-4 h-4" />
+        <div className="bg-white p-7 rounded-[2rem] border border-slate-200 shadow-sm">
+          <div className="flex justify-between items-start">
+            <span className="p-3 bg-slate-50 rounded-2xl border border-slate-100 text-slate-700">
+              <Clock className="w-5 h-5" />
             </span>
-            <span className="text-[10px] font-bold text-slate-500 px-2 py-0.5 bg-slate-50 rounded-full border border-slate-100">
+            <span className="text-[11px] font-black text-slate-400 px-3 py-1 bg-slate-50 rounded-full border border-slate-100 uppercase tracking-wider">
               {enabled ? tA("activity.alive") : tA("hero.paused")}
             </span>
           </div>
-          <p className="text-slate-500 text-xs font-medium">{tA("activity.lastAppliedLabel")}</p>
-          <h3 className="text-lg font-extrabold mt-0.5 text-slate-900">
-            {lastApplied
-              ? lastApplied.toLocaleDateString(undefined, { month: "short", day: "numeric" })
-              : tA("activity.noApplications")}
-          </h3>
+          <div className="mt-8">
+            <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">
+              {tA("activity.lastAppliedLabel")}
+            </p>
+            <h3 className="text-2xl font-extrabold mt-1.5 text-slate-900 tracking-tight">
+              {lastApplied
+                ? lastApplied.toLocaleDateString(undefined, { month: "short", day: "numeric" })
+                : tA("activity.noApplications")}
+            </h3>
+          </div>
         </div>
 
-        {/* Monthly Limit — dark card */}
-        <div className="col-span-2 sm:col-span-1 bg-slate-900 text-white p-5 rounded-2xl shadow-lg relative overflow-hidden">
+        {/* Monthly Limit — dark */}
+        <div className="col-span-2 sm:col-span-1 bg-slate-900 text-white p-7 rounded-[2rem] shadow-2xl relative overflow-hidden flex flex-col justify-between">
           <div className="relative z-10">
-            <p className="text-xs font-medium text-white/60">
-              {cap != null ? tA("stats.progress", { used: appliedCount, cap }) : tAll("Billing.unlimited")}
-            </p>
-            <h3 className="text-3xl font-extrabold mt-1 text-white">
+            <div className="flex justify-between items-center mb-8">
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-white/50">
+                {cap != null
+                  ? tA("stats.progress", { used: appliedCount, cap })
+                  : tAll("Billing.unlimited")}
+              </p>
+              <Sparkles className="w-5 h-5 text-white/30" />
+            </div>
+            <h3 className="text-4xl font-extrabold tracking-tight text-white">
               {appliedCount}
               {cap != null && (
-                <span className="text-sm font-medium text-white/40 ml-1">/ {cap}</span>
+                <span className="text-xl font-medium text-white/30 ml-1.5">/ {cap}</span>
               )}
             </h3>
             <Progress
               value={pct}
-              className="w-full bg-white/10 h-1.5 rounded-full mt-3 [&>[data-slot=progress-indicator]]:bg-red-500"
+              className="w-full bg-white/10 h-2 rounded-full mt-5 [&>[data-slot=progress-indicator]]:bg-red-500"
             />
           </div>
-          <div className="absolute -right-4 -bottom-4 opacity-10">
-            <Sparkles className="w-20 h-20" />
+          <div className="absolute -right-6 -bottom-6 opacity-10 pointer-events-none">
+            <Sparkles className="w-36 h-36" />
           </div>
         </div>
       </div>
 
-      {/* ── Body: Preferences sidebar + Job listing ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
-        {/* Sidebar: Preferences */}
-        <aside className="lg:col-span-4">
+      {/* ── Body: sidebar + listing (equal height) ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-stretch">
+        {/* ── Sidebar: Preferences ── */}
+        <aside className="lg:col-span-4 h-full">
           {/* Mobile toggle */}
-          <div className="flex items-center justify-between mb-4">
+          <div className="lg:hidden flex items-center justify-between mb-3">
             <h2 className="text-lg font-bold text-slate-900">{tA("prefs.title")}</h2>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="lg:hidden"
-              onClick={() => setPrefsOpen((v) => !v)}
-            >
-              <SlidersHorizontal className="w-4 h-4 mr-1.5" />
+            <Button variant="ghost" size="sm" onClick={() => setPrefsOpen((v) => !v)}>
               {prefsOpen ? tA("prefs.hide") : tA("prefs.edit")}
             </Button>
-            <SlidersHorizontal className="hidden lg:block w-4 h-4 text-slate-400" />
           </div>
-          <p className="text-sm text-slate-500 mb-4">{tA("prefs.hint")}</p>
 
-          <div className={prefsOpen ? "block" : "hidden lg:block"}>
-            {PreferencesPanel}
-          </div>
+          <section
+            className={`relative overflow-hidden h-full bg-white p-8 rounded-[2rem] border border-slate-200 shadow-sm flex flex-col ${
+              prefsOpen ? "block" : "hidden lg:flex"
+            }`}
+          >
+            {/* Decorative blobs */}
+            <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/5 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none" />
+            <div className="absolute bottom-0 left-0 w-48 h-48 bg-slate-100 rounded-full blur-3xl -ml-24 -mb-24 pointer-events-none" />
+
+            {/* Header */}
+            <div className="relative z-10 flex items-center justify-between pb-6 border-b border-slate-100 mb-8">
+              <div className="space-y-0.5">
+                <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">
+                  {tA("prefs.title")}
+                </h2>
+                <p className="text-[11px] font-bold text-red-500 uppercase tracking-[0.2em]">
+                  {tA("prefs.hint")}
+                </p>
+              </div>
+              <div className="w-11 h-11 bg-slate-50 rounded-2xl flex items-center justify-center border border-slate-100 shrink-0">
+                <ShieldCheck className="w-5 h-5 text-slate-700" />
+              </div>
+            </div>
+
+            {/* Content — flex-grow so Save button stays at bottom */}
+            <div className="relative z-10 flex flex-col flex-grow space-y-8">
+              {/* Category */}
+              <ChipSection
+                label={tA("category.title")}
+                dotColor="red"
+                selected={category ? [category] : []}
+                allOptions={jobCategoryValues as unknown as string[]}
+                getLabel={getCategoryLabel}
+                onToggle={(c) => setCategory(category === c ? null : (c as JobCategory))}
+                renderChip={(c, _isSelected) => {
+                  const Icon = jobCategoryIcons[c as keyof typeof jobCategoryIcons];
+                  return (
+                    <button
+                      key={c}
+                      onClick={() => setCategory(category === c ? null : (c as JobCategory))}
+                      className="flex items-center gap-2 pl-4 pr-3 py-2 bg-slate-900 text-white rounded-2xl text-sm font-bold shadow-sm hover:bg-slate-800 transition-all"
+                    >
+                      {Icon && <Icon className="w-3.5 h-3.5" />}
+                      {getCategoryLabel(c)}
+                      <X className="w-3 h-3 opacity-70" />
+                    </button>
+                  );
+                }}
+              />
+
+              {/* Roles */}
+              <ChipSection
+                label={tA("roles.title")}
+                dotColor="slate"
+                selected={roles}
+                allOptions={roleSuggestions}
+                getLabel={getRoleLabel}
+                onToggle={toggleRole}
+              />
+
+              {/* Keywords */}
+              <div className="space-y-3">
+                <label className="text-[11px] font-extrabold uppercase tracking-[0.15em] text-slate-400 flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+                  {tA("keywords.title")}
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {keywords.slice(0, 3).map((tag) => (
+                    <span
+                      key={tag}
+                      className="flex items-center gap-2 pl-4 pr-3 py-2 bg-slate-50 border border-slate-200 text-slate-900 rounded-2xl text-xs font-extrabold"
+                    >
+                      {getKeywordLabel(tag)}
+                      <button
+                        onClick={() => setKeywords((prev) => prev.filter((k) => k !== tag))}
+                        className="text-slate-300 hover:text-red-500 transition-colors"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  ))}
+                  {keywords.length > 3 && (
+                    <span className="flex items-center px-3 py-2 bg-slate-100 text-slate-600 rounded-2xl text-xs font-bold border border-slate-200">
+                      +{keywords.length - 3}
+                    </span>
+                  )}
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button className="w-10 h-10 flex items-center justify-center bg-slate-50 rounded-2xl border border-slate-200 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-all">
+                        <Plus className="w-4 h-4" />
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent
+                      className="w-80 p-4 rounded-2xl shadow-xl border border-slate-100"
+                      align="start"
+                    >
+                      <p className="text-[11px] font-extrabold uppercase tracking-widest text-slate-400 mb-3">
+                        {tA("keywords.title")}
+                      </p>
+                      {/* Suggestion chips */}
+                      {suggestions.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mb-3 max-h-40 overflow-y-auto">
+                          {suggestions.map((tag) => {
+                            const isSelected = keywords.includes(tag);
+                            return (
+                              <button
+                                key={tag}
+                                onClick={() => toggleKeyword(tag)}
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-medium transition-colors ${
+                                  isSelected
+                                    ? "border-slate-900 bg-slate-900 text-white"
+                                    : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                                }`}
+                              >
+                                {isSelected && <Check className="w-3 h-3" />}
+                                {getKeywordLabel(tag)}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                      {/* Custom input */}
+                      <div className="flex gap-2 mt-1">
+                        <Input
+                          value={customTag}
+                          onChange={(e) => setCustomTag(e.target.value)}
+                          placeholder={tA("keywords.placeholder")}
+                          className="flex-1 text-sm rounded-xl"
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              addKeyword(customTag);
+                            }
+                          }}
+                        />
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => addKeyword(customTag)}
+                          className="rounded-xl shrink-0"
+                        >
+                          {tA("prefs.addMore")}
+                        </Button>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              </div>
+
+              {/* Automation Logic toggles */}
+              <div className="space-y-3">
+                <label className="text-[11px] font-extrabold uppercase tracking-[0.15em] text-slate-400 flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-slate-300" />
+                  {tA("prefs.agentLogic")}
+                </label>
+                <ToggleRow
+                  icon={ShieldCheck}
+                  label={tA("hero.strictMatch")}
+                  hint={tA("hero.strictMatchHint")}
+                  checked={strictMatch}
+                  onChange={setStrictMatch}
+                />
+                <ToggleRow
+                  icon={Brain}
+                  label={tA("hero.smartOutreach")}
+                  hint={tA("hero.smartOutreachHint")}
+                  checked={smartOutreach}
+                  onChange={setSmartOutreach}
+                />
+              </div>
+
+              {/* Save — pinned to bottom */}
+              <div className="mt-auto pt-6">
+                <Button
+                  onClick={savePrefs}
+                  disabled={mutation.isPending}
+                  className="w-full bg-slate-900 text-white rounded-2xl py-6 font-extrabold text-sm uppercase tracking-[0.15em] hover:bg-slate-800 transition-all active:scale-95 shadow-lg shadow-slate-900/10"
+                >
+                  {mutation.isPending && (
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  )}
+                  {tA("save")}
+                </Button>
+              </div>
+            </div>
+          </section>
         </aside>
 
-        {/* Main content: job matches */}
-        <section className="lg:col-span-8">
+        {/* ── Main: job listing ── */}
+        <section className="lg:col-span-8 flex flex-col min-h-0">
           <AutoApplyListingGrid
             enabled={enabled}
             category={category}
             keywords={keywords}
             roles={roles}
+            strictMatch={strictMatch}
+            smartOutreach={smartOutreach}
           />
         </section>
       </div>

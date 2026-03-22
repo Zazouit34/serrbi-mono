@@ -961,14 +961,20 @@
       "queue": "Jobs in focus",
       "queueHint": "Top matches refresh as new roles appear.",
       "resumed": "AI resumed",
-      "pausedToast": "AI paused"
+      "pausedToast": "AI paused",
+      "strictMatch": "Strict Match",
+      "strictMatchHint": "Only return jobs that match your selected category, roles & keywords",
+      "smartOutreach": "Smart Outreach",
+      "smartOutreachHint": "Rank jobs using your uploaded resume's semantic profile"
     },
     "prefs": {
       "title": "Preferences",
       "subtitle": "Tune only when needed.",
-      "hint": "We'll keep learning from your recent applications.",
+      "hint": "Agent Logic Engine",
       "edit": "Edit",
-      "hide": "Hide"
+      "hide": "Hide",
+      "agentLogic": "Automation Logic",
+      "addMore": "Add"
     },
     "activity": {
       "title": "AI activity",
@@ -986,12 +992,16 @@
     },
     "listing": {
       "title": "Handpicked for you",
+      "curatedTitle": "Curated Match List",
+      "curatedSubtitle": "AI identified {total} high-potential matches for your profile.",
       "subtitle": "Based on your experience, preferences, and resume signals.",
+      "refine": "Refine",
       "updating": "Updating…",
       "jobsInQueue": "{count} jobs in queue",
       "noMatching": "No matching jobs yet for your auto-apply preferences.",
       "resumeHint": "Matched to your resume and preferences",
       "bestMatches": "Showing top {count} jobs ranked for you.",
+      "pageRange": "Showing {from} to {to} of {total} curated matches",
       "refresh": "Refresh",
       "applyPage": "Bulk Apply",
       "pageOf": "Page {page} of {totalPages} · {total} jobs",

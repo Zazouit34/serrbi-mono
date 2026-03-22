@@ -81,12 +81,14 @@ export function scoreAutoApplyJob<T extends AutoApplyRankableJob>(args: {
   roles: string[];
   resumeEmbedding?: number[] | null;
   maxReasons?: number;
+  /** When true, resume embedding is ignored regardless of availability (Smart Outreach off) */
+  disableEmbedding?: boolean;
 }): AutoApplyScoredJob<T> {
   const { job } = args;
   const keywords = args.keywords ?? [];
   const roles = args.roles ?? [];
   const maxReasons = args.maxReasons ?? 3;
-  const resumeEmbedding = args.resumeEmbedding ?? null;
+  const resumeEmbedding = args.disableEmbedding ? null : (args.resumeEmbedding ?? null);
 
   const textTokens = new Set(tokenize(`${job.title ?? ""} ${job.description ?? ""}`));
   const titleTokens = new Set(tokenize(`${job.title ?? ""}`));

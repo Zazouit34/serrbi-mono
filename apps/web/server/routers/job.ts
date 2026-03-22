@@ -506,7 +506,7 @@ export const jobRouter = router({
         return { items: [], total: 0, page, pageSize };
       }
 
-      const MAX_ITEMS = 20;
+      const MAX_ITEMS = 100;
       const skip = (page - 1) * pageSize;
 
       // Always fetch the freshest jobs in the selected category (up to MAX_ITEMS)
@@ -540,8 +540,6 @@ export const jobRouter = router({
         },
       });
 
-      const total = Math.min(jobs.length, MAX_ITEMS);
-
       // Pre-fetch existing applications for this user to mark alreadyApplied
       const jobIds = jobs.map((j) => j.id);
       const existingApps =
@@ -567,6 +565,9 @@ export const jobRouter = router({
         userEmbedding.length > 0
       );
 
+      const strictMatch = input?.strictMatch ?? false;
+      const smartOutreach = input?.smartOutreach ?? true;
+
       const scoredItems = jobs.map((job: any) => {
         const scored = scoreAutoApplyJob({
           job,
@@ -574,6 +575,7 @@ export const jobRouter = router({
           roles: effectiveRoles || [],
           resumeEmbedding: userEmbedding,
           maxReasons: 3,
+          disableEmbedding: !smartOutreach,
         });
         return {
           ...job,
@@ -587,27 +589,35 @@ export const jobRouter = router({
             recencyScore: scored.recencyScore,
           },
           _score: scored.finalScore,
+          _keywordHits: scored.keywordHits,
+          _roleHits: scored.roleHits,
         };
       });
 
+      // When Strict Match is on, exclude jobs that have no keyword OR role hits.
+      const filtered = strictMatch
+        ? scoredItems.filter(
+            (j) => j._keywordHits.length > 0 || j._roleHits.length > 0,
+          )
+        : scoredItems;
+
       // Sort primarily by combined score (semantic + filters), then by recency.
-      let ordered: typeof scoredItems;
-      ordered = [...scoredItems].sort((a, b) => {
-        // Higher score first
+      const ordered = [...filtered].sort((a, b) => {
         const scoreDiff = (b._score ?? 0) - (a._score ?? 0);
         if (Math.abs(scoreDiff) > 1e-6) return scoreDiff;
-        // Tie-breaker: newer jobs first
         const timeDiff = b.createdAt.getTime() - a.createdAt.getTime();
         if (timeDiff !== 0) return timeDiff;
         return 0;
       });
 
-      // Apply pagination after optional reordering.
+      const total = ordered.length;
+
+      // Apply pagination after filtering and ordering.
       const start = skip;
       const end = start + pageSize;
       const paged = ordered.slice(start, end);
 
-      const resultItems = paged.map(({ _score, ...rest }) => rest);
+      const resultItems = paged.map(({ _score, _keywordHits, _roleHits, ...rest }) => rest);
 
       return { items: resultItems, total, page, pageSize, usedResumeEmbedding };
     }),

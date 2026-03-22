@@ -951,14 +951,20 @@
       "queue": "Jobs en focus",
       "queueHint": "Les meilleurs matchs se mettent à jour quand de nouvelles offres arrivent.",
       "resumed": "IA relancée",
-      "pausedToast": "IA mise en pause"
+      "pausedToast": "IA mise en pause",
+      "strictMatch": "Correspondance stricte",
+      "strictMatchHint": "Retourne uniquement les offres correspondant à votre catégorie, rôles et mots-clés",
+      "smartOutreach": "Recherche intelligente",
+      "smartOutreachHint": "Classe les offres grâce au profil sémantique de votre CV"
     },
     "prefs": {
       "title": "Préférences",
       "subtitle": "À ajuster seulement si besoin.",
-      "hint": "Nous apprenons en continu de vos dernières candidatures.",
+      "hint": "Moteur de logique agent",
       "edit": "Modifier",
-      "hide": "Masquer"
+      "hide": "Masquer",
+      "agentLogic": "Logique d'automatisation",
+      "addMore": "Ajouter"
     },
     "activity": {
       "title": "Activité de l’IA",
@@ -976,12 +982,16 @@
     },
     "listing": {
       "title": "Sélection pour vous",
+      "curatedTitle": "Liste de matchs sélectionnés",
+      "curatedSubtitle": "L'IA a identifié {total} correspondances à fort potentiel pour votre profil.",
       "subtitle": "Basée sur votre expérience, vos préférences et les signaux de votre CV.",
+      "refine": "Affiner",
       "updating": "Mise à jour…",
       "jobsInQueue": "{count} emplois en file",
       "noMatching": "Aucun emploi correspondant pour le moment à vos préférences AI Serrbi.",
       "resumeHint": "Correspondant à votre CV et à vos préférences",
       "bestMatches": "Affichage des {count} meilleures offres classées pour vous.",
+      "pageRange": "Affichage de {from} à {to} sur {total} matchs",
       "refresh": "Actualiser",
       "applyPage": "Candidature groupée",
       "pageOf": "Page {page} sur {totalPages} · {total} offres",
