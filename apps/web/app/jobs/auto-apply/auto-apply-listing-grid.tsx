@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Mail, Sparkles, Info, Shield } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { trpc } from "@/app/_trpc/client";
 import { AutoApplyCard } from "@/components/ui/form/job/auto-apply-card";
@@ -15,8 +15,6 @@ import {
   PaginationPrevious,
   PaginationEllipsis,
 } from "@workspace/ui/components/pagination";
-import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui/components/card";
-import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
 import { toast } from "sonner";
 
@@ -60,7 +58,7 @@ export function AutoApplyListingGrid({
 
   const queryInput = {
     page,
-    pageSize: 10,
+    pageSize: 5,
     enabled,
     category,
     keywords,
@@ -237,148 +235,149 @@ export function AutoApplyListingGrid({
   }
 
   return (
-    <Card className="w-full max-w-full rounded-3xl border border-slate-100 shadow-none bg-white">
-      <CardHeader className="flex flex-col gap-3 pb-2 md:flex-row md:items-center md:justify-between">
-        <div className="flex gap-3 items-start">
-          <div className="flex justify-center items-center w-10 h-10 bg-slate-900 text-white rounded-2xl shadow-sm">
-            <Sparkles className="w-5 h-5" />
-          </div>
-          <div className="space-y-1">
-            <CardTitle className="text-lg font-semibold tracking-tight md:text-xl">
+    <div className="space-y-4 w-full">
+      {/* Header: title + subtitle + action buttons */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="space-y-1">
+          <div className="flex gap-2 items-center">
+            <h2 className="text-xl font-bold tracking-tight text-slate-900">
               {tA("listing.title")}
-            </CardTitle>
-            <p className="text-sm text-slate-500 max-w-xl">
-              {tA("listing.subtitle")}
-            </p>
-            {usedResumeEmbedding && (
-              <p className="text-[12px] text-emerald-700 flex items-center gap-1">
-                <Shield className="h-4 w-4" />
-                {tA("listing.resumeHint")}
-              </p>
+            </h2>
+            {isFetching && (
+              <span className="text-[11px] text-slate-400 font-medium animate-pulse">
+                {tA("listing.updating")}
+              </span>
             )}
           </div>
+          <p className="text-sm text-slate-500">
+            {tA("listing.subtitle")}
+          </p>
+          {usedResumeEmbedding && (
+            <p className="text-[12px] text-emerald-700 flex items-center gap-1">
+              <Sparkles className="h-3.5 w-3.5" />
+              {tA("listing.resumeHint")}
+            </p>
+          )}
+          {data && data.items.length > 0 && (
+            <p className="text-xs text-slate-400 pt-0.5">
+              {tA("listing.bestMatches", { count: data.total })}
+            </p>
+          )}
         </div>
 
-        <Badge className="self-start bg-emerald-50 text-emerald-700 border-emerald-200 text-[11px] px-3 py-1 rounded-full md:self-auto">
-          {isFetching ? tA("listing.updating") : tA("listing.jobsInQueue", { count: totalQueue })}
-        </Badge>
-      </CardHeader>
-
-      <CardContent className="pt-1 space-y-4 w-full">
         {data && data.items.length > 0 && (
-          <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-            <p className="text-xs text-slate-500">
-              {tA("listing.bestMatches", {
-                count: data.total,
-              })}
-            </p>
-            <div className="flex flex-wrap gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={isFetching || bulkApplyMutation.isPending}
-                onClick={() => refetch()}
-                className="h-7 px-3 text-[11px]"
-              >
-                {tA("listing.refresh")}
-              </Button>
-              <Button
-                size="sm"
-                disabled={bulkApplyMutation.isPending || !data.items.some((j: any) => !j.alreadyApplied)}
-                onClick={async () => {
-                  if (!data) return;
-                  const jobIds = data.items
-                    .filter((j: any) => !j.alreadyApplied)
-                    .map((j: any) => j.id);
+          <div className="flex gap-2 items-center shrink-0">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={isFetching || bulkApplyMutation.isPending}
+              onClick={() => refetch()}
+              className="px-4 text-sm font-semibold rounded-xl"
+            >
+              {tA("listing.refresh")}
+            </Button>
+            <Button
+              size="sm"
+              disabled={bulkApplyMutation.isPending || !data.items.some((j: any) => !j.alreadyApplied)}
+              onClick={async () => {
+                if (!data) return;
+                const jobIds = data.items
+                  .filter((j: any) => !j.alreadyApplied)
+                  .map((j: any) => j.id);
 
-                  if (!jobIds.length) return;
+                if (!jobIds.length) return;
 
-                  try {
-                    const res = await bulkApplyMutation.mutateAsync({ jobIds });
-                    const appliedCount = res.applied.length;
-                    const skippedCount = res.skipped.length;
-                    if (appliedCount) {
-                      toast.success(
-                        tA("listing.bulkAppliedSuccess", {
-                          applied: appliedCount,
-                          skipped: skippedCount,
-                        }),
-                      );
-                    } else {
-                      toast.info(
-                        tA("listing.bulkAppliedNone", {
-                          skipped: skippedCount,
-                        }),
-                      );
-                    }
-                    await refetch();
-                  } catch (err: any) {
-                    toast.error(
-                      err?.message || tA("listing.bulkAppliedError"),
+                try {
+                  const res = await bulkApplyMutation.mutateAsync({ jobIds });
+                  const appliedCount = res.applied.length;
+                  const skippedCount = res.skipped.length;
+                  if (appliedCount) {
+                    toast.success(
+                      tA("listing.bulkAppliedSuccess", {
+                        applied: appliedCount,
+                        skipped: skippedCount,
+                      }),
+                    );
+                  } else {
+                    toast.info(
+                      tA("listing.bulkAppliedNone", {
+                        skipped: skippedCount,
+                      }),
                     );
                   }
-                }}
-                className="h-7 px-3 text-[11px]"
-              >
-                {bulkApplyMutation.isPending
-                  ? tA("listing.bulkApplying")
-                  : tA("listing.applyPage")}
-              </Button>
-            </div>
+                  await refetch();
+                } catch (err: any) {
+                  toast.error(
+                    err?.message || tA("listing.bulkAppliedError"),
+                  );
+                }
+              }}
+              className="px-4 text-sm font-semibold text-white rounded-xl bg-slate-900 hover:bg-slate-800"
+            >
+              {bulkApplyMutation.isPending
+                ? tA("listing.bulkApplying")
+                : tA("listing.applyPage")}
+            </Button>
           </div>
         )}
+      </div>
 
-        {isLoading ? (
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div
-                key={i}
-                className="flex gap-3 justify-between items-start px-3 py-3 rounded-2xl border border-slate-100 bg-slate-50/70"
-              >
-                <div className="flex gap-3 items-start w-full">
-                  <Skeleton className="w-9 h-9 rounded-lg" />
-                  <div className="flex-1 space-y-2">
-                    <Skeleton className="w-3/4 h-4" />
-                    <Skeleton className="w-1/2 h-3" />
-                    <Skeleton className="w-full h-3" />
-                  </div>
+      {/* Job list */}
+      {isLoading ? (
+        <div className="flex flex-col gap-3">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div
+              key={i}
+              className="flex gap-3 justify-between items-start px-3 py-3 rounded-2xl border border-slate-100 bg-slate-50/70"
+            >
+              <div className="flex gap-3 items-start w-full">
+                <Skeleton className="w-9 h-9 rounded-lg" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="w-3/4 h-4" />
+                  <Skeleton className="w-1/2 h-3" />
+                  <Skeleton className="w-full h-3" />
                 </div>
               </div>
-            ))}
-          </div>
-        ) : !data || data.items.length === 0 ? (
-          <div className="py-8 text-sm text-center rounded-xl border border-dashed border-slate-200 bg-slate-50/60 text-slate-500">
-            {tA("listing.noMatching")}
-          </div>
-        ) : (
-          <>
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-              {data.items.map((job: any) => {
-                const reasons = (Array.isArray(job.matchReasons) ? job.matchReasons : [])
-                  .map((reason: MatchReason) => buildReasonLabel(job, reason))
-                  .filter((reason: string | null): reason is string => Boolean(reason))
-                  .slice(0, 3);
-                const confidence = buildConfidence(job.matchPercent);
-                return (
-                  <AutoApplyCard
-                    key={job.id}
-                    job={job}
-                    alreadyApplied={job.alreadyApplied}
-                    confidence={confidence}
-                    reasons={reasons}
-                    matchPercent={job.matchPercent}
-                    postedAgo={formatTimeAgo(job.createdAt)}
-                    onApply={async () => {
-                      const res = await applyMutation.mutateAsync({ jobId: job.id });
-                      return { message: res.message };
-                    }}
-                  />
-                );
-              })}
             </div>
+          ))}
+        </div>
+      ) : !data || data.items.length === 0 ? (
+        <div className="py-10 text-sm text-center rounded-xl border border-dashed border-slate-200 bg-slate-50/60 text-slate-500">
+          {tA("listing.noMatching")}
+        </div>
+      ) : (
+        <>
+          <div className="flex flex-col gap-3">
+            {data.items.map((job: any) => {
+              const reasons = (Array.isArray(job.matchReasons) ? job.matchReasons : [])
+                .map((reason: MatchReason) => buildReasonLabel(job, reason))
+                .filter((reason: string | null): reason is string => Boolean(reason))
+                .slice(0, 3);
+              const confidence = buildConfidence(job.matchPercent);
+              return (
+                <AutoApplyCard
+                  key={job.id}
+                  job={job}
+                  alreadyApplied={job.alreadyApplied}
+                  confidence={confidence}
+                  reasons={reasons}
+                  matchPercent={job.matchPercent}
+                  postedAgo={formatTimeAgo(job.createdAt)}
+                  onApply={async () => {
+                    const res = await applyMutation.mutateAsync({ jobId: job.id });
+                    return { message: res.message };
+                  }}
+                />
+              );
+            })}
+          </div>
 
-            {totalPages > 1 && (
-              <Pagination>
+          {totalPages > 1 && (
+            <div className="flex justify-between items-center pt-2 border-t border-slate-100">
+              <p className="text-sm text-slate-500">
+                {tA("listing.pageOf", { page, totalPages, total: totalQueue })}
+              </p>
+              <Pagination className="mx-0 w-auto">
                 <PaginationContent>
                   <PaginationItem>
                     <PaginationPrevious
@@ -405,12 +404,10 @@ export function AutoApplyListingGrid({
                   </PaginationItem>
                 </PaginationContent>
               </Pagination>
-            )}
-          </>
-        )}
-      </CardContent>
-    </Card>
+            </div>
+          )}
+        </>
+      )}
+    </div>
   );
 }
-
-

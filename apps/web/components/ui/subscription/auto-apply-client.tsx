@@ -8,19 +8,16 @@ import { Label } from "@workspace/ui/components/label";
 import { Button } from "@workspace/ui/components/button";
 import { Input } from "@workspace/ui/components/input";
 import { Progress } from "@workspace/ui/components/progress";
-import { Badge } from "@workspace/ui/components/badge";
 import { toast } from "sonner";
 import {
   Loader2,
   Check,
   Pause,
   Play,
-  ShieldCheck,
   Clock,
   Sparkles,
   Send,
   SlidersHorizontal,
-  Zap,
   X,
 } from "lucide-react";
 
@@ -87,7 +84,6 @@ export default function AutoApplySettingsPage() {
     ? new Date(stats.recent[0].createdAt)
     : null;
 
-  // Count applied today
   const appliedToday = useMemo(() => {
     if (!stats?.recent) return 0;
     const today = new Date();
@@ -322,164 +318,138 @@ export default function AutoApplySettingsPage() {
   );
 
   return (
-    <div className="bg-[#F6F8FA] min-h-screen px-4 py-8 md:px-6 lg:px-8 lg:py-12 space-y-10">
-      {/* ── Header ── */}
-      <header className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-end">
-        {/* Left: title + status pill */}
-        <div className="lg:col-span-5 space-y-6">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 text-xs text-slate-500">
-              <ShieldCheck className="h-4 w-4" />
-              {tA("hero.reassurance")}
-            </div>
-            <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900">
-              {tA("hero.title")}
-            </h1>
-            <p className="text-slate-500 text-base md:text-lg">
-              {tA("hero.subtitle")}
-            </p>
-          </div>
+    <div className="px-4 py-6 md:px-6 lg:px-8 lg:py-10 space-y-6">
+      {/* ── Row 1: Title + subtitle ── */}
+      <div>
+        <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900">
+          {tA("hero.title")}
+        </h1>
+        <p className="text-slate-500 text-base mt-1">{tA("hero.subtitle")}</p>
+      </div>
 
-          {/* Agent status pill */}
-          <div className="flex items-center gap-3 bg-white pl-5 pr-2 py-2 rounded-full shadow-sm border border-slate-100 w-fit">
-            <div className="flex items-center gap-3">
-              <span className="flex h-2.5 w-2.5 relative">
-                <span
-                  className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
-                    enabled ? "bg-emerald-500" : "bg-amber-400"
-                  }`}
-                />
-                <span
-                  className={`relative inline-flex rounded-full h-2.5 w-2.5 ${
-                    enabled ? "bg-emerald-500" : "bg-amber-400"
-                  }`}
-                />
-              </span>
-              <span className="text-sm font-bold text-slate-900 tracking-tight">
-                {enabled ? tA("hero.active") : tA("hero.paused")}
-              </span>
-            </div>
-            <div className="h-8 w-px bg-slate-100 mx-1" />
-            <Button
-              onClick={() => handleToggle(!enabled)}
-              disabled={mutation.isPending}
-              size="sm"
-              variant="ghost"
-              className="rounded-full bg-slate-50 hover:bg-slate-100 text-slate-600 text-sm font-semibold border border-slate-200 px-4"
-            >
-              {mutation.isPending ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" />
-              ) : enabled ? (
-                <Pause className="w-3.5 h-3.5 mr-1.5" />
-              ) : (
-                <Play className="w-3.5 h-3.5 mr-1.5" />
-              )}
-              {enabled ? tA("hero.pause") : tA("hero.resume")}
-            </Button>
-          </div>
-        </div>
-
-        {/* Right: 3 stat cards */}
-        <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {/* Total Applied */}
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-            <div className="flex justify-between items-start mb-4">
-              <span className="p-2 bg-slate-100 rounded-xl text-slate-700">
-                <Send className="w-5 h-5" />
-              </span>
-              {appliedToday > 0 && (
-                <span className="text-[10px] font-bold text-emerald-600 px-2 py-1 bg-emerald-50 rounded-full">
-                  +{appliedToday} {tA("activity.today")}
-                </span>
-              )}
-            </div>
-            <p className="text-slate-500 text-sm font-medium">{tA("stats.autoApplied")}</p>
-            <h3 className="text-3xl font-extrabold mt-1 text-slate-900">{appliedCount}</h3>
-          </div>
-
-          {/* Last Applied */}
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-            <div className="flex justify-between items-start mb-4">
-              <span className="p-2 bg-slate-100 rounded-xl text-slate-700">
-                <Clock className="w-5 h-5" />
-              </span>
-              <span className="text-[10px] font-bold text-slate-500 px-2 py-1 bg-slate-50 rounded-full border border-slate-100">
-                {enabled ? tA("activity.alive") : tA("hero.paused")}
-              </span>
-            </div>
-            <p className="text-slate-500 text-sm font-medium">{tA("activity.lastAppliedLabel")}</p>
-            <h3 className="text-xl font-extrabold mt-1 text-slate-900">
-              {lastApplied
-                ? lastApplied.toLocaleDateString(undefined, { month: "short", day: "numeric" })
-                : tA("activity.noApplications")}
-            </h3>
-          </div>
-
-          {/* Monthly Limit — dark card */}
-          <div className="bg-slate-900 text-white p-6 rounded-2xl shadow-lg relative overflow-hidden">
-            <div className="relative z-10">
-              <p className="text-sm font-medium text-white/60">
-                {cap != null ? tA("stats.progress", { used: appliedCount, cap }) : tAll("Billing.unlimited")}
-              </p>
-              <h3 className="text-4xl font-extrabold mt-2 text-white">
-                {appliedCount}
-                {cap != null && (
-                  <span className="text-lg font-medium text-white/40 ml-1">/ {cap}</span>
-                )}
-              </h3>
-              <Progress
-                value={pct}
-                className="w-full bg-white/10 h-1.5 rounded-full mt-4 [&>[data-slot=progress-indicator]]:bg-red-500"
+      {/* ── Row 2: Agent pill + 3 stat cards ── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Agent status pill — styled as a card */}
+        <div className="col-span-2 sm:col-span-1 flex flex-col justify-between bg-white p-5 rounded-2xl border border-slate-100 shadow-sm gap-4">
+          <div className="flex items-center gap-2">
+            <span className="flex h-2.5 w-2.5 relative">
+              <span
+                className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
+                  enabled ? "bg-emerald-500" : "bg-amber-400"
+                }`}
               />
-            </div>
-            <div className="absolute -right-4 -bottom-4 opacity-10">
-              <Sparkles className="w-24 h-24" />
-            </div>
+              <span
+                className={`relative inline-flex rounded-full h-2.5 w-2.5 ${
+                  enabled ? "bg-emerald-500" : "bg-amber-400"
+                }`}
+              />
+            </span>
+            <span className="text-sm font-bold text-slate-900">
+              {enabled ? tA("hero.active") : tA("hero.paused")}
+            </span>
+          </div>
+          <Button
+            onClick={() => handleToggle(!enabled)}
+            disabled={mutation.isPending}
+            size="sm"
+            variant="outline"
+            className="rounded-xl text-sm font-semibold w-full"
+          >
+            {mutation.isPending ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" />
+            ) : enabled ? (
+              <Pause className="w-3.5 h-3.5 mr-1.5" />
+            ) : (
+              <Play className="w-3.5 h-3.5 mr-1.5" />
+            )}
+            {enabled ? tA("hero.pause") : tA("hero.resume")}
+          </Button>
+        </div>
+
+        {/* Total Applied */}
+        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
+          <div className="flex justify-between items-start mb-3">
+            <span className="p-2 bg-slate-100 rounded-xl text-slate-700">
+              <Send className="w-4 h-4" />
+            </span>
+            {appliedToday > 0 && (
+              <span className="text-[10px] font-bold text-emerald-600 px-2 py-0.5 bg-emerald-50 rounded-full">
+                +{appliedToday} {tA("activity.today")}
+              </span>
+            )}
+          </div>
+          <p className="text-slate-500 text-xs font-medium">{tA("stats.autoApplied")}</p>
+          <h3 className="text-2xl font-extrabold mt-0.5 text-slate-900">{appliedCount}</h3>
+        </div>
+
+        {/* Last Applied */}
+        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
+          <div className="flex justify-between items-start mb-3">
+            <span className="p-2 bg-slate-100 rounded-xl text-slate-700">
+              <Clock className="w-4 h-4" />
+            </span>
+            <span className="text-[10px] font-bold text-slate-500 px-2 py-0.5 bg-slate-50 rounded-full border border-slate-100">
+              {enabled ? tA("activity.alive") : tA("hero.paused")}
+            </span>
+          </div>
+          <p className="text-slate-500 text-xs font-medium">{tA("activity.lastAppliedLabel")}</p>
+          <h3 className="text-lg font-extrabold mt-0.5 text-slate-900">
+            {lastApplied
+              ? lastApplied.toLocaleDateString(undefined, { month: "short", day: "numeric" })
+              : tA("activity.noApplications")}
+          </h3>
+        </div>
+
+        {/* Monthly Limit — dark card */}
+        <div className="col-span-2 sm:col-span-1 bg-slate-900 text-white p-5 rounded-2xl shadow-lg relative overflow-hidden">
+          <div className="relative z-10">
+            <p className="text-xs font-medium text-white/60">
+              {cap != null ? tA("stats.progress", { used: appliedCount, cap }) : tAll("Billing.unlimited")}
+            </p>
+            <h3 className="text-3xl font-extrabold mt-1 text-white">
+              {appliedCount}
+              {cap != null && (
+                <span className="text-sm font-medium text-white/40 ml-1">/ {cap}</span>
+              )}
+            </h3>
+            <Progress
+              value={pct}
+              className="w-full bg-white/10 h-1.5 rounded-full mt-3 [&>[data-slot=progress-indicator]]:bg-red-500"
+            />
+          </div>
+          <div className="absolute -right-4 -bottom-4 opacity-10">
+            <Sparkles className="w-20 h-20" />
           </div>
         </div>
-      </header>
+      </div>
 
-      {/* ── Main layout ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+      {/* ── Body: Preferences sidebar + Job listing ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
         {/* Sidebar: Preferences */}
         <aside className="lg:col-span-4">
           {/* Mobile toggle */}
-          <div className="lg:hidden mb-3 flex items-center justify-between">
+          <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-bold text-slate-900">{tA("prefs.title")}</h2>
-            <Button variant="ghost" size="sm" onClick={() => setPrefsOpen((v) => !v)}>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="lg:hidden"
+              onClick={() => setPrefsOpen((v) => !v)}
+            >
               <SlidersHorizontal className="w-4 h-4 mr-1.5" />
               {prefsOpen ? tA("prefs.hide") : tA("prefs.edit")}
             </Button>
+            <SlidersHorizontal className="hidden lg:block w-4 h-4 text-slate-400" />
           </div>
+          <p className="text-sm text-slate-500 mb-4">{tA("prefs.hint")}</p>
 
-          {/* Desktop: always visible / Mobile: toggleable */}
-          <section
-            className={`bg-white p-6 md:p-8 rounded-[2rem] border border-slate-100 shadow-sm space-y-8 ${
-              prefsOpen ? "block" : "hidden lg:block"
-            }`}
-          >
-            <div className="hidden lg:flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-slate-900">{tA("prefs.title")}</h2>
-              <SlidersHorizontal className="w-5 h-5 text-slate-400" />
-            </div>
-            <p className="hidden lg:block text-sm text-slate-500 -mt-4">{tA("prefs.hint")}</p>
+          <div className={prefsOpen ? "block" : "hidden lg:block"}>
             {PreferencesPanel}
-          </section>
+          </div>
         </aside>
 
         {/* Main content: job matches */}
-        <section className="lg:col-span-8 space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <h2 className="text-2xl md:text-3xl font-extrabold text-slate-900">
-                {tA("listing.title")}
-              </h2>
-              <p className="text-slate-500 mt-1 font-medium text-sm">
-                {tA("listing.subtitle")}
-              </p>
-            </div>
-          </div>
-
+        <section className="lg:col-span-8">
           <AutoApplyListingGrid
             enabled={enabled}
             category={category}
