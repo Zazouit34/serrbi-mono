@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Mail, Sparkles, ChevronDown } from "lucide-react";
+import { Sparkles, ChevronDown } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Card, CardContent } from "@workspace/ui/components/card";
 import { Badge } from "@workspace/ui/components/badge";
@@ -19,6 +19,7 @@ type AutoApplyJob = {
   companyImage: string | null;
   description?: string | null;
   tags?: string[] | null;
+  wage?: string | number | null;
   createdAt?: Date | string | null;
   city?: string | null;
   stateAbbreviation?: string | null;
@@ -50,14 +51,6 @@ function formatTimeAgo(createdAt?: Date | string | null): string {
   return `${diffDays}d`;
 }
 
-function AppliedBadge({ label }: { label: string }) {
-  return (
-    <Badge className="bg-black text-white border-black text-[11px] px-3 py-1 rounded-full">
-      {label}
-    </Badge>
-  );
-}
-
 export function AutoApplyCard({
   job,
   alreadyApplied,
@@ -78,11 +71,8 @@ export function AutoApplyCard({
     try {
       setStatus("applying");
       const res = await onApply();
-      if (res?.message === "Already applied" || res?.message) {
-        setStatus("applied");
-      } else {
-        setStatus("idle");
-      }
+      if (res?.message) setStatus("applied");
+      else setStatus("idle");
     } catch {
       setStatus("idle");
     }
@@ -93,108 +83,131 @@ export function AutoApplyCard({
       ? `${job.city}, ${job.stateAbbreviation}`
       : job.city || job.stateAbbreviation || "";
 
+  const companyLocation = [job.companyName, location].filter(Boolean).join(" · ");
+
   const displayTags = (job.tags || []).slice(0, 3);
   const jobType = job.type ? job.type.toString().replace(/_/g, " ") : "";
+  const wage = job.wage ? String(job.wage) : "";
 
   const firstLetter = job.companyName?.trim()?.[0] ?? job.title?.trim()?.[0] ?? "S";
 
-  return (
-    <Card className="w-full rounded-2xl border border-slate-200 bg-white shadow-none">
-      <CardContent className="flex flex-col gap-3 px-4 py-4 w-full">
-        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-          <div className="flex items-start gap-3">
-            <Avatar className="h-10 w-10 rounded-xl">
-              <AvatarImage src={job.companyImage || undefined} alt={job.companyName || job.title} />
-              <AvatarFallback className="text-xs rounded-xl border border-slate-200">
-                {firstLetter.toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
+  const confidenceColors = {
+    "very-strong": "bg-emerald-50 text-emerald-700 border-emerald-200",
+    strong: "bg-blue-50 text-blue-700 border-blue-200",
+    potential: "bg-amber-50 text-amber-700 border-amber-200",
+  };
 
-            <div className="space-y-1">
-              <div className="flex flex-wrap items-center gap-2">
-                <p className="text-sm font-semibold text-slate-900 line-clamp-1">
-                  {job.title}
+  return (
+    <Card className="w-full bg-white rounded-2xl border shadow-none border-slate-200">
+      <CardContent className="px-4 py-4 space-y-3 w-full">
+
+        {/* ── Main info row ── */}
+        <div className="flex gap-3 items-start">
+          {/* Avatar */}
+          <Avatar className="h-10 w-10 rounded-xl shrink-0 mt-0.5">
+            <AvatarImage
+              src={job.companyImage || undefined}
+              alt={job.companyName || job.title}
+            />
+            <AvatarFallback className="text-xs rounded-xl border border-slate-200">
+              {firstLetter.toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+
+          {/* Info block */}
+          <div className="flex-1 min-w-0">
+            {/* Line 1: title + confidence badge */}
+            <div className="flex gap-2 justify-between items-start">
+              <p className="flex-1 min-w-0 text-sm font-semibold text-slate-900 line-clamp-1">
+                {job.title}
+              </p>
+              {confidence && (
+                <Badge
+                  className={`shrink-0 text-[10px] px-2 py-0.5 rounded-md border font-semibold ${
+                    confidenceColors[confidence.level]
+                  }`}
+                >
+                  <Sparkles className="h-2.5 w-2.5 mr-1" />
+                  {confidence.label}
+                </Badge>
+              )}
+            </div>
+
+            {/* Line 2: company · location + timeAgo + matchPercent */}
+            <div className="flex items-center justify-between gap-2 mt-0.5">
+              {companyLocation ? (
+                <p className="text-[12px] text-slate-500 line-clamp-1 flex-1 min-w-0">
+                  {companyLocation}
                 </p>
-                {job.companyName && (
-                  <span className="text-[12px] text-slate-500">· {job.companyName}</span>
+              ) : (
+                <span />
+              )}
+              <div className="flex gap-2 items-center shrink-0">
+                <span className="text-[11px] text-slate-400">{postedAgo || timeAgo}</span>
+                {typeof matchPercent === "number" && (
+                  <span className="text-[11px] font-semibold text-slate-500">
+                    {Math.max(0, Math.min(100, Math.round(matchPercent)))}%
+                  </span>
                 )}
               </div>
-
-              {location && (
-                <p className="text-[12px] text-slate-500 line-clamp-1">{location}</p>
-              )}
-              {jobType && (
-                <p className="text-[12px] text-slate-500 line-clamp-1 capitalize">{jobType}</p>
-              )}
-
-              {displayTags.length > 0 && (
-                <div className="mt-1.5 flex flex-wrap gap-1.5">
-                  {displayTags.map((tag) => (
-                    <Badge
-                      key={tag}
-                      variant="outline"
-                      className="bg-slate-50 text-[11px] text-slate-700 border-slate-200 px-2 py-0.5"
-                    >
-                      {tag}
-                    </Badge>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="flex flex-col items-start justify-between gap-2 md:items-end">
-            <div className="flex items-center gap-1 text-[11px] text-slate-400">
-              <Mail className="h-3 w-3" />
-              {postedAgo || timeAgo}
             </div>
 
-            {confidence && (
-              <Badge
-                className={`text-[11px] px-2.5 py-1 rounded-full ${
-                  confidence.level === "very-strong"
-                    ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                    : confidence.level === "strong"
-                      ? "bg-blue-50 text-blue-700 border-blue-200"
-                      : "bg-amber-50 text-amber-700 border-amber-200"
-                }`}
-              >
-                <Sparkles className="h-3 w-3 mr-1" />
-                {confidence.label}
-              </Badge>
-            )}
-            {typeof matchPercent === "number" && (
-              <p className="text-[11px] font-medium text-slate-600">
-                Match: {Math.max(0, Math.min(100, Math.round(matchPercent)))}%
-              </p>
-            )}
-
-            {status === "applied" ? (
-              <AppliedBadge label={tA("card.applied")} />
-            ) : (
-              <Button
-                size="sm"
-                className="mt-1 h-8 px-3 text-[12px] rounded-lg bg-slate-900 text-white hover:bg-slate-900/90 w-full md:w-auto"
-                onClick={handleApply}
-                disabled={status === "applying"}
-              >
-                {status === "applying" ? tA("card.applying") : tA("card.apply")}
-              </Button>
+            {/* Line 3: wage + jobType pills */}
+            {(wage || jobType || displayTags.length > 0) && (
+              <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                {wage && (
+                  <span className="border border-slate-200 bg-white text-slate-700 text-[11px] font-medium px-2.5 py-0.5 rounded-md">
+                    {wage}
+                  </span>
+                )}
+                {jobType && (
+                  <span className="border border-slate-200 bg-white text-slate-700 text-[11px] font-medium px-2.5 py-0.5 rounded-md capitalize">
+                    {jobType}
+                  </span>
+                )}
+                {displayTags.map((tag) => (
+                  <Badge
+                    key={tag}
+                    variant="outline"
+                    className="bg-slate-50 text-[10px] text-slate-600 border-slate-200 px-2 py-0.5 rounded-md"
+                  >
+                    {tag}
+                  </Badge>
+                ))}
+              </div>
             )}
           </div>
         </div>
 
-        <div className="flex items-center justify-between pt-1">
+        {/* ── Bottom row: Why this job? (left) + Apply button (right) ── */}
+        <div className="flex justify-between items-center pt-2 border-t border-slate-100">
           <button
-            className="flex items-center gap-1 text-[12px] text-slate-600 hover:text-slate-900"
+            className="flex items-center gap-1 text-[12px] text-slate-500 hover:text-slate-800 transition-colors"
             onClick={() => setShowReasons((v) => !v)}
           >
-            <ChevronDown className={`h-3.5 w-3.5 transition ${showReasons ? "rotate-180" : ""}`} />
+            <ChevronDown
+              className={`h-3.5 w-3.5 transition-transform ${showReasons ? "rotate-180" : ""}`}
+            />
             {tA("listing.whyThisJob")}
           </button>
-          <span className="text-[11px] text-slate-500">{timeAgo}</span>
+
+          {status === "applied" ? (
+            <Badge className="bg-slate-900 text-white border-slate-900 text-[11px] px-3 py-1 rounded-lg">
+              {tA("card.applied")}
+            </Badge>
+          ) : (
+            <Button
+              size="sm"
+              className="h-7 px-3 text-[12px] rounded-lg bg-slate-900 text-white hover:bg-slate-800 border border-slate-900"
+              onClick={handleApply}
+              disabled={status === "applying"}
+            >
+              {status === "applying" ? tA("card.applying") : tA("card.apply")}
+            </Button>
+          )}
         </div>
 
+        {/* ── Expanded reasons ── */}
         {showReasons && reasons.length > 0 && (
           <div className="grid gap-1.5">
             {reasons.map((reason, idx) => (
@@ -211,5 +224,3 @@ export function AutoApplyCard({
     </Card>
   );
 }
-
-

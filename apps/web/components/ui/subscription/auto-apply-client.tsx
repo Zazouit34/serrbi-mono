@@ -13,6 +13,10 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@workspace/ui/components/popover";
+import {
+  Dialog,
+  DialogContent,
+} from "@workspace/ui/components/dialog";
 import { toast } from "sonner";
 import {
   Loader2,
@@ -26,6 +30,7 @@ import {
   X,
   ShieldCheck,
   Brain,
+  SlidersHorizontal,
 } from "lucide-react";
 
 import { jobCategoryValues } from "@workspace/ui/lib/job-enum";
@@ -53,19 +58,19 @@ function ToggleRow({
 }) {
   return (
     <div className="flex items-center justify-between p-5 bg-white border border-slate-200 rounded-[1.5rem] group hover:border-slate-300 transition-all shadow-sm">
-      <div className="flex items-center gap-3">
-        <div className="w-9 h-9 rounded-xl bg-slate-50 flex items-center justify-center shrink-0">
+      <div className="flex gap-3 items-center">
+        <div className="flex justify-center items-center w-9 h-9 rounded-xl bg-slate-50 shrink-0">
           <Icon className="w-4 h-4 text-slate-700" />
         </div>
         <div>
-          <p className="text-sm font-bold text-slate-900 leading-tight">{label}</p>
+          <p className="text-sm font-bold leading-tight text-slate-900">{label}</p>
           <p className="text-[11px] text-slate-400 mt-0.5 leading-tight">{hint}</p>
         </div>
       </div>
       <button
         onClick={() => onChange(!checked)}
         className={`w-11 h-6 rounded-full relative flex items-center transition-colors shrink-0 ml-4 ${
-          checked ? "bg-slate-900 justify-end" : "bg-slate-200 justify-start"
+          checked ? "justify-end bg-slate-900" : "justify-start bg-slate-200"
         } px-1`}
         aria-checked={checked}
         role="switch"
@@ -117,7 +122,7 @@ function ChipSection({
             <button
               key={v}
               onClick={() => onToggle(v)}
-              className="flex items-center gap-2 pl-4 pr-3 py-2 bg-slate-900 text-white rounded-2xl text-sm font-bold shadow-sm hover:bg-slate-800 transition-all"
+              className="flex gap-2 items-center py-2 pr-3 pl-4 text-sm font-bold text-white rounded-2xl shadow-sm transition-all bg-slate-900 hover:bg-slate-800"
             >
               {getLabel(v)}
               <X className="w-3 h-3 opacity-70" />
@@ -127,7 +132,7 @@ function ChipSection({
 
         {/* Overflow indicator */}
         {extraSelected.length > 0 && (
-          <span className="flex items-center px-3 py-2 bg-slate-100 text-slate-600 rounded-2xl text-xs font-bold border border-slate-200">
+          <span className="flex items-center px-3 py-2 text-xs font-bold rounded-2xl border bg-slate-100 text-slate-600 border-slate-200">
             +{extraSelected.length}
           </span>
         )}
@@ -136,18 +141,18 @@ function ChipSection({
         {(hiddenOptions.length > 0 || selected.length === 0) && (
           <Popover>
             <PopoverTrigger asChild>
-              <button className="w-10 h-10 flex items-center justify-center bg-slate-50 rounded-2xl border border-slate-200 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-all">
+              <button className="flex justify-center items-center w-10 h-10 rounded-2xl border transition-all bg-slate-50 border-slate-200 text-slate-400 hover:bg-slate-100 hover:text-slate-700">
                 <Plus className="w-4 h-4" />
               </button>
             </PopoverTrigger>
             <PopoverContent
-              className="w-72 p-4 rounded-2xl shadow-xl border border-slate-100"
+              className="p-4 w-72 rounded-2xl border shadow-xl border-slate-100"
               align="start"
             >
               <p className="text-[11px] font-extrabold uppercase tracking-widest text-slate-400 mb-3">
                 {label}
               </p>
-              <div className="flex flex-wrap gap-2 max-h-52 overflow-y-auto">
+              <div className="flex overflow-y-auto flex-wrap gap-2 max-h-52">
                 {allOptions.map((v) => {
                   const isSelected = selected.includes(v);
                   return (
@@ -206,6 +211,7 @@ export default function AutoApplySettingsPage() {
   const [prefsOpen, setPrefsOpen] = useState(false);
   const [strictMatch, setStrictMatch] = useState(false);
   const [smartOutreach, setSmartOutreach] = useState(true);
+  const [showMobilePrefs, setShowMobilePrefs] = useState(false);
 
   useEffect(() => {
     if (data) {
@@ -324,23 +330,23 @@ export default function AutoApplySettingsPage() {
   };
 
   return (
-    <div className="px-4 py-10 md:px-8 lg:py-14 space-y-10">
+    <div className="px-4 py-6 space-y-6 md:px-8 md:py-10 lg:py-14 lg:space-y-10">
       {/* ── Row 1: Title + subtitle ── */}
-      <div className="space-y-2">
-        <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-slate-900">
+      <div className="space-y-1.5">
+        <h1 className="text-2xl font-extrabold tracking-tight md:text-4xl lg:text-5xl text-slate-900">
           {tA("hero.title")}
         </h1>
-        <p className="text-slate-500 text-lg max-w-2xl font-medium">
+        <p className="max-w-2xl text-sm font-medium md:text-lg text-slate-500">
           {tA("hero.subtitle")}
         </p>
       </div>
 
-      {/* ── Row 2: 4 metric cards — always one row ── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* ── Row 2: 4 metric cards — horizontal scroll on mobile, grid on desktop ── */}
+      <div className="flex gap-3 overflow-x-auto pb-1 -mx-4 px-4 snap-x snap-mandatory scrollbar-none lg:mx-0 lg:px-0 lg:grid lg:grid-cols-4 lg:gap-4 lg:overflow-visible lg:pb-0">
         {/* Agent Status */}
-        <div className="bg-white p-5 rounded-[2rem] border border-slate-200 shadow-sm flex flex-col justify-between gap-4">
+        <div className="snap-start min-w-[200px] bg-white p-5 rounded-[2rem] border border-slate-200 shadow-sm flex flex-col justify-between gap-4 lg:min-w-0">
           <div className="space-y-2">
-            <div className="flex items-center gap-2">
+            <div className="flex gap-2 items-center">
               <span className="flex h-2.5 w-2.5 relative shrink-0">
                 <span
                   className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
@@ -357,7 +363,7 @@ export default function AutoApplySettingsPage() {
                 {enabled ? tA("hero.active") : tA("hero.paused")}
               </span>
             </div>
-            <p className="text-xs text-slate-400 font-medium leading-relaxed line-clamp-2">
+            <p className="text-xs font-medium leading-relaxed text-slate-400 line-clamp-2">
               {tA("hero.reassurance")}
             </p>
           </div>
@@ -365,21 +371,21 @@ export default function AutoApplySettingsPage() {
             onClick={() => handleToggle(!enabled)}
             disabled={mutation.isPending}
             variant="outline"
-            className="w-full rounded-2xl py-5 font-bold text-sm border-slate-200 hover:bg-slate-50"
+            className="py-5 w-full text-sm font-bold rounded-2xl border-slate-200 hover:bg-slate-50"
           >
             {mutation.isPending ? (
-              <Loader2 className="w-4 h-4 animate-spin mr-2" />
+              <Loader2 className="mr-2 w-4 h-4 animate-spin" />
             ) : enabled ? (
-              <Pause className="w-4 h-4 mr-2" />
+              <Pause className="mr-2 w-4 h-4" />
             ) : (
-              <Play className="w-4 h-4 mr-2" />
+              <Play className="mr-2 w-4 h-4" />
             )}
             {enabled ? tA("hero.pause") : tA("hero.resume")}
           </Button>
         </div>
 
         {/* Total Applied */}
-        <div className="bg-white p-5 rounded-[2rem] border border-slate-200 shadow-sm">
+        <div className="snap-start min-w-[160px] bg-white p-5 rounded-[2rem] border border-slate-200 shadow-sm lg:min-w-0">
           <div className="flex justify-between items-start">
             <span className="p-2.5 bg-slate-50 rounded-xl border border-slate-100 text-slate-700">
               <Send className="w-4 h-4" />
@@ -394,14 +400,14 @@ export default function AutoApplySettingsPage() {
             <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">
               {tA("stats.autoApplied")}
             </p>
-            <h3 className="text-3xl font-extrabold mt-1 text-slate-900 tracking-tight">
+            <h3 className="mt-1 text-3xl font-extrabold tracking-tight text-slate-900">
               {appliedCount}
             </h3>
           </div>
         </div>
 
         {/* Last Applied */}
-        <div className="bg-white p-5 rounded-[2rem] border border-slate-200 shadow-sm">
+        <div className="snap-start min-w-[160px] bg-white p-5 rounded-[2rem] border border-slate-200 shadow-sm lg:min-w-0">
           <div className="flex justify-between items-start">
             <span className="p-2.5 bg-slate-50 rounded-xl border border-slate-100 text-slate-700">
               <Clock className="w-4 h-4" />
@@ -414,7 +420,7 @@ export default function AutoApplySettingsPage() {
             <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">
               {tA("activity.lastAppliedLabel")}
             </p>
-            <h3 className="text-xl font-extrabold mt-1 text-slate-900 tracking-tight">
+            <h3 className="mt-1 text-xl font-extrabold tracking-tight text-slate-900">
               {lastApplied
                 ? lastApplied.toLocaleDateString(undefined, { month: "short", day: "numeric" })
                 : tA("activity.noApplications")}
@@ -423,7 +429,7 @@ export default function AutoApplySettingsPage() {
         </div>
 
         {/* Monthly Limit — dark */}
-        <div className="bg-slate-900 text-white p-5 rounded-[2rem] relative overflow-hidden flex flex-col justify-between">
+        <div className="snap-start min-w-[160px] bg-slate-900 text-white p-5 rounded-[2rem] relative overflow-hidden flex flex-col justify-between lg:min-w-0">
           <div className="relative z-10">
             <div className="flex justify-between items-center mb-5">
               <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/50">
@@ -448,34 +454,22 @@ export default function AutoApplySettingsPage() {
       </div>
 
       {/* ── Body: sidebar + listing (equal height) ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-stretch">
-        {/* ── Sidebar: Preferences ── */}
-        <aside className="lg:col-span-4 h-full">
-          {/* Mobile toggle */}
-          <div className="lg:hidden flex items-center justify-between mb-3">
-            <h2 className="text-lg font-bold text-slate-900">{tA("prefs.title")}</h2>
-            <Button variant="ghost" size="sm" onClick={() => setPrefsOpen((v) => !v)}>
-              {prefsOpen ? tA("prefs.hide") : tA("prefs.edit")}
-            </Button>
-          </div>
-
-          <section
-            className={`h-full bg-white p-8 rounded-[2rem] border border-slate-200 shadow-sm flex flex-col ${
-              prefsOpen ? "block" : "hidden lg:flex"
-            }`}
-          >
+      <div className="grid grid-cols-1 gap-10 items-stretch lg:grid-cols-12">
+        {/* ── Sidebar: Preferences — hidden on mobile, desktop only ── */}
+        <aside className="hidden lg:block lg:col-span-4 h-full">
+          <section className="h-full bg-white p-8 rounded-[2rem] border border-slate-200 shadow-sm flex flex-col">
             {/* Header */}
-            <div className="flex items-center justify-between pb-6 border-b border-slate-100 mb-8">
+            <div className="flex justify-between items-center pb-6 mb-8 border-b border-slate-100">
               <div className="space-y-0.5">
-                <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">
+                <h2 className="text-2xl font-extrabold tracking-tight text-slate-900">
                   {tA("prefs.title")}
                 </h2>
                 <p className="text-[11px] font-bold text-red-500 uppercase tracking-[0.2em]">
                   {tA("prefs.hint")}
                 </p>
               </div>
-              <div className="w-11 h-11 bg-slate-50 rounded-2xl flex items-center justify-center border border-slate-100 shrink-0">
-                <ShieldCheck className="w-5 h-5 text-slate-700" />
+              <div className="flex justify-center items-center w-11 h-11 rounded-2xl border bg-slate-50 border-slate-100 shrink-0">
+                <SlidersHorizontal className="w-5 h-5 text-slate-700" />
               </div>
             </div>
 
@@ -495,7 +489,7 @@ export default function AutoApplySettingsPage() {
                     <button
                       key={c}
                       onClick={() => setCategory(category === c ? null : (c as JobCategory))}
-                      className="flex items-center gap-2 pl-4 pr-3 py-2 bg-slate-900 text-white rounded-2xl text-sm font-bold shadow-sm hover:bg-slate-800 transition-all"
+                      className="flex gap-2 items-center py-2 pr-3 pl-4 text-sm font-bold text-white rounded-2xl shadow-sm transition-all bg-slate-900 hover:bg-slate-800"
                     >
                       {Icon && <Icon className="w-3.5 h-3.5" />}
                       {getCategoryLabel(c)}
@@ -525,30 +519,30 @@ export default function AutoApplySettingsPage() {
                   {keywords.slice(0, 3).map((tag) => (
                     <span
                       key={tag}
-                      className="flex items-center gap-2 pl-4 pr-3 py-2 bg-slate-50 border border-slate-200 text-slate-900 rounded-2xl text-xs font-extrabold"
+                      className="flex gap-2 items-center py-2 pr-3 pl-4 text-xs font-extrabold rounded-2xl border bg-slate-50 border-slate-200 text-slate-900"
                     >
                       {getKeywordLabel(tag)}
                       <button
                         onClick={() => setKeywords((prev) => prev.filter((k) => k !== tag))}
-                        className="text-slate-300 hover:text-red-500 transition-colors"
+                        className="transition-colors text-slate-300 hover:text-red-500"
                       >
                         <X className="w-3 h-3" />
                       </button>
                     </span>
                   ))}
                   {keywords.length > 3 && (
-                    <span className="flex items-center px-3 py-2 bg-slate-100 text-slate-600 rounded-2xl text-xs font-bold border border-slate-200">
+                    <span className="flex items-center px-3 py-2 text-xs font-bold rounded-2xl border bg-slate-100 text-slate-600 border-slate-200">
                       +{keywords.length - 3}
                     </span>
                   )}
                   <Popover>
                     <PopoverTrigger asChild>
-                      <button className="w-10 h-10 flex items-center justify-center bg-slate-50 rounded-2xl border border-slate-200 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-all">
+                      <button className="flex justify-center items-center w-10 h-10 rounded-2xl border transition-all bg-slate-50 border-slate-200 text-slate-400 hover:bg-slate-100 hover:text-slate-700">
                         <Plus className="w-4 h-4" />
                       </button>
                     </PopoverTrigger>
                     <PopoverContent
-                      className="w-80 p-4 rounded-2xl shadow-xl border border-slate-100"
+                      className="p-4 w-80 rounded-2xl border shadow-xl border-slate-100"
                       align="start"
                     >
                       <p className="text-[11px] font-extrabold uppercase tracking-widest text-slate-400 mb-3">
@@ -556,7 +550,7 @@ export default function AutoApplySettingsPage() {
                       </p>
                       {/* Suggestion chips */}
                       {suggestions.length > 0 && (
-                        <div className="flex flex-wrap gap-2 mb-3 max-h-40 overflow-y-auto">
+                        <div className="flex overflow-y-auto flex-wrap gap-2 mb-3 max-h-40">
                           {suggestions.map((tag) => {
                             const isSelected = keywords.includes(tag);
                             return (
@@ -627,14 +621,14 @@ export default function AutoApplySettingsPage() {
               </div>
 
               {/* Save — pinned to bottom */}
-              <div className="mt-auto pt-6">
+              <div className="pt-6 mt-auto">
                 <Button
                   onClick={savePrefs}
                   disabled={mutation.isPending}
                   className="w-full bg-slate-900 text-white rounded-2xl py-6 font-extrabold text-sm uppercase tracking-[0.15em] hover:bg-slate-800 transition-all active:scale-95 shadow-lg shadow-slate-900/10"
                 >
                   {mutation.isPending && (
-                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                    <Loader2 className="mr-2 w-4 h-4 animate-spin" />
                   )}
                   {tA("save")}
                 </Button>
@@ -644,7 +638,7 @@ export default function AutoApplySettingsPage() {
         </aside>
 
         {/* ── Main: job listing ── */}
-        <section className="lg:col-span-8 flex flex-col min-h-0">
+        <section className="flex flex-col min-h-0 lg:col-span-8">
           <AutoApplyListingGrid
             enabled={enabled}
             category={category}
@@ -655,6 +649,181 @@ export default function AutoApplySettingsPage() {
           />
         </section>
       </div>
+
+      {/* ── Mobile: floating preferences button ── */}
+      <button
+        onClick={() => setShowMobilePrefs(true)}
+        className="fixed bottom-6 right-6 z-40 flex items-center justify-center w-14 h-14 rounded-full shadow-2xl lg:hidden active:scale-95 transition-transform"
+        style={{ backgroundColor: "#ff040E" }}
+        aria-label={tA("prefs.title")}
+      >
+        <SlidersHorizontal className="w-6 h-6 text-white" />
+      </button>
+
+      {/* ── Mobile: preferences bottom-sheet modal ── */}
+      <Dialog open={showMobilePrefs} onOpenChange={setShowMobilePrefs}>
+        <DialogContent
+          showCloseButton={false}
+          className="lg:hidden bottom-0 left-0 right-0 top-auto max-w-full translate-x-0 translate-y-0 rounded-t-[2rem] rounded-b-none p-0 border-x-0 border-b-0 flex flex-col max-h-[90dvh] data-[state=open]:slide-in-from-bottom-full data-[state=closed]:slide-out-to-bottom-full data-[state=open]:zoom-in-100 data-[state=closed]:zoom-out-100"
+        >
+          {/* Header */}
+          <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-slate-100 shrink-0">
+            <div>
+              <h2 className="text-xl font-extrabold text-slate-900">{tA("prefs.title")}</h2>
+              <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-red-500 mt-0.5">
+                {tA("prefs.hint")}
+              </p>
+            </div>
+            <button
+              onClick={() => setShowMobilePrefs(false)}
+              className="flex items-center justify-center w-9 h-9 rounded-xl bg-slate-100 text-slate-500 hover:bg-slate-200 transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+            {/* Scrollable content */}
+            <div className="overflow-y-auto flex-1 px-6 py-5 space-y-6">
+              {/* Category */}
+              <ChipSection
+                label={tA("category.title")}
+                dotColor="red"
+                selected={category ? [category] : []}
+                allOptions={jobCategoryValues as unknown as string[]}
+                getLabel={getCategoryLabel}
+                onToggle={(c) => setCategory(category === c ? null : (c as JobCategory))}
+                renderChip={(c, _isSelected) => {
+                  const Icon = jobCategoryIcons[c as keyof typeof jobCategoryIcons];
+                  return (
+                    <button
+                      key={c}
+                      onClick={() => setCategory(category === c ? null : (c as JobCategory))}
+                      className="flex gap-2 items-center py-2 pr-3 pl-4 text-sm font-bold text-white rounded-2xl shadow-sm transition-all bg-slate-900 hover:bg-slate-800"
+                    >
+                      {Icon && <Icon className="w-3.5 h-3.5" />}
+                      {getCategoryLabel(c)}
+                      <X className="w-3 h-3 opacity-70" />
+                    </button>
+                  );
+                }}
+              />
+              <ChipSection
+                label={tA("roles.title")}
+                dotColor="slate"
+                selected={roles}
+                allOptions={roleSuggestions}
+                getLabel={getRoleLabel}
+                onToggle={toggleRole}
+              />
+              {/* Keywords */}
+              <div className="space-y-3">
+                <label className="text-[11px] font-extrabold uppercase tracking-[0.15em] text-slate-400 flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+                  {tA("keywords.title")}
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {keywords.slice(0, 3).map((tag) => (
+                    <span
+                      key={tag}
+                      className="flex gap-2 items-center py-2 pr-3 pl-4 text-xs font-extrabold rounded-2xl border bg-slate-50 border-slate-200 text-slate-900"
+                    >
+                      {getKeywordLabel(tag)}
+                      <button
+                        onClick={() => setKeywords((prev) => prev.filter((k) => k !== tag))}
+                        className="transition-colors text-slate-300 hover:text-red-500"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  ))}
+                  {keywords.length > 3 && (
+                    <span className="flex items-center px-3 py-2 text-xs font-bold rounded-2xl border bg-slate-100 text-slate-600 border-slate-200">
+                      +{keywords.length - 3}
+                    </span>
+                  )}
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button className="flex justify-center items-center w-10 h-10 rounded-2xl border transition-all bg-slate-50 border-slate-200 text-slate-400 hover:bg-slate-100 hover:text-slate-700">
+                        <Plus className="w-4 h-4" />
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent className="p-4 w-72 rounded-2xl border shadow-xl border-slate-100" align="start">
+                      <p className="text-[11px] font-extrabold uppercase tracking-widest text-slate-400 mb-3">
+                        {tA("keywords.title")}
+                      </p>
+                      {suggestions.length > 0 && (
+                        <div className="flex overflow-y-auto flex-wrap gap-2 mb-3 max-h-36">
+                          {suggestions.map((tag) => {
+                            const isSelected = keywords.includes(tag);
+                            return (
+                              <button
+                                key={tag}
+                                onClick={() => toggleKeyword(tag)}
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-medium transition-colors ${
+                                  isSelected
+                                    ? "border-slate-900 bg-slate-900 text-white"
+                                    : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                                }`}
+                              >
+                                {isSelected && <Check className="w-3 h-3" />}
+                                {getKeywordLabel(tag)}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                      <div className="flex gap-2 mt-1">
+                        <Input
+                          value={customTag}
+                          onChange={(e) => setCustomTag(e.target.value)}
+                          placeholder={tA("keywords.placeholder")}
+                          className="flex-1 text-sm rounded-xl"
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") { e.preventDefault(); addKeyword(customTag); }
+                          }}
+                        />
+                        <Button variant="secondary" size="sm" onClick={() => addKeyword(customTag)} className="rounded-xl shrink-0">
+                          {tA("prefs.addMore")}
+                        </Button>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              </div>
+              {/* Automation Logic toggles */}
+              <div className="space-y-3">
+                <label className="text-[11px] font-extrabold uppercase tracking-[0.15em] text-slate-400 flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-slate-300" />
+                  {tA("prefs.agentLogic")}
+                </label>
+                <ToggleRow
+                  icon={ShieldCheck}
+                  label={tA("hero.strictMatch")}
+                  hint={tA("hero.strictMatchHint")}
+                  checked={strictMatch}
+                  onChange={setStrictMatch}
+                />
+                <ToggleRow
+                  icon={Brain}
+                  label={tA("hero.smartOutreach")}
+                  hint={tA("hero.smartOutreachHint")}
+                  checked={smartOutreach}
+                  onChange={setSmartOutreach}
+                />
+              </div>
+            </div>
+          {/* Sticky save button */}
+          <div className="px-6 py-4 border-t border-slate-100 shrink-0">
+            <Button
+              onClick={async () => { await savePrefs(); setShowMobilePrefs(false); }}
+              disabled={mutation.isPending}
+              className="w-full bg-slate-900 text-white rounded-2xl py-5 font-extrabold text-sm uppercase tracking-[0.15em] hover:bg-slate-800 active:scale-95 transition-all"
+            >
+              {mutation.isPending && <Loader2 className="mr-2 w-4 h-4 animate-spin" />}
+              {tA("save")}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
