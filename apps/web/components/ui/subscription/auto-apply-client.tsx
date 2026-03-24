@@ -332,11 +332,11 @@ export default function AutoApplySettingsPage() {
   return (
     <div className="px-4 py-6 space-y-6 md:px-8 md:py-10 lg:py-14 lg:space-y-10">
       {/* ── Row 1: Title + subtitle ── */}
-      <div className="space-y-1.5">
-        <h1 className="text-2xl font-extrabold tracking-tight md:text-4xl lg:text-5xl text-slate-900">
+      <div className="space-y-1">
+        <h1 className="text-xl font-extrabold tracking-tight md:text-4xl lg:text-5xl text-slate-900">
           {tA("hero.title")}
         </h1>
-        <p className="max-w-2xl text-sm font-medium md:text-lg text-slate-500">
+        <p className="max-w-2xl text-xs font-medium md:text-lg text-slate-500">
           {tA("hero.subtitle")}
         </p>
       </div>
@@ -344,7 +344,7 @@ export default function AutoApplySettingsPage() {
       {/* ── Row 2: 4 metric cards — horizontal scroll on mobile, grid on desktop ── */}
       <div className="flex gap-3 overflow-x-auto pb-1 -mx-4 px-4 snap-x snap-mandatory scrollbar-none lg:mx-0 lg:px-0 lg:grid lg:grid-cols-4 lg:gap-4 lg:overflow-visible lg:pb-0">
         {/* Agent Status */}
-        <div className="snap-start min-w-[200px] bg-white p-5 rounded-[2rem] border border-slate-200 shadow-sm flex flex-col justify-between gap-4 lg:min-w-0">
+        <div className="snap-start min-w-[260px] bg-white p-5 rounded-[2rem] border border-slate-200 shadow-sm flex flex-col justify-between gap-4 lg:min-w-0">
           <div className="space-y-2">
             <div className="flex gap-2 items-center">
               <span className="flex h-2.5 w-2.5 relative shrink-0">
@@ -385,7 +385,7 @@ export default function AutoApplySettingsPage() {
         </div>
 
         {/* Total Applied */}
-        <div className="snap-start min-w-[160px] bg-white p-5 rounded-[2rem] border border-slate-200 shadow-sm lg:min-w-0">
+        <div className="snap-start min-w-[200px] bg-white p-5 rounded-[2rem] border border-slate-200 shadow-sm lg:min-w-0">
           <div className="flex justify-between items-start">
             <span className="p-2.5 bg-slate-50 rounded-xl border border-slate-100 text-slate-700">
               <Send className="w-4 h-4" />
@@ -407,7 +407,7 @@ export default function AutoApplySettingsPage() {
         </div>
 
         {/* Last Applied */}
-        <div className="snap-start min-w-[160px] bg-white p-5 rounded-[2rem] border border-slate-200 shadow-sm lg:min-w-0">
+        <div className="snap-start min-w-[200px] bg-white p-5 rounded-[2rem] border border-slate-200 shadow-sm lg:min-w-0">
           <div className="flex justify-between items-start">
             <span className="p-2.5 bg-slate-50 rounded-xl border border-slate-100 text-slate-700">
               <Clock className="w-4 h-4" />
@@ -429,7 +429,7 @@ export default function AutoApplySettingsPage() {
         </div>
 
         {/* Monthly Limit — dark */}
-        <div className="snap-start min-w-[160px] bg-slate-900 text-white p-5 rounded-[2rem] relative overflow-hidden flex flex-col justify-between lg:min-w-0">
+        <div className="snap-start min-w-[200px] bg-slate-900 text-white p-5 rounded-[2rem] relative overflow-hidden flex flex-col justify-between lg:min-w-0">
           <div className="relative z-10">
             <div className="flex justify-between items-center mb-5">
               <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/50">
@@ -646,19 +646,10 @@ export default function AutoApplySettingsPage() {
             roles={roles}
             strictMatch={strictMatch}
             smartOutreach={smartOutreach}
+            onOpenPrefs={() => setShowMobilePrefs(true)}
           />
         </section>
       </div>
-
-      {/* ── Mobile: floating preferences button ── */}
-      <button
-        onClick={() => setShowMobilePrefs(true)}
-        className="fixed bottom-6 right-6 z-40 flex items-center justify-center w-14 h-14 rounded-full shadow-2xl lg:hidden active:scale-95 transition-transform"
-        style={{ backgroundColor: "#ff040E" }}
-        aria-label={tA("prefs.title")}
-      >
-        <SlidersHorizontal className="w-6 h-6 text-white" />
-      </button>
 
       {/* ── Mobile: preferences bottom-sheet modal ── */}
       <Dialog open={showMobilePrefs} onOpenChange={setShowMobilePrefs}>

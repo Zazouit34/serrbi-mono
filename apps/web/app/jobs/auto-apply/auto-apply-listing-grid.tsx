@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Zap, ChevronLeft, ChevronRight } from "lucide-react";
+import { Zap, ChevronLeft, ChevronRight, SlidersHorizontal } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { trpc } from "@/app/_trpc/client";
 import { AutoApplyCard } from "@/components/ui/form/job/auto-apply-card";
@@ -18,6 +18,7 @@ type AutoApplyListingGridProps = {
   roles: string[];
   strictMatch: boolean;
   smartOutreach: boolean;
+  onOpenPrefs?: () => void;
 };
 
 type MatchReason = {
@@ -68,6 +69,7 @@ export function AutoApplyListingGrid({
   roles,
   strictMatch,
   smartOutreach,
+  onOpenPrefs,
 }: AutoApplyListingGridProps) {
   const [page, setPage] = useState(1);
   const tA = useTranslations("AutoApply");
@@ -173,16 +175,27 @@ export function AutoApplyListingGrid({
       {/* ── Section header ── */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 px-1 mb-8">
         <div>
-          <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">
+          <h2 className="text-lg sm:text-3xl font-extrabold text-slate-900 tracking-tight">
             {tA("listing.curatedTitle")}
           </h2>
-          <p className="text-slate-500 mt-1.5 font-medium opacity-80">
+          <p className="text-xs sm:text-base text-slate-500 mt-1 sm:mt-1.5 font-medium opacity-80">
             {totalQueue > 0
               ? tA("listing.curatedSubtitle", { total: totalQueue })
               : tA("listing.subtitle")}
           </p>
         </div>
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex items-center gap-2 shrink-0">
+          {/* Preferences button — mobile only, next to bulk-apply */}
+          {onOpenPrefs && (
+            <button
+              onClick={onOpenPrefs}
+              className="lg:hidden flex items-center justify-center w-9 h-9 rounded-xl active:scale-95 transition-transform shrink-0"
+              style={{ backgroundColor: "#ff040E" }}
+              aria-label="Preferences"
+            >
+              <SlidersHorizontal className="w-4 h-4 text-white" />
+            </button>
+          )}
           <Button
             size="sm"
             disabled={
