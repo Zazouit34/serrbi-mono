@@ -344,7 +344,7 @@ export default function AutoApplySettingsPage() {
       {/* ── Row 2: 4 metric cards — horizontal scroll on mobile, grid on desktop ── */}
       <div className="flex gap-3 overflow-x-auto pb-1 -mx-4 px-4 snap-x snap-mandatory scrollbar-none lg:mx-0 lg:px-0 lg:grid lg:grid-cols-4 lg:gap-4 lg:overflow-visible lg:pb-0">
         {/* Agent Status */}
-        <div className="snap-start min-w-[260px] bg-white p-5 rounded-[2rem] border border-slate-200 shadow-sm flex flex-col justify-between gap-4 lg:min-w-0">
+        <div className="snap-start min-w-[min(300px,82vw)] bg-white p-5 rounded-[2rem] border border-slate-200 shadow-sm flex flex-col justify-between gap-4 lg:min-w-0">
           <div className="space-y-2">
             <div className="flex gap-2 items-center">
               <span className="flex h-2.5 w-2.5 relative shrink-0">
@@ -359,11 +359,11 @@ export default function AutoApplySettingsPage() {
                   }`}
                 />
               </span>
-              <span className="text-sm font-bold text-slate-900">
+              <span className="text-xs sm:text-sm font-bold text-slate-900">
                 {enabled ? tA("hero.active") : tA("hero.paused")}
               </span>
             </div>
-            <p className="text-xs font-medium leading-relaxed text-slate-400 line-clamp-2">
+            <p className="text-[11px] sm:text-xs font-medium leading-relaxed text-slate-400 line-clamp-2">
               {tA("hero.reassurance")}
             </p>
           </div>
@@ -385,7 +385,7 @@ export default function AutoApplySettingsPage() {
         </div>
 
         {/* Total Applied */}
-        <div className="snap-start min-w-[200px] bg-white p-5 rounded-[2rem] border border-slate-200 shadow-sm lg:min-w-0">
+        <div className="snap-start min-w-[min(240px,72vw)] bg-white p-5 rounded-[2rem] border border-slate-200 shadow-sm lg:min-w-0">
           <div className="flex justify-between items-start">
             <span className="p-2.5 bg-slate-50 rounded-xl border border-slate-100 text-slate-700">
               <Send className="w-4 h-4" />
@@ -397,17 +397,17 @@ export default function AutoApplySettingsPage() {
             )}
           </div>
           <div className="mt-5">
-            <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">
+            <p className="text-slate-400 text-[9px] sm:text-[10px] font-bold uppercase tracking-widest">
               {tA("stats.autoApplied")}
             </p>
-            <h3 className="mt-1 text-3xl font-extrabold tracking-tight text-slate-900">
+            <h3 className="mt-1 text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
               {appliedCount}
             </h3>
           </div>
         </div>
 
         {/* Last Applied */}
-        <div className="snap-start min-w-[200px] bg-white p-5 rounded-[2rem] border border-slate-200 shadow-sm lg:min-w-0">
+        <div className="snap-start min-w-[min(240px,72vw)] bg-white p-5 rounded-[2rem] border border-slate-200 shadow-sm lg:min-w-0">
           <div className="flex justify-between items-start">
             <span className="p-2.5 bg-slate-50 rounded-xl border border-slate-100 text-slate-700">
               <Clock className="w-4 h-4" />
@@ -417,10 +417,10 @@ export default function AutoApplySettingsPage() {
             </span>
           </div>
           <div className="mt-5">
-            <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">
+            <p className="text-slate-400 text-[9px] sm:text-[10px] font-bold uppercase tracking-widest">
               {tA("activity.lastAppliedLabel")}
             </p>
-            <h3 className="mt-1 text-xl font-extrabold tracking-tight text-slate-900">
+            <h3 className="mt-1 text-base sm:text-xl font-extrabold tracking-tight text-slate-900">
               {lastApplied
                 ? lastApplied.toLocaleDateString(undefined, { month: "short", day: "numeric" })
                 : tA("activity.noApplications")}
@@ -429,20 +429,20 @@ export default function AutoApplySettingsPage() {
         </div>
 
         {/* Monthly Limit — dark */}
-        <div className="snap-start min-w-[200px] bg-slate-900 text-white p-5 rounded-[2rem] relative overflow-hidden flex flex-col justify-between lg:min-w-0">
+        <div className="snap-start min-w-[min(240px,72vw)] bg-slate-900 text-white p-5 rounded-[2rem] relative overflow-hidden flex flex-col justify-between lg:min-w-0">
           <div className="relative z-10">
             <div className="flex justify-between items-center mb-5">
-              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/50">
+              <p className="text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.2em] text-white/50">
                 {cap != null
                   ? tA("stats.progress", { used: appliedCount, cap })
                   : tAll("Billing.unlimited")}
               </p>
               <Sparkles className="w-4 h-4 text-white/30" />
             </div>
-            <h3 className="text-3xl font-extrabold tracking-tight text-white">
+            <h3 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
               {appliedCount}
               {cap != null && (
-                <span className="text-base font-medium text-white/30 ml-1.5">/ {cap}</span>
+                <span className="text-sm sm:text-base font-medium text-white/30 ml-1.5">/ {cap}</span>
               )}
             </h3>
             <Progress

@@ -116,7 +116,7 @@ export function AutoApplyCard({
 
           {/* Info block */}
           <div className="flex-1 min-w-0">
-            {/* Line 1: title + confidence badge */}
+            {/* Line 1: title + confidence badge (with match % inside) */}
             <div className="flex gap-2 justify-between items-start">
               <p className="flex-1 min-w-0 text-sm font-semibold text-slate-900 line-clamp-1">
                 {job.title}
@@ -128,12 +128,17 @@ export function AutoApplyCard({
                   }`}
                 >
                   <Sparkles className="h-2.5 w-2.5 mr-1" />
+                  {typeof matchPercent === "number" && (
+                    <span className="font-black mr-1">
+                      {Math.max(0, Math.min(100, Math.round(matchPercent)))}%
+                    </span>
+                  )}
                   {confidence.label}
                 </Badge>
               )}
             </div>
 
-            {/* Line 2: company · location + timeAgo + matchPercent */}
+            {/* Line 2: company · location + timeAgo */}
             <div className="flex items-center justify-between gap-2 mt-0.5">
               {companyLocation ? (
                 <p className="text-[12px] text-slate-500 line-clamp-1 flex-1 min-w-0">
@@ -142,14 +147,7 @@ export function AutoApplyCard({
               ) : (
                 <span />
               )}
-              <div className="flex gap-2 items-center shrink-0">
-                <span className="text-[11px] text-slate-400">{postedAgo || timeAgo}</span>
-                {typeof matchPercent === "number" && (
-                  <span className="text-[11px] font-semibold text-slate-500">
-                    {Math.max(0, Math.min(100, Math.round(matchPercent)))}%
-                  </span>
-                )}
-              </div>
+              <span className="text-[11px] text-slate-400 shrink-0">{postedAgo || timeAgo}</span>
             </div>
 
             {/* Line 3: wage + jobType pills */}

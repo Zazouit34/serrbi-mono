@@ -48,7 +48,7 @@ function PageBtn({
     <button
       onClick={onClick}
       disabled={disabled}
-      className={`w-11 h-11 flex items-center justify-center rounded-2xl text-sm font-bold transition-all border
+      className={`w-9 h-9 sm:w-11 sm:h-11 flex items-center justify-center rounded-xl sm:rounded-2xl text-xs sm:text-sm font-bold transition-all border
         ${
           active
             ? "bg-slate-900 text-white border-slate-900 shadow-lg shadow-slate-900/10"
@@ -254,7 +254,7 @@ export function AutoApplyListingGrid({
             ))}
           </div>
         ) : !data || data.items.length === 0 ? (
-          <div className="py-14 text-sm text-center rounded-[2rem] border border-dashed border-slate-200 bg-slate-50/60 text-slate-500">
+          <div className="py-14 text-xs sm:text-sm text-center rounded-[2rem] border border-dashed border-slate-200 bg-slate-50/60 text-slate-500">
             {tA("listing.noMatching")}
           </div>
         ) : (
@@ -287,25 +287,25 @@ export function AutoApplyListingGrid({
 
       {/* ── Pagination ── */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-between pt-8 mt-auto px-1">
-          {/* Left: range info */}
-          <p className="text-sm font-bold text-slate-400">
+        <div className="flex flex-col items-center gap-3 pt-8 mt-auto px-1 sm:flex-row sm:justify-between">
+          {/* Range info — centred on mobile, left on desktop */}
+          <p className="text-[11px] sm:text-sm font-bold text-slate-400 text-center sm:text-left">
             {tA("listing.pageRange", { from: rangeFrom, to: rangeTo, total: totalQueue })}
           </p>
 
-          {/* Right: page buttons */}
-          <div className="flex items-center gap-1.5">
+          {/* Page buttons — always centred */}
+          <div className="flex items-center gap-1">
             <PageBtn
               disabled={page <= 1}
               onClick={() => page > 1 && setPage(page - 1)}
             >
-              <ChevronLeft className="w-4 h-4" />
+              <ChevronLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </PageBtn>
 
             {pageNumbers.map((p, idx) =>
               p === "..." ? (
-                <span key={`ellipsis-${idx}`} className="px-2 text-slate-300 font-bold text-sm">
-                  ...
+                <span key={`ellipsis-${idx}`} className="px-1.5 text-slate-300 font-bold text-xs sm:text-sm">
+                  …
                 </span>
               ) : (
                 <PageBtn
@@ -322,7 +322,7 @@ export function AutoApplyListingGrid({
               disabled={page >= totalPages}
               onClick={() => page < totalPages && setPage(page + 1)}
             >
-              <ChevronRight className="w-4 h-4" />
+              <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </PageBtn>
           </div>
         </div>
