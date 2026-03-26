@@ -32,7 +32,7 @@ export type ChatMessage = {
   role: "user" | "assistant";
   content?: string;
   thinking?: boolean;
-  kind?: "text" | "results" | "suggestions";
+  kind?: "text" | "results" | "suggestions" | "resume-insight";
   results?: {
     key: string;
     query: string;
@@ -47,6 +47,13 @@ export type ChatMessage = {
     title: string;
     description: string;
     buttonLabel: string;
+  };
+  resumeInsight?: {
+    score: number;
+    skillGaps: string[];
+    improvements: string[];
+    suggestedRoles?: string[];
+    reengagement?: boolean;
   };
 };
 
@@ -337,6 +344,16 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange, session
   const chatInputRef = useRef<HTMLTextAreaElement | null>(null);
   const agentSessionIdRef = useRef<string | null>(null);
   const dbSessionIdRef = useRef<string | null>(propSessionId ?? null);
+  // STATE 2 — track job searches for smart CTA timing
+  const jobSearchCountRef = useRef(0);
+  // Store the last resume insight for re-engagement (STATE 7)
+  const resumeInsightDataRef = useRef<{
+    score: number;
+    skillGaps: string[];
+    improvements: string[];
+    suggestedRoles?: string[];
+  } | null>(null);
+  const reengagementShownRef = useRef(false);
   const updateResumeUrl = trpc.auth.updateResume.useMutation();
   const updateResumeEmbedding = trpc.auth.updateResumeEmbedding.useMutation();
   const userDataQuery = trpc.auth.userData.useQuery(undefined, {
@@ -425,6 +442,27 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange, session
       setHasResumeAttached(false);
     }
   }, [isLoggedIn, userDataQuery.data, resumeAttachStatusText, resumeAttachProgress]);
+
+  // STATE 7 — Re-engagement: after resume is attached, remind user to improve it after 60s
+  useEffect(() => {
+    if (!hasResumeAttached || reengagementShownRef.current) return;
+    const timer = setTimeout(() => {
+      if (reengagementShownRef.current) return;
+      const insight = resumeInsightDataRef.current;
+      if (!insight) return;
+      reengagementShownRef.current = true;
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: nextMessageIdRef.current++,
+          role: "assistant" as const,
+          kind: "resume-insight" as const,
+          resumeInsight: { ...insight, reengagement: true },
+        },
+      ]);
+    }, 60_000);
+    return () => clearTimeout(timer);
+  }, [hasResumeAttached]);
 
   const uploadFileWithProgress = async (
     url: string,
@@ -531,17 +569,39 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange, session
 
       await updateResumeUrl.mutateAsync({ resumeUrl: uploadData.publicUrl });
 
-      const analyzeText =
+      // STATE 3 — Resume received status
+      const receiveText =
         locale === "fr"
-          ? "Analyse du CV..."
+          ? "CV reçu\nAnalyse de votre expérience..."
           : locale === "ar"
-            ? "جاري تحليل السيرة الذاتية..."
-            : "Analyzing resume...";
-      setResumeAttachStatusText(analyzeText);
-      setStatusBubble(analyzeText, true);
+            ? "تم استلام السيرة الذاتية\nجاري تحليل خبرتك..."
+            : "Resume received\nAnalyzing your experience...";
+      setResumeAttachStatusText(receiveText);
+      setStatusBubble(receiveText, true);
+
       const resumeText = await parsePDF(file);
       const embeddingResult = await updateResumeEmbedding.mutateAsync({ resumeText });
       console.log("[chat-ui] resume embedding debug", embeddingResult?.debug ?? null);
+
+      // STATE 4 — Call the same LLM insight API used by the resume-analyzer page
+      let insightData: {
+        overallScore: number;
+        skillGaps: string[];
+        improvements: string[];
+        suggestedRoles?: string[];
+      } | null = null;
+      try {
+        const insightRes = await fetch("/api/chat/resume-insight", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text: resumeText, locale }),
+        });
+        if (insightRes.ok) {
+          insightData = await insightRes.json();
+        }
+      } catch {
+        // Non-fatal — insight is optional; upload already succeeded
+      }
 
       const doneText =
         locale === "fr"
@@ -553,6 +613,28 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange, session
       setStatusBubble(doneText, false);
       setResumeAttachProgress(null);
       setHasResumeAttached(true);
+
+      // Inject ChatResumeInsight collapsed card (STATE 4)
+      if (insightData && typeof insightData.overallScore === "number") {
+        const insight = {
+          score: insightData.overallScore,
+          skillGaps: insightData.skillGaps ?? [],
+          improvements: insightData.improvements ?? [],
+          suggestedRoles: insightData.suggestedRoles ?? [],
+        };
+        resumeInsightDataRef.current = insight;
+        reengagementShownRef.current = false;
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: nextMessageIdRef.current++,
+            role: "assistant" as const,
+            kind: "resume-insight" as const,
+            resumeInsight: insight,
+          },
+        ]);
+      }
+
       await userDataQuery.refetch();
     } catch (error) {
       console.error("Resume attach flow failed", error);
@@ -740,6 +822,33 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange, session
     }
     const json = (await res.json()) as ResultsSummaryResponse;
     return typeof json?.summary === "string" ? json.summary.trim() : "";
+  };
+
+  // STATE 9 — Improve Resume action loop
+  const handleImproveResume = () => {
+    const content =
+      locale === "fr"
+        ? "Je peux améliorer votre CV pour ce rôle. Que voulez-vous optimiser ?"
+        : locale === "ar"
+          ? "يمكنني تحسين سيرتك الذاتية لهذا الدور. ماذا تريد تحسينه؟"
+          : "I can improve your resume for this role. What do you want to optimize?";
+    const relatedPrompts =
+      locale === "fr"
+        ? ["Compétences", "Expérience", "Réécriture complète"]
+        : locale === "ar"
+          ? ["المهارات", "الخبرة", "إعادة كتابة كاملة"]
+          : ["Skills", "Experience", "Full Rewrite"];
+    setChatExpanded(true);
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: nextMessageIdRef.current++,
+        role: "assistant" as const,
+        kind: "suggestions" as const,
+        content,
+        relatedPrompts,
+      },
+    ]);
   };
 
   const handlePromptSelection = (prompt: string, upgradeUrl?: string) => {
@@ -969,15 +1078,24 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange, session
     if (topSearchLoading || topSearchItems.length === 0) return;
 
     let cancelled = false;
-    void (async () => {
+      void (async () => {
       try {
-        const summary = await callResultsSummary({
+        const rawSummary = await callResultsSummary({
           locale,
           intent: activeTab,
           query: submittedQuery,
           items: topSearchItems,
         });
-        if (cancelled || !summary) return;
+        if (cancelled || !rawSummary) return;
+        // STATE 6 — prefix summary with "Based on your resume" when resume is attached and searching jobs
+        const summary =
+          hasResumeAttached && activeTab === "jobs"
+            ? (locale === "fr"
+                ? "📈 Basé sur votre CV\n\n"
+                : locale === "ar"
+                  ? "📈 بناءً على سيرتك الذاتية\n\n"
+                  : "📈 Based on your resume\n\n") + rawSummary
+            : rawSummary;
         setMessages((prev) =>
           prev.map((msg) => {
             if (!msg.results) return msg;
@@ -1013,7 +1131,7 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange, session
     return () => {
       cancelled = true;
     };
-  }, [hasSearched, submittedQuery, submittedResultsKey, topSearchLoading, topSearchItems, locale, activeTab]);
+  }, [hasSearched, submittedQuery, submittedResultsKey, topSearchLoading, topSearchItems, locale, activeTab, hasResumeAttached]);
 
   const handleSearch = async (overrideQuery?: string) => {
     const effectiveQuery = (overrideQuery ?? chatInput).trim();
@@ -1093,6 +1211,12 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange, session
       }
 
       const tab: TabType = pinnedIntent ?? agent.intent;
+
+      // STATE 2 — track job searches for smart CTA timing
+      if (tab === "jobs") {
+        jobSearchCountRef.current += 1;
+      }
+
       const q = (agent.searchQuery || "").trim();
       if (!q) {
         // If the agent couldn't produce a search query, treat it like chat.
@@ -1305,8 +1429,9 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange, session
             }}
             onInputChange={setChatInput}
             onSubmit={() => {
-                        void handleSearch();
+              void handleSearch();
             }}
+            onImproveResume={handleImproveResume}
             onPinnedIntentClear={() => {
               setPinnedIntent(null);
               setSelectedCategory(undefined);

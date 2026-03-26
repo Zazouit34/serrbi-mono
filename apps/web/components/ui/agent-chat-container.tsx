@@ -3,8 +3,9 @@
 import { useRef, type ChangeEvent, type RefObject } from "react";
 import Image from "next/image";
 
-import { AlertTriangle, FileCheck2, Search, X } from "lucide-react";
+import { FileCheck2, Search, X } from "lucide-react";
 import { FiPaperclip } from "react-icons/fi";
+import { ChatResumeInsight } from "@/components/ui/chat-resume-insight";
 import { Progress } from "@workspace/ui/components/progress";
 import { ChatContainerRoot, ChatContainerContent } from "@/components/ui/chat-container";
 import { Message, MessageAvatar } from "@/components/ui/message";
@@ -22,7 +23,7 @@ type ChatMessage = {
   role: "user" | "assistant";
   content?: string;
   thinking?: boolean;
-  kind?: "text" | "results" | "suggestions";
+  kind?: "text" | "results" | "suggestions" | "resume-insight";
   results?: {
     key: string;
     query: string;
@@ -37,6 +38,13 @@ type ChatMessage = {
     title: string;
     description: string;
     buttonLabel: string;
+  };
+  resumeInsight?: {
+    score: number;
+    skillGaps: string[];
+    improvements: string[];
+    suggestedRoles?: string[];
+    reengagement?: boolean;
   };
 };
 
@@ -71,6 +79,7 @@ type AgentChatContainerProps = {
   onPinnedIntentClear: () => void;
   onSuggestionSelect: (prompt: string, upgradeUrl?: string) => void;
   onResumeAttach: (file: File) => void;
+  onImproveResume?: () => void;
   resumeAttachLabel?: string;
   resumeAttachStatusText?: string;
   resumeAttachProgress?: number | null;
@@ -132,6 +141,7 @@ export function AgentChatContainer({
   onPinnedIntentClear,
   onSuggestionSelect,
   onResumeAttach,
+  onImproveResume,
   resumeAttachLabel,
   resumeAttachStatusText,
   resumeAttachProgress,
@@ -140,7 +150,8 @@ export function AgentChatContainer({
   resumeAttachedLabel,
 }: AgentChatContainerProps) {
   const resumeInputRef = useRef<HTMLInputElement | null>(null);
-  const showCvBadge = Boolean(hasResumeAttached) && (!pinnedIntent || pinnedIntent === "jobs");
+  // Always show CV badge in jobs context: red when no resume, emerald when attached
+  const showCvBadge = !pinnedIntent || pinnedIntent === "jobs";
   const onFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -174,7 +185,18 @@ export function AgentChatContainer({
                     />
                   ) : null}
                   {isAssistant ? (
-                    message.kind === "suggestions" ? (
+                    message.kind === "resume-insight" && message.resumeInsight ? (
+                      <div className="w-full min-w-0 text-left">
+                        <ChatResumeInsight
+                          score={message.resumeInsight.score}
+                          skillGaps={message.resumeInsight.skillGaps}
+                          improvements={message.resumeInsight.improvements}
+                          suggestedRoles={message.resumeInsight.suggestedRoles}
+                          reengagement={message.resumeInsight.reengagement}
+                          onImproveResume={onImproveResume}
+                        />
+                      </div>
+                    ) : message.kind === "suggestions" ? (
                       <div className="w-full min-w-0 text-left">
                         <SuggestionList
                           prompts={message.relatedPrompts ?? []}
@@ -237,24 +259,14 @@ export function AgentChatContainer({
                         )}
 
                         {!message.results.isLoading && message.resumeUploadCta ? (
-                          <div className="mt-4 rounded-xl border border-slate-300 bg-slate-50 p-4">
-                            <div className="flex items-start gap-3">
-                              <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-slate-600" />
-                              <div className="min-w-0 flex-1">
-                                <p className="text-sm font-extrabold tracking-tight text-slate-900">
-                                  {message.resumeUploadCta.title}
-                                </p>
-                                <p className="mt-1 text-sm leading-6 text-slate-700">
-                                  {message.resumeUploadCta.description}
-                                </p>
-                                <a
-                                  onClick={openResumePicker}
-                                  className="mt-3 inline-block cursor-pointer text-sm font-bold text-slate-900 underline transition hover:text-slate-700"
-                                >
-                                  {message.resumeUploadCta.buttonLabel}
-                                </a>
-                              </div>
-                            </div>
+                          <div className="mt-2 flex items-center gap-1.5 text-[11px] text-slate-500">
+                            <span>✨ {message.resumeUploadCta.title}</span>
+                            <button
+                              onClick={openResumePicker}
+                              className="font-semibold text-slate-700 underline underline-offset-2 hover:text-slate-900 transition-colors"
+                            >
+                              {message.resumeUploadCta.buttonLabel}
+                            </button>
                           </div>
                         ) : null}
                       </div>
@@ -334,11 +346,22 @@ export function AgentChatContainer({
                 <FiPaperclip className="h-4 w-4" />
               </button>
               {showCvBadge ? (
-                <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 md:px-2.5 md:py-1 md:text-xs">
-                  <FileCheck2 className="h-3 w-3 md:h-3.5 md:w-3.5" />
-                  <span className="md:hidden">{labels.cvShort || "CV"}</span>
-                  <span className="hidden md:inline">{resumeAttachedLabel || "CV"}</span>
-                </span>
+                hasResumeAttached ? (
+                  <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 md:px-2.5 md:py-1 md:text-xs">
+                    <FileCheck2 className="h-3 w-3 md:h-3.5 md:w-3.5" />
+                    <span className="md:hidden">{labels.cvShort || "CV"}</span>
+                    <span className="hidden md:inline">{resumeAttachedLabel || "CV attached"}</span>
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={openResumePicker}
+                    className="inline-flex items-center gap-1 rounded-full border border-red-200 bg-red-50 px-2 py-0.5 text-[11px] font-semibold text-red-600 hover:bg-red-100 transition-colors md:px-2.5 md:py-1 md:text-xs"
+                  >
+                    <FileCheck2 className="h-3 w-3 md:h-3.5 md:w-3.5" />
+                    <span>No CV</span>
+                  </button>
+                )
               ) : null}
               {pinnedIntent ? (
                 <span

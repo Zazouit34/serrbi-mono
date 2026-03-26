@@ -67,7 +67,7 @@ export function UserMenu() {
               {t("autoApply")}
             </Link>
           </DropdownMenuItem>
-          <DropdownMenuItem asChild>
+          {/* <DropdownMenuItem asChild>
             <Link
               href="/resume-analyzer"
               className="flex items-center w-full cursor-pointer"
@@ -75,8 +75,8 @@ export function UserMenu() {
               <FileText className="mr-2 size-4" />
               {t("resumeAnalyzer")}
             </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
+          </DropdownMenuItem> */}
+          {/* <DropdownMenuItem asChild>
             <Link
               href="/career-switch"
               className="flex items-center w-full cursor-pointer"
@@ -84,7 +84,7 @@ export function UserMenu() {
               <TrendingUp className="mr-2 size-4" />
               {t("careerSwitch")}
             </Link>
-          </DropdownMenuItem>
+          </DropdownMenuItem> */}
           <DropdownMenuItem asChild>
             <Link
               href="/favorites"
