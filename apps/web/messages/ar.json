@@ -412,6 +412,35 @@
       "confirmChoiceTask": "ممتاز! لقد اخترت **مهام**. أخبرني عن المهمة التي تحتاج المساعدة فيها."
     }
   },
+  "ChatResumeInsight": {
+    "cvBadge": "سيرة",
+    "resumeScore": "تقييم السيرة",
+    "scoreLabels": {
+      "excellent": "ممتاز",
+      "good": "جيد",
+      "average": "متوسط",
+      "needsWork": "يحتاج تحسيناً"
+    },
+    "scoreSeparator": "—",
+    "outOfHundred": "/ 100",
+    "missingPrefix": "ناقص:",
+    "viewInsights": "عرض التفاصيل",
+    "keyIssues": "أهم النقاط",
+    "suggestions": "اقتراحات",
+    "suggestedRoles": "أدوار مقترحة",
+    "improveResume": "تحسين السيرة",
+    "moreDetails": "المزيد من التفاصيل",
+    "hideDetails": "إخفاء التفاصيل",
+    "breakdown": {
+      "skillsMatch": "تطابق المهارات",
+      "experience": "الخبرة",
+      "formatting": "التنسيق",
+      "atsCompatibility": "توافق ATS"
+    },
+    "reengagementTitle": "يمكن تحسين سيرتك الذاتية لمطابقة أفضل",
+    "reengagementPotential": "+12% زيادة محتملة في النقاط",
+    "improveNow": "حسّن الآن"
+  },
   "Routes": {
     "resumeAnalyzer": "محلل السيرة الذاتية",
     "autoApply": "التقديم الآلي بالذكاء الاصطناعي",

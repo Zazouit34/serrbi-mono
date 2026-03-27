@@ -385,6 +385,35 @@
       "confirmChoiceTask": "Excellent! You chose **tasks**. Tell me what task you need help with."
     }
   },
+  "ChatResumeInsight": {
+    "cvBadge": "CV",
+    "resumeScore": "Resume Score",
+    "scoreLabels": {
+      "excellent": "Excellent",
+      "good": "Good",
+      "average": "Average",
+      "needsWork": "Needs work"
+    },
+    "scoreSeparator": "—",
+    "outOfHundred": "/ 100",
+    "missingPrefix": "Missing:",
+    "viewInsights": "View insights",
+    "keyIssues": "Key Issues",
+    "suggestions": "Suggestions",
+    "suggestedRoles": "Suggested Roles",
+    "improveResume": "Improve Resume",
+    "moreDetails": "More details",
+    "hideDetails": "Hide details",
+    "breakdown": {
+      "skillsMatch": "Skills Match",
+      "experience": "Experience",
+      "formatting": "Formatting",
+      "atsCompatibility": "ATS Compatibility"
+    },
+    "reengagementTitle": "Your resume could be improved for better matches",
+    "reengagementPotential": "+12% potential score increase",
+    "improveNow": "Improve now"
+  },
   "Routes": {
     "resumeAnalyzer": "Resume Analyzer",
     "autoApply": "AI Auto-Apply",

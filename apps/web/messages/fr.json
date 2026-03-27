@@ -400,6 +400,35 @@
       "confirmChoiceTask": "Excellent ! Vous avez choisi **tâches**. Dites-moi de quelle tâche vous avez besoin."
     }
   },
+  "ChatResumeInsight": {
+    "cvBadge": "CV",
+    "resumeScore": "Score du CV",
+    "scoreLabels": {
+      "excellent": "Excellent",
+      "good": "Bon",
+      "average": "Moyen",
+      "needsWork": "À améliorer"
+    },
+    "scoreSeparator": "—",
+    "outOfHundred": "/ 100",
+    "missingPrefix": "Manquants :",
+    "viewInsights": "Voir les détails",
+    "keyIssues": "Points clés",
+    "suggestions": "Suggestions",
+    "suggestedRoles": "Rôles suggérés",
+    "improveResume": "Améliorer le CV",
+    "moreDetails": "Plus de détails",
+    "hideDetails": "Masquer les détails",
+    "breakdown": {
+      "skillsMatch": "Adéquation des compétences",
+      "experience": "Expérience",
+      "formatting": "Mise en forme",
+      "atsCompatibility": "Compatibilité ATS"
+    },
+    "reengagementTitle": "Votre CV peut être amélioré pour de meilleures correspondances",
+    "reengagementPotential": "+12 % de score potentiel",
+    "improveNow": "Améliorer maintenant"
+  },
   "Routes": {
     "resumeAnalyzer": "Analyseur de CV",
     "autoApply": "AI Auto-Apply",

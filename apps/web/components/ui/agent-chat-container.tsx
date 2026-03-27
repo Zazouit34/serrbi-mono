@@ -259,11 +259,11 @@ export function AgentChatContainer({
                         )}
 
                         {!message.results.isLoading && message.resumeUploadCta ? (
-                          <div className="mt-2 flex items-center gap-1.5 text-[11px] text-slate-500">
+                          <div className="mt-3 flex items-center gap-1.5 text-xs text-slate-700 md:mt-4 md:text-sm md:leading-6">
                             <span>✨ {message.resumeUploadCta.title}</span>
                             <button
                               onClick={openResumePicker}
-                              className="font-semibold text-slate-700 underline underline-offset-2 hover:text-slate-900 transition-colors"
+                              className="font-medium text-slate-700 underline underline-offset-2 hover:text-slate-900 transition-colors md:text-sm"
                             >
                               {message.resumeUploadCta.buttonLabel}
                             </button>
