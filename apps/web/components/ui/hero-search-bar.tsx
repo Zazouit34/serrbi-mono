@@ -377,6 +377,7 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange, session
         kind: m.kind,
         results: m.results ? { ...m.results, isLoading: false } : undefined,
         relatedPrompts: m.relatedPrompts,
+        resumeUploadCta: m.resumeUploadCta,
       }));
 
   // Create DB session after first agent response, then keep it updated
@@ -443,6 +444,7 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange, session
     }
   }, [isLoggedIn, userDataQuery.data, resumeAttachStatusText, resumeAttachProgress]);
 
+
   // STATE 7 — Re-engagement: after resume is attached, remind user to improve it after 60s
   useEffect(() => {
     if (!hasResumeAttached || reengagementShownRef.current) return;
@@ -450,16 +452,16 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange, session
       if (reengagementShownRef.current) return;
       const insight = resumeInsightDataRef.current;
       if (!insight) return;
-      reengagementShownRef.current = true;
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: nextMessageIdRef.current++,
-          role: "assistant" as const,
-          kind: "resume-insight" as const,
-          resumeInsight: { ...insight, reengagement: true },
-        },
-      ]);
+    reengagementShownRef.current = true;
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: nextMessageIdRef.current++,
+        role: "assistant" as const,
+        kind: "resume-insight" as const,
+        resumeInsight: { ...insight, reengagement: true },
+      } as ChatMessage,
+    ]);
     }, 60_000);
     return () => clearTimeout(timer);
   }, [hasResumeAttached]);
@@ -631,7 +633,7 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange, session
             role: "assistant" as const,
             kind: "resume-insight" as const,
             resumeInsight: insight,
-          },
+          } as ChatMessage,
         ]);
       }
 
@@ -705,6 +707,8 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange, session
           query: opts.query,
           categoryHint: opts.categoryHint,
           sessionId,
+          hasResumeAttached: hasResumeAttached,
+          resumeInsightAvailable: !!resumeInsightDataRef.current,
         },
       }),
     });
@@ -1194,6 +1198,54 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange, session
           : undefined;
       const agent = await callSearchAgent({ query: effectiveQuery, locale, scope: currentScope, categoryHint });
       if (agent.action === "chat") {
+        // Check if user is asking for resume insights and regenerate them
+        const isResumeInsightRequest = effectiveQuery.toLowerCase().includes("resume") && 
+          (effectiveQuery.toLowerCase().includes("insight") || effectiveQuery.toLowerCase().includes("analysis") || 
+           effectiveQuery.toLowerCase().includes("score") || effectiveQuery.toLowerCase().includes("bring back"));
+        
+        if (isResumeInsightRequest && hasResumeAttached) {
+          // Generate fresh resume insight
+          const userData = userDataQuery.data as any;
+          const resumeUrl = userData?.user?.resumeUrl;
+          if (resumeUrl) {
+            void (async () => {
+              try {
+                const res = await fetch(resumeUrl);
+                if (!res.ok) return;
+                const blob = await res.blob();
+                const file = new File([blob], "resume.pdf", { type: "application/pdf" });
+                const resumeText = await parsePDF(file);
+                const insightRes = await fetch("/api/chat/resume-insight", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ text: resumeText, locale }),
+                });
+                if (!insightRes.ok) return;
+                const insightData = await insightRes.json();
+                if (typeof insightData.overallScore !== "number") return;
+                const insight = {
+                  score: insightData.overallScore,
+                  skillGaps: insightData.skillGaps ?? [],
+                  improvements: insightData.improvements ?? [],
+                  suggestedRoles: insightData.suggestedRoles ?? [],
+                };
+                resumeInsightDataRef.current = insight;
+                setMessages((prev) => [
+                  ...prev,
+                  {
+                    id: nextMessageIdRef.current++,
+                    role: "assistant" as const,
+                    kind: "resume-insight" as const,
+                    resumeInsight: insight,
+                  } as ChatMessage,
+                ]);
+              } catch {
+                // Non-fatal
+              }
+            })();
+          }
+        }
+        
         setMessages((prev) =>
           prev.map((m) =>
             m.id === assistantMessageId
