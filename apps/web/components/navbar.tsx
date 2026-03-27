@@ -116,7 +116,7 @@ export function Navbar() {
             >
               <NavigationMenuList>
                 {NAV_LINKS.map((link) => {
-                  const isActive = pathname === `/${locale}${link.href}` || pathname === link.href;
+                  const isActive = pathname === `/${link.href}` || pathname === link.href;
                   const visibleLabel = t(link.key as any);
                   const isAutoApply = link.key === "autoApply";
 
@@ -125,7 +125,7 @@ export function Navbar() {
                       <NavigationMenuItem key={link.href}>
                         <NavigationMenuLink asChild>
                           <Link
-                            href={`/${locale}${link.href}`}
+                            href={`/${link.href}`}
                             className={cn(
                               "inline-flex !flex-row items-center whitespace-nowrap gap-2 px-5 py-2.5 rounded-full font-bold text-sm leading-none transition-all duration-200",
                               isActive
@@ -145,7 +145,7 @@ export function Navbar() {
                     <NavigationMenuItem key={link.href}>
                       <NavigationMenuLink asChild>
                         <Link
-                          href={`/${locale}${link.href}`}
+                          href={`/${link.href}`}
                           className={cn(
                             "flex relative flex-row gap-3 items-center px-3 py-2 transition-all duration-300 group",
                             isActive
@@ -231,7 +231,7 @@ export function Navbar() {
                 return (
                   <DropdownMenuItem key={link.href} asChild>
                     <Link
-                      href={`/${locale}${link.href}`}
+                      href={`/${link.href}`}
                       className={cn(
                         "flex gap-2 items-center w-full",
                         isAutoApply && "font-semibold"
@@ -280,11 +280,11 @@ export function Navbar() {
         {/* Bottom row: auto-apply pill */}
         <nav className="flex justify-center items-center px-4 py-2">
           {NAV_LINKS.filter((l) => l.key === "autoApply").map((link) => {
-            const isActive = pathname === `/${locale}${link.href}` || pathname === link.href;
+            const isActive = pathname === `/${link.href}` || pathname === link.href;
             return (
               <Link
                 key={link.href}
-                href={`/${locale}${link.href}`}
+                href={`/${link.href}`}
                 className={cn(
                   "flex items-center gap-2 px-5 py-2 rounded-full font-bold text-sm transition-all duration-200",
                   isActive
