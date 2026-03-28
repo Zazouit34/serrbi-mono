@@ -278,6 +278,10 @@ export const authRouter = router({
 
       return {
         success: true,
+        profile: {
+          jobTitle: profile.job_title ?? null,
+          skills: profile.skills ?? [],
+        },
         debug: includeDebug
           ? {
               extracted_profile: profile,

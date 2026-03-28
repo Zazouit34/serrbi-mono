@@ -389,6 +389,29 @@
     },
     "browseJobs": "Parcourir Emplois",
     "loadMore": "Charger plus",
+    "errorMessage": "Désolé, je ne peux pas lancer la recherche pour le moment. Réessayez dans un instant.",
+    "jobsShort": "Emplois",
+    "servicesShort": "Services",
+    "tasksShort": "Tâches",
+    "whyPicked": "Pourquoi ce choix",
+    "confidence": "Niveau de confiance",
+    "resume": {
+      "uploadText": "Upload du CV en cours...",
+      "receiveText": "CV reçu — Analyse de votre expérience...",
+      "doneText": "CV joint et profil mis à jour. Vos prochaines recherches seront plus pertinentes grâce au matching CV.",
+      "errorText": "Impossible d'ajouter le CV pour le moment. Réessayez.",
+      "pdfOnly": "Veuillez joindre un fichier PDF.",
+      "attachLabel": "Joindre un CV (PDF)",
+      "attachedLabel": "CV actif",
+      "noCv": "Sans CV",
+      "postUploadMessage": "J'ai analysé votre CV. Basé sur votre profil en tant que {jobTitle}, je vais vous trouver les meilleures offres correspondantes."
+    },
+    "intentSelect": {
+      "placeholder": "Se concentrer sur...",
+      "jobs": "Emplois",
+      "services": "Services",
+      "tasks": "Tâches"
+    },
     "onboarding": {
       "greeting": "Bonjour, je suis Serrbi ! Je peux vous aider à trouver des",
       "chooseAction": "Choisir",

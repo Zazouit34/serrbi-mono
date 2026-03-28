@@ -2,7 +2,7 @@
 
 import { useRef, type ChangeEvent, type RefObject } from "react";
 import Image from "next/image";
-
+import { useTranslations } from "next-intl";
 import { FileCheck2, Search, X } from "lucide-react";
 import { FiPaperclip } from "react-icons/fi";
 import { ChatResumeInsight } from "@/components/ui/chat-resume-insight";
@@ -15,6 +15,13 @@ import { ServiceCard } from "@/components/ui/form/service/service-card";
 import { TaskCard } from "@/components/ui/form/task/task-card";
 import { ThinkingBar } from "@/components/ui/thinking-bar";
 import { SiGoogleassistant } from "react-icons/si";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@workspace/ui/components/select";
 
 type TabType = "jobs" | "services" | "tasks";
 
@@ -44,7 +51,6 @@ type ChatMessage = {
     skillGaps: string[];
     improvements: string[];
     suggestedRoles?: string[];
-    reengagement?: boolean;
   };
 };
 
@@ -57,6 +63,7 @@ type AgentChatContainerProps = {
   isSearching: boolean;
   isAgentWorking: boolean;
   pinnedIntent: TabType | null;
+  inSession?: boolean;
   userInitial?: string;
   chatInputRef: RefObject<HTMLTextAreaElement | null>;
   labels: {
@@ -77,9 +84,9 @@ type AgentChatContainerProps = {
   onInputChange: (value: string) => void;
   onSubmit: () => void;
   onPinnedIntentClear: () => void;
+  onIntentChange?: (intent: TabType | null) => void;
   onSuggestionSelect: (prompt: string, upgradeUrl?: string) => void;
   onResumeAttach: (file: File) => void;
-  onImproveResume?: () => void;
   resumeAttachLabel?: string;
   resumeAttachStatusText?: string;
   resumeAttachProgress?: number | null;
@@ -133,15 +140,16 @@ export function AgentChatContainer({
   isSearching,
   isAgentWorking,
   pinnedIntent,
+  inSession = false,
   userInitial,
   chatInputRef,
   labels,
   onInputChange,
   onSubmit,
   onPinnedIntentClear,
+  onIntentChange,
   onSuggestionSelect,
   onResumeAttach,
-  onImproveResume,
   resumeAttachLabel,
   resumeAttachStatusText,
   resumeAttachProgress,
@@ -149,9 +157,11 @@ export function AgentChatContainer({
   hasResumeAttached,
   resumeAttachedLabel,
 }: AgentChatContainerProps) {
+  const t = useTranslations("HeroSearchBar");
   const resumeInputRef = useRef<HTMLInputElement | null>(null);
-  // Always show CV badge in jobs context: red when no resume, emerald when attached
+  // Show CV badge whenever intent is jobs (or no intent pinned — neutral)
   const showCvBadge = !pinnedIntent || pinnedIntent === "jobs";
+
   const onFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -192,8 +202,6 @@ export function AgentChatContainer({
                           skillGaps={message.resumeInsight.skillGaps}
                           improvements={message.resumeInsight.improvements}
                           suggestedRoles={message.resumeInsight.suggestedRoles}
-                          reengagement={message.resumeInsight.reengagement}
-                          onImproveResume={onImproveResume}
                         />
                       </div>
                     ) : message.kind === "suggestions" ? (
@@ -336,6 +344,7 @@ export function AgentChatContainer({
           </div>
           <div className="mt-2 flex items-center justify-between gap-2 md:mt-3">
             <div className="flex min-h-7 items-center gap-1.5 md:min-h-8 md:gap-2">
+              {/* Resume attach button */}
               <button
                 type="button"
                 onClick={openResumePicker}
@@ -345,12 +354,14 @@ export function AgentChatContainer({
               >
                 <FiPaperclip className="h-4 w-4" />
               </button>
+
+              {/* CV status badge (jobs context only) */}
               {showCvBadge ? (
                 hasResumeAttached ? (
                   <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 md:px-2.5 md:py-1 md:text-xs">
                     <FileCheck2 className="h-3 w-3 md:h-3.5 md:w-3.5" />
                     <span className="md:hidden">{labels.cvShort || "CV"}</span>
-                    <span className="hidden md:inline">{resumeAttachedLabel || "CV attached"}</span>
+                    <span className="hidden md:inline">{resumeAttachedLabel || "CV"}</span>
                   </span>
                 ) : (
                   <button
@@ -359,11 +370,13 @@ export function AgentChatContainer({
                     className="inline-flex items-center gap-1 rounded-full border border-red-200 bg-red-50 px-2 py-0.5 text-[11px] font-semibold text-red-600 hover:bg-red-100 transition-colors md:px-2.5 md:py-1 md:text-xs"
                   >
                     <FileCheck2 className="h-3 w-3 md:h-3.5 md:w-3.5" />
-                    <span>No CV</span>
+                    <span>{t("resume.noCv")}</span>
                   </button>
                 )
               ) : null}
-              {pinnedIntent ? (
+
+              {/* Pinned intent badge (non-session: with clear button) */}
+              {pinnedIntent && !inSession ? (
                 <span
                   className={`group inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium md:px-2.5 md:py-1 md:text-xs ${
                     pinnedIntent === "jobs"
@@ -394,20 +407,44 @@ export function AgentChatContainer({
                 </span>
               ) : null}
             </div>
-            <button
-              type="button"
-              onClick={onSubmit}
-              disabled={isSearching || isAgentWorking}
-              className="flex h-7 w-10 items-center justify-center rounded-lg border border-gray-200 disabled:opacity-60 md:h-8 md:w-12"
-            >
-              <Image
-                src="/icons/arrow.svg"
-                alt="Send"
-                width={20}
-                height={20}
-                className={dir === "rtl" ? "rotate-180" : ""}
-              />
-            </button>
+
+            <div className="flex items-center gap-2">
+              {/* Intent select — only in session page */}
+              {inSession && onIntentChange ? (
+                <Select
+                  value={pinnedIntent ?? "auto"}
+                  onValueChange={(val) => {
+                    if (val === "auto") onIntentChange(null);
+                    else onIntentChange(val as TabType);
+                  }}
+                >
+                  <SelectTrigger className="h-7 w-auto min-w-[90px] rounded-lg border border-gray-200 bg-white px-2 text-xs text-slate-700 shadow-none focus:ring-0 md:h-8">
+                    <SelectValue placeholder={t("intentSelect.placeholder")} />
+                  </SelectTrigger>
+                  <SelectContent align="end" className="text-xs">
+                    <SelectItem value="jobs">{t("intentSelect.jobs")}</SelectItem>
+                    <SelectItem value="services">{t("intentSelect.services")}</SelectItem>
+                    <SelectItem value="tasks">{t("intentSelect.tasks")}</SelectItem>
+                  </SelectContent>
+                </Select>
+              ) : null}
+
+              {/* Send button */}
+              <button
+                type="button"
+                onClick={onSubmit}
+                disabled={isSearching || isAgentWorking}
+                className="flex h-7 w-10 items-center justify-center rounded-lg border border-gray-200 disabled:opacity-60 md:h-8 md:w-12"
+              >
+                <Image
+                  src="/icons/arrow.svg"
+                  alt="Send"
+                  width={20}
+                  height={20}
+                  className={dir === "rtl" ? "rotate-180" : ""}
+                />
+              </button>
+            </div>
           </div>
           <input
             ref={resumeInputRef}

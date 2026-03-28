@@ -3,15 +3,13 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { cn } from "@workspace/ui/lib/utils";
-import { ChevronDown, TrendingUp, Zap } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 
 type Props = {
   score: number;
   skillGaps?: string[];
   improvements?: string[];
   suggestedRoles?: string[];
-  onImproveResume?: () => void;
-  reengagement?: boolean;
 };
 
 function scoreLabelKey(score: number): "excellent" | "good" | "average" | "needsWork" {
@@ -33,7 +31,6 @@ function scoreBarColor(score: number): string {
   return "from-red-500 to-red-400";
 }
 
-// Derive breakdown sub-scores from the overall score
 function deriveBreakdown(score: number) {
   const clamp = (v: number) => Math.max(0, Math.min(100, Math.round(v)));
   return {
@@ -49,8 +46,6 @@ export function ChatResumeInsight({
   skillGaps = [],
   improvements = [],
   suggestedRoles = [],
-  onImproveResume,
-  reengagement = false,
 }: Props) {
   const t = useTranslations("ChatResumeInsight");
   const [expanded, setExpanded] = useState(false);
@@ -61,40 +56,10 @@ export function ChatResumeInsight({
   const labelKey = scoreLabelKey(score);
   const scoreLabelText = t(`scoreLabels.${labelKey}`);
 
-  // ── Re-engagement variant (STATE 7) ──────────────────────────────
-  if (reengagement) {
-    return (
-      <div className="max-w-sm w-full rounded-2xl border border-slate-200 bg-white shadow-sm p-4 space-y-3">
-        <div className="flex items-start gap-3">
-          <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-amber-50 border border-amber-100 shrink-0">
-            <TrendingUp className="w-4 h-4 text-amber-600" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-slate-900 leading-snug">
-              {t("reengagementTitle")}
-            </p>
-            <p className="text-xs text-emerald-600 font-bold mt-0.5">
-              {t("reengagementPotential")}
-            </p>
-          </div>
-        </div>
-        {onImproveResume && (
-          <button
-            onClick={onImproveResume}
-            className="w-full text-xs font-bold px-4 py-2.5 rounded-xl bg-slate-900 text-white hover:bg-slate-800 transition-all active:scale-95"
-          >
-            {t("improveNow")}
-          </button>
-        )}
-      </div>
-    );
-  }
-
-  // ── Collapsed — STATE 4 ──────────────────────────────────────────
+  // ── Collapsed ────────────────────────────────────────────────────
   if (!expanded) {
     return (
       <div className="max-w-sm w-full rounded-2xl border border-slate-200 bg-white shadow-sm p-4 space-y-3">
-        {/* Header */}
         <div className="flex items-center justify-between">
           <span className="text-xs font-semibold text-slate-600 flex items-center gap-1.5">
             <span className="w-4 h-4 rounded-md bg-slate-100 flex items-center justify-center text-[10px]">
@@ -110,7 +75,6 @@ export function ChatResumeInsight({
           </span>
         </div>
 
-        {/* Progress bar */}
         <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
           <div
             className={cn("h-full bg-gradient-to-r transition-all duration-700", scoreBarColor(score))}
@@ -118,7 +82,6 @@ export function ChatResumeInsight({
           />
         </div>
 
-        {/* Top issues */}
         {topIssues.length > 0 && (
           <p className="text-[11px] text-slate-600 leading-relaxed">
             <span className="text-amber-500 me-1">⚠</span>
@@ -126,7 +89,6 @@ export function ChatResumeInsight({
           </p>
         )}
 
-        {/* View insights CTA */}
         <button
           onClick={() => setExpanded(true)}
           className="flex items-center gap-1 text-xs font-semibold text-slate-700 hover:text-slate-900 transition-colors group"
@@ -138,10 +100,9 @@ export function ChatResumeInsight({
     );
   }
 
-  // ── Expanded — STATE 5 ───────────────────────────────────────────
+  // ── Expanded ─────────────────────────────────────────────────────
   return (
     <div className="max-w-sm w-full rounded-2xl border border-slate-200 bg-white shadow-sm p-4 space-y-4">
-      {/* Header with score */}
       <div className="flex items-center justify-between">
         <span className="text-xs font-semibold text-slate-600 flex items-center gap-1.5">
           <span className="w-4 h-4 rounded-md bg-slate-100 flex items-center justify-center text-[10px]">
@@ -163,7 +124,6 @@ export function ChatResumeInsight({
         </div>
       </div>
 
-      {/* Progress bar */}
       <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
         <div
           className={cn("h-full bg-gradient-to-r transition-all duration-700", scoreBarColor(score))}
@@ -171,7 +131,6 @@ export function ChatResumeInsight({
         />
       </div>
 
-      {/* Key issues */}
       {topIssues.length > 0 && (
         <div className="space-y-1.5">
           <p className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-slate-400">
@@ -188,11 +147,10 @@ export function ChatResumeInsight({
         </div>
       )}
 
-      {/* Suggestions */}
       {improvements.length > 0 && (
         <div className="space-y-1.5">
           <p className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-slate-400">
-            Suggestions
+            {t("suggestions")}
           </p>
           <ul className="space-y-1">
             {improvements.slice(0, 3).map((item, i) => (
@@ -205,7 +163,6 @@ export function ChatResumeInsight({
         </div>
       )}
 
-      {/* Suggested roles */}
       {suggestedRoles.length > 0 && (
         <div className="space-y-1.5">
           <p className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-slate-400">
@@ -224,26 +181,13 @@ export function ChatResumeInsight({
         </div>
       )}
 
-      {/* Action buttons */}
-      <div className="flex gap-2 pt-1">
-        {onImproveResume && (
-          <button
-            onClick={onImproveResume}
-            className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full bg-slate-900 text-white hover:bg-slate-800 transition-all active:scale-95"
-          >
-            <Zap className="w-3 h-3" />
-            {t("improveResume")}
-          </button>
-        )}
-        <button
-          onClick={() => setDeepDive((v) => !v)}
-          className="text-xs font-medium px-3 py-1.5 rounded-full border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors"
-        >
-          {deepDive ? t("hideDetails") : t("moreDetails")}
-        </button>
-      </div>
+      <button
+        onClick={() => setDeepDive((v) => !v)}
+        className="text-xs font-medium px-3 py-1.5 rounded-full border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors"
+      >
+        {deepDive ? t("hideDetails") : t("moreDetails")}
+      </button>
 
-      {/* Deep dive — STATE 5 detail rows */}
       {deepDive && (
         <div className="pt-2 border-t border-slate-100 space-y-2">
           {(

@@ -15,7 +15,7 @@ import { serviceCategoryValues } from "@workspace/ui/lib/service-enum";
 import { taskCategoryValues } from "@workspace/ui/lib/task-enum";
 import { ActionButton } from "@/components/ui/action-button";
 import { AgentChatContainer } from "@/components/ui/agent-chat-container";
-import { parsePDF } from "@/app/utils/pdf/prase-pdf";
+import { useResumeAttach, type ResumeProfile } from "@/components/ui/use-resume-attach";
 
 type TabType = "jobs" | "services" | "tasks";
 type ScopeOverride = "auto" | TabType;
@@ -53,7 +53,6 @@ export type ChatMessage = {
     skillGaps: string[];
     improvements: string[];
     suggestedRoles?: string[];
-    reengagement?: boolean;
   };
 };
 
@@ -76,6 +75,7 @@ type HeroSearchBarProps = {
   onChatExpandedChange?: (expanded: boolean) => void;
   sessionId?: string;
   initialMessages?: ChatMessage[];
+  inSession?: boolean;
 };
 
 type AgentIntent = TabType;
@@ -105,203 +105,34 @@ type ResultsSummaryResponse = {
 };
 type ConfidenceMode = "strong" | "moderate" | "weak";
 
-function normalizeLocaleForSummary(locale: string): "en" | "fr" | "ar" {
-  const lower = locale.toLowerCase();
-  if (lower.startsWith("fr")) return "fr";
-  if (lower.startsWith("ar")) return "ar";
-  return "en";
-}
-
-function mapJobExperienceLabel(value: string, locale: "en" | "fr" | "ar"): string {
-  const key = value.toLowerCase();
-  if (locale === "fr") {
-    if (key === "mid_level") return "Intermediaire";
-    if (key === "junior") return "Junior";
-    if (key === "senior") return "Senior";
-    return value;
-  }
-  if (locale === "ar") {
-    if (key === "mid_level") return "متوسط";
-    if (key === "junior") return "مبتدئ";
-    if (key === "senior") return "متقدم";
-    return value;
-  }
-  if (key === "mid_level") return "Mid level";
-  if (key === "junior") return "Junior";
-  if (key === "senior") return "Senior";
-  return value;
-}
-
-function mapLocationRequirementLabel(value: string, locale: "en" | "fr" | "ar"): string {
-  const key = value.toLowerCase();
-  if (locale === "fr") {
-    if (key === "in_office") return "Presentiel";
-    if (key === "hybrid") return "Hybride";
-    if (key === "remote") return "A distance";
-    return value;
-  }
-  if (locale === "ar") {
-    if (key === "in_office") return "حضوري";
-    if (key === "hybrid") return "هجين";
-    if (key === "remote") return "عن بعد";
-    return value;
-  }
-  if (key === "in_office") return "On-site";
-  if (key === "hybrid") return "Hybrid";
-  if (key === "remote") return "Remote";
-  return value;
-}
-
+// Minimal fallback summary (only used if API call fails)
 function buildResultsSummary(params: {
   type: TabType;
   items: any[];
   query: string;
-  locale: string;
 }): string {
-  const { type, items, query, locale } = params;
-  const l = normalizeLocaleForSummary(locale);
+  const { type, items, query } = params;
   if (!items.length) return "";
-
+  const first = items[0];
   if (type === "jobs") {
-    const first = items[0];
-    const cities = Array.from(new Set(items.map((i) => i.city).filter(Boolean)));
-    const levels = Array.from(new Set(items.map((i) => i.experienceLevel).filter(Boolean))).map((v) =>
-      mapJobExperienceLabel(String(v), l),
-    );
-    const locations = Array.from(
-      new Set(items.map((i) => i.locationRequirement).filter(Boolean)),
-    ).map((v) => mapLocationRequirementLabel(String(v), l));
-    const wages = items.map((i) => Number(i.wage)).filter((v) => Number.isFinite(v));
-    const wageInfo =
-      wages.length > 0
-        ? `${Math.min(...wages)} - ${Math.max(...wages)} MAD`
-        : l === "fr"
-          ? "Non precise"
-          : l === "ar"
-            ? "غير محدد"
-            : "Not specified";
-
-    if (l === "fr") {
-      return [
-        `## Resultats pour "${query}"`,
-        `- **Meilleure correspondance:** ${first?.title ?? "Resultat principal"}${first?.city ? ` (${first.city})` : ""}.`,
-        `- **Niveau d'experience:** ${levels.length ? levels.join(", ") : "Non precise"}.`,
-        `- **Mode de travail:** ${locations.length ? locations.join(", ") : "Non precise"}.`,
-        `- **Salaire:** ${wageInfo}.`,
-        `- **Ville(s):** ${cities.length ? cities.join(", ") : "Non precise"}.`,
-      ].join("\n");
-    }
-    if (l === "ar") {
-      return [
-        `## نتائج "${query}"`,
-        `- **أفضل تطابق:** ${first?.title ?? "أفضل نتيجة"}${first?.city ? ` (${first.city})` : ""}.`,
-        `- **مستوى الخبرة:** ${levels.length ? levels.join("، ") : "غير محدد"}.`,
-        `- **نمط العمل:** ${locations.length ? locations.join("، ") : "غير محدد"}.`,
-        `- **الأجر:** ${wageInfo}.`,
-        `- **المدينة/المدن:** ${cities.length ? cities.join("، ") : "غير محدد"}.`,
-      ].join("\n");
-    }
     return [
       `## Results for "${query}"`,
       `- **Top match:** ${first?.title ?? "Top result"}${first?.city ? ` (${first.city})` : ""}.`,
-      `- **Experience level:** ${levels.length ? levels.join(", ") : "Not specified"}.`,
-      `- **Work setup:** ${locations.length ? locations.join(", ") : "Not specified"}.`,
-      `- **Salary signal:** ${wageInfo}.`,
-      `- **City coverage:** ${cities.length ? cities.join(", ") : "Not specified"}.`,
     ].join("\n");
   }
-
   if (type === "services") {
-    const first = items[0];
-    const cities = Array.from(new Set(items.map((i) => i.city).filter(Boolean)));
-    const prices = items.map((i) => Number(i.price)).filter((v) => Number.isFinite(v));
-    const ratings = items.map((i) => Number(i.averageRating)).filter((v) => Number.isFinite(v));
-    const priceInfo =
-      prices.length > 0
-        ? `${Math.min(...prices)} - ${Math.max(...prices)} MAD`
-        : l === "fr"
-          ? "Non precise"
-          : l === "ar"
-            ? "غير محدد"
-            : "Not specified";
-    if (l === "fr") {
-      return [
-        `## Services pour "${query}"`,
-        `- **Meilleure option:** ${first?.title ?? "Resultat principal"}${first?.city ? ` (${first.city})` : ""}.`,
-        `- **Categorie:** ${first?.serviceCategory ?? "Non precise"}.`,
-        `- **Prix:** ${priceInfo}.`,
-        `- **Ville(s):** ${cities.length ? cities.join(", ") : "Non precise"}.`,
-        `- **Rating:** ${ratings.length ? `${Math.max(...ratings).toFixed(1)}/5` : "Non precise"}.`,
-        `- **Prochaine etape:** ouvre le service le mieux note dans ta ville et verifie les details.`,
-      ].join("\n");
-    }
-    if (l === "ar") {
-      return [
-        `## خدمات "${query}"`,
-        `- **أفضل خيار:** ${first?.title ?? "أفضل نتيجة"}${first?.city ? ` (${first.city})` : ""}.`,
-        `- **الفئة:** ${first?.serviceCategory ?? "غير محدد"}.`,
-        `- **السعر:** ${priceInfo}.`,
-        `- **المدينة/المدن:** ${cities.length ? cities.join("، ") : "غير محدد"}.`,
-        `- **التقييم:** ${ratings.length ? `${Math.max(...ratings).toFixed(1)}/5` : "غير محدد"}.`,
-        `- **الخطوة التالية:** افتح أفضل خدمة في مدينتك وراجع التفاصيل قبل التواصل.`,
-      ].join("\n");
-    }
-    return [
-      `## Services for "${query}"`,
-      `- **Top option:** ${first?.title ?? "Top result"}${first?.city ? ` (${first.city})` : ""}.`,
-      `- **Category:** ${first?.serviceCategory ?? "Not specified"}.`,
-      `- **Price signal:** ${priceInfo}.`,
-      `- **City coverage:** ${cities.length ? cities.join(", ") : "Not specified"}.`,
-      `- **Rating:** ${ratings.length ? `${Math.max(...ratings).toFixed(1)}/5` : "Not specified"}.`,
-      `- **Next step:** open the top-rated option in your city and review the offer details.`,
-    ].join("\n");
+    return `## Results for "${query}"\n- **Top match:** ${first?.title ?? "Top result"}.`;
   }
-
-  const first = items[0];
-  const cities = Array.from(new Set(items.map((i) => i.city).filter(Boolean)));
-  const budgets = items.map((i) => Number(i.budget)).filter((v) => Number.isFinite(v));
-  const budgetInfo =
-    budgets.length > 0
-      ? `${Math.min(...budgets)} - ${Math.max(...budgets)} MAD`
-      : l === "fr"
-        ? "Non precise"
-        : l === "ar"
-          ? "غير محدد"
-          : "Not specified";
-  if (l === "fr") {
-    return [
-      `## Taches pour "${query}"`,
-      `- **Meilleure option:** ${first?.title ?? "Resultat principal"}${first?.city ? ` (${first.city})` : ""}.`,
-      `- **Categorie:** ${first?.category ?? "Non precise"}.`,
-      `- **Budget:** ${budgetInfo}.`,
-      `- **Ville(s):** ${cities.length ? cities.join(", ") : "Non precise"}.`,
-      `- **Statut:** ${first?.status ?? "Non precise"}.`,
-      `- **Prochaine etape:** ouvre la tache la plus claire et confirme le budget avant de postuler.`,
-    ].join("\n");
-  }
-  if (l === "ar") {
-    return [
-      `## مهام "${query}"`,
-      `- **أفضل خيار:** ${first?.title ?? "أفضل نتيجة"}${first?.city ? ` (${first.city})` : ""}.`,
-      `- **الفئة:** ${first?.category ?? "غير محدد"}.`,
-      `- **الميزانية:** ${budgetInfo}.`,
-      `- **المدينة/المدن:** ${cities.length ? cities.join("، ") : "غير محدد"}.`,
-      `- **الحالة:** ${first?.status ?? "غير محدد"}.`,
-      `- **الخطوة التالية:** افتح المهمة الأنسب وتأكد من الميزانية قبل المتابعة.`,
-    ].join("\n");
-  }
-  return [
-    `## Tasks for "${query}"`,
-    `- **Top option:** ${first?.title ?? "Top result"}${first?.city ? ` (${first.city})` : ""}.`,
-    `- **Category:** ${first?.category ?? "Not specified"}.`,
-    `- **Budget signal:** ${budgetInfo}.`,
-    `- **City coverage:** ${cities.length ? cities.join(", ") : "Not specified"}.`,
-    `- **Status:** ${first?.status ?? "Not specified"}.`,
-    `- **Next step:** open the best-fit task and validate budget/status before applying.`,
-  ].join("\n");
+  return `## Tasks for "${query}"\n- **Top option:** ${first?.title ?? "Top result"}.`;
 }
 
-function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange, sessionId: propSessionId, initialMessages }: HeroSearchBarProps) {
+function HeroSearchBarComponent({
+  onPreviewChange,
+  onChatExpandedChange,
+  sessionId: propSessionId,
+  initialMessages,
+  inSession = false,
+}: HeroSearchBarProps) {
   const t = useTranslations("HeroSearchBar");
   const locale = useLocale();
   const dir = locale === "ar" ? "rtl" : "ltr";
@@ -319,7 +150,7 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange, session
     JobCategory | ServiceCategory | TaskCategory | undefined
   >(undefined);
   const isSecondary = isSecondaryClient();
-  
+
   // Chat state
   const hasInitial = Array.isArray(initialMessages) && initialMessages.length > 0;
   const [messages, setMessages] = useState<ChatMessage[]>(() => {
@@ -344,18 +175,7 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange, session
   const chatInputRef = useRef<HTMLTextAreaElement | null>(null);
   const agentSessionIdRef = useRef<string | null>(null);
   const dbSessionIdRef = useRef<string | null>(propSessionId ?? null);
-  // STATE 2 — track job searches for smart CTA timing
-  const jobSearchCountRef = useRef(0);
-  // Store the last resume insight for re-engagement (STATE 7)
-  const resumeInsightDataRef = useRef<{
-    score: number;
-    skillGaps: string[];
-    improvements: string[];
-    suggestedRoles?: string[];
-  } | null>(null);
-  const reengagementShownRef = useRef(false);
-  const updateResumeUrl = trpc.auth.updateResume.useMutation();
-  const updateResumeEmbedding = trpc.auth.updateResumeEmbedding.useMutation();
+
   const userDataQuery = trpc.auth.userData.useQuery(undefined, {
     enabled: isLoggedIn,
     refetchOnWindowFocus: false,
@@ -365,8 +185,7 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange, session
   const updateSession = trpc.chatSession.update.useMutation();
 
   const saveTimerRef = useRef<NodeJS.Timeout | null>(null);
-  // Keep every completed message — the anyLoading guard already prevents calling
-  // this while anything is still thinking/fetching, so no partial states slip through.
+
   const serializeMessages = (msgs: ChatMessage[]) =>
     msgs
       .filter((m) => !m.thinking && !m.results?.isLoading)
@@ -380,11 +199,8 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange, session
         resumeUploadCta: m.resumeUploadCta,
       }));
 
-  // Create DB session after first agent response, then keep it updated
+  // Create/update DB session on messages change
   const isCreatingSessionRef = useRef(false);
-  // Tracks whether the effect has already run once. Used to skip the debounced
-  // save on the very first render when messages come from DB (initialMessages),
-  // preventing overwriting the full history with stale React Query cache.
   const isFirstEffectRunRef = useRef(true);
   useEffect(() => {
     if (messages.length === 0) return;
@@ -395,15 +211,12 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange, session
 
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
 
-    // On the very first render of a pre-existing session (loaded from DB),
-    // skip the save — data is already persisted and we must not overwrite it.
     if (isFirstEffectRunRef.current && dbSessionIdRef.current) {
       isFirstEffectRunRef.current = false;
       return;
     }
     isFirstEffectRunRef.current = false;
 
-    // First message round-trip complete: create session if not yet created
     if (!dbSessionIdRef.current && isLoggedIn && !isCreatingSessionRef.current) {
       isCreatingSessionRef.current = true;
       const userMsgs = messages.filter((m) => m.role === "user" && m.content?.trim());
@@ -417,7 +230,6 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange, session
       return;
     }
 
-    // Subsequent messages: debounced update
     saveTimerRef.current = setTimeout(() => {
       const sid = dbSessionIdRef.current;
       if (!sid) return;
@@ -429,6 +241,7 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange, session
     return () => { if (saveTimerRef.current) clearTimeout(saveTimerRef.current); };
   }, [messages]);
 
+  // Sync resume status from DB
   useEffect(() => {
     if (!isLoggedIn) {
       setHasResumeAttached(false);
@@ -444,254 +257,64 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange, session
     }
   }, [isLoggedIn, userDataQuery.data, resumeAttachStatusText, resumeAttachProgress]);
 
-  // Auto-generate resume insight on page load if user has resume but no insight in chat
-  useEffect(() => {
-    if (!hasInitial || !hasResumeAttached || !isLoggedIn) return;
-    // Check if we already have messages or if insight was already generated
-    if (messages.length > 0 || resumeInsightDataRef.current) return;
-    
-    const userData = userDataQuery.data as any;
-    const resumeUrl = userData?.user?.resumeUrl;
-    if (!resumeUrl) return;
-    
-    let cancelled = false;
-    void (async () => {
-      try {
-        const res = await fetch(resumeUrl);
-        if (!res.ok || cancelled) return;
-        const blob = await res.blob();
-        const file = new File([blob], "resume.pdf", { type: "application/pdf" });
-        const resumeText = await parsePDF(file);
-        const insightRes = await fetch("/api/chat/resume-insight", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text: resumeText, locale }),
-        });
-        if (!insightRes.ok || cancelled) return;
-        const insightData = await insightRes.json();
-        if (cancelled || typeof insightData.overallScore !== "number") return;
-        const insight = {
-          score: insightData.overallScore,
-          skillGaps: insightData.skillGaps ?? [],
-          improvements: insightData.improvements ?? [],
-          suggestedRoles: insightData.suggestedRoles ?? [],
-        };
-        resumeInsightDataRef.current = insight;
-      } catch {
-        // Non-fatal
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [hasInitial, hasResumeAttached, isLoggedIn, userDataQuery.data, locale, messages.length]);
-
-  // STATE 7 — Re-engagement: after resume is attached, remind user to improve it after 60s
-  useEffect(() => {
-    if (!hasResumeAttached || reengagementShownRef.current) return;
-    const timer = setTimeout(() => {
-      if (reengagementShownRef.current) return;
-      const insight = resumeInsightDataRef.current;
-      if (!insight) return;
-    reengagementShownRef.current = true;
-    setMessages((prev) => [
-      ...prev,
-      {
-        id: nextMessageIdRef.current++,
-        role: "assistant" as const,
-        kind: "resume-insight" as const,
-        resumeInsight: { ...insight, reengagement: true },
-      } as ChatMessage,
-    ]);
-    }, 60_000);
-    return () => clearTimeout(timer);
-  }, [hasResumeAttached]);
-
-  const uploadFileWithProgress = async (
-    url: string,
-    file: File,
-    onProgress: (value: number) => void,
-  ): Promise<void> => {
-    await new Promise<void>((resolve, reject) => {
-      const xhr = new XMLHttpRequest();
-      xhr.open("PUT", url);
-      xhr.setRequestHeader("Content-Type", file.type || "application/pdf");
-      xhr.upload.onprogress = (event) => {
-        if (!event.lengthComputable) return;
-        const value = Math.max(0, Math.min(100, Math.round((event.loaded / event.total) * 100)));
-        onProgress(value);
-      };
-      xhr.onload = () => {
-        if (xhr.status >= 200 && xhr.status < 300) {
-          resolve();
-          return;
-        }
-        reject(new Error("Failed to upload resume file"));
-      };
-      xhr.onerror = () => reject(new Error("Failed to upload resume file"));
-      xhr.send(file);
-    });
-  };
-
-  const handleResumeAttach = async (file: File) => {
-    if (!isLoggedIn) {
-      const callback = pathname || "/";
-      router.push(`/login?callbackUrl=${encodeURIComponent(callback)}`);
-      return;
-    }
-
-    if (!(file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf"))) {
-      setResumeAttachStatusText(
-        locale === "fr"
-          ? "Veuillez joindre un fichier PDF."
-          : locale === "ar"
-            ? "المرجو إرفاق ملف PDF."
-            : "Please attach a PDF file.",
-      );
-      return;
-    }
-
-    setChatExpanded(true);
-    setResumeAttachFileName(file.name);
-    setResumeAttachProgress(0);
-    const statusMessageId = nextMessageIdRef.current++;
-    const setStatusBubble = (text: string, thinking = true) => {
-      setMessages((prev) => {
-        const exists = prev.some((m) => m.id === statusMessageId);
-        if (!exists) {
-          return [
-            ...prev,
-            {
-              id: statusMessageId,
-              role: "assistant",
-              kind: "text",
-              content: text,
-              thinking,
-            },
-          ];
-        }
-        return prev.map((m) =>
-          m.id === statusMessageId
-            ? {
-                ...m,
-                content: text,
-                thinking,
-                kind: "text",
-              }
-            : m,
-        );
-      });
-    };
-
-    try {
-      const uploadText =
-        locale === "fr"
-          ? "Upload du CV en cours..."
-          : locale === "ar"
-            ? "جاري رفع السيرة الذاتية..."
-            : "Uploading resume...";
-      setResumeAttachStatusText(uploadText);
-      setStatusBubble(uploadText, true);
-
-      const presignedRes = await fetch("/api/upload/presigned-url", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          filename: file.name,
-          contentType: file.type || "application/pdf",
-          fileType: "resume",
-        }),
-      });
-      if (!presignedRes.ok) throw new Error("Failed to get presigned URL");
-      const uploadData = await presignedRes.json();
-
-      await uploadFileWithProgress(uploadData.presignedUrl, file, (value) => {
-        setResumeAttachProgress(value);
-      });
-      setResumeAttachProgress(100);
-
-      await updateResumeUrl.mutateAsync({ resumeUrl: uploadData.publicUrl });
-
-      // STATE 3 — Resume received status
-      const receiveText =
-        locale === "fr"
-          ? "CV reçu\nAnalyse de votre expérience..."
-          : locale === "ar"
-            ? "تم استلام السيرة الذاتية\nجاري تحليل خبرتك..."
-            : "Resume received\nAnalyzing your experience...";
-      setResumeAttachStatusText(receiveText);
-      setStatusBubble(receiveText, true);
-
-      const resumeText = await parsePDF(file);
-      const embeddingResult = await updateResumeEmbedding.mutateAsync({ resumeText });
-      console.log("[chat-ui] resume embedding debug", embeddingResult?.debug ?? null);
-
-      // STATE 4 — Call the same LLM insight API used by the resume-analyzer page
-      let insightData: {
-        overallScore: number;
-        skillGaps: string[];
-        improvements: string[];
-        suggestedRoles?: string[];
-      } | null = null;
-      try {
-        const insightRes = await fetch("/api/chat/resume-insight", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text: resumeText, locale }),
-        });
-        if (insightRes.ok) {
-          insightData = await insightRes.json();
-        }
-      } catch {
-        // Non-fatal — insight is optional; upload already succeeded
-      }
-
-      const doneText =
-        locale === "fr"
-          ? "CV joint et profil mis a jour. Vos prochaines recherches seront plus pertinentes grace au matching CV."
-          : locale === "ar"
-            ? "تم إرفاق السيرة الذاتية وتحديث الملف. عمليات البحث القادمة ستكون أدق بفضل المطابقة مع السيرة الذاتية."
-            : "Resume attached and profile updated. Your next searches will be more relevant thanks to resume matching.";
+  // Resume attach hook
+  const { handleResumeAttach } = useResumeAttach({
+    isLoggedIn,
+    onStatusChange: (text) => {
+      setResumeAttachStatusText(text);
+      setChatExpanded(true);
+    },
+    onProgressChange: setResumeAttachProgress,
+    onFileNameChange: setResumeAttachFileName,
+    onAttached: (profile: ResumeProfile) => {
       setResumeAttachStatusText("");
-      setStatusBubble(doneText, false);
-      setResumeAttachProgress(null);
       setHasResumeAttached(true);
+      userDataQuery.refetch();
 
-      // Inject ChatResumeInsight collapsed card (STATE 4)
-      if (insightData && typeof insightData.overallScore === "number") {
-        const insight = {
-          score: insightData.overallScore,
-          skillGaps: insightData.skillGaps ?? [],
-          improvements: insightData.improvements ?? [],
-          suggestedRoles: insightData.suggestedRoles ?? [],
-        };
-        resumeInsightDataRef.current = insight;
-        reengagementShownRef.current = false;
+      // Inject resume insight after upload
+      void (async () => {
+        try {
+          const insightRes = await fetch("/api/chat/resume-insight", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ text: "", locale }),
+          });
+          // Use the insight API but we may not have resumeText here - handled below
+        } catch { /* non-fatal */ }
+      })();
+
+      // Use extracted profile data to pin intent and suggest relevant jobs
+      if (!pinnedIntent) {
+        setPinnedIntent("jobs");
+        setActiveTab("jobs");
+      }
+
+      const jobTitle = profile.jobTitle;
+      const skills = profile.skills ?? [];
+      const searchQuery = jobTitle
+        ? jobTitle
+        : skills.length > 0
+          ? skills.slice(0, 3).join(", ")
+          : null;
+
+      if (searchQuery) {
         setMessages((prev) => [
           ...prev,
           {
             id: nextMessageIdRef.current++,
             role: "assistant" as const,
-            kind: "resume-insight" as const,
-            resumeInsight: insight,
+            kind: "suggestions" as const,
+            content: t("resume.postUploadMessage").replace("{jobTitle}", jobTitle ?? skills[0] ?? "your profile"),
+            relatedPrompts: [searchQuery],
           } as ChatMessage,
         ]);
       }
-
-      await userDataQuery.refetch();
-    } catch (error) {
-      console.error("Resume attach flow failed", error);
-      const errorText =
-        locale === "fr"
-          ? "Impossible d'ajouter le CV pour le moment."
-          : locale === "ar"
-            ? "تعذر إضافة السيرة الذاتية حاليا."
-            : "Failed to attach resume right now.";
-      setResumeAttachStatusText(errorText);
-      setStatusBubble(errorText, false);
-      setResumeAttachProgress(null);
+    },
+    onError: () => {
       const hasSavedResume = Boolean((userDataQuery.data as any)?.user?.resumeUrl);
       setHasResumeAttached(hasSavedResume);
-    }
-  };
+    },
+  });
 
   const getOrCreateAgentSessionId = (): string => {
     if (agentSessionIdRef.current) return agentSessionIdRef.current;
@@ -746,8 +369,6 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange, session
           query: opts.query,
           categoryHint: opts.categoryHint,
           sessionId,
-          hasResumeAttached: hasResumeAttached,
-          resumeInsightAvailable: !!resumeInsightDataRef.current,
         },
       }),
     });
@@ -757,16 +378,6 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange, session
       throw new Error(text || `Chat API error ${res.status}`);
     }
     const json = (await res.json()) as AgentResponse;
-    console.log("[chat-ui] /api/chat response", {
-      action: json?.action,
-      intent: json?.intent,
-      searchQuery: json?.searchQuery,
-      hasResults: !!json?.results,
-      resultType: json?.results?.type,
-      resultCount: Array.isArray(json?.results?.items) ? json.results.items.length : 0,
-      relatedPromptsCount: Array.isArray(json?.relatedPrompts) ? json.relatedPrompts.length : 0,
-      debug: json?.debug ?? null,
-    });
     if (!json || (json.action !== "chat" && json.action !== "search") || !Array.isArray(json.relatedPrompts)) {
       throw new Error("Chat API returned invalid payload.");
     }
@@ -783,7 +394,6 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange, session
       .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
       .toLowerCase()
       .trim();
-    // Include both enum key and human-readable label to improve multilingual prompt matching.
     return `${intent} category: ${raw}${humanized && humanized !== raw ? ` (${humanized})` : ""}`;
   };
 
@@ -867,101 +477,12 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange, session
     return typeof json?.summary === "string" ? json.summary.trim() : "";
   };
 
-  // STATE 9 — Improve Resume action loop
-  const handleImproveResume = () => {
-    const content =
-      locale === "fr"
-        ? "Je peux améliorer votre CV pour ce rôle. Que voulez-vous optimiser ?"
-        : locale === "ar"
-          ? "يمكنني تحسين سيرتك الذاتية لهذا الدور. ماذا تريد تحسينه؟"
-          : "I can improve your resume for this role. What do you want to optimize?";
-    const relatedPrompts =
-      locale === "fr"
-        ? ["Compétences", "Expérience", "Réécriture complète"]
-        : locale === "ar"
-          ? ["المهارات", "الخبرة", "إعادة كتابة كاملة"]
-          : ["Skills", "Experience", "Full Rewrite"];
-    setChatExpanded(true);
-    setMessages((prev) => [
-      ...prev,
-      {
-        id: nextMessageIdRef.current++,
-        role: "assistant" as const,
-        kind: "suggestions" as const,
-        content,
-        relatedPrompts,
-      },
-    ]);
-  };
-
   const handlePromptSelection = (prompt: string, upgradeUrl?: string) => {
     const normalized = prompt.trim().toLowerCase();
     if (normalized === "plans" || normalized === "plan" || normalized === "pricing") {
       router.push(upgradeUrl || "/subscription");
       return;
     }
-    
-    // Check if this is a resume enhancement request
-    const isSkillsEnhancement = normalized.includes("skill") || normalized.includes("compétence") || normalized.includes("مهارات");
-    const isExperienceEnhancement = normalized.includes("experience") || normalized.includes("expérience") || normalized.includes("خبرة");
-    const isFullRewrite = normalized.includes("rewrite") || normalized.includes("réécriture") || normalized.includes("إعادة كتابة");
-    
-    if ((isSkillsEnhancement || isExperienceEnhancement || isFullRewrite) && hasResumeAttached) {
-      // Handle resume enhancement request
-      const enhancementType = isSkillsEnhancement ? "skills" : isExperienceEnhancement ? "experience" : "full";
-      const followUpContent = locale === "fr"
-        ? `D'accord ! Dites-moi ce que vous voulez ${enhancementType === "skills" ? "ajouter comme compétences" : enhancementType === "experience" ? "améliorer dans votre expérience" : "améliorer dans votre CV"} ?`
-        : locale === "ar"
-          ? `حسناً! أخبرني ماذا تريد ${enhancementType === "skills" ? "إضافة من المهارات" : enhancementType === "experience" ? "تحسين في خبرتك" : "تحسين في سيرتك الذاتية"}؟`
-          : `Great! Tell me what you want to ${enhancementType === "skills" ? "add as skills" : enhancementType === "experience" ? "improve in your experience" : "improve in your resume"}?`;
-      
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: nextMessageIdRef.current++,
-          role: "user" as const,
-          content: prompt,
-        },
-        {
-          id: nextMessageIdRef.current++,
-          role: "assistant" as const,
-          content: followUpContent,
-        },
-      ]);
-      setChatInput("");
-      return;
-    }
-    
-    // Check if this is a job matching request based on resume
-    const isJobMatchingRequest = 
-      (normalized.includes("find") || normalized.includes("trouver") || normalized.includes("ابحث")) &&
-      (normalized.includes("job") || normalized.includes("emploi") || normalized.includes("وظائف") ||
-       normalized.includes("matching") || normalized.includes("correspondant") || normalized.includes("مطابقة") ||
-       normalized.includes("opportunit") || normalized.includes("فرص"));
-    
-    if (isJobMatchingRequest && hasResumeAttached) {
-      // Get user's resume skills to build a better query
-      const userData = userDataQuery.data as any;
-      const resumeSkills = userData?.autoApplyKeywords as string[] | undefined;
-      
-      // Build a query based on resume skills if available
-      let searchQuery = prompt;
-      if (resumeSkills && resumeSkills.length > 0) {
-        // Use top 3-5 skills to build query
-        const topSkills = resumeSkills.slice(0, 5).join(", ");
-        searchQuery = locale === "fr"
-          ? `Emplois en ${topSkills}`
-          : locale === "ar"
-            ? `وظائف في ${topSkills}`
-            : `Jobs in ${topSkills}`;
-      }
-      
-      setChatInput(searchQuery);
-      chatInputRef.current?.focus();
-      void handleSearch(searchQuery);
-      return;
-    }
-    
     setChatInput(prompt);
     chatInputRef.current?.focus();
     void handleSearch(prompt);
@@ -973,9 +494,7 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange, session
       if (!next) {
         setSelectedCategory(undefined);
       } else {
-        if (prev && prev !== next) {
-          setSelectedCategory(undefined);
-        }
+        if (prev && prev !== next) setSelectedCategory(undefined);
         setActiveTab(next);
       }
       return next;
@@ -1007,24 +526,18 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange, session
     }
 
     let charIndex = 0;
-
     const streamPlaceholder = () => {
       if (charIndex < placeholderText.length) {
         setPlaceholder(placeholderText.slice(0, charIndex + 1));
         charIndex++;
       } else {
-        if (placeholderIntervalRef.current) {
-          clearInterval(placeholderIntervalRef.current);
-        }
+        if (placeholderIntervalRef.current) clearInterval(placeholderIntervalRef.current);
       }
     };
 
     placeholderIntervalRef.current = setInterval(streamPlaceholder, 50);
-
     return () => {
-      if (placeholderIntervalRef.current) {
-        clearInterval(placeholderIntervalRef.current);
-      }
+      if (placeholderIntervalRef.current) clearInterval(placeholderIntervalRef.current);
     };
   }, [t]);
 
@@ -1037,30 +550,15 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange, session
 
   // Preview queries (always on)
   const previewJobsQuery = trpc.job.getJob.useQuery(
-    {
-      page: 1,
-      pageSize: Math.min(previewPageSize, MAX_PAGE_SIZE),
-      search: undefined,
-      category: selectedJobCategory,
-    },
+    { page: 1, pageSize: Math.min(previewPageSize, MAX_PAGE_SIZE), search: undefined, category: selectedJobCategory },
     { refetchOnWindowFocus: false },
   );
   const previewServicesQuery = trpc.service.getService.useQuery(
-    {
-      page: 1,
-      pageSize: Math.min(previewPageSize, MAX_PAGE_SIZE),
-      search: undefined,
-      serviceCategory: selectedServiceCategory,
-    },
+    { page: 1, pageSize: Math.min(previewPageSize, MAX_PAGE_SIZE), search: undefined, serviceCategory: selectedServiceCategory },
     { refetchOnWindowFocus: false },
   );
   const previewTasksQuery = trpc.task.getTask.useQuery(
-    {
-      page: 1,
-      pageSize: Math.min(previewPageSize, MAX_PAGE_SIZE),
-      search: undefined,
-      category: selectedTaskCategory,
-    },
+    { page: 1, pageSize: Math.min(previewPageSize, MAX_PAGE_SIZE), search: undefined, category: selectedTaskCategory },
     { refetchOnWindowFocus: false },
   );
 
@@ -1068,45 +566,18 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange, session
     setPreviewPageSize((prev) => Math.min(prev + 12, MAX_PAGE_SIZE));
   };
 
-  // Search result queries (manual, wider pageSize to filter top 6)
+  // Search result queries
   const searchJobsQuery = trpc.job.getJob.useQuery(
-    {
-      page: 1,
-      pageSize: SEARCH_PAGE_SIZE,
-      search: submittedQuery || undefined,
-      // In chat mode, category chips are used to generate prompts, not hard-filter results.
-      category: undefined,
-    },
-    {
-      enabled: hasSearched && activeTab === "jobs" && !!submittedQuery.trim(),
-      refetchOnWindowFocus: false,
-    },
+    { page: 1, pageSize: SEARCH_PAGE_SIZE, search: submittedQuery || undefined, category: undefined },
+    { enabled: hasSearched && activeTab === "jobs" && !!submittedQuery.trim(), refetchOnWindowFocus: false },
   );
   const searchServicesQuery = trpc.service.getService.useQuery(
-    {
-      page: 1,
-      pageSize: SEARCH_PAGE_SIZE,
-      search: submittedQuery || undefined,
-      // In chat mode, category chips are used to generate prompts, not hard-filter results.
-      serviceCategory: undefined,
-    },
-    {
-      enabled: hasSearched && activeTab === "services" && !!submittedQuery.trim(),
-      refetchOnWindowFocus: false,
-    },
+    { page: 1, pageSize: SEARCH_PAGE_SIZE, search: submittedQuery || undefined, serviceCategory: undefined },
+    { enabled: hasSearched && activeTab === "services" && !!submittedQuery.trim(), refetchOnWindowFocus: false },
   );
   const searchTasksQuery = trpc.task.getTask.useQuery(
-    {
-      page: 1,
-      pageSize: SEARCH_PAGE_SIZE,
-      search: submittedQuery || undefined,
-      // In chat mode, category chips are used to generate prompts, not hard-filter results.
-      category: undefined,
-    },
-    {
-      enabled: hasSearched && activeTab === "tasks" && !!submittedQuery.trim(),
-      refetchOnWindowFocus: false,
-    },
+    { page: 1, pageSize: SEARCH_PAGE_SIZE, search: submittedQuery || undefined, category: undefined },
+    { enabled: hasSearched && activeTab === "tasks" && !!submittedQuery.trim(), refetchOnWindowFocus: false },
   );
 
   const isSearching =
@@ -1121,69 +592,26 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange, session
     if (activeTab === "jobs") return (searchJobsQuery.data?.items ?? []).slice(0, SEARCH_PAGE_SIZE);
     if (activeTab === "services") return (searchServicesQuery.data?.items ?? []).slice(0, SEARCH_PAGE_SIZE);
     return (searchTasksQuery.data?.items ?? []).slice(0, SEARCH_PAGE_SIZE);
-  }, [
-    hasSearched,
-    submittedQuery,
-    activeTab,
-    searchJobsQuery.data?.items,
-    searchServicesQuery.data?.items,
-    searchTasksQuery.data?.items,
-  ]);
+  }, [hasSearched, submittedQuery, activeTab, searchJobsQuery.data?.items, searchServicesQuery.data?.items, searchTasksQuery.data?.items]);
 
   const topSearchLoading = useMemo(() => {
     if (!hasSearched || !submittedQuery.trim()) return false;
     if (activeTab === "jobs") return searchJobsQuery.isFetching;
     if (activeTab === "services") return searchServicesQuery.isFetching;
     return searchTasksQuery.isFetching;
-  }, [
-    hasSearched,
-    submittedQuery,
-    activeTab,
-    searchJobsQuery.isFetching,
-    searchServicesQuery.isFetching,
-    searchTasksQuery.isFetching,
-  ]);
+  }, [hasSearched, submittedQuery, activeTab, searchJobsQuery.isFetching, searchServicesQuery.isFetching, searchTasksQuery.isFetching]);
 
   const submittedResultsKey = useMemo(() => {
     if (!submittedQuery.trim()) return "";
     return `${activeTab}|${submittedQuery.trim()}`;
   }, [activeTab, submittedQuery]);
 
+  // Results summary effect: fires after search query completes
   useEffect(() => {
-    if (!hasSearched || !submittedQuery.trim()) return;
-    if (!submittedResultsKey) return;
-
-    setMessages((prev) =>
-      prev.map((msg) => {
-        if (!msg.results) return msg;
-        if (msg.results.key !== submittedResultsKey) return msg;
-        return {
-          ...msg,
-          results: {
-            ...msg.results,
-            items: topSearchItems,
-            isLoading: topSearchLoading,
-            type: activeTab,
-            query: submittedQuery,
-          },
-        };
-      }),
-    );
-  }, [
-    hasSearched,
-    submittedQuery,
-    submittedResultsKey,
-    activeTab,
-    topSearchItems,
-    topSearchLoading,
-  ]);
-
-  useEffect(() => {
-    if (!hasSearched || !submittedQuery.trim() || !submittedResultsKey) return;
-    if (topSearchLoading || topSearchItems.length === 0) return;
-
+    if (!hasSearched || !submittedQuery.trim() || topSearchLoading) return;
     let cancelled = false;
-      void (async () => {
+
+    void (async () => {
       try {
         const rawSummary = await callResultsSummary({
           locale,
@@ -1192,50 +620,32 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange, session
           items: topSearchItems,
         });
         if (cancelled || !rawSummary) return;
-        // STATE 6 — prefix summary with "Based on your resume" when resume is attached and searching jobs
-        const summary =
-          hasResumeAttached && activeTab === "jobs"
-            ? (locale === "fr"
-                ? "📈 Basé sur votre CV\n\n"
-                : locale === "ar"
-                  ? "📈 بناءً على سيرتك الذاتية\n\n"
-                  : "📈 Based on your resume\n\n") + rawSummary
-            : rawSummary;
+
+        const summary = hasResumeAttached && activeTab === "jobs"
+          ? `📈 Based on your resume\n\n${rawSummary}`
+          : rawSummary;
+
         setMessages((prev) =>
           prev.map((msg) => {
             if (!msg.results) return msg;
             if (msg.results.key !== submittedResultsKey) return msg;
-            return {
-              ...msg,
-              content: summary,
-            };
+            return { ...msg, content: summary };
           }),
         );
       } catch {
-        // If summarization API fails, keep a deterministic local fallback.
-        const fallback = buildResultsSummary({
-          type: activeTab,
-          items: topSearchItems,
-          query: submittedQuery,
-          locale,
-        });
+        const fallback = buildResultsSummary({ type: activeTab, items: topSearchItems, query: submittedQuery });
         if (cancelled || !fallback) return;
         setMessages((prev) =>
           prev.map((msg) => {
             if (!msg.results) return msg;
             if (msg.results.key !== submittedResultsKey) return msg;
-            return {
-              ...msg,
-              content: fallback,
-            };
+            return { ...msg, content: fallback };
           }),
         );
       }
     })();
 
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [hasSearched, submittedQuery, submittedResultsKey, topSearchLoading, topSearchItems, locale, activeTab, hasResumeAttached]);
 
   const handleSearch = async (overrideQuery?: string) => {
@@ -1256,243 +666,86 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange, session
             ? buildCategoryHint(pinnedIntent, String(selectedCategory ?? ""))
             : undefined;
         const agent = await callSearchAgent({ query: effectiveQuery, locale, scope: currentScope, categoryHint });
-        const tab: TabType = pinnedIntent ?? agent.intent;
-        const q = (agent.searchQuery || effectiveQuery).trim();
-        const searchParams = new URLSearchParams();
-        if (q) searchParams.set("search", q);
-        const routes: Record<TabType, string> = {
-          jobs: `/jobs?${searchParams.toString()}`,
-          services: `/services?${searchParams.toString()}`,
-          tasks: `/tasks?${searchParams.toString()}`,
-        };
-        window.location.href = routes[tab] ?? routes.jobs;
-        return;
+        if (agent.results?.items.length) {
+          const q = agent.searchQuery.trim();
+          router.push(`/jobs?search=${encodeURIComponent(q)}`);
+        } else {
+          router.push(`/jobs?search=${encodeURIComponent(effectiveQuery)}`);
+        }
+      } catch {
+        router.push(`/jobs?search=${encodeURIComponent(effectiveQuery)}`);
       } finally {
         setIsAgentWorking(false);
       }
-    }
-
-    if (!effectiveQuery) {
-      setHasSearched(false);
-      setSubmittedQuery("");
       return;
     }
 
+    if (!effectiveQuery) return;
     setChatExpanded(true);
-
-    const userMessageId = nextMessageIdRef.current++;
-    const assistantMessageId = nextMessageIdRef.current++;
-
-    setMessages((prev) => [
-      ...prev,
-      { id: userMessageId, role: "user", content: effectiveQuery },
-      { id: assistantMessageId, role: "assistant", kind: "text", content: "", thinking: true },
-    ]);
-
+    setIsAgentWorking(true);
     setChatInput("");
 
-    setIsAgentWorking(true);
+    const assistantMessageId = nextMessageIdRef.current++;
+    setMessages((prev) => [
+      ...prev,
+      { id: nextMessageIdRef.current++ - 1, role: "user" as const, content: effectiveQuery },
+      { id: assistantMessageId, role: "assistant" as const, thinking: true, content: "" },
+    ]);
+
     try {
       const categoryHint =
         pinnedIntent && activeTab === pinnedIntent
           ? buildCategoryHint(pinnedIntent, String(selectedCategory ?? ""))
           : undefined;
       const agent = await callSearchAgent({ query: effectiveQuery, locale, scope: currentScope, categoryHint });
-      if (agent.action === "chat") {
-        // Check if user is asking for resume insights and regenerate them
-        const isResumeInsightRequest = effectiveQuery.toLowerCase().includes("resume") && 
-          (effectiveQuery.toLowerCase().includes("insight") || effectiveQuery.toLowerCase().includes("analysis") || 
-           effectiveQuery.toLowerCase().includes("score") || effectiveQuery.toLowerCase().includes("bring back"));
-        
-        // Check if this is a resume enhancement request (user providing details after selecting Skills/Experience/Full Rewrite)
-        const lastAssistantMsg = messages.filter(m => m.role === "assistant").pop();
-        const isEnhancementFollowUp = lastAssistantMsg?.content && (
-          lastAssistantMsg.content.includes("ajouter comme compétences") ||
-          lastAssistantMsg.content.includes("add as skills") ||
-          lastAssistantMsg.content.includes("améliorer dans votre expérience") ||
-          lastAssistantMsg.content.includes("improve in your experience") ||
-          lastAssistantMsg.content.includes("améliorer dans votre CV") ||
-          lastAssistantMsg.content.includes("improve in your resume")
-        );
-        
-        if (isEnhancementFollowUp && hasResumeAttached) {
-          // User is providing enhancement details - generate actual suggestions
-          const userData = userDataQuery.data as any;
-          const resumeUrl = userData?.user?.resumeUrl;
-          if (resumeUrl) {
-            void (async () => {
-              try {
-                const res = await fetch(resumeUrl);
-                if (!res.ok) return;
-                const blob = await res.blob();
-                const file = new File([blob], "resume.pdf", { type: "application/pdf" });
-                const resumeText = await parsePDF(file);
-                
-                // Call LLM to generate enhancement suggestions
-                const enhancementRes = await fetch("/api/chat/resume-enhance", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ 
-                    resumeText, 
-                    userRequest: effectiveQuery,
-                    locale 
-                  }),
-                });
-                
-                if (!enhancementRes.ok) {
-                  // Fallback: provide generic suggestions
-                  const fallbackContent = locale === "fr"
-                    ? `Voici quelques suggestions pour améliorer votre CV :\n\n${effectiveQuery}\n\nJe vous recommande d'ajouter ces éléments dans la section appropriée de votre CV. Assurez-vous d'inclure des exemples concrets de projets où vous avez utilisé ces compétences.`
-                    : locale === "ar"
-                      ? `إليك بعض الاقتراحات لتحسين سيرتك الذاتية:\n\n${effectiveQuery}\n\nأوصي بإضافة هذه العناصر في القسم المناسب من سيرتك الذاتية. تأكد من تضمين أمثلة ملموسة للمشاريع التي استخدمت فيها هذه المهارات.`
-                      : `Here are some suggestions to improve your resume:\n\n${effectiveQuery}\n\nI recommend adding these elements to the appropriate section of your resume. Make sure to include concrete examples of projects where you used these skills.`;
-                  
-                  setMessages((prev) => [
-                    ...prev,
-                    {
-                      id: nextMessageIdRef.current++,
-                      role: "assistant" as const,
-                      content: fallbackContent,
-                    } as ChatMessage,
-                  ]);
-                  return;
-                }
-                
-                const enhancementData = await enhancementRes.json();
-                setMessages((prev) => [
-                  ...prev,
-                  {
-                    id: nextMessageIdRef.current++,
-                    role: "assistant" as const,
-                    content: enhancementData.suggestions || agent.assistantText || "",
-                  } as ChatMessage,
-                ]);
-              } catch {
-                // Fallback on error
-                const fallbackContent = locale === "fr"
-                  ? `Voici quelques suggestions pour améliorer votre CV basées sur votre demande : "${effectiveQuery}"`
-                  : locale === "ar"
-                    ? `إليك بعض الاقتراحات لتحسين سيرتك الذاتية بناءً على طلبك: "${effectiveQuery}"`
-                    : `Here are some suggestions to improve your resume based on your request: "${effectiveQuery}"`;
-                
-                setMessages((prev) => [
-                  ...prev,
-                  {
-                    id: nextMessageIdRef.current++,
-                    role: "assistant" as const,
-                    content: fallbackContent,
-                  } as ChatMessage,
-                ]);
-              }
-            })();
-            return; // Don't show the default agent response
-          }
-        }
-        
-        if (isResumeInsightRequest && hasResumeAttached) {
-          // Generate fresh resume insight
-          const userData = userDataQuery.data as any;
-          const resumeUrl = userData?.user?.resumeUrl;
-          if (resumeUrl) {
-            void (async () => {
-              try {
-                const res = await fetch(resumeUrl);
-                if (!res.ok) return;
-                const blob = await res.blob();
-                const file = new File([blob], "resume.pdf", { type: "application/pdf" });
-                const resumeText = await parsePDF(file);
-                const insightRes = await fetch("/api/chat/resume-insight", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ text: resumeText, locale }),
-                });
-                if (!insightRes.ok) return;
-                const insightData = await insightRes.json();
-                if (typeof insightData.overallScore !== "number") return;
-                const insight = {
-                  score: insightData.overallScore,
-                  skillGaps: insightData.skillGaps ?? [],
-                  improvements: insightData.improvements ?? [],
-                  suggestedRoles: insightData.suggestedRoles ?? [],
-                };
-        resumeInsightDataRef.current = insight;
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: nextMessageIdRef.current++,
-            role: "assistant" as const,
-            kind: "resume-insight" as const,
-            resumeInsight: insight,
-          } as ChatMessage,
-        ]);
-        
-        // After showing resume insight, suggest relevant jobs based on resume
-        setTimeout(() => {
-          const jobSuggestionContent = locale === "fr"
-            ? `Basé sur votre CV, je peux vous trouver des opportunités qui correspondent à votre profil. Voulez-vous que je recherche des postes adaptés à vos compétences ?`
-            : locale === "ar"
-              ? `بناءً على سيرتك الذاتية، يمكنني العثور على فرص تتناسب مع ملفك الشخصي. هل تريد مني البحث عن وظائف تتناسب مع مهاراتك؟`
-              : `Based on your resume, I can find opportunities that match your profile. Would you like me to search for positions suited to your skills?`;
-          
-          const jobSuggestionPrompts = locale === "fr"
-            ? ["Trouver des emplois correspondants", "Voir les opportunités"]
-            : locale === "ar"
-              ? ["ابحث عن وظائف مطابقة", "عرض الفرص"]
-              : ["Find matching jobs", "See opportunities"];
-          
-          setMessages((prev) => [
-            ...prev,
-            {
-              id: nextMessageIdRef.current++,
-              role: "assistant" as const,
-              kind: "suggestions" as const,
-              content: jobSuggestionContent,
-              relatedPrompts: jobSuggestionPrompts,
-            } as ChatMessage,
-          ]);
-        }, 1500);
-              } catch {
-                // Non-fatal
-              }
-            })();
-          }
-        }
-        
+
+      if (agent.planLimitReached) {
         setMessages((prev) =>
           prev.map((m) =>
             m.id === assistantMessageId
               ? {
                   ...m,
                   thinking: false,
-                  kind: "text",
+                  kind: "suggestions" as const,
+                  content: agent.assistantText ?? "",
+                  relatedPrompts: agent.relatedPrompts,
+                  upgradeUrl: agent.upgradeUrl,
+                }
+              : m,
+          ),
+        );
+        return;
+      }
+
+      if (agent.action === "chat") {
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === assistantMessageId
+              ? {
+                  ...m,
+                  thinking: false,
+                  kind: "text" as const,
                   content: agent.assistantText ?? "",
                 }
               : m,
           ),
         );
-
         return;
       }
 
+      // Agent returned a search intent — auto-pin if not already pinned
       const tab: TabType = pinnedIntent ?? agent.intent;
-
-      // STATE 2 — track job searches for smart CTA timing
-      if (tab === "jobs") {
-        jobSearchCountRef.current += 1;
+      if (!pinnedIntent) {
+        setPinnedIntent(tab);
+        setActiveTab(tab);
       }
 
       const q = (agent.searchQuery || "").trim();
       if (!q) {
-        // If the agent couldn't produce a search query, treat it like chat.
         setMessages((prev) =>
           prev.map((m) =>
             m.id === assistantMessageId
-              ? {
-                  ...m,
-                  thinking: false,
-                  kind: "text",
-                  content: agent.assistantText ?? "",
-                }
+              ? { ...m, thinking: false, kind: "text" as const, content: agent.assistantText ?? "" }
               : m,
           ),
         );
@@ -1520,7 +773,7 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange, session
               ? {
                   ...m,
                   thinking: false,
-                  kind: "results",
+                  kind: "results" as const,
                   content: agent.assistantText ?? "",
                   resumeUploadCta: agent.resumeUploadCta,
                   relatedPrompts: agent.relatedPrompts,
@@ -1535,7 +788,6 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange, session
               : m,
           ),
         );
-
         return;
       }
 
@@ -1545,15 +797,14 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange, session
       setPreviewPageSize(12);
       setHasSearched(true);
 
-      // Turn the assistant bubble into the results bubble (cards only).
       setMessages((prev) =>
         prev.map((m) =>
           m.id === assistantMessageId
             ? {
                 ...m,
                 thinking: false,
-                kind: "results",
-                content: agent.assistantText ?? "",
+                kind: "results" as const,
+                content: "",
                 resumeUploadCta: agent.resumeUploadCta,
                 relatedPrompts: agent.relatedPrompts,
                 results: {
@@ -1575,13 +826,8 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange, session
             ? {
                 ...m,
                 thinking: false,
-                kind: "text",
-                content:
-                  locale === "fr"
-                    ? "Désolé, je n’arrive pas à lancer la recherche pour le moment. Réessaie dans un instant."
-                    : locale === "ar"
-                      ? "عذرًا، لا أستطيع بدء البحث الآن. حاول مرة أخرى بعد قليل."
-                      : "Sorry, I can’t start the search right now. Please try again in a moment.",
+                kind: "text" as const,
+                content: t("errorMessage"),
               }
             : m,
         ),
@@ -1599,19 +845,10 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange, session
       return { items: previewServicesQuery.data?.items ?? [], loading: previewServicesQuery.isLoading };
     }
     return { items: previewTasksQuery.data?.items ?? [], loading: previewTasksQuery.isLoading };
-  }, [
-    activeTab,
-    previewJobsQuery.data?.items,
-    previewJobsQuery.isLoading,
-    previewServicesQuery.data?.items,
-    previewServicesQuery.isLoading,
-    previewTasksQuery.data?.items,
-    previewTasksQuery.isLoading,
-  ]);
+  }, [activeTab, previewJobsQuery.data?.items, previewJobsQuery.isLoading, previewServicesQuery.data?.items, previewServicesQuery.isLoading, previewTasksQuery.data?.items, previewTasksQuery.isLoading]);
 
   useEffect(() => {
     if (!onPreviewChange) return;
-
     onPreviewChange({
       items: previewItems.items,
       type: activeTab,
@@ -1635,21 +872,13 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange, session
       onCategoryChange: (nextCategory) => {
         setSelectedCategory(nextCategory as any);
         setPreviewPageSize(12);
-        // If user already searched, keep search mode (query hooks will refetch automatically).
         const hasQuery = !!submittedQuery.trim();
         setHasSearched(hasQuery);
       },
       onLoadMore: handleLoadMorePreview,
       loadMoreLabel: t("loadMore"),
     });
-  }, [
-    activeTab,
-    onPreviewChange,
-    t,
-    previewItems,
-    selectedCategory,
-    submittedQuery,
-  ]);
+  }, [activeTab, onPreviewChange, t, previewItems, selectedCategory, submittedQuery]);
 
   return (
     <div className={`mx-auto w-full max-w-none text-left md:max-w-4xl ${chatExpanded ? "h-full min-h-0" : ""}`}>
@@ -1659,11 +888,12 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange, session
             chatExpanded={chatExpanded}
             messages={messages}
             chatInput={chatInput}
-                    placeholder={placeholder || t("placeholder")}
+            placeholder={placeholder || t("placeholder")}
             dir={dir}
             isSearching={isSearching}
             isAgentWorking={isAgentWorking}
             pinnedIntent={pinnedIntent}
+            inSession={inSession}
             userInitial={session?.user?.name?.slice(0, 1)?.toUpperCase() || "U"}
             chatInputRef={chatInputRef}
             labels={{
@@ -1671,58 +901,38 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange, session
               thinking: t("thinking"),
               noResults: t("messages.noResults"),
               related: t("labels.related"),
-              jobs: t("tabs.jobs"),
-              services: t("tabs.services"),
-              tasks: t("tabs.tasks"),
-              jobsShort: locale === "fr" ? "Emplois" : locale === "ar" ? "وظائف" : "Jobs",
-              servicesShort: locale === "fr" ? "Services" : locale === "ar" ? "خدمات" : "Services",
-              tasksShort: locale === "fr" ? "Tâches" : locale === "ar" ? "مهام" : "Tasks",
+              jobs: t("actionButtons.categories.jobs"),
+              services: t("actionButtons.categories.services"),
+              tasks: t("actionButtons.categories.tasks"),
+              jobsShort: t("jobsShort"),
+              servicesShort: t("servicesShort"),
+              tasksShort: t("tasksShort"),
               cvShort: "CV",
-              whyPicked:
-                locale === "fr"
-                  ? "Pourquoi ce choix"
-                  : locale === "ar"
-                    ? "سبب الاختيار"
-                    : "Why picked",
-              confidence:
-                locale === "fr"
-                  ? "Niveau de confiance"
-                  : locale === "ar"
-                    ? "طبقة الثقة"
-                    : "Confidence",
+              whyPicked: t("whyPicked"),
+              confidence: t("confidence"),
             }}
             onInputChange={setChatInput}
-            onSubmit={() => {
-              void handleSearch();
-            }}
-            onImproveResume={handleImproveResume}
+            onSubmit={() => { void handleSearch(); }}
             onPinnedIntentClear={() => {
               setPinnedIntent(null);
               setSelectedCategory(undefined);
             }}
+            onIntentChange={(intent) => {
+              setPinnedIntent(intent);
+              if (intent) setActiveTab(intent);
+              else setSelectedCategory(undefined);
+            }}
             onSuggestionSelect={handlePromptSelection}
             onResumeAttach={handleResumeAttach}
-            resumeAttachLabel={
-              locale === "fr"
-                ? "Joindre un CV (PDF)"
-                : locale === "ar"
-                  ? "إرفاق السيرة الذاتية (PDF)"
-                  : "Attach resume (PDF)"
-            }
+            resumeAttachLabel={t("resume.attachLabel")}
             resumeAttachStatusText={resumeAttachStatusText}
             resumeAttachProgress={resumeAttachProgress}
             resumeAttachFileName={resumeAttachFileName}
             hasResumeAttached={hasResumeAttached}
-            resumeAttachedLabel={
-              locale === "fr"
-                ? "CV actif"
-                : locale === "ar"
-                  ? "السيرة مرفقة"
-                  : "CV attached"
-            }
+            resumeAttachedLabel={t("resume.attachedLabel")}
           />
 
-          {/* Prompt shortcuts (like before) */}
+          {/* Action buttons shown only when chat is not expanded (home page mode) */}
           {!chatExpanded && (
             <ActionButton
               selectedAction={pinnedIntent}
@@ -1738,7 +948,7 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange, session
         </div>
       </div>
       {isSecondary && (
-      <div className="px-6 pb-4">
+        <div className="px-6 pb-4">
           <div className="flex justify-center">
             <Link href="/jobs">
               <Button className="px-6 h-10 text-white bg-black rounded-full hover:bg-gray-800">
@@ -1746,8 +956,8 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange, session
               </Button>
             </Link>
           </div>
-          </div>
-        )}
+        </div>
+      )}
     </div>
   );
 }

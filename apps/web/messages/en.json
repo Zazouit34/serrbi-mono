@@ -374,6 +374,29 @@
     },
     "browseJobs": "Browse Jobs",
     "loadMore": "Load more",
+    "errorMessage": "Sorry, I can't start the search right now. Please try again in a moment.",
+    "jobsShort": "Jobs",
+    "servicesShort": "Services",
+    "tasksShort": "Tasks",
+    "whyPicked": "Why picked",
+    "confidence": "Confidence level",
+    "resume": {
+      "uploadText": "Uploading resume...",
+      "receiveText": "Resume received — Analyzing your experience...",
+      "doneText": "Resume attached and profile updated. Your next searches will be more relevant thanks to resume matching.",
+      "errorText": "Failed to attach resume right now. Please try again.",
+      "pdfOnly": "Please attach a PDF file.",
+      "attachLabel": "Attach resume (PDF)",
+      "attachedLabel": "CV attached",
+      "noCv": "No CV",
+      "postUploadMessage": "I've analyzed your resume. Based on your profile as a {jobTitle}, let me find you the best matching jobs."
+    },
+    "intentSelect": {
+      "placeholder": "Focus on...",
+      "jobs": "Jobs",
+      "services": "Services",
+      "tasks": "Tasks"
+    },
     "onboarding": {
       "greeting": "Hi, I am Serrbi! I can help you find",
       "chooseAction": "Choose",
