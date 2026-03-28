@@ -444,6 +444,45 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange, session
     }
   }, [isLoggedIn, userDataQuery.data, resumeAttachStatusText, resumeAttachProgress]);
 
+  // Auto-generate resume insight on page load if user has resume but no insight in chat
+  useEffect(() => {
+    if (!hasInitial || !hasResumeAttached || !isLoggedIn) return;
+    // Check if we already have messages or if insight was already generated
+    if (messages.length > 0 || resumeInsightDataRef.current) return;
+    
+    const userData = userDataQuery.data as any;
+    const resumeUrl = userData?.user?.resumeUrl;
+    if (!resumeUrl) return;
+    
+    let cancelled = false;
+    void (async () => {
+      try {
+        const res = await fetch(resumeUrl);
+        if (!res.ok || cancelled) return;
+        const blob = await res.blob();
+        const file = new File([blob], "resume.pdf", { type: "application/pdf" });
+        const resumeText = await parsePDF(file);
+        const insightRes = await fetch("/api/chat/resume-insight", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text: resumeText, locale }),
+        });
+        if (!insightRes.ok || cancelled) return;
+        const insightData = await insightRes.json();
+        if (cancelled || typeof insightData.overallScore !== "number") return;
+        const insight = {
+          score: insightData.overallScore,
+          skillGaps: insightData.skillGaps ?? [],
+          improvements: insightData.improvements ?? [],
+          suggestedRoles: insightData.suggestedRoles ?? [],
+        };
+        resumeInsightDataRef.current = insight;
+      } catch {
+        // Non-fatal
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [hasInitial, hasResumeAttached, isLoggedIn, userDataQuery.data, locale, messages.length]);
 
   // STATE 7 — Re-engagement: after resume is attached, remind user to improve it after 60s
   useEffect(() => {
@@ -861,6 +900,68 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange, session
       router.push(upgradeUrl || "/subscription");
       return;
     }
+    
+    // Check if this is a resume enhancement request
+    const isSkillsEnhancement = normalized.includes("skill") || normalized.includes("compétence") || normalized.includes("مهارات");
+    const isExperienceEnhancement = normalized.includes("experience") || normalized.includes("expérience") || normalized.includes("خبرة");
+    const isFullRewrite = normalized.includes("rewrite") || normalized.includes("réécriture") || normalized.includes("إعادة كتابة");
+    
+    if ((isSkillsEnhancement || isExperienceEnhancement || isFullRewrite) && hasResumeAttached) {
+      // Handle resume enhancement request
+      const enhancementType = isSkillsEnhancement ? "skills" : isExperienceEnhancement ? "experience" : "full";
+      const followUpContent = locale === "fr"
+        ? `D'accord ! Dites-moi ce que vous voulez ${enhancementType === "skills" ? "ajouter comme compétences" : enhancementType === "experience" ? "améliorer dans votre expérience" : "améliorer dans votre CV"} ?`
+        : locale === "ar"
+          ? `حسناً! أخبرني ماذا تريد ${enhancementType === "skills" ? "إضافة من المهارات" : enhancementType === "experience" ? "تحسين في خبرتك" : "تحسين في سيرتك الذاتية"}؟`
+          : `Great! Tell me what you want to ${enhancementType === "skills" ? "add as skills" : enhancementType === "experience" ? "improve in your experience" : "improve in your resume"}?`;
+      
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: nextMessageIdRef.current++,
+          role: "user" as const,
+          content: prompt,
+        },
+        {
+          id: nextMessageIdRef.current++,
+          role: "assistant" as const,
+          content: followUpContent,
+        },
+      ]);
+      setChatInput("");
+      return;
+    }
+    
+    // Check if this is a job matching request based on resume
+    const isJobMatchingRequest = 
+      (normalized.includes("find") || normalized.includes("trouver") || normalized.includes("ابحث")) &&
+      (normalized.includes("job") || normalized.includes("emploi") || normalized.includes("وظائف") ||
+       normalized.includes("matching") || normalized.includes("correspondant") || normalized.includes("مطابقة") ||
+       normalized.includes("opportunit") || normalized.includes("فرص"));
+    
+    if (isJobMatchingRequest && hasResumeAttached) {
+      // Get user's resume skills to build a better query
+      const userData = userDataQuery.data as any;
+      const resumeSkills = userData?.autoApplyKeywords as string[] | undefined;
+      
+      // Build a query based on resume skills if available
+      let searchQuery = prompt;
+      if (resumeSkills && resumeSkills.length > 0) {
+        // Use top 3-5 skills to build query
+        const topSkills = resumeSkills.slice(0, 5).join(", ");
+        searchQuery = locale === "fr"
+          ? `Emplois en ${topSkills}`
+          : locale === "ar"
+            ? `وظائف في ${topSkills}`
+            : `Jobs in ${topSkills}`;
+      }
+      
+      setChatInput(searchQuery);
+      chatInputRef.current?.focus();
+      void handleSearch(searchQuery);
+      return;
+    }
+    
     setChatInput(prompt);
     chatInputRef.current?.focus();
     void handleSearch(prompt);
@@ -1203,6 +1304,91 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange, session
           (effectiveQuery.toLowerCase().includes("insight") || effectiveQuery.toLowerCase().includes("analysis") || 
            effectiveQuery.toLowerCase().includes("score") || effectiveQuery.toLowerCase().includes("bring back"));
         
+        // Check if this is a resume enhancement request (user providing details after selecting Skills/Experience/Full Rewrite)
+        const lastAssistantMsg = messages.filter(m => m.role === "assistant").pop();
+        const isEnhancementFollowUp = lastAssistantMsg?.content && (
+          lastAssistantMsg.content.includes("ajouter comme compétences") ||
+          lastAssistantMsg.content.includes("add as skills") ||
+          lastAssistantMsg.content.includes("améliorer dans votre expérience") ||
+          lastAssistantMsg.content.includes("improve in your experience") ||
+          lastAssistantMsg.content.includes("améliorer dans votre CV") ||
+          lastAssistantMsg.content.includes("improve in your resume")
+        );
+        
+        if (isEnhancementFollowUp && hasResumeAttached) {
+          // User is providing enhancement details - generate actual suggestions
+          const userData = userDataQuery.data as any;
+          const resumeUrl = userData?.user?.resumeUrl;
+          if (resumeUrl) {
+            void (async () => {
+              try {
+                const res = await fetch(resumeUrl);
+                if (!res.ok) return;
+                const blob = await res.blob();
+                const file = new File([blob], "resume.pdf", { type: "application/pdf" });
+                const resumeText = await parsePDF(file);
+                
+                // Call LLM to generate enhancement suggestions
+                const enhancementRes = await fetch("/api/chat/resume-enhance", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ 
+                    resumeText, 
+                    userRequest: effectiveQuery,
+                    locale 
+                  }),
+                });
+                
+                if (!enhancementRes.ok) {
+                  // Fallback: provide generic suggestions
+                  const fallbackContent = locale === "fr"
+                    ? `Voici quelques suggestions pour améliorer votre CV :\n\n${effectiveQuery}\n\nJe vous recommande d'ajouter ces éléments dans la section appropriée de votre CV. Assurez-vous d'inclure des exemples concrets de projets où vous avez utilisé ces compétences.`
+                    : locale === "ar"
+                      ? `إليك بعض الاقتراحات لتحسين سيرتك الذاتية:\n\n${effectiveQuery}\n\nأوصي بإضافة هذه العناصر في القسم المناسب من سيرتك الذاتية. تأكد من تضمين أمثلة ملموسة للمشاريع التي استخدمت فيها هذه المهارات.`
+                      : `Here are some suggestions to improve your resume:\n\n${effectiveQuery}\n\nI recommend adding these elements to the appropriate section of your resume. Make sure to include concrete examples of projects where you used these skills.`;
+                  
+                  setMessages((prev) => [
+                    ...prev,
+                    {
+                      id: nextMessageIdRef.current++,
+                      role: "assistant" as const,
+                      content: fallbackContent,
+                    } as ChatMessage,
+                  ]);
+                  return;
+                }
+                
+                const enhancementData = await enhancementRes.json();
+                setMessages((prev) => [
+                  ...prev,
+                  {
+                    id: nextMessageIdRef.current++,
+                    role: "assistant" as const,
+                    content: enhancementData.suggestions || agent.assistantText || "",
+                  } as ChatMessage,
+                ]);
+              } catch {
+                // Fallback on error
+                const fallbackContent = locale === "fr"
+                  ? `Voici quelques suggestions pour améliorer votre CV basées sur votre demande : "${effectiveQuery}"`
+                  : locale === "ar"
+                    ? `إليك بعض الاقتراحات لتحسين سيرتك الذاتية بناءً على طلبك: "${effectiveQuery}"`
+                    : `Here are some suggestions to improve your resume based on your request: "${effectiveQuery}"`;
+                
+                setMessages((prev) => [
+                  ...prev,
+                  {
+                    id: nextMessageIdRef.current++,
+                    role: "assistant" as const,
+                    content: fallbackContent,
+                  } as ChatMessage,
+                ]);
+              }
+            })();
+            return; // Don't show the default agent response
+          }
+        }
+        
         if (isResumeInsightRequest && hasResumeAttached) {
           // Generate fresh resume insight
           const userData = userDataQuery.data as any;
@@ -1229,16 +1415,42 @@ function HeroSearchBarComponent({ onPreviewChange, onChatExpandedChange, session
                   improvements: insightData.improvements ?? [],
                   suggestedRoles: insightData.suggestedRoles ?? [],
                 };
-                resumeInsightDataRef.current = insight;
-                setMessages((prev) => [
-                  ...prev,
-                  {
-                    id: nextMessageIdRef.current++,
-                    role: "assistant" as const,
-                    kind: "resume-insight" as const,
-                    resumeInsight: insight,
-                  } as ChatMessage,
-                ]);
+        resumeInsightDataRef.current = insight;
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: nextMessageIdRef.current++,
+            role: "assistant" as const,
+            kind: "resume-insight" as const,
+            resumeInsight: insight,
+          } as ChatMessage,
+        ]);
+        
+        // After showing resume insight, suggest relevant jobs based on resume
+        setTimeout(() => {
+          const jobSuggestionContent = locale === "fr"
+            ? `Basé sur votre CV, je peux vous trouver des opportunités qui correspondent à votre profil. Voulez-vous que je recherche des postes adaptés à vos compétences ?`
+            : locale === "ar"
+              ? `بناءً على سيرتك الذاتية، يمكنني العثور على فرص تتناسب مع ملفك الشخصي. هل تريد مني البحث عن وظائف تتناسب مع مهاراتك؟`
+              : `Based on your resume, I can find opportunities that match your profile. Would you like me to search for positions suited to your skills?`;
+          
+          const jobSuggestionPrompts = locale === "fr"
+            ? ["Trouver des emplois correspondants", "Voir les opportunités"]
+            : locale === "ar"
+              ? ["ابحث عن وظائف مطابقة", "عرض الفرص"]
+              : ["Find matching jobs", "See opportunities"];
+          
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: nextMessageIdRef.current++,
+              role: "assistant" as const,
+              kind: "suggestions" as const,
+              content: jobSuggestionContent,
+              relatedPrompts: jobSuggestionPrompts,
+            } as ChatMessage,
+          ]);
+        }, 1500);
               } catch {
                 // Non-fatal
               }
