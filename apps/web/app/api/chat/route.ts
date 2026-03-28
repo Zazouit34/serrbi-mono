@@ -54,6 +54,7 @@ type AgentResponse = {
     description: string;
     buttonLabel: string;
   };
+  intentMismatch?: { suggestedIntent: AgentIntent };
   debug?: Record<string, unknown>;
   planLimitReached?: boolean;
   upgradeUrl?: string;
@@ -1098,6 +1099,54 @@ function logChatDebug(step: string, payload: unknown): void {
   console.log(`[chat-debug] ${step}`, payload);
 }
 
+function buildScopeMismatchMessage(
+  locale: string,
+  currentScope: string,
+  suggestedIntent: string,
+): string {
+  const intentLabel: Record<string, Record<string, string>> = {
+    services: { fr: "les services", ar: "الخدمات", en: "services" },
+    tasks: { fr: "les tâches", ar: "المهام", en: "tasks" },
+    jobs: { fr: "les emplois", ar: "الوظائف", en: "jobs" },
+  };
+  const currentLabel: Record<string, Record<string, string>> = {
+    jobs: { fr: "emplois", ar: "وظائف", en: "jobs" },
+    services: { fr: "services", ar: "خدمات", en: "services" },
+    tasks: { fr: "tâches", ar: "مهام", en: "tasks" },
+  };
+  const lang = ["fr", "ar"].includes(locale) ? locale : "en";
+  const suggested = intentLabel[suggestedIntent]?.[lang] ?? suggestedIntent;
+  const current = currentLabel[currentScope]?.[lang] ?? currentScope;
+
+  if (lang === "fr") {
+    return `Vous êtes actuellement en mode **${current}**. Voulez-vous basculer vers **${suggested}** pour cette recherche ?`;
+  }
+  if (lang === "ar") {
+    return `أنت حاليًا في وضع **${current}**. هل تريد التبديل إلى **${suggested}** لهذا البحث؟`;
+  }
+  return `You're currently in **${current}** mode. Would you like to switch to **${suggested}** for this search?`;
+}
+
+function buildSwitchConfirmPrompt(locale: string, suggestedIntent: string): string {
+  const labels: Record<string, Record<string, string>> = {
+    services: { fr: "Oui, passer aux services", ar: "نعم، التبديل إلى الخدمات", en: "Yes, switch to services" },
+    tasks: { fr: "Oui, passer aux tâches", ar: "نعم، التبديل إلى المهام", en: "Yes, switch to tasks" },
+    jobs: { fr: "Oui, passer aux emplois", ar: "نعم، التبديل إلى الوظائف", en: "Yes, switch to jobs" },
+  };
+  const lang = ["fr", "ar"].includes(locale) ? locale : "en";
+  return labels[suggestedIntent]?.[lang] ?? `Yes, switch to ${suggestedIntent}`;
+}
+
+function buildStayPrompt(locale: string, currentScope: string): string {
+  const labels: Record<string, Record<string, string>> = {
+    jobs: { fr: "Non, continuer avec les emplois", ar: "لا، الاستمرار مع الوظائف", en: "No, keep searching jobs" },
+    services: { fr: "Non, continuer avec les services", ar: "لا، الاستمرار مع الخدمات", en: "No, keep searching services" },
+    tasks: { fr: "Non, continuer avec les tâches", ar: "لا، الاستمرار مع المهام", en: "No, keep searching tasks" },
+  };
+  const lang = ["fr", "ar"].includes(locale) ? locale : "en";
+  return labels[currentScope]?.[lang] ?? `No, keep searching ${currentScope}`;
+}
+
 export async function POST(req: Request) {
   try {
     const includeDebug = process.env.CHAT_DEBUG === "true" || process.env.NODE_ENV !== "production";
@@ -1192,6 +1241,31 @@ export async function POST(req: Request) {
         extractedIntentData: aiResult.intent_data ?? null,
       },
     });
+
+    // Scope guard: if user has pinned an intent and asks for a different type, ask to switch
+    const pinnedScope = body.context?.scope;
+    if (pinnedScope && pinnedScope !== "auto" && aiResult.type !== "conversation") {
+      const scopeToType: Record<string, string> = {
+        jobs: "search_job",
+        services: "search_service",
+        tasks: "search_task",
+      };
+      const expectedType = scopeToType[pinnedScope];
+      if (expectedType && aiResult.type !== expectedType) {
+        const suggestedIntent = aiResult.type === "search_service" ? "services" : "tasks";
+        return NextResponse.json({
+          action: "chat",
+          intent: pinnedScope as AgentIntent,
+          searchQuery: "",
+          assistantText: buildScopeMismatchMessage(locale, pinnedScope, suggestedIntent),
+          relatedPrompts: [
+            buildSwitchConfirmPrompt(locale, suggestedIntent),
+            buildStayPrompt(locale, pinnedScope),
+          ],
+          intentMismatch: { suggestedIntent: suggestedIntent as AgentIntent },
+        } satisfies AgentResponse);
+      }
+    }
 
     if (aiResult.type === "conversation") {
       return NextResponse.json({

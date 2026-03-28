@@ -15,7 +15,7 @@ import { serviceCategoryValues } from "@workspace/ui/lib/service-enum";
 import { taskCategoryValues } from "@workspace/ui/lib/task-enum";
 import { ActionButton } from "@/components/ui/action-button";
 import { AgentChatContainer } from "@/components/ui/agent-chat-container";
-import { useResumeAttach, type ResumeProfile } from "@/components/ui/use-resume-attach";
+import { useResumeAttach, type ResumeProfile, type ResumeInsightData } from "@/components/ui/use-resume-attach";
 
 type TabType = "jobs" | "services" | "tasks";
 type ScopeOverride = "auto" | TabType;
@@ -43,6 +43,7 @@ export type ChatMessage = {
   relatedPrompts?: string[];
   suggestionsForKey?: string;
   upgradeUrl?: string;
+  suggestedIntentSwitch?: TabType; // set on scope-mismatch suggestions so we can auto-switch
   resumeUploadCta?: {
     title: string;
     description: string;
@@ -95,6 +96,7 @@ type AgentResponse = {
     description: string;
     buttonLabel: string;
   };
+  intentMismatch?: { suggestedIntent: TabType };
   debug?: Record<string, unknown>;
   planLimitReached?: boolean;
   upgradeUrl?: string;
@@ -260,30 +262,19 @@ function HeroSearchBarComponent({
   // Resume attach hook
   const { handleResumeAttach } = useResumeAttach({
     isLoggedIn,
+    locale,
     onStatusChange: (text) => {
       setResumeAttachStatusText(text);
       setChatExpanded(true);
     },
     onProgressChange: setResumeAttachProgress,
     onFileNameChange: setResumeAttachFileName,
-    onAttached: (profile: ResumeProfile) => {
+    onAttached: (profile: ResumeProfile, insight: ResumeInsightData | null) => {
       setResumeAttachStatusText("");
       setHasResumeAttached(true);
       userDataQuery.refetch();
 
-      // Inject resume insight after upload
-      void (async () => {
-        try {
-          const insightRes = await fetch("/api/chat/resume-insight", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ text: "", locale }),
-          });
-          // Use the insight API but we may not have resumeText here - handled below
-        } catch { /* non-fatal */ }
-      })();
-
-      // Use extracted profile data to pin intent and suggest relevant jobs
+      // Pin jobs intent automatically
       if (!pinnedIntent) {
         setPinnedIntent("jobs");
         setActiveTab("jobs");
@@ -297,6 +288,20 @@ function HeroSearchBarComponent({
           ? skills.slice(0, 3).join(", ")
           : null;
 
+      // Inject insight card if we got one
+      if (insight) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: nextMessageIdRef.current++,
+            role: "assistant" as const,
+            kind: "resume-insight" as const,
+            resumeInsight: insight,
+          } as ChatMessage,
+        ]);
+      }
+
+      // Inject suggestion to search based on the resume profile
       if (searchQuery) {
         setMessages((prev) => [
           ...prev,
@@ -477,10 +482,26 @@ function HeroSearchBarComponent({
     return typeof json?.summary === "string" ? json.summary.trim() : "";
   };
 
-  const handlePromptSelection = (prompt: string, upgradeUrl?: string) => {
+  const handlePromptSelection = (prompt: string, upgradeUrl?: string, intentSwitch?: TabType) => {
     const normalized = prompt.trim().toLowerCase();
     if (normalized === "plans" || normalized === "plan" || normalized === "pricing") {
       router.push(upgradeUrl || "/subscription");
+      return;
+    }
+    // User confirmed an intent switch from a scope-mismatch suggestion
+    if (intentSwitch) {
+      setPinnedIntent(intentSwitch);
+      setActiveTab(intentSwitch);
+      // Add a user confirmation message and proceed with the search under the new intent
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: nextMessageIdRef.current++,
+          role: "user" as const,
+          content: prompt,
+        } as ChatMessage,
+      ]);
+      void handleSearch(prompt, intentSwitch);
       return;
     }
     setChatInput(prompt);
@@ -648,7 +669,7 @@ function HeroSearchBarComponent({
     return () => { cancelled = true; };
   }, [hasSearched, submittedQuery, submittedResultsKey, topSearchLoading, topSearchItems, locale, activeTab, hasResumeAttached]);
 
-  const handleSearch = async (overrideQuery?: string) => {
+  const handleSearch = async (overrideQuery?: string, overrideIntent?: TabType) => {
     const effectiveQuery = (overrideQuery ?? chatInput).trim();
 
     if (!isLoggedIn) {
@@ -656,6 +677,9 @@ function HeroSearchBarComponent({
       router.push(`/login?callbackUrl=${encodeURIComponent(callback)}`);
       return;
     }
+
+    // Effective scope uses overrideIntent if provided (e.g. after user confirms intent switch)
+    const effectiveScope: ScopeOverride = overrideIntent ?? currentScope;
 
     // For the secondary client, keep simple redirect behavior (but let the agent pick scope)
     if (isSecondary) {
@@ -665,7 +689,7 @@ function HeroSearchBarComponent({
           pinnedIntent && activeTab === pinnedIntent
             ? buildCategoryHint(pinnedIntent, String(selectedCategory ?? ""))
             : undefined;
-        const agent = await callSearchAgent({ query: effectiveQuery, locale, scope: currentScope, categoryHint });
+        const agent = await callSearchAgent({ query: effectiveQuery, locale, scope: effectiveScope, categoryHint });
         if (agent.results?.items.length) {
           const q = agent.searchQuery.trim();
           router.push(`/jobs?search=${encodeURIComponent(q)}`);
@@ -686,18 +710,26 @@ function HeroSearchBarComponent({
     setChatInput("");
 
     const assistantMessageId = nextMessageIdRef.current++;
-    setMessages((prev) => [
-      ...prev,
-      { id: nextMessageIdRef.current++ - 1, role: "user" as const, content: effectiveQuery },
-      { id: assistantMessageId, role: "assistant" as const, thinking: true, content: "" },
-    ]);
+    // When called from handlePromptSelection with intentSwitch, user message was already injected
+    if (!overrideIntent) {
+      setMessages((prev) => [
+        ...prev,
+        { id: nextMessageIdRef.current++ - 1, role: "user" as const, content: effectiveQuery },
+        { id: assistantMessageId, role: "assistant" as const, thinking: true, content: "" },
+      ]);
+    } else {
+      setMessages((prev) => [
+        ...prev,
+        { id: assistantMessageId, role: "assistant" as const, thinking: true, content: "" },
+      ]);
+    }
 
     try {
       const categoryHint =
-        pinnedIntent && activeTab === pinnedIntent
-          ? buildCategoryHint(pinnedIntent, String(selectedCategory ?? ""))
+        (overrideIntent ?? pinnedIntent) && activeTab === (overrideIntent ?? pinnedIntent)
+          ? buildCategoryHint((overrideIntent ?? pinnedIntent)!, String(selectedCategory ?? ""))
           : undefined;
-      const agent = await callSearchAgent({ query: effectiveQuery, locale, scope: currentScope, categoryHint });
+      const agent = await callSearchAgent({ query: effectiveQuery, locale, scope: effectiveScope, categoryHint });
 
       if (agent.planLimitReached) {
         setMessages((prev) =>
@@ -718,6 +750,25 @@ function HeroSearchBarComponent({
       }
 
       if (agent.action === "chat") {
+        // Scope mismatch: agent proposes to switch intent
+        if (agent.intentMismatch) {
+          const { suggestedIntent } = agent.intentMismatch;
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === assistantMessageId
+                ? {
+                    ...m,
+                    thinking: false,
+                    kind: "suggestions" as const,
+                    content: agent.assistantText ?? "",
+                    relatedPrompts: agent.relatedPrompts,
+                    suggestedIntentSwitch: suggestedIntent,
+                  }
+                : m,
+            ),
+          );
+          return;
+        }
         setMessages((prev) =>
           prev.map((m) =>
             m.id === assistantMessageId
@@ -734,8 +785,8 @@ function HeroSearchBarComponent({
       }
 
       // Agent returned a search intent — auto-pin if not already pinned
-      const tab: TabType = pinnedIntent ?? agent.intent;
-      if (!pinnedIntent) {
+      const tab: TabType = overrideIntent ?? pinnedIntent ?? agent.intent;
+      if (!pinnedIntent && !overrideIntent) {
         setPinnedIntent(tab);
         setActiveTab(tab);
       }

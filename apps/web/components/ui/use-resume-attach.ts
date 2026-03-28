@@ -1,6 +1,5 @@
 "use client";
 
-import { useRef, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { parsePDF } from "@/app/utils/pdf/prase-pdf";
@@ -11,17 +10,26 @@ export type ResumeProfile = {
   skills: string[];
 };
 
+export type ResumeInsightData = {
+  score: number;
+  skillGaps: string[];
+  improvements: string[];
+  suggestedRoles?: string[];
+};
+
 type UseResumeAttachOptions = {
   isLoggedIn: boolean;
+  locale: string;
   onStatusChange: (text: string) => void;
   onProgressChange: (value: number | null) => void;
   onFileNameChange: (name: string) => void;
-  onAttached: (profile: ResumeProfile) => void;
+  onAttached: (profile: ResumeProfile, insight: ResumeInsightData | null) => void;
   onError: () => void;
 };
 
 export function useResumeAttach({
   isLoggedIn,
+  locale,
   onStatusChange,
   onProgressChange,
   onFileNameChange,
@@ -106,7 +114,31 @@ export function useResumeAttach({
         jobTitle: (embeddingResult as any)?.profile?.jobTitle ?? null,
         skills: (embeddingResult as any)?.profile?.skills ?? [],
       };
-      onAttached(profile);
+
+      // Call resume insight API with the parsed text
+      let insight: ResumeInsightData | null = null;
+      try {
+        const insightRes = await fetch("/api/chat/resume-insight", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text: resumeText, locale }),
+        });
+        if (insightRes.ok) {
+          const data = await insightRes.json();
+          if (typeof data.overallScore === "number") {
+            insight = {
+              score: data.overallScore,
+              skillGaps: data.skillGaps ?? [],
+              improvements: data.improvements ?? [],
+              suggestedRoles: data.suggestedRoles ?? [],
+            };
+          }
+        }
+      } catch {
+        // Non-fatal — upload and embedding already succeeded
+      }
+
+      onAttached(profile, insight);
     } catch (error) {
       console.error("Resume attach flow failed", error);
       onStatusChange(t("resume.errorText"));

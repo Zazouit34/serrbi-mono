@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, type ChangeEvent, type RefObject } from "react";
+import { useRef, useEffect, type ChangeEvent, type RefObject } from "react";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { FileCheck2, Search, X } from "lucide-react";
@@ -41,6 +41,7 @@ type ChatMessage = {
   relatedPrompts?: string[];
   suggestionsForKey?: string;
   upgradeUrl?: string;
+  suggestedIntentSwitch?: TabType;
   resumeUploadCta?: {
     title: string;
     description: string;
@@ -85,7 +86,7 @@ type AgentChatContainerProps = {
   onSubmit: () => void;
   onPinnedIntentClear: () => void;
   onIntentChange?: (intent: TabType | null) => void;
-  onSuggestionSelect: (prompt: string, upgradeUrl?: string) => void;
+  onSuggestionSelect: (prompt: string, upgradeUrl?: string, intentSwitch?: TabType) => void;
   onResumeAttach: (file: File) => void;
   resumeAttachLabel?: string;
   resumeAttachStatusText?: string;
@@ -99,10 +100,12 @@ function SuggestionList({
   prompts,
   title,
   onSelect,
+  suggestedIntentSwitch,
 }: {
   prompts: string[];
   title?: string;
-  onSelect: (prompt: string) => void;
+  onSelect: (prompt: string, intentSwitch?: TabType) => void;
+  suggestedIntentSwitch?: TabType;
 }) {
   if (!Array.isArray(prompts) || prompts.length === 0) return null;
 
@@ -120,7 +123,7 @@ function SuggestionList({
             key={`${index}-${prompt}`}
             type="button"
             className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-slate-50 group"
-            onClick={() => onSelect(prompt)}
+            onClick={() => onSelect(prompt, index === 0 ? suggestedIntentSwitch : undefined)}
           >
             <Search className="h-3.5 w-3.5 shrink-0 text-slate-400 group-hover:text-slate-700" />
             <span className="text-slate-800">{prompt}</span>
@@ -159,8 +162,14 @@ export function AgentChatContainer({
 }: AgentChatContainerProps) {
   const t = useTranslations("HeroSearchBar");
   const resumeInputRef = useRef<HTMLInputElement | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
   // Show CV badge whenever intent is jobs (or no intent pinned — neutral)
   const showCvBadge = !pinnedIntent || pinnedIntent === "jobs";
+
+  // Auto-scroll to bottom when new messages arrive or agent finishes
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages.length, isAgentWorking]);
 
   const onFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -209,7 +218,8 @@ export function AgentChatContainer({
                         <SuggestionList
                           prompts={message.relatedPrompts ?? []}
                           title={message.content || labels.related}
-                          onSelect={(p) => onSuggestionSelect(p, message.upgradeUrl)}
+                          suggestedIntentSwitch={message.suggestedIntentSwitch}
+                          onSelect={(p, intentSwitch) => onSuggestionSelect(p, message.upgradeUrl, intentSwitch)}
                         />
                       </div>
                     ) : message.results ? (
@@ -310,6 +320,7 @@ export function AgentChatContainer({
                 </div>
               </Message>
             ) : null}
+            <div ref={messagesEndRef} />
           </ChatContainerContent>
         </ChatContainerRoot>
       )}
@@ -375,8 +386,8 @@ export function AgentChatContainer({
                 )
               ) : null}
 
-              {/* Pinned intent badge (non-session: with clear button) */}
-              {pinnedIntent && !inSession ? (
+              {/* Pinned intent badge — always show when intent is known */}
+              {pinnedIntent ? (
                 <span
                   className={`group inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium md:px-2.5 md:py-1 md:text-xs ${
                     pinnedIntent === "jobs"
@@ -396,14 +407,17 @@ export function AgentChatContainer({
                   <span className="hidden md:inline">
                     {pinnedIntent === "jobs" ? labels.jobs : pinnedIntent === "services" ? labels.services : labels.tasks}
                   </span>
-                  <button
-                    type="button"
-                    onClick={onPinnedIntentClear}
-                    className="opacity-0 transition-opacity group-hover:opacity-100"
-                    aria-label="Remove selected action"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
+                  {/* Only show clear button outside of session (in-session: use the Select) */}
+                  {!inSession ? (
+                    <button
+                      type="button"
+                      onClick={onPinnedIntentClear}
+                      className="opacity-0 transition-opacity group-hover:opacity-100"
+                      aria-label="Remove selected action"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  ) : null}
                 </span>
               ) : null}
             </div>
@@ -412,9 +426,9 @@ export function AgentChatContainer({
               {/* Intent select — only in session page */}
               {inSession && onIntentChange ? (
                 <Select
-                  value={pinnedIntent ?? "auto"}
+                  value={pinnedIntent ?? ""}
                   onValueChange={(val) => {
-                    if (val === "auto") onIntentChange(null);
+                    if (!val) onIntentChange(null);
                     else onIntentChange(val as TabType);
                   }}
                 >
