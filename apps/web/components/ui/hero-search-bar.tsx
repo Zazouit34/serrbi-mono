@@ -684,15 +684,18 @@ function HeroSearchBarComponent({
     setIsAgentWorking(true);
     setChatInput("");
 
-    const assistantMessageId = nextMessageIdRef.current++;
     // When called from handlePromptSelection with intentSwitch, user message was already injected
+    let assistantMessageId: number;
     if (!overrideIntent) {
+      const userMessageId = nextMessageIdRef.current++;
+      assistantMessageId = nextMessageIdRef.current++;
       setMessages((prev) => [
         ...prev,
-        { id: nextMessageIdRef.current++ - 1, role: "user" as const, content: effectiveQuery },
+        { id: userMessageId, role: "user" as const, content: effectiveQuery },
         { id: assistantMessageId, role: "assistant" as const, thinking: true, content: "" },
       ]);
     } else {
+      assistantMessageId = nextMessageIdRef.current++;
       setMessages((prev) => [
         ...prev,
         { id: assistantMessageId, role: "assistant" as const, thinking: true, content: "" },
