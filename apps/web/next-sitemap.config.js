@@ -10,14 +10,12 @@ module.exports = {
       { userAgent: '*', allow: '/' },
       { userAgent: '*', disallow: ['/api/', '/admin/', '/dashboard/'] },
     ],
-    additionalSitemaps: [
-      `https://${process.env.NEXT_PUBLIC_PRIMARY_DOMAIN || 'serrbi.ma'}/sitemap.xml`,
-      `https://${process.env.NEXT_PUBLIC_SECONDARY_DOMAIN || 'serrbi.com'}/sitemap.xml`,
-    ],
+    // No additionalSitemaps — one domain, one sitemap
   },
   alternateRefs: [
     { href: `https://${process.env.NEXT_PUBLIC_PRIMARY_DOMAIN || 'serrbi.ma'}`, hreflang: 'x-default' },
     { href: `https://${process.env.NEXT_PUBLIC_PRIMARY_DOMAIN || 'serrbi.ma'}`, hreflang: 'fr' },
-    { href: `https://${process.env.NEXT_PUBLIC_SECONDARY_DOMAIN || 'serrbi.com'}`, hreflang: 'en' },
+    { href: `https://${process.env.NEXT_PUBLIC_PRIMARY_DOMAIN || 'serrbi.ma'}`, hreflang: 'en' },
+    { href: `https://${process.env.NEXT_PUBLIC_PRIMARY_DOMAIN || 'serrbi.ma'}`, hreflang: 'ar' },
   ],
 };
