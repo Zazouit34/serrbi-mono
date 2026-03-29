@@ -1,9 +1,6 @@
-import { headers } from "next/headers";
 import { embedBatch } from "./embedding";
 import type { SerrbiJob, ScoredJob } from "../types/job";
 import { prisma, type Prisma } from "@workspace/db";
-import { getTenantFromHost } from "@/lib/domain";
-import maStates from "@workspace/ui/lib/states.json" assert { type: "json" };
 
 interface JobEmbedding {
   job: SerrbiJob;
@@ -83,23 +80,6 @@ async function buildWhereForHybridSearch(
     ];
   }
 
-  try {
-    const hdrs = await headers();
-    const host = hdrs.get("host") || "";
-    const tenant = getTenantFromHost(host);
-    if (tenant === "secondary") {
-      const maCodes = Object.keys(maStates as Record<string, string>);
-      where.NOT = {
-        OR: [
-          { countryIso2: "MA" },
-          { stateAbbreviation: { in: maCodes } },
-        ],
-      };
-    }
-  } catch {
-    // ignore header/tenant errors and fall back to global search
-  }
-
   return where;
 }
 
@@ -145,7 +125,6 @@ async function fetchJobsForHybridSearch(
   }));
 }
 
-// Semantic search over jobs using dense embeddings and cosine similarity only.
 export async function hybridSearchJobs(
   query: string,
   queryEmbedding: number[],
@@ -174,10 +153,7 @@ export async function hybridSearchJobs(
     if (!embedding) {
       throw new Error("Missing embedding for job index");
     }
-    return {
-      job,
-      embedding,
-    };
+    return { job, embedding };
   });
 
   const denseScored = jobsWithEmbeddings.map((je) => ({
@@ -196,7 +172,6 @@ export async function hybridSearchJobs(
     const { job } = item.jobEmbedding;
     const denseScore = denseScores[idx] ?? 0;
     const denseNormScore = denseNorm[idx] ?? 0;
-    // In pure semantic search, the final score is just the normalized dense score.
     const finalScore = denseNormScore;
 
     return {
@@ -210,5 +185,3 @@ export async function hybridSearchJobs(
 
   return scoredJobs.slice(0, Math.min(topKFinal, scoredJobs.length));
 }
-
-
