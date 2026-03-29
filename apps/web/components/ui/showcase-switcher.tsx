@@ -7,7 +7,6 @@ import { AnimatePresence, motion } from "framer-motion";
 import { ArrowLeft, ArrowRight, Star } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useLocale } from "next-intl";
-import { isSecondaryClient } from "@/lib/domain";
 
 type Tab = "services" | "jobs" | "tasks";
 
@@ -144,7 +143,6 @@ export function ShowcaseSwitcher() {
   const t = useTranslations("Showcase");
   const locale = useLocale();
   const isRtl = locale === "ar";
-  const isSecondary = isSecondaryClient();
 
   const servicesItems: ShowcaseItem[] = useMemo(
     () =>
@@ -203,7 +201,7 @@ export function ShowcaseSwitcher() {
     },
   };
 
-  const effectiveTab: Tab = isSecondary ? "jobs" : tab;
+  const effectiveTab: Tab = tab;
   const meta = tabMeta[effectiveTab];
 
   const handlePrev = () => {
@@ -254,8 +252,7 @@ export function ShowcaseSwitcher() {
             </motion.p>
           </AnimatePresence>
         </div>
-        {!isSecondary && (
-          <div className="flex gap-2 items-center">
+        <div className="flex gap-2 items-center">
             <button
               aria-label={t("prev")}
               onClick={handlePrev}
@@ -279,7 +276,6 @@ export function ShowcaseSwitcher() {
               )}
             </button>
           </div>
-        )}
       </div>
 
        {/* Cards Grid */}

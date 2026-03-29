@@ -26,7 +26,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu";
-import { isSecondaryClient } from "@/lib/domain";
 
 const DEFAULT_LINKS = [
   //{ href: "/jobs", key: "jobs", image: "/images/jobs.png" },
@@ -58,11 +57,7 @@ export function Navbar() {
   const router = useRouter();
 
   const [scrolled, setScrolled] = useState(false);
-  const isSecondary = isSecondaryClient();
-  const NAV_LINKS = React.useMemo(
-    () => (isSecondary ? [] : DEFAULT_LINKS),
-    [isSecondary]
-  );
+  const NAV_LINKS = DEFAULT_LINKS;
 
   useEffect(() => {
     // Initialize selected language from cookie

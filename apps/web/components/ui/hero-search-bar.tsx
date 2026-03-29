@@ -6,7 +6,6 @@ import { usePathname, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { Button } from "@workspace/ui/components/button";
 import { useLocale, useTranslations } from "next-intl";
-import { isSecondaryClient } from "@/lib/domain";
 
 import { PreviewCards } from "@/components/ui/preview-cards";
 import { trpc } from "@/app/_trpc/client";
@@ -151,7 +150,6 @@ function HeroSearchBarComponent({
   const [selectedCategory, setSelectedCategory] = useState<
     JobCategory | ServiceCategory | TaskCategory | undefined
   >(undefined);
-  const isSecondary = isSecondaryClient();
 
   // Chat state
   const hasInitial = Array.isArray(initialMessages) && initialMessages.length > 0;
@@ -681,29 +679,6 @@ function HeroSearchBarComponent({
     // Effective scope uses overrideIntent if provided (e.g. after user confirms intent switch)
     const effectiveScope: ScopeOverride = overrideIntent ?? currentScope;
 
-    // For the secondary client, keep simple redirect behavior (but let the agent pick scope)
-    if (isSecondary) {
-      setIsAgentWorking(true);
-      try {
-        const categoryHint =
-          pinnedIntent && activeTab === pinnedIntent
-            ? buildCategoryHint(pinnedIntent, String(selectedCategory ?? ""))
-            : undefined;
-        const agent = await callSearchAgent({ query: effectiveQuery, locale, scope: effectiveScope, categoryHint });
-        if (agent.results?.items.length) {
-          const q = agent.searchQuery.trim();
-          router.push(`/jobs?search=${encodeURIComponent(q)}`);
-        } else {
-          router.push(`/jobs?search=${encodeURIComponent(effectiveQuery)}`);
-        }
-      } catch {
-        router.push(`/jobs?search=${encodeURIComponent(effectiveQuery)}`);
-      } finally {
-        setIsAgentWorking(false);
-      }
-      return;
-    }
-
     if (!effectiveQuery) return;
     setChatExpanded(true);
     setIsAgentWorking(true);
@@ -998,17 +973,6 @@ function HeroSearchBarComponent({
           )}
         </div>
       </div>
-      {isSecondary && (
-        <div className="px-6 pb-4">
-          <div className="flex justify-center">
-            <Link href="/jobs">
-              <Button className="px-6 h-10 text-white bg-black rounded-full hover:bg-gray-800">
-                {t("browseJobs")}
-              </Button>
-            </Link>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

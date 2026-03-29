@@ -739,6 +739,7 @@ function buildResumeJobMatchMarkdownSummary(
   query: string,
   cards: any[],
   confidenceMode: ConfidenceMode,
+  originalUserQuery?: string,
 ): string {
   const normalized = normalizeLocale(locale);
   const top = cards[0];
@@ -747,6 +748,9 @@ function buildResumeJobMatchMarkdownSummary(
     if (normalized === "ar") return "## الوظائف\n- نبحث عن أفضل العروض لك.\n- هل يمكنك توضيح المنصب أو المدينة المطلوبة؟";
     return "## Jobs\n- We're looking for the best offers for you.\n- Could you specify the role or preferred city?";
   }
+
+  // Use the original user query for display, fallback to cleaned search query
+  const displayQuery = originalUserQuery?.trim() || query;
 
   const topPercent = top?.resumeMatch?.percent ?? top?.matchScore ?? null;
   const matched = top?.resumeMatch?.matchedSkillsCount ?? 0;
@@ -770,7 +774,7 @@ function buildResumeJobMatchMarkdownSummary(
   if (normalized === "fr") {
     if (style === "recommendation") {
     return [
-        `## Recommandation pour "${query}"`,
+        `## Recommandation pour "${displayQuery}"`,
         `- ${top.title ?? "Poste"}${top?.city ? ` — ${top.city}` : ""}${top?.type ? ` — ${top.type}` : ""}.`,
         `- Cette offre semble bien alignee avec votre recherche${typeof topPercent === "number" ? ` (${topPercent}% de match)` : ""}${skills ? `, notamment sur ${skills}` : ""}.`,
         `- Je peux aussi vous montrer d'autres offres proches${alternativesText ? ` (${alternativesText})` : ""} si vous voulez comparer.`,
@@ -779,7 +783,7 @@ function buildResumeJobMatchMarkdownSummary(
     }
     if (style === "comparison") {
       return [
-        `## Comparaison rapide pour "${query}"`,
+        `## Comparaison rapide pour "${displayQuery}"`,
         `- ${cards[0]?.title ?? "Offre 1"}${cards[0]?.city ? ` — ${cards[0].city}` : ""}${cards[0]?.wage ? ` — ${cards[0].wage} MAD` : ""}.`,
         `- ${cards[1]?.title ?? "Offre 2"}${cards[1]?.city ? ` — ${cards[1].city}` : ""}${cards[1]?.wage ? ` — ${cards[1].wage} MAD` : ""}.`,
         `- ${cards[2]?.title ?? "Offre 3"}${cards[2]?.city ? ` — ${cards[2].city}` : ""}${cards[2]?.wage ? ` — ${cards[2].wage} MAD` : ""}.`,
@@ -788,7 +792,7 @@ function buildResumeJobMatchMarkdownSummary(
     }
     if (confidenceMode === "weak") {
       return [
-        `## Offres les plus proches pour "${query}"`,
+        `## Offres les plus proches pour "${displayQuery}"`,
         `- ${cards[0]?.title ?? "Offre 1"}${cards[0]?.city ? ` — ${cards[0].city}` : ""}.`,
         `- ${cards[1]?.title ?? "Offre 2"}${cards[1]?.city ? ` — ${cards[1].city}` : ""}.`,
         `- ${cards[2]?.title ?? "Offre 3"}${cards[2]?.city ? ` — ${cards[2].city}` : ""}.`,
@@ -796,7 +800,7 @@ function buildResumeJobMatchMarkdownSummary(
       ].join("\n");
     }
     return [
-      `## Offres pour "${query}"`,
+      `## Offres pour "${displayQuery}"`,
       `- ${cards[0]?.title ?? "Offre 1"}${cards[0]?.city ? ` — ${cards[0].city}` : ""}${cards[0]?.type ? ` — ${cards[0].type}` : ""}.`,
       `- ${cards[1]?.title ?? "Offre 2"}${cards[1]?.city ? ` — ${cards[1].city}` : ""}${cards[1]?.type ? ` — ${cards[1].type}` : ""}.`,
       `- ${cards[2]?.title ?? "Offre 3"}${cards[2]?.city ? ` — ${cards[2].city}` : ""}${cards[2]?.type ? ` — ${cards[2].type}` : ""}.`,
@@ -807,7 +811,7 @@ function buildResumeJobMatchMarkdownSummary(
   if (normalized === "ar") {
     if (style === "recommendation") {
     return [
-        `## توصية لـ "${query}"`,
+        `## توصية لـ "${displayQuery}"`,
         `- ${top.title ?? "وظيفة"}${top?.city ? ` — ${top.city}` : ""}${top?.type ? ` — ${top.type}` : ""}.`,
         `- هذا العرض يبدو مناسباً لطلبك${typeof topPercent === "number" ? ` (${topPercent}% مطابقة)` : ""}${skills ? ` خاصة في ${skills}` : ""}.`,
         `- أقدر أيضاً أعرض لك بدائل مشابهة${alternativesText ? ` (${alternativesText})` : ""} إذا رغبت بالمقارنة.`,
@@ -816,7 +820,7 @@ function buildResumeJobMatchMarkdownSummary(
   }
     if (style === "comparison") {
   return [
-        `## مقارنة سريعة لـ "${query}"`,
+        `## مقارنة سريعة لـ "${displayQuery}"`,
         `- ${cards[0]?.title ?? "الخيار 1"}${cards[0]?.city ? ` — ${cards[0].city}` : ""}${cards[0]?.wage ? ` — ${cards[0].wage} MAD` : ""}.`,
         `- ${cards[1]?.title ?? "الخيار 2"}${cards[1]?.city ? ` — ${cards[1].city}` : ""}${cards[1]?.wage ? ` — ${cards[1].wage} MAD` : ""}.`,
         `- ${cards[2]?.title ?? "الخيار 3"}${cards[2]?.city ? ` — ${cards[2].city}` : ""}${cards[2]?.wage ? ` — ${cards[2].wage} MAD` : ""}.`,
@@ -825,7 +829,7 @@ function buildResumeJobMatchMarkdownSummary(
     }
     if (confidenceMode === "weak") {
       return [
-        `## أقرب الوظائف الحالية لـ "${query}"`,
+        `## أقرب الوظائف الحالية لـ "${displayQuery}"`,
         `- ${cards[0]?.title ?? "الخيار 1"}${cards[0]?.city ? ` — ${cards[0].city}` : ""}.`,
         `- ${cards[1]?.title ?? "الخيار 2"}${cards[1]?.city ? ` — ${cards[1].city}` : ""}.`,
         `- ${cards[2]?.title ?? "الخيار 3"}${cards[2]?.city ? ` — ${cards[2].city}` : ""}.`,
@@ -833,7 +837,7 @@ function buildResumeJobMatchMarkdownSummary(
       ].join("\n");
     }
     return [
-      `## وظائف "${query}"`,
+      `## وظائف "${displayQuery}"`,
       `- ${cards[0]?.title ?? "الخيار 1"}${cards[0]?.city ? ` — ${cards[0].city}` : ""}${cards[0]?.type ? ` — ${cards[0].type}` : ""}.`,
       `- ${cards[1]?.title ?? "الخيار 2"}${cards[1]?.city ? ` — ${cards[1].city}` : ""}${cards[1]?.type ? ` — ${cards[1].type}` : ""}.`,
       `- ${cards[2]?.title ?? "الخيار 3"}${cards[2]?.city ? ` — ${cards[2].city}` : ""}${cards[2]?.type ? ` — ${cards[2].type}` : ""}.`,
@@ -843,7 +847,7 @@ function buildResumeJobMatchMarkdownSummary(
   }
   if (style === "recommendation") {
     return [
-      `## Recommendation for "${query}"`,
+      `## Recommendation for "${displayQuery}"`,
       `- ${top.title ?? "Role"}${top?.city ? ` — ${top.city}` : ""}${top?.type ? ` — ${top.type}` : ""}.`,
       `- This role looks like a strong fit${typeof topPercent === "number" ? ` (${topPercent}% match)` : ""}${skills ? `, especially for ${skills}` : ""}.`,
       `- I can also show similar alternatives${alternativesText ? ` (${alternativesText})` : ""} if you want to compare.`,
@@ -852,7 +856,7 @@ function buildResumeJobMatchMarkdownSummary(
   }
   if (style === "comparison") {
     return [
-      `## Quick Comparison for "${query}"`,
+      `## Quick Comparison for "${displayQuery}"`,
       `- ${cards[0]?.title ?? "Option 1"}${cards[0]?.city ? ` — ${cards[0].city}` : ""}${cards[0]?.wage ? ` — ${cards[0].wage} MAD` : ""}.`,
       `- ${cards[1]?.title ?? "Option 2"}${cards[1]?.city ? ` — ${cards[1].city}` : ""}${cards[1]?.wage ? ` — ${cards[1].wage} MAD` : ""}.`,
       `- ${cards[2]?.title ?? "Option 3"}${cards[2]?.city ? ` — ${cards[2].city}` : ""}${cards[2]?.wage ? ` — ${cards[2].wage} MAD` : ""}.`,
@@ -861,7 +865,7 @@ function buildResumeJobMatchMarkdownSummary(
   }
   if (confidenceMode === "weak") {
     return [
-      `## Closest Matches So Far for "${query}"`,
+      `## Closest Matches So Far for "${displayQuery}"`,
       `- ${cards[0]?.title ?? "Option 1"}${cards[0]?.city ? ` — ${cards[0].city}` : ""}.`,
       `- ${cards[1]?.title ?? "Option 2"}${cards[1]?.city ? ` — ${cards[1].city}` : ""}.`,
       `- ${cards[2]?.title ?? "Option 3"}${cards[2]?.city ? ` — ${cards[2].city}` : ""}.`,
@@ -869,7 +873,7 @@ function buildResumeJobMatchMarkdownSummary(
     ].join("\n");
   }
   return [
-    `## Jobs for "${query}"`,
+    `## Jobs for "${displayQuery}"`,
     `- ${cards[0]?.title ?? "Option 1"}${cards[0]?.city ? ` — ${cards[0].city}` : ""}${cards[0]?.type ? ` — ${cards[0].type}` : ""}.`,
     `- ${cards[1]?.title ?? "Option 2"}${cards[1]?.city ? ` — ${cards[1].city}` : ""}${cards[1]?.type ? ` — ${cards[1].type}` : ""}.`,
     `- ${cards[2]?.title ?? "Option 3"}${cards[2]?.city ? ` — ${cards[2].city}` : ""}${cards[2]?.type ? ` — ${cards[2].type}` : ""}.`,
@@ -1100,51 +1104,19 @@ function logChatDebug(step: string, payload: unknown): void {
 }
 
 function buildScopeMismatchMessage(
-  locale: string,
+  _locale: string,
   currentScope: string,
   suggestedIntent: string,
 ): string {
-  const intentLabel: Record<string, Record<string, string>> = {
-    services: { fr: "les services", ar: "الخدمات", en: "services" },
-    tasks: { fr: "les tâches", ar: "المهام", en: "tasks" },
-    jobs: { fr: "les emplois", ar: "الوظائف", en: "jobs" },
-  };
-  const currentLabel: Record<string, Record<string, string>> = {
-    jobs: { fr: "emplois", ar: "وظائف", en: "jobs" },
-    services: { fr: "services", ar: "خدمات", en: "services" },
-    tasks: { fr: "tâches", ar: "مهام", en: "tasks" },
-  };
-  const lang = ["fr", "ar"].includes(locale) ? locale : "en";
-  const suggested = intentLabel[suggestedIntent]?.[lang] ?? suggestedIntent;
-  const current = currentLabel[currentScope]?.[lang] ?? currentScope;
-
-  if (lang === "fr") {
-    return `Vous êtes actuellement en mode **${current}**. Voulez-vous basculer vers **${suggested}** pour cette recherche ?`;
-  }
-  if (lang === "ar") {
-    return `أنت حاليًا في وضع **${current}**. هل تريد التبديل إلى **${suggested}** لهذا البحث؟`;
-  }
-  return `You're currently in **${current}** mode. Would you like to switch to **${suggested}** for this search?`;
+  return `You're currently searching for **${currentScope}**, but your query seems to be about **${suggestedIntent}**. Would you like me to switch the search focus?`;
 }
 
-function buildSwitchConfirmPrompt(locale: string, suggestedIntent: string): string {
-  const labels: Record<string, Record<string, string>> = {
-    services: { fr: "Oui, passer aux services", ar: "نعم، التبديل إلى الخدمات", en: "Yes, switch to services" },
-    tasks: { fr: "Oui, passer aux tâches", ar: "نعم، التبديل إلى المهام", en: "Yes, switch to tasks" },
-    jobs: { fr: "Oui, passer aux emplois", ar: "نعم، التبديل إلى الوظائف", en: "Yes, switch to jobs" },
-  };
-  const lang = ["fr", "ar"].includes(locale) ? locale : "en";
-  return labels[suggestedIntent]?.[lang] ?? `Yes, switch to ${suggestedIntent}`;
+function buildSwitchConfirmPrompt(_locale: string, suggestedIntent: string): string {
+  return `Yes, switch to ${suggestedIntent}`;
 }
 
-function buildStayPrompt(locale: string, currentScope: string): string {
-  const labels: Record<string, Record<string, string>> = {
-    jobs: { fr: "Non, continuer avec les emplois", ar: "لا، الاستمرار مع الوظائف", en: "No, keep searching jobs" },
-    services: { fr: "Non, continuer avec les services", ar: "لا، الاستمرار مع الخدمات", en: "No, keep searching services" },
-    tasks: { fr: "Non, continuer avec les tâches", ar: "لا، الاستمرار مع المهام", en: "No, keep searching tasks" },
-  };
-  const lang = ["fr", "ar"].includes(locale) ? locale : "en";
-  return labels[currentScope]?.[lang] ?? `No, keep searching ${currentScope}`;
+function buildStayPrompt(_locale: string, currentScope: string): string {
+  return `No, keep searching ${currentScope}`;
 }
 
 export async function POST(req: Request) {
@@ -1364,9 +1336,6 @@ export async function POST(req: Request) {
         action: "search",
         intent: "jobs",
         searchQuery,
-        assistantText: hasResumeEmbedding
-          ? buildResumeJobMatchMarkdownSummary(locale, searchQuery, cards, confidenceMode)
-          : buildResumeUploadHint(locale),
         results: {
           type: "jobs",
           items: cards,
@@ -1427,7 +1396,6 @@ export async function POST(req: Request) {
         action: "search",
         intent: "services",
         searchQuery,
-        assistantText: buildServiceMarkdownSummary(locale, searchQuery, cards, confidenceMode),
         results: {
           type: "services",
           items: cards,
