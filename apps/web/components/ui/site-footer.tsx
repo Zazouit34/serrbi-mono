@@ -18,9 +18,6 @@ const navigation = {
     { key: "services", href: "/services" },
     { key: "tasks", href: "/tasks" },
     { key: "Auto Apply", href: "/account/auto-apply" },
-    { key: "AI Resume Analyzer", href: "/resume-analyzer" },
-    { key: "AI Career Switch", href: "/career-switch" },
-    
   ],
   support: [
     { key: "Talents", href: "mailto:talents@serrbi.com", displayName: "talents@serrbi.com" },

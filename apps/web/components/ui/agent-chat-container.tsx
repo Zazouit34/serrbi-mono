@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect, type ChangeEvent, type RefObject } from "react";
+import { useRef, type ChangeEvent, type RefObject } from "react";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { FileCheck2, Search, X } from "lucide-react";
@@ -162,14 +162,8 @@ export function AgentChatContainer({
 }: AgentChatContainerProps) {
   const t = useTranslations("HeroSearchBar");
   const resumeInputRef = useRef<HTMLInputElement | null>(null);
-  const messagesEndRef = useRef<HTMLDivElement | null>(null);
   // Show CV badge whenever intent is jobs (or no intent pinned — neutral)
   const showCvBadge = !pinnedIntent || pinnedIntent === "jobs";
-
-  // Auto-scroll to bottom when new messages arrive or agent finishes
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages.length, isAgentWorking]);
 
   const onFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -320,7 +314,6 @@ export function AgentChatContainer({
                 </div>
               </Message>
             ) : null}
-            <div ref={messagesEndRef} />
           </ChatContainerContent>
         </ChatContainerRoot>
       )}
