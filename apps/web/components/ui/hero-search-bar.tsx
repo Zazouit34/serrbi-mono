@@ -95,6 +95,12 @@ type AgentResponse = {
     description: string;
     buttonLabel: string;
   };
+  resumeInsight?: {
+    score: number;
+    skillGaps: string[];
+    improvements: string[];
+    suggestedRoles?: string[];
+  };
   intentMismatch?: { suggestedIntent: TabType };
   debug?: Record<string, unknown>;
   planLimitReached?: boolean;
@@ -241,7 +247,8 @@ function HeroSearchBarComponent({
     return () => { if (saveTimerRef.current) clearTimeout(saveTimerRef.current); };
   }, [messages]);
 
-  // Sync resume status from DB
+  // Sync resume status from DB and fetch insight for new sessions
+  const hasShownInitialInsightRef = useRef(false);
   useEffect(() => {
     if (!isLoggedIn) {
       setHasResumeAttached(false);
@@ -250,12 +257,52 @@ function HeroSearchBarComponent({
     const hasSavedResume = Boolean((userDataQuery.data as any)?.user?.resumeUrl);
     if (hasSavedResume) {
       setHasResumeAttached(true);
+      
+      // Show resume insight in new sessions (not when restoring from initialMessages)
+      if (!hasInitial && !hasShownInitialInsightRef.current && messages.length === 0) {
+        hasShownInitialInsightRef.current = true;
+        
+        // Fetch and show resume insight
+        void (async () => {
+          try {
+            const resumeText = (userDataQuery.data as any)?.user?.resumeText || "";
+            if (!resumeText) return;
+            
+            const res = await fetch("/api/chat/resume-insight", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ text: resumeText, locale }),
+            });
+            
+            if (res.ok) {
+              const data = await res.json();
+              setMessages((prev) => [
+                ...prev,
+                {
+                  id: nextMessageIdRef.current++,
+                  role: "assistant" as const,
+                  kind: "resume-insight" as const,
+                  resumeInsight: {
+                    score: data.score,
+                    skillGaps: data.skillGaps || [],
+                    improvements: data.improvements || [],
+                    suggestedRoles: data.suggestedRoles || [],
+                  },
+                } as ChatMessage,
+              ]);
+              setChatExpanded(true);
+            }
+          } catch (error) {
+            console.error("Failed to fetch resume insight:", error);
+          }
+        })();
+      }
       return;
     }
     if (!resumeAttachStatusText && resumeAttachProgress == null) {
       setHasResumeAttached(false);
     }
-  }, [isLoggedIn, userDataQuery.data, resumeAttachStatusText, resumeAttachProgress]);
+  }, [isLoggedIn, userDataQuery.data, resumeAttachStatusText, resumeAttachProgress, hasInitial, messages.length, locale]);
 
   // Resume attach hook
   const { handleResumeAttach } = useResumeAttach({
@@ -796,27 +843,58 @@ function HeroSearchBarComponent({
         if (!pinnedIntent) setSelectedCategory(undefined);
         setPreviewPageSize(12);
 
-        setMessages((prev) =>
-          prev.map((m) =>
-            m.id === assistantMessageId
-              ? {
-                  ...m,
-                  thinking: false,
-                  kind: "results" as const,
-                  content: agent.assistantText ?? "",
-                  resumeUploadCta: agent.resumeUploadCta,
-                  relatedPrompts: agent.relatedPrompts,
-                  results: {
-                    key: resultsKey,
-                    query: q,
-                    type: tab,
-                    items: directResults.items.slice(0, SEARCH_PAGE_SIZE),
-                    isLoading: false,
-                  },
-                }
-              : m,
-          ),
-        );
+        // Inject resume insight if provided by agent
+        if (agent.resumeInsight) {
+          setMessages((prev) => [
+            ...prev.map((m) =>
+              m.id === assistantMessageId
+                ? {
+                    ...m,
+                    thinking: false,
+                    kind: "results" as const,
+                    content: agent.assistantText ?? "",
+                    resumeUploadCta: agent.resumeUploadCta,
+                    relatedPrompts: agent.relatedPrompts,
+                    results: {
+                      key: resultsKey,
+                      query: q,
+                      type: tab,
+                      items: directResults.items.slice(0, SEARCH_PAGE_SIZE),
+                      isLoading: false,
+                    },
+                  }
+                : m,
+            ),
+            {
+              id: nextMessageIdRef.current++,
+              role: "assistant" as const,
+              kind: "resume-insight" as const,
+              resumeInsight: agent.resumeInsight,
+            } as ChatMessage,
+          ]);
+        } else {
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === assistantMessageId
+                ? {
+                    ...m,
+                    thinking: false,
+                    kind: "results" as const,
+                    content: agent.assistantText ?? "",
+                    resumeUploadCta: agent.resumeUploadCta,
+                    relatedPrompts: agent.relatedPrompts,
+                    results: {
+                      key: resultsKey,
+                      query: q,
+                      type: tab,
+                      items: directResults.items.slice(0, SEARCH_PAGE_SIZE),
+                      isLoading: false,
+                    },
+                  }
+                : m,
+            ),
+          );
+        }
         return;
       }
 

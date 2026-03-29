@@ -54,6 +54,12 @@ type AgentResponse = {
     description: string;
     buttonLabel: string;
   };
+  resumeInsight?: {
+    score: number;
+    skillGaps: string[];
+    improvements: string[];
+    suggestedRoles?: string[];
+  };
   intentMismatch?: { suggestedIntent: AgentIntent };
   debug?: Record<string, unknown>;
   planLimitReached?: boolean;
@@ -892,6 +898,31 @@ export async function POST(req: Request) {
       })
       .slice(-4);
 
+    // Fetch user resume data if available
+    const userResumeData =
+      userId
+        ? await (prisma as any).user.findUnique({
+            where: { id: userId },
+            select: {
+              resumeEmbedding: true,
+              autoApplyKeywords: true,
+              resumeUrl: true,
+            },
+          })
+        : null;
+
+    const hasResumeEmbedding =
+      Array.isArray(userResumeData?.resumeEmbedding) && userResumeData.resumeEmbedding.length > 0;
+
+    // Build resume profile for intent extractor
+    const resumeProfile = hasResumeEmbedding
+      ? {
+          job_title: null, // We don't store this separately, but skills will help
+          skills: (userResumeData?.autoApplyKeywords as string[] | undefined) ?? [],
+          experience_level: null,
+        }
+      : null;
+
     const scope = body.context?.scope;
     const quickQuery = (lastUser || "").trim();
     const shouldBypassIntentLlm =
@@ -911,6 +942,7 @@ export async function POST(req: Request) {
       categoryHint: body.context?.categoryHint,
       message: lastUser,
       history: extractorHistory,
+      resumeProfile: resumeProfile as any,
     });
     logChatDebug("intent_extracted", {
       message: lastUser,
@@ -983,20 +1015,8 @@ export async function POST(req: Request) {
         aiResult.intent_data as JobIntentData,
       );
       const searchQuery = aiResult.intent_data.query?.trim() || lastUser.trim();
-      const userResumeData =
-        userId
-          ? await (prisma as any).user.findUnique({
-              where: { id: userId },
-              select: {
-                resumeEmbedding: true,
-                autoApplyKeywords: true,
-              },
-            })
-          : null;
 
-      const hasResumeEmbedding =
-        Array.isArray(userResumeData?.resumeEmbedding) && userResumeData.resumeEmbedding.length > 0;
-
+      // Use already-fetched resume data
       const personalizedRanked = hasResumeEmbedding
         ? rankJobsWithResumeMatch(searchResult.topResults as any, {
             resumeEmbedding: userResumeData.resumeEmbedding as number[],

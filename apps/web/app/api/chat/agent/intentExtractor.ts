@@ -78,6 +78,7 @@ type ExtractIntentInput = {
   categoryHint?: string;
   message: string;
   history?: ChatMessage[];
+  resumeProfile?: Partial<ResumeProfile> | null;
 };
 
 function getRequiredEnv(name: string): string {
@@ -325,6 +326,7 @@ export async function extractIntent(input: ExtractIntentInput): Promise<AgentRes
   const systemPrompt = buildIntentExtractorPrompt({
     scope: input.scope,
     categoryHint: input.categoryHint,
+    resumeProfile: input.resumeProfile,
   });
   const compactHistory = (input.history ?? []).slice(-6);
   const messages: ChatMessage[] = [
