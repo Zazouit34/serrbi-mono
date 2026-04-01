@@ -42,7 +42,7 @@ export type ChatMessage = {
   relatedPrompts?: string[];
   suggestionsForKey?: string;
   upgradeUrl?: string;
-  suggestedIntentSwitch?: TabType; // set on scope-mismatch suggestions so we can auto-switch
+  suggestedIntentSwitch?: TabType;
   resumeUploadCta?: {
     title: string;
     description: string;
@@ -85,7 +85,7 @@ type AgentResponse = {
   intent: AgentIntent;
   searchQuery: string;
   assistantText?: string;
-  relatedPrompts: string[];
+  relatedPrompts?: string[];
   results?: {
     type: TabType;
     items: any[];
@@ -110,9 +110,9 @@ type AgentResponse = {
 type ResultsSummaryResponse = {
   summary: string;
 };
+
 type ConfidenceMode = "strong" | "moderate" | "weak";
 
-// Minimal fallback summary (only used if API call fails)
 function buildResultsSummary(params: {
   type: TabType;
   items: any[];
@@ -157,7 +157,6 @@ function HeroSearchBarComponent({
     JobCategory | ServiceCategory | TaskCategory | undefined
   >(undefined);
 
-  // Chat state
   const hasInitial = Array.isArray(initialMessages) && initialMessages.length > 0;
   const [messages, setMessages] = useState<ChatMessage[]>(() => {
     if (!hasInitial) return [];
@@ -189,7 +188,6 @@ function HeroSearchBarComponent({
 
   const createSession = trpc.chatSession.create.useMutation();
   const updateSession = trpc.chatSession.update.useMutation();
-
   const saveTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const serializeMessages = (msgs: ChatMessage[]) =>
@@ -205,9 +203,9 @@ function HeroSearchBarComponent({
         resumeUploadCta: m.resumeUploadCta,
       }));
 
-  // Create/update DB session on messages change
   const isCreatingSessionRef = useRef(false);
   const isFirstEffectRunRef = useRef(true);
+
   useEffect(() => {
     if (messages.length === 0) return;
     const hasUser = messages.some((m) => m.role === "user" && m.content?.trim());
@@ -244,11 +242,13 @@ function HeroSearchBarComponent({
       updateSession.mutate({ id: sid, title, messages: serializeMessages(messages) });
     }, 1500);
 
-    return () => { if (saveTimerRef.current) clearTimeout(saveTimerRef.current); };
+    return () => {
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    };
   }, [messages]);
 
-  // Sync resume status from DB and fetch insight for new sessions
   const hasShownInitialInsightRef = useRef(false);
+
   useEffect(() => {
     if (!isLoggedIn) {
       setHasResumeAttached(false);
@@ -257,23 +257,17 @@ function HeroSearchBarComponent({
     const hasSavedResume = Boolean((userDataQuery.data as any)?.user?.resumeUrl);
     if (hasSavedResume) {
       setHasResumeAttached(true);
-      
-      // Show resume insight in new sessions (not when restoring from initialMessages)
       if (!hasInitial && !hasShownInitialInsightRef.current && messages.length === 0) {
         hasShownInitialInsightRef.current = true;
-        
-        // Fetch and show resume insight
         void (async () => {
           try {
             const resumeText = (userDataQuery.data as any)?.user?.resumeText || "";
             if (!resumeText) return;
-            
             const res = await fetch("/api/chat/resume-insight", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ text: resumeText, locale }),
             });
-            
             if (res.ok) {
               const data = await res.json();
               setMessages((prev) => [
@@ -304,7 +298,6 @@ function HeroSearchBarComponent({
     }
   }, [isLoggedIn, userDataQuery.data, resumeAttachStatusText, resumeAttachProgress, hasInitial, messages.length, locale]);
 
-  // Resume attach hook
   const { handleResumeAttach } = useResumeAttach({
     isLoggedIn,
     locale,
@@ -318,13 +311,10 @@ function HeroSearchBarComponent({
       setResumeAttachStatusText("");
       setHasResumeAttached(true);
       userDataQuery.refetch();
-
-      // Pin jobs intent automatically
       if (!pinnedIntent) {
         setPinnedIntent("jobs");
         setActiveTab("jobs");
       }
-
       const jobTitle = profile.jobTitle;
       const skills = profile.skills ?? [];
       const searchQuery = jobTitle
@@ -332,8 +322,6 @@ function HeroSearchBarComponent({
         : skills.length > 0
           ? skills.slice(0, 3).join(", ")
           : null;
-
-      // Inject insight card if we got one
       if (insight) {
         setMessages((prev) => [
           ...prev,
@@ -345,8 +333,6 @@ function HeroSearchBarComponent({
           } as ChatMessage,
         ]);
       }
-
-      // Inject suggestion to search based on the resume profile
       if (searchQuery) {
         setMessages((prev) => [
           ...prev,
@@ -428,13 +414,14 @@ function HeroSearchBarComponent({
       throw new Error(text || `Chat API error ${res.status}`);
     }
     const json = (await res.json()) as AgentResponse;
-    if (!json || (json.action !== "chat" && json.action !== "search") || !Array.isArray(json.relatedPrompts)) {
+    if (!json || (json.action !== "chat" && json.action !== "search")) {
       throw new Error("Chat API returned invalid payload.");
     }
     return json;
   };
 
   const currentScope: ScopeOverride = pinnedIntent ?? "auto";
+
   const buildCategoryHint = (intent: TabType | null, category?: string): string | undefined => {
     if (!intent || !category) return undefined;
     const raw = category.trim();
@@ -533,11 +520,9 @@ function HeroSearchBarComponent({
       router.push(upgradeUrl || "/subscription");
       return;
     }
-    // User confirmed an intent switch from a scope-mismatch suggestion
     if (intentSwitch) {
       setPinnedIntent(intentSwitch);
       setActiveTab(intentSwitch);
-      // Add a user confirmation message and proceed with the search under the new intent
       setMessages((prev) => [
         ...prev,
         {
@@ -583,14 +568,12 @@ function HeroSearchBarComponent({
     onChatExpandedChange?.(chatExpanded);
   }, [chatExpanded, onChatExpandedChange]);
 
-  // One-time streaming placeholder effect
   useEffect(() => {
     const placeholderText = t.raw("placeholderStreaming") as string;
     if (typeof placeholderText !== "string" || !placeholderText) {
       setPlaceholder(t("placeholder"));
       return;
     }
-
     let charIndex = 0;
     const streamPlaceholder = () => {
       if (charIndex < placeholderText.length) {
@@ -600,7 +583,6 @@ function HeroSearchBarComponent({
         if (placeholderIntervalRef.current) clearInterval(placeholderIntervalRef.current);
       }
     };
-
     placeholderIntervalRef.current = setInterval(streamPlaceholder, 50);
     return () => {
       if (placeholderIntervalRef.current) clearInterval(placeholderIntervalRef.current);
@@ -614,7 +596,6 @@ function HeroSearchBarComponent({
   const selectedTaskCategory =
     activeTab === "tasks" ? (selectedCategory as TaskCategory | undefined) : undefined;
 
-  // Preview queries (always on)
   const previewJobsQuery = trpc.job.getJob.useQuery(
     { page: 1, pageSize: Math.min(previewPageSize, MAX_PAGE_SIZE), search: undefined, category: selectedJobCategory },
     { refetchOnWindowFocus: false },
@@ -632,7 +613,6 @@ function HeroSearchBarComponent({
     setPreviewPageSize((prev) => Math.min(prev + 12, MAX_PAGE_SIZE));
   };
 
-  // Search result queries
   const searchJobsQuery = trpc.job.getJob.useQuery(
     { page: 1, pageSize: SEARCH_PAGE_SIZE, search: submittedQuery || undefined, category: undefined },
     { enabled: hasSearched && activeTab === "jobs" && !!submittedQuery.trim(), refetchOnWindowFocus: false },
@@ -672,7 +652,7 @@ function HeroSearchBarComponent({
     return `${activeTab}|${submittedQuery.trim()}`;
   }, [activeTab, submittedQuery]);
 
-  // Results summary effect: fires after search query completes
+  // Summary effect — fires for the useEffect (non-directResults) path
   useEffect(() => {
     if (!hasSearched || !submittedQuery.trim() || topSearchLoading) return;
     let cancelled = false;
@@ -711,7 +691,9 @@ function HeroSearchBarComponent({
       }
     })();
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [hasSearched, submittedQuery, submittedResultsKey, topSearchLoading, topSearchItems, locale, activeTab, hasResumeAttached]);
 
   const handleSearch = async (overrideQuery?: string, overrideIntent?: TabType) => {
@@ -723,15 +705,13 @@ function HeroSearchBarComponent({
       return;
     }
 
-    // Effective scope uses overrideIntent if provided (e.g. after user confirms intent switch)
     const effectiveScope: ScopeOverride = overrideIntent ?? currentScope;
-
     if (!effectiveQuery) return;
+
     setChatExpanded(true);
     setIsAgentWorking(true);
     setChatInput("");
 
-    // When called from handlePromptSelection with intentSwitch, user message was already injected
     let assistantMessageId: number;
     if (!overrideIntent) {
       const userMessageId = nextMessageIdRef.current++;
@@ -754,8 +734,15 @@ function HeroSearchBarComponent({
         (overrideIntent ?? pinnedIntent) && activeTab === (overrideIntent ?? pinnedIntent)
           ? buildCategoryHint((overrideIntent ?? pinnedIntent)!, String(selectedCategory ?? ""))
           : undefined;
-      const agent = await callSearchAgent({ query: effectiveQuery, locale, scope: effectiveScope, categoryHint });
 
+      const agent = await callSearchAgent({
+        query: effectiveQuery,
+        locale,
+        scope: effectiveScope,
+        categoryHint,
+      });
+
+      // ── Plan limit reached ──────────────────────────────────────────────────
       if (agent.planLimitReached) {
         setMessages((prev) =>
           prev.map((m) =>
@@ -765,7 +752,7 @@ function HeroSearchBarComponent({
                   thinking: false,
                   kind: "suggestions" as const,
                   content: agent.assistantText ?? "",
-                  relatedPrompts: agent.relatedPrompts,
+                  relatedPrompts: agent.relatedPrompts ?? [],
                   upgradeUrl: agent.upgradeUrl,
                 }
               : m,
@@ -774,8 +761,8 @@ function HeroSearchBarComponent({
         return;
       }
 
+      // ── Chat / clarification / scope mismatch ───────────────────────────────
       if (agent.action === "chat") {
-        // Scope mismatch: agent proposes to switch intent
         if (agent.intentMismatch) {
           const { suggestedIntent } = agent.intentMismatch;
           setMessages((prev) =>
@@ -786,7 +773,7 @@ function HeroSearchBarComponent({
                     thinking: false,
                     kind: "suggestions" as const,
                     content: agent.assistantText ?? "",
-                    relatedPrompts: agent.relatedPrompts,
+                    relatedPrompts: agent.relatedPrompts ?? [],
                     suggestedIntentSwitch: suggestedIntent,
                   }
                 : m,
@@ -809,7 +796,7 @@ function HeroSearchBarComponent({
         return;
       }
 
-      // Agent returned a search intent — auto-pin if not already pinned
+      // ── Search result ───────────────────────────────────────────────────────
       const tab: TabType = overrideIntent ?? pinnedIntent ?? agent.intent;
       if (!pinnedIntent && !overrideIntent) {
         setPinnedIntent(tab);
@@ -843,12 +830,13 @@ function HeroSearchBarComponent({
         if (!pinnedIntent) setSelectedCategory(undefined);
         setPreviewPageSize(12);
 
-        // Ensure content is never empty for directResults
-        const finalAssistantText =
-          agent.assistantText?.trim() ||
-          buildResultsSummary({ type: tab, items: directResults.items, query: q });
+        const cards = directResults.items.slice(0, SEARCH_PAGE_SIZE);
 
-        // Inject resume insight if provided by agent
+        // ── FIX: inject agent's assistantText as the message content immediately
+        // Then fire the results-summary API manually since the useEffect path
+        // won't run (hasSearched is false for directResults)
+        const initialContent = agent.assistantText?.trim() ?? "";
+
         if (agent.resumeInsight) {
           setMessages((prev) => [
             ...prev.map((m) =>
@@ -857,14 +845,14 @@ function HeroSearchBarComponent({
                     ...m,
                     thinking: false,
                     kind: "results" as const,
-                    content: finalAssistantText,
+                    content: initialContent,
                     resumeUploadCta: agent.resumeUploadCta,
-                    relatedPrompts: agent.relatedPrompts,
+                    relatedPrompts: agent.relatedPrompts ?? [],
                     results: {
                       key: resultsKey,
                       query: q,
                       type: tab,
-                      items: directResults.items.slice(0, SEARCH_PAGE_SIZE),
+                      items: cards,
                       isLoading: false,
                     },
                   }
@@ -885,14 +873,14 @@ function HeroSearchBarComponent({
                     ...m,
                     thinking: false,
                     kind: "results" as const,
-                    content: finalAssistantText,
+                    content: initialContent,
                     resumeUploadCta: agent.resumeUploadCta,
-                    relatedPrompts: agent.relatedPrompts,
+                    relatedPrompts: agent.relatedPrompts ?? [],
                     results: {
                       key: resultsKey,
                       query: q,
                       type: tab,
-                      items: directResults.items.slice(0, SEARCH_PAGE_SIZE),
+                      items: cards,
                       isLoading: false,
                     },
                   }
@@ -900,9 +888,53 @@ function HeroSearchBarComponent({
             ),
           );
         }
+
+        // ── FIX: fire results-summary manually for directResults path ──────────
+        // The useEffect summary won't fire because hasSearched=false.
+        // We call it here and append the summary to the message content.
+        if (cards.length > 0) {
+          void callResultsSummary({
+            locale,
+            intent: tab,
+            query: q,
+            items: cards,
+          })
+            .then((summary) => {
+              if (!summary) return;
+              const finalContent = hasResumeAttached && tab === "jobs"
+                ? `📈 Based on your resume\n\n${summary}`
+                : summary;
+              setMessages((prev) =>
+                prev.map((msg) => {
+                  if (msg.id !== assistantMessageId) return msg;
+                  // Append summary after the assistantText intro
+                  const existing = msg.content ?? "";
+                  const combined = existing
+                    ? `${existing}\n\n${finalContent}`
+                    : finalContent;
+                  return { ...msg, content: combined };
+                }),
+              );
+            })
+            .catch(() => {
+              // Fallback inline summary
+              const fallback = buildResultsSummary({ type: tab, items: cards, query: q });
+              if (!fallback) return;
+              setMessages((prev) =>
+                prev.map((msg) => {
+                  if (msg.id !== assistantMessageId) return msg;
+                  const existing = msg.content ?? "";
+                  const combined = existing ? `${existing}\n\n${fallback}` : fallback;
+                  return { ...msg, content: combined };
+                }),
+              );
+            });
+        }
+
         return;
       }
 
+      // ── Non-direct results (useEffect summary path) ─────────────────────────
       setActiveTab(tab);
       setSubmittedQuery(q);
       if (!pinnedIntent) setSelectedCategory(undefined);
@@ -916,9 +948,9 @@ function HeroSearchBarComponent({
                 ...m,
                 thinking: false,
                 kind: "results" as const,
-                content: "",
+                content: agent.assistantText?.trim() ?? "",
                 resumeUploadCta: agent.resumeUploadCta,
-                relatedPrompts: agent.relatedPrompts,
+                relatedPrompts: agent.relatedPrompts ?? [],
                 results: {
                   key: resultsKey,
                   query: q,
@@ -1024,7 +1056,9 @@ function HeroSearchBarComponent({
               confidence: t("confidence"),
             }}
             onInputChange={setChatInput}
-            onSubmit={() => { void handleSearch(); }}
+            onSubmit={() => {
+              void handleSearch();
+            }}
             onPinnedIntentClear={() => {
               setPinnedIntent(null);
               setSelectedCategory(undefined);
@@ -1044,7 +1078,6 @@ function HeroSearchBarComponent({
             resumeAttachedLabel={t("resume.attachedLabel")}
           />
 
-          {/* Action buttons shown only when chat is not expanded (home page mode) */}
           {!chatExpanded && (
             <ActionButton
               selectedAction={pinnedIntent}

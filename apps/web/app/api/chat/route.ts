@@ -11,8 +11,15 @@ import {
 import { jobSearchEngine } from "./agent/jobSearchEngine";
 import { serviceSearchEngine } from "./agent/serviceSearchEngine";
 import { rankJobsWithResumeMatch } from "./agent/scoreEngine";
+import {
+  buildSuggestionsPrompt,
+  buildPlanLimitPrompt,
+  buildScopeMismatchPrompt,
+} from "./agent/prompt/intent";
 
 export const runtime = "nodejs";
+
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 type ChatRole = "system" | "user" | "assistant";
 
@@ -36,7 +43,6 @@ type ChatRequestBody = {
 
 type AgentIntent = "jobs" | "services" | "tasks";
 type ConfidenceMode = "strong" | "moderate" | "weak";
-
 type AgentAction = "chat" | "search";
 
 type AgentResponse = {
@@ -66,13 +72,20 @@ type AgentResponse = {
   upgradeUrl?: string;
 };
 
+// ─── Constants ────────────────────────────────────────────────────────────────
+
 const FREE_DAILY_LIMIT = 20;
+const SEARCH_PAGE_SIZE = 3;
+
+// ─── Env helpers ──────────────────────────────────────────────────────────────
 
 function getRequiredEnv(name: string): string {
   const value = process.env[name];
   if (!value) throw new Error(`Missing required environment variable: ${name}`);
   return value;
 }
+
+// ─── LLM caller ───────────────────────────────────────────────────────────────
 
 function pickFirstString(...candidates: unknown[]): string | null {
   for (const c of candidates) {
@@ -82,98 +95,85 @@ function pickFirstString(...candidates: unknown[]): string | null {
 }
 
 function extractAssistantText(json: any): string | null {
-  // DashScope generation commonly returns under output.choices[0].message.content
   return pickFirstString(
     json?.output?.choices?.[0]?.message?.content,
     json?.output?.text,
     json?.output?.texts?.[0],
     json?.output?.choices?.[0]?.text,
-    // OpenAI-compatible fallbacks
     json?.choices?.[0]?.message?.content,
     json?.choices?.[0]?.text,
   );
 }
 
-async function callDashScope(body: {
-  model: string;
-  messages: ChatMessage[];
-}): Promise<string> {
+async function callLLM(
+  messages: Array<{ role: "system" | "user" | "assistant"; content: string }>,
+  opts?: { temperature?: number; maxTokens?: number },
+): Promise<string> {
   const url = getRequiredEnv("CHAT_API_URL");
   const apiKey = getRequiredEnv("DASHSCOPE_API_KEY");
-  // Use a fixed Qwen 3 model (no env needed).
   const model = "qwen3-32b";
+  const temperature = opts?.temperature ?? 0.4;
+  const max_tokens = opts?.maxTokens ?? 700;
 
-  // Try DashScope native format first: { model, input: { messages }, parameters: {...} }
   const dashscopeBody = {
     model,
-    input: { messages: body.messages },
-    parameters: {
-      temperature: 0.2,
-      top_p: 0.9,
-      max_tokens: 700,
-      // If supported, ask for message-shaped output.
-      result_format: "message",
-      // Qwen3 may default to "thinking" mode; DashScope requires disabling it for non-streaming calls.
-      enable_thinking: false,
-    },
+    input: { messages },
+    parameters: { temperature, top_p: 0.9, max_tokens, result_format: "message", enable_thinking: false },
   };
 
   let response = await fetch(url, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
     body: JSON.stringify(dashscopeBody),
   });
 
-  // Fallback to OpenAI-compatible shape if the endpoint is configured that way.
   if (!response.ok) {
-    const openaiBody = {
-      model,
-      messages: body.messages,
-      temperature: 0.4,
-      top_p: 0.9,
-      max_tokens: 700,
-      // DashScope OpenAI-compatible mode may also enforce this for non-streaming.
-      enable_thinking: false,
-    };
-
     response = await fetch(url, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify(openaiBody),
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+      body: JSON.stringify({ model, messages, temperature, top_p: 0.9, max_tokens, enable_thinking: false }),
     });
   }
 
   if (!response.ok) {
     const details = await response.text().catch(() => "");
-    throw new Error(
-      `DashScope error ${response.status}${details ? `: ${details.slice(0, 300)}` : ""}`,
-    );
+    throw new Error(`LLM error ${response.status}${details ? `: ${details.slice(0, 300)}` : ""}`);
   }
 
-  const json = (await response.json()) as any;
+  const json = await response.json();
   const text = extractAssistantText(json);
-  if (!text) {
-    throw new Error("DashScope returned an unexpected payload shape.");
-  }
+  if (!text) throw new Error("LLM returned unexpected payload shape");
   return text;
 }
 
+// ─── Normalizers ──────────────────────────────────────────────────────────────
+
+function normalizeLocale(locale: string): "en" | "fr" | "ar" {
+  const lower = locale.toLowerCase();
+  if (lower.startsWith("fr")) return "fr";
+  if (lower.startsWith("ar")) return "ar";
+  return "en";
+}
+
+function normalizeSessionId(raw: unknown): string | null {
+  if (typeof raw !== "string") return null;
+  const cleaned = raw.trim().slice(0, 120);
+  return cleaned || null;
+}
+
 function normalizeForIntent(text: string): string {
-  const withoutDiacritics = text.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
   return text
-    ? withoutDiacritics
+    ? text
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
         .toLowerCase()
         .trim()
         .replace(/[.,!?;:()[\]{}'"`~@#$%^&*_+=<>|\\/.-]/g, " ")
         .replace(/\s+/g, " ")
     : "";
 }
+
+// ─── Intent classification (heuristic — used only for shouldBypassIntentLlm) ──
 
 function countPhraseHits(text: string, phrases: string[]): number {
   let score = 0;
@@ -189,143 +189,46 @@ function classifyTurnIntent(text: string): "chat" | "search" {
 
   const tokens = normalized.split(" ").filter(Boolean);
 
-  const greetingOrSmalltalkPhrases = [
-    // English
-    "hi",
-    "hey",
-    "hello",
-    "yo",
-    "good morning",
-    "good afternoon",
-    "good evening",
-    "how are you",
-    "who are you",
-    "what can you do",
-    "thanks",
-    "thank you",
-    // French
-    "salut",
-    "bonjour",
-    "bonsoir",
-    "coucou",
-    "ca va",
-    "qui es tu",
-    "tu fais quoi",
-    "merci",
-    // Arabic
-    "مرحبا",
-    "اهلا",
-    "أهلا",
-    "سلام",
-    "السلام عليكم",
-    "كيف حالك",
-    "شكرا",
-    "شكرًا",
+  const greetingPhrases = [
+    "hi", "hey", "hello", "yo", "good morning", "good afternoon", "good evening",
+    "how are you", "who are you", "what can you do", "thanks", "thank you",
+    "salut", "bonjour", "bonsoir", "coucou", "ca va", "qui es tu", "merci",
+    "مرحبا", "اهلا", "أهلا", "سلام", "السلام عليكم", "كيف حالك", "شكرا", "شكرًا",
   ];
 
   const searchActionPhrases = [
-    // English
-    "find",
-    "search",
-    "looking for",
-    "look for",
-    "show me",
-    "i need",
-    "i want",
-    "hire",
-    "apply",
-    // French
-    "cherche",
-    "recherche",
-    "trouve",
-    "montre moi",
-    "jai besoin",
-    "je veux",
-    // Arabic / Darija common
-    "بغيت",
-    "كنقلب",
-    "ابحث",
-    "أبحث",
-    "اريد",
-    "أريد",
-    "احتاج",
-    "أحتاج",
-    "وريني",
+    "find", "search", "looking for", "look for", "show me", "i need", "i want", "hire", "apply",
+    "cherche", "recherche", "trouve", "montre moi", "jai besoin", "je veux",
+    "بغيت", "كنقلب", "ابحث", "أبحث", "اريد", "أريد", "احتاج", "أحتاج", "وريني",
   ];
 
   const marketplaceNouns = [
-    // English
-    "job",
-    "jobs",
-    "work",
-    "service",
-    "services",
-    "task",
-    "tasks",
-    "freelance",
-    // French
-    "emploi",
-    "emplois",
-    "travail",
-    "service",
-    "services",
-    "mission",
-    "tache",
-    "taches",
-    // Arabic
-    "وظيفة",
-    "وظائف",
-    "خدمة",
-    "خدمات",
-    "مهمة",
-    "مهام",
-    "عمل",
+    "job", "jobs", "work", "service", "services", "task", "tasks", "freelance",
+    "emploi", "emplois", "travail", "mission", "tache", "taches",
+    "وظيفة", "وظائف", "خدمة", "خدمات", "مهمة", "مهام", "عمل",
   ];
 
   const constraintSignals = [
-    "remote",
-    "onsite",
-    "hybrid",
-    "distance",
-    "casablanca",
-    "rabat",
-    "marrakech",
-    "tangier",
-    "agadir",
-    "en ligne",
-    "a distance",
-    "عن بعد",
-    "في",
-    "بال",
-    "budget",
-    "salary",
-    "wage",
-    "prix",
-    "salaire",
-    "price",
+    "remote", "onsite", "hybrid", "casablanca", "rabat", "marrakech", "tangier",
+    "budget", "salary", "wage", "prix", "salaire", "price", "عن بعد",
   ];
 
   let chatScore = 0;
   let searchScore = 0;
 
-  chatScore += countPhraseHits(normalized, greetingOrSmalltalkPhrases);
+  chatScore += countPhraseHits(normalized, greetingPhrases);
   searchScore += countPhraseHits(normalized, searchActionPhrases);
   searchScore += countPhraseHits(normalized, marketplaceNouns) * 2;
   searchScore += countPhraseHits(normalized, constraintSignals);
 
-  // Numeric/currency hints usually mean search filters.
   if (/\b\d{2,}\b/.test(normalized)) searchScore += 1;
   if (/(dh|mad|usd|eur|\$|€)/.test(text.toLowerCase())) searchScore += 1;
 
   const hasMarketplaceNoun = marketplaceNouns.some((w) => tokens.includes(w));
   const hasSearchAction = searchActionPhrases.some((p) => normalized.includes(p));
 
-  // Very short non-domain messages should remain chat.
-  if (!hasMarketplaceNoun && !hasSearchAction && tokens.length <= 4) {
-    chatScore += 2;
-  }
+  if (!hasMarketplaceNoun && !hasSearchAction && tokens.length <= 4) chatScore += 2;
 
-  // Questions about agent identity/capability are chat even if short.
   if (
     normalized.includes("who are you") ||
     normalized.includes("what can you do") ||
@@ -336,10 +239,7 @@ function classifyTurnIntent(text: string): "chat" | "search" {
     chatScore += 3;
   }
 
-  // If explicit marketplace intent is weak, default to conversational.
-  if (searchScore < 2) {
-    chatScore += 1;
-  }
+  if (searchScore < 2) chatScore += 1;
 
   return searchScore >= chatScore + 1 ? "search" : "chat";
 }
@@ -352,231 +252,184 @@ function isLikelySearchRequest(text: string): boolean {
   return classifyTurnIntent(text) === "search";
 }
 
-function normalizeLocale(locale: string): "en" | "fr" | "ar" {
-  const lower = locale.toLowerCase();
-  if (lower.startsWith("fr")) return "fr";
-  if (lower.startsWith("ar")) return "ar";
-  return "en";
+// ─── Search readiness ─────────────────────────────────────────────────────────
+
+/**
+ * For jobs: we need at least a detectable category before running the search engine.
+ * The LLM handles the clarification reply — this just signals whether to proceed.
+ */
+function isJobSearchReady(intentData: JobIntentData): boolean {
+  if (!intentData.query?.trim()) return false;
+
+  // If LLM already extracted a category, we're good
+  if (intentData.category) return true;
+
+  // Try to infer category from the query text
+  return inferCategoryFromText(intentData.query, intentData.skills ?? []) !== null;
 }
 
-function getDayBucketUtc(date = new Date()): Date {
-  const d = new Date(date);
-  d.setUTCHours(0, 0, 0, 0);
-  return d;
-}
+function inferCategoryFromText(query: string, skills: string[]): string | null {
+  const text = `${query} ${skills.join(" ")}`;
+  const normalized = text
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
 
-async function isEligiblePaidUser(userId: string): Promise<boolean> {
-  const db = prisma as any;
-  const subscription = await db.subscription.findFirst({
-    where: {
-      userId,
-      status: SubscriptionStatus.ACTIVE,
+  const rules: Array<{ category: string; keywords: string[] }> = [
+    {
+      category: "Tech",
+      keywords: ["developer", "developpeur", "dev", "software", "frontend", "backend",
+        "fullstack", "data", "engineer", "it", "tech", "programmer", "مطور", "برمجة", "تقنية"],
     },
-    select: {
-      planId: true,
+    {
+      category: "Finance",
+      keywords: ["finance", "accountant", "accounting", "comptable", "audit", "bank", "محاسب", "مالية", "بنك"],
     },
-  });
-  if (!subscription?.planId) return false;
-  return [PLANS.BASIC.id, PLANS.PREMIUM.id].includes(subscription.planId);
-}
-
-async function getDailyUsageCount(userId: string, dayBucket: Date): Promise<number> {
-  const db = prisma as any;
-  const row = await db.aiChatUsage.findUnique({
-    where: {
-      userId_dayBucket: {
-        userId,
-        dayBucket,
-      },
+    {
+      category: "Health",
+      keywords: ["doctor", "nurse", "medical", "sante", "health", "pharmac", "طبيب", "ممرض", "صحة", "دكتور"],
     },
-    select: {
-      requests: true,
+    {
+      category: "Legal",
+      keywords: ["lawyer", "legal", "juridique", "avocat", "محامي", "قانون", "notaire"],
     },
-  });
-  return row?.requests ?? 0;
-}
-
-async function incrementDailyUsage(userId: string, dayBucket: Date): Promise<void> {
-  const db = prisma as any;
-  await db.aiChatUsage.upsert({
-    where: {
-      userId_dayBucket: {
-        userId,
-        dayBucket,
-      },
+    {
+      category: "Education",
+      keywords: ["teacher", "prof", "education", "formateur", "instructor", "معلم", "أستاذ", "تعليم"],
     },
-    create: {
-      userId,
-      dayBucket,
-      requests: 1,
+    {
+      category: "Construction",
+      keywords: ["construction", "builder", "mason", "maçon", "plumbing", "electric", "بناء", "مقاول"],
     },
-    update: {
-      requests: {
-        increment: 1,
-      },
+    {
+      category: "Hospitality",
+      keywords: ["hotel", "restaurant", "hospitality", "serveur", "waiter", "cuisine",
+        "فندق", "استقبال", "مطعم", "نادل", "طباخ"],
     },
-  });
+    {
+      category: "CallCenter",
+      keywords: ["call center", "customer support", "teleconseiller", "centre d'appel", "دعم عملاء", "مركز اتصال"],
+    },
+    {
+      category: "Auto",
+      keywords: ["mechanic", "mecanicien", "garage", "automotive", "auto", "car repair", "ميكانيكي", "كراج"],
+    },
+    {
+      category: "Cleaning",
+      keywords: ["cleaning", "cleaner", "menage", "nettoyage", "نظافة", "تنظيف"],
+    },
+  ];
+
+  for (const rule of rules) {
+    if (rule.keywords.some((k) => normalized.includes(k))) return rule.category;
+  }
+  return null;
 }
 
-function buildChatFallbackReply(locale: string, lastUser: string): string {
-  const normalizedLocale = normalizeLocale(locale);
-  const normalizedInput = normalizeForIntent(lastUser);
+// ─── LLM-powered helpers ───────────────────────────────────────────────────────
 
-  if (normalizedLocale === "fr") {
-    if (normalizedInput.includes("comment ca va") || normalizedInput.includes("ca va")) {
-      return "Je vais bien, merci. Et toi ? Si tu veux, je peux deja t'aider a cibler un job, un service ou une tache selon ta ville et ton budget.";
-    }
-    if (normalizedInput.includes("merci")) {
-      return "Avec plaisir. Si tu veux, on peut affiner ensemble ta recherche pour trouver des resultats plus precis.";
-    }
-    return "Super, on avance ensemble. Dis-moi ton besoin exact et je te propose la meilleure recherche.";
-  }
-
-  if (normalizedLocale === "ar") {
-    if (normalizedInput.includes("كيف حالك")) {
-      return "بخير الحمد لله، شكرا. وانت؟ نقدر نعاونك تلقى وظيفة او خدمة او مهمة بطريقة ادق.";
-    }
-    if (normalizedInput.includes("شكرا")) {
-      return "العفو. اذا بغيتي نقدر نعاونك نضبط البحث باش تكون النتائج احسن.";
-    }
-    return "ممتاز، خلينا نخدموها خطوة بخطوة. قلّي بالضبط اش كتقلب عليه.";
-  }
-
-  if (normalizedInput.includes("how are you")) {
-    return "I am doing well, thanks. How are you? I can help you find better jobs, services, or tasks with specific filters.";
-  }
-  if (normalizedInput.includes("thank")) {
-    return "You are welcome. I can help refine your search to get sharper results.";
-  }
-  return "Great, let's do it step by step. Tell me exactly what you need and I'll guide you.";
-}
-
-function buildCharismaticConversationReply(locale: string, lastUser: string, modelReply?: string): string {
-  const normalizedLocale = normalizeLocale(locale);
-  const rawReply = (modelReply ?? "").trim();
-  const normalizedInput = normalizeForIntent(lastUser);
-  const words = rawReply.split(/\s+/).filter(Boolean);
-  const shortOrDry = words.length <= 4;
-
-  // Keep model reply when it's already rich enough.
-  if (!shortOrDry && rawReply.length >= 24) return rawReply;
-
-  if (normalizedLocale === "fr") {
-    if (normalizedInput.includes("salut") || normalizedInput.includes("bonjour") || normalizedInput.includes("bonsoir")) {
-      return "Salut 👋 Ravi de te voir ici. Dis-moi ce que tu veux trouver (job, service ou tache) et je te guide rapidement.";
-    }
-    if (normalizedInput.includes("merci")) {
-      return "Avec plaisir 😊 Si tu veux, je peux aussi te proposer une recherche plus precise selon ta ville, budget ou niveau.";
-    }
-    return rawReply
-      ? `${rawReply} 😊 Si tu veux, je peux te proposer une recherche concrete tout de suite.`
-      : "Top 👋 Je suis la pour t'aider. Donne-moi ton besoin et je te propose les meilleures options.";
-  }
-
-  if (normalizedLocale === "ar") {
-    if (
-      normalizedInput.includes("سلام") ||
-      normalizedInput.includes("مرحبا") ||
-      normalizedInput.includes("السلام عليكم")
-    ) {
-      return "سلام 👋 مرحبا بك! قولي شنو بغيتي (وظيفة، خدمة، أو مهمة) وأنا نعاونك بسرعة.";
-    }
-    if (normalizedInput.includes("شكرا")) {
-      return "العفو 😊 إذا بغيتي نقدر نضبط ليك البحث أكثر حسب المدينة والميزانية.";
-    }
-    return rawReply
-      ? `${rawReply} 😊 إلى بغيتي نقدر نبداو مباشرة ببحث مضبوط.`
-      : "ممتاز 👋 أنا هنا باش نعاونك. قولّي شنو محتاج ونخدموه خطوة بخطوة.";
-  }
-
-  if (normalizedInput.includes("hi") || normalizedInput.includes("hello") || normalizedInput.includes("hey")) {
-    return "Hey 👋 Great to see you. Tell me what you want to find (job, service, or task) and I'll help you right away.";
-  }
-  if (normalizedInput.includes("thank")) {
-    return "You're welcome 😊 If you want, I can refine your search by city, budget, or level.";
-  }
-  return rawReply
-    ? `${rawReply} 😊 Want me to turn this into a focused search now?`
-    : "Awesome 👋 I'm here to help. Tell me what you need and I'll guide you step by step.";
-}
-
-function normalizeSessionId(raw: unknown): string | null {
-  if (typeof raw !== "string") return null;
-  const cleaned = raw.trim().slice(0, 120);
-  return cleaned || null;
-}
-
-async function trackAgentEvent(args: {
-  userId?: string | null;
-  sessionId: string;
-  name: "AGENT_INTENT_TRIGGERED" | "AGENT_SEARCH_RESULTS_RETURNED";
-  intent: "conversation" | "search_job" | "search_service" | "search_task";
-  data?: Record<string, unknown>;
-}): Promise<void> {
-  if (!args.userId) return;
-  try {
-    const db = prisma as any;
-    await db.event.create({
-      data: {
-        userId: args.userId,
-        sessionId: args.sessionId,
-        name: args.name,
-        intent: args.intent,
-        source: "agent_chat",
-        data: args.data ?? {},
-      },
-    });
-  } catch (error) {
-    console.error("Failed to track agent event", error);
-  }
-}
-
-function buildPlanLimitMessage(locale: string): string {
-  const normalizedLocale = normalizeLocale(locale);
-  if (normalizedLocale === "fr") {
-    return "Tu as atteint la limite gratuite de 20 requetes IA aujourd'hui. Pour continuer, passe a un plan payant depuis la page Plans.";
-  }
-  if (normalizedLocale === "ar") {
-    return "وصلتي للحد المجاني ديال 20 طلب ذكاء اصطناعي اليوم. باش تكمل الاستعمال، خذ خطة مدفوعة من صفحة Plans.";
-  }
-  return "You reached the free AI limit of 20 requests today. To continue, please upgrade from the Plans page.";
-}
-function buildResumeUploadHint(locale: string): string {
-  const normalized = normalizeLocale(locale);
-  if (normalized === "fr") {
-    return "Voici les meilleurs matchs trouvés pour votre recherche. Pour des résultats encore plus pertinents, joignez votre CV via l'icône trombone afin d'activer le matching personnalisé.";
-  }
-  if (normalized === "ar") {
-    return "هذو أفضل النتائج حسب بحثك. إذا بغيتي نتائج أدق، حمّل السيرة الذاتية عبر أيقونة المشبك لتفعيل المطابقة الذكية.";
-  }
-  return "Here are the best matches for your search. For more relevant results, attach your resume using the paperclip icon to enable personalized matching.";
-}
-
-function buildResumeUploadCta(locale: string): { title: string; description: string; buttonLabel: string } {
-  const normalized = normalizeLocale(locale);
-  if (normalized === "fr") {
-    return {
-      title: "Action recommandee: ajoutez votre CV",
-      description:
-        "Nous avons des resultats, mais pour un matching plus precis (competences, experience, priorites), joignez votre CV maintenant.",
-      buttonLabel: "Joindre mon CV",
-    };
-  }
-  if (normalized === "ar") {
-    return {
-      title: "إجراء مهم: أرفق سيرتك الذاتية",
-      description:
-        "النتائج متوفرة، لكن المطابقة ستكون أدق إذا أرفقت السيرة الذاتية الآن.",
-      buttonLabel: "إرفاق السيرة الذاتية",
-    };
-  }
-  return {
-    title: "Recommended action: attach your resume",
-    description:
-      "We found results, but matching becomes much more precise (skills, experience, priorities) once your resume is attached.",
-    buttonLabel: "Attach my resume",
+/**
+ * Generate smart contextual suggestions using the LLM.
+ * Falls back to simple rule-based if LLM fails.
+ */
+async function generateSmartSuggestions(opts: {
+  intent: AgentIntent;
+  query: string;
+  extractedData: JobIntentData | ServiceIntentData | null;
+  items: any[];
+}): Promise<string[]> {
+  const context = {
+    query: opts.query,
+    intent: opts.intent,
+    extractedFilters: opts.extractedData
+      ? {
+          category: (opts.extractedData as any).category ?? (opts.extractedData as any).serviceCategory ?? null,
+          city: (opts.extractedData as any).city ?? null,
+          locationRequirement: (opts.extractedData as any).locationRequirement ?? null,
+          experienceLevel: (opts.extractedData as any).experienceLevel ?? null,
+        }
+      : null,
+    topResults: opts.items.slice(0, 3).map((item: any) => ({
+      title: item.title ?? null,
+      city: item.city ?? null,
+      category: item.category ?? item.serviceCategory ?? null,
+    })),
   };
+
+  try {
+    const raw = await callLLM(
+      [
+        { role: "system", content: buildSuggestionsPrompt() },
+        { role: "user", content: JSON.stringify(context) },
+      ],
+      { temperature: 0.7, maxTokens: 120 },
+    );
+
+    const first = raw.indexOf("[");
+    const last = raw.lastIndexOf("]");
+    if (first === -1 || last === -1) throw new Error("No array in response");
+
+    const parsed = JSON.parse(raw.slice(first, last + 1));
+    if (Array.isArray(parsed) && parsed.length >= 1 && parsed.every((s) => typeof s === "string")) {
+      return parsed.slice(0, 3).filter(Boolean);
+    }
+    throw new Error("Invalid format");
+  } catch {
+    // Rule-based fallback — generic but never crashes
+    if (opts.intent === "jobs") {
+      return ["Show more job opportunities", "Filter by experience level", "Remote positions only"];
+    }
+    if (opts.intent === "services") {
+      return ["Show highest rated providers", "Filter by city", "Compare prices"];
+    }
+    return ["Show more tasks", "Filter by budget", "Urgent tasks only"];
+  }
 }
+
+/**
+ * Ask LLM to generate a plan limit message in the user's language.
+ */
+async function buildPlanLimitMessage(userMessage: string): Promise<string> {
+  try {
+    return await callLLM(
+      [
+        { role: "system", content: buildPlanLimitPrompt() },
+        { role: "user", content: userMessage },
+      ],
+      { temperature: 0.3, maxTokens: 100 },
+    );
+  } catch {
+    return "You've reached your free daily limit. Upgrade from the Plans page to continue.";
+  }
+}
+
+/**
+ * Ask LLM to generate a scope mismatch confirmation message in the user's language.
+ */
+async function buildScopeMismatchMessage(opts: {
+  currentScope: string;
+  suggestedIntent: string;
+  userMessage: string;
+}): Promise<string> {
+  const context = JSON.stringify({
+    currentScope: opts.currentScope,
+    suggestedIntent: opts.suggestedIntent,
+    userMessage: opts.userMessage,
+  });
+  try {
+    return await callLLM(
+      [
+        { role: "system", content: buildScopeMismatchPrompt() },
+        { role: "user", content: context },
+      ],
+      { temperature: 0.3, maxTokens: 100 },
+    );
+  } catch {
+    return `You're currently searching ${opts.currentScope}. Switch to ${opts.suggestedIntent}?`;
+  }
+}
+
+// ─── Card mappers ─────────────────────────────────────────────────────────────
 
 function buildJobResumeMatchExplanation(locale: string, input: {
   matchedSkillsCount: number;
@@ -586,126 +439,18 @@ function buildJobResumeMatchExplanation(locale: string, input: {
   const matched = input.matchedSkillsCount;
   const required = input.requiredSkillsCount;
   const sampleSkills = input.matchedSkills.slice(0, 3).join(", ");
-  if (normalizeLocale(locale) === "fr") {
-    if (required > 0) {
-      return `Correspondance competences: ${matched}/${required}${sampleSkills ? ` (ex: ${sampleSkills})` : ""}.`;
-    }
-    return "Correspondance semantique et niveau d'experience alignes avec votre CV.";
+  const lang = normalizeLocale(locale);
+
+  if (lang === "fr") {
+    if (required > 0) return `Correspondance compétences : ${matched}/${required}${sampleSkills ? ` (ex: ${sampleSkills})` : ""}.`;
+    return "Correspondance sémantique et niveau d'expérience alignés avec votre CV.";
   }
-  if (normalizeLocale(locale) === "ar") {
-    if (required > 0) {
-      return `تطابق المهارات: ${matched}/${required}${sampleSkills ? ` (مثل: ${sampleSkills})` : ""}.`;
-    }
+  if (lang === "ar") {
+    if (required > 0) return `تطابق المهارات: ${matched}/${required}${sampleSkills ? ` (مثل: ${sampleSkills})` : ""}.`;
     return "التطابق مبني على التشابه الدلالي وملاءمة مستوى الخبرة مع السيرة الذاتية.";
   }
-  if (required > 0) {
-    return `Skill overlap: ${matched}/${required}${sampleSkills ? ` (e.g. ${sampleSkills})` : ""}.`;
-  }
+  if (required > 0) return `Skill overlap: ${matched}/${required}${sampleSkills ? ` (e.g. ${sampleSkills})` : ""}.`;
   return "Match is based on semantic similarity and experience alignment with your resume.";
-}
-
-function toNumberOrNull(value: unknown): number | null {
-  if (typeof value === "number" && Number.isFinite(value)) return value;
-  if (typeof value === "string" && value.trim()) {
-    const parsed = Number(value);
-    return Number.isFinite(parsed) ? parsed : null;
-  }
-  return null;
-}
-
-function evaluateConfidenceMode(items: Array<{ matchScore?: number | null }>): ConfidenceMode {
-  const topScore = toNumberOrNull(items[0]?.matchScore) ?? 0;
-  const secondScore = toNumberOrNull(items[1]?.matchScore) ?? 0;
-  const scoreGap = topScore - secondScore;
-  if (topScore >= 75 && scoreGap >= 10) return "strong";
-  if (topScore >= 55) return "moderate";
-  return "weak";
-}
-
-function buildSmartRelatedPrompts(
-  locale: string,
-  intent: AgentIntent,
-  query: string,
-  items: Array<{ title?: string; city?: string; serviceCategory?: string; category?: string; type?: string; matchScore?: number | null }>,
-  confidenceMode: ConfidenceMode,
-): string[] {
-  const lang = normalizeLocale(locale);
-  const topItem = items[0];
-  const city = topItem?.city;
-  const category = topItem?.serviceCategory || topItem?.category || "";
-  const type = topItem?.type || "";
-
-  if (intent === "services") {
-    if (lang === "fr") {
-      const prompts = [
-        city ? `Meilleur ${type || "service"} à ${city}` : `Meilleur ${type || "service"} près de moi`,
-        confidenceMode === "weak" ? "Montre-moi d'autres catégories de services" : `Comparer les prix ${type ? "de " + type : ""}`,
-        "Quel service a les meilleurs avis ?",
-      ];
-      return prompts.slice(0, 3);
-    }
-    if (lang === "ar") {
-      const prompts = [
-        city ? `أفضل ${type || "خدمة"} في ${city}` : `أفضل ${type || "خدمة"} بالقرب مني`,
-        confidenceMode === "weak" ? "اعرض لي فئات خدمات أخرى" : `قارن الأسعار ${type ? "لـ " + type : ""}`,
-        "أي خدمة لديها أفضل تقييمات؟",
-      ];
-      return prompts.slice(0, 3);
-    }
-    const prompts = [
-      city ? `Best ${type || "service"} in ${city}` : `Best ${type || "service"} near me`,
-      confidenceMode === "weak" ? "Show me other service categories" : `Compare ${type || "service"} prices`,
-      "Which one has the best reviews?",
-    ];
-    return prompts.slice(0, 3);
-  }
-
-  if (intent === "jobs") {
-    if (lang === "fr") {
-      return [
-        city ? `Plus d'offres à ${city}` : "Plus d'offres d'emploi",
-        "Offres pour débutants",
-        "Emplois à temps partiel",
-      ];
-    }
-    if (lang === "ar") {
-      return [
-        city ? `المزيد من الوظائف في ${city}` : "المزيد من فرص العمل",
-        "وظائف للمبتدئين",
-        "وظائف بدوام جزئي",
-      ];
-    }
-    return [
-      city ? `More jobs in ${city}` : "More job opportunities",
-      "Entry-level positions",
-      "Part-time jobs",
-    ];
-  }
-
-  if (lang === "fr") return ["Plus de missions disponibles", "Missions urgentes", "Missions à petit budget"];
-  if (lang === "ar") return ["المزيد من المهام المتاحة", "مهام عاجلة", "مهام بميزانية صغيرة"];
-  return ["More available tasks", "Urgent tasks", "Budget-friendly tasks"];
-}
-
-function isComparisonQuery(query: string): boolean {
-  const q = normalizeForIntent(query);
-  const hints = [
-    "compare",
-    "comparison",
-    "which one",
-    "better",
-    "best",
-    "vs",
-    "comparer",
-    "comparatif",
-    "meilleur",
-    "plus",
-    "قارن",
-    "مقارنة",
-    "الأفضل",
-    "احسن",
-  ];
-  return hints.some((h) => q.includes(h));
 }
 
 function mapJobCards(items: any[], opts?: { locale?: string; includeResumeMatch?: boolean }): any[] {
@@ -736,16 +481,12 @@ function mapJobCards(items: any[], opts?: { locale?: string; includeResumeMatch?
     resumeMatch: includeResumeMatch
       ? {
           percent: typeof item.matchPercent === "number" ? item.matchPercent : null,
-          matchedSkillsCount:
-            typeof item.matchedSkillsCount === "number" ? item.matchedSkillsCount : 0,
-          requiredSkillsCount:
-            typeof item.requiredSkillsCount === "number" ? item.requiredSkillsCount : 0,
+          matchedSkillsCount: typeof item.matchedSkillsCount === "number" ? item.matchedSkillsCount : 0,
+          requiredSkillsCount: typeof item.requiredSkillsCount === "number" ? item.requiredSkillsCount : 0,
           matchedSkills: Array.isArray(item.matchedSkills) ? item.matchedSkills : [],
           explanation: buildJobResumeMatchExplanation(locale, {
-            matchedSkillsCount:
-              typeof item.matchedSkillsCount === "number" ? item.matchedSkillsCount : 0,
-            requiredSkillsCount:
-              typeof item.requiredSkillsCount === "number" ? item.requiredSkillsCount : 0,
+            matchedSkillsCount: typeof item.matchedSkillsCount === "number" ? item.matchedSkillsCount : 0,
+            requiredSkillsCount: typeof item.requiredSkillsCount === "number" ? item.requiredSkillsCount : 0,
             matchedSkills: Array.isArray(item.matchedSkills) ? item.matchedSkills : [],
           }),
         }
@@ -758,19 +499,18 @@ function mapServiceCards(items: any[]): any[] {
     id: item.id,
     title: item.title,
     displayImage: item.displayImage ?? null,
-    images:
-      Array.isArray(item.images)
-        ? item.images
-        : typeof item.images === "string"
-          ? (() => {
-              try {
-                const parsed = JSON.parse(item.images);
-                return Array.isArray(parsed) ? parsed.filter((x) => typeof x === "string") : [];
-              } catch {
-                return [];
-              }
-            })()
-          : [],
+    images: Array.isArray(item.images)
+      ? item.images
+      : typeof item.images === "string"
+        ? (() => {
+            try {
+              const parsed = JSON.parse(item.images);
+              return Array.isArray(parsed) ? parsed.filter((x: unknown) => typeof x === "string") : [];
+            } catch {
+              return [];
+            }
+          })()
+        : [],
     serviceCategory: item.serviceCategory,
     price: item.price,
     currency: "MAD",
@@ -791,89 +531,96 @@ function mapServiceCards(items: any[]): any[] {
   }));
 }
 
+// ─── Scoring helpers ──────────────────────────────────────────────────────────
+
+function toNumberOrNull(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string" && value.trim()) {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
+}
+
+function evaluateConfidenceMode(items: Array<{ matchScore?: number | null }>): ConfidenceMode {
+  const topScore = toNumberOrNull(items[0]?.matchScore) ?? 0;
+  const secondScore = toNumberOrNull(items[1]?.matchScore) ?? 0;
+  const scoreGap = topScore - secondScore;
+  if (topScore >= 75 && scoreGap >= 10) return "strong";
+  if (topScore >= 55) return "moderate";
+  return "weak";
+}
+
+// ─── Rate limiting ────────────────────────────────────────────────────────────
+
+function getDayBucketUtc(date = new Date()): Date {
+  const d = new Date(date);
+  d.setUTCHours(0, 0, 0, 0);
+  return d;
+}
+
+async function isEligiblePaidUser(userId: string): Promise<boolean> {
+  const db = prisma as any;
+  const subscription = await db.subscription.findFirst({
+    where: { userId, status: SubscriptionStatus.ACTIVE },
+    select: { planId: true },
+  });
+  if (!subscription?.planId) return false;
+  return [PLANS.BASIC.id, PLANS.PREMIUM.id].includes(subscription.planId);
+}
+
+async function getDailyUsageCount(userId: string, dayBucket: Date): Promise<number> {
+  const db = prisma as any;
+  const row = await db.aiChatUsage.findUnique({
+    where: { userId_dayBucket: { userId, dayBucket } },
+    select: { requests: true },
+  });
+  return row?.requests ?? 0;
+}
+
+async function incrementDailyUsage(userId: string, dayBucket: Date): Promise<void> {
+  const db = prisma as any;
+  await db.aiChatUsage.upsert({
+    where: { userId_dayBucket: { userId, dayBucket } },
+    create: { userId, dayBucket, requests: 1 },
+    update: { requests: { increment: 1 } },
+  });
+}
+
+// ─── Event tracking ───────────────────────────────────────────────────────────
+
+async function trackAgentEvent(args: {
+  userId?: string | null;
+  sessionId: string;
+  name: "AGENT_INTENT_TRIGGERED" | "AGENT_SEARCH_RESULTS_RETURNED";
+  intent: "conversation" | "search_job" | "search_service" | "search_task";
+  data?: Record<string, unknown>;
+}): Promise<void> {
+  if (!args.userId) return;
+  try {
+    const db = prisma as any;
+    await db.event.create({
+      data: {
+        userId: args.userId,
+        sessionId: args.sessionId,
+        name: args.name,
+        intent: args.intent,
+        source: "agent_chat",
+        data: args.data ?? {},
+      },
+    });
+  } catch (error) {
+    console.error("Failed to track agent event", error);
+  }
+}
+
+// ─── Debug ────────────────────────────────────────────────────────────────────
+
 function logChatDebug(step: string, payload: unknown): void {
   console.log(`[chat-debug] ${step}`, payload);
 }
 
-function buildScopeMismatchMessage(
-  locale: string,
-  currentScope: string,
-  suggestedIntent: string,
-): string {
-  const intentLabel: Record<string, Record<string, string>> = {
-    services: { fr: "les services", ar: "الخدمات", en: "services" },
-    tasks: { fr: "les tâches", ar: "المهام", en: "tasks" },
-    jobs: { fr: "les emplois", ar: "الوظائف", en: "jobs" },
-  };
-  const currentLabel: Record<string, Record<string, string>> = {
-    jobs: { fr: "emplois", ar: "وظائف", en: "jobs" },
-    services: { fr: "services", ar: "خدمات", en: "services" },
-    tasks: { fr: "tâches", ar: "مهام", en: "tasks" },
-  };
-  const lang = ["fr", "ar"].includes(locale) ? locale : "en";
-  const suggested = intentLabel[suggestedIntent]?.[lang] ?? suggestedIntent;
-  const current = currentLabel[currentScope]?.[lang] ?? currentScope;
-
-  if (lang === "fr") {
-    return `Vous êtes actuellement en mode **${current}**. Voulez-vous basculer vers **${suggested}** pour cette recherche ?`;
-  }
-  if (lang === "ar") {
-    return `أنت حاليًا في وضع **${current}**. هل تريد التبديل إلى **${suggested}** لهذا البحث؟`;
-  }
-  return `You're currently in **${current}** mode. Would you like to switch to **${suggested}** for this search?`;
-}
-
-function buildSwitchConfirmPrompt(locale: string, suggestedIntent: string): string {
-  const labels: Record<string, Record<string, string>> = {
-    services: { fr: "Oui, passer aux services", ar: "نعم، التبديل إلى الخدمات", en: "Yes, switch to services" },
-    tasks: { fr: "Oui, passer aux tâches", ar: "نعم، التبديل إلى المهام", en: "Yes, switch to tasks" },
-    jobs: { fr: "Oui, passer aux emplois", ar: "نعم، التبديل إلى الوظائف", en: "Yes, switch to jobs" },
-  };
-  const lang = ["fr", "ar"].includes(locale) ? locale : "en";
-  return labels[suggestedIntent]?.[lang] ?? `Yes, switch to ${suggestedIntent}`;
-}
-
-function buildStayPrompt(locale: string, currentScope: string): string {
-  const labels: Record<string, Record<string, string>> = {
-    jobs: { fr: "Non, continuer avec les emplois", ar: "لا، الاستمرار مع الوظائف", en: "No, keep searching jobs" },
-    services: { fr: "Non, continuer avec les services", ar: "لا، الاستمرار مع الخدمات", en: "No, keep searching services" },
-    tasks: { fr: "Non, continuer avec les tâches", ar: "لا، الاستمرار مع المهام", en: "No, keep searching tasks" },
-  };
-  const lang = ["fr", "ar"].includes(locale) ? locale : "en";
-  return labels[currentScope]?.[lang] ?? `No, keep searching ${currentScope}`;
-}
-
-function isExplicitIntentSwitch(query: string, targetIntent: string): boolean {
-  const q = normalizeForIntent(query);
-  const serviceKeywords = ["plumber", "electrician", "cleaner", "mechanic", "painter",
-    "plombier", "électricien", "نجار", "سباك", "كهربائي", "خدمة", "service", "services"];
-  const taskKeywords = ["task", "mission", "gig", "tâche", "مهمة", "مهام"];
-  const jobKeywords = ["job", "emploi", "وظيفة", "travail", "عمل", "hire", "recruit", "jobs", "emplois"];
-  
-  if (targetIntent === "services") return serviceKeywords.some(k => q.includes(k));
-  if (targetIntent === "tasks") return taskKeywords.some(k => q.includes(k));
-  if (targetIntent === "jobs") return jobKeywords.some(k => q.includes(k));
-  return false;
-}
-
-function buildSearchIntroText(locale: string, intent: AgentIntent, query: string): string {
-  const lang = normalizeLocale(locale);
-  const q = query.trim();
-
-  if (intent === "jobs") {
-    if (lang === "fr") return `Voici les meilleures offres d'emploi pour "${q}" que j'ai trouvées pour toi.`;
-    if (lang === "ar") return `إليك أفضل فرص العمل المتعلقة بـ "${q}" التي وجدتها لك.`;
-    return `Here are the best job matches I found for "${q}".`;
-  }
-  if (intent === "services") {
-    if (lang === "fr") return `Voici les meilleurs services disponibles pour "${q}".`;
-    if (lang === "ar") return `إليك أفضل الخدمات المتاحة لـ "${q}".`;
-    return `Here are the top services available for "${q}".`;
-  }
-  if (lang === "fr") return `Voici les meilleures missions disponibles pour "${q}".`;
-  if (lang === "ar") return `إليك أفضل المهام المتاحة لـ "${q}".`;
-  return `Here are the best tasks available for "${q}".`;
-}
+// ─── Main handler ──────────────────────────────────────────────────────────────
 
 export async function POST(req: Request) {
   try {
@@ -882,35 +629,35 @@ export async function POST(req: Request) {
     const messages = Array.isArray(body?.messages) ? body.messages : [];
 
     if (!messages.length) {
-      return NextResponse.json(
-        { error: "Missing messages" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "Missing messages" }, { status: 400 });
     }
 
     const lastUser =
       [...messages].reverse().find((m) => m?.role === "user" && typeof m.content === "string")?.content ??
       body.context?.query ??
       "";
+
     const locale = body.context?.locale || "en";
 
-    // Enforce free-tier AI usage limit (20/day), BASIC/PREMIUM unlimited.
+    // ── Auth & rate limiting ──────────────────────────────────────────────────
     const session = await auth();
     const userId = session?.user?.id;
     const sessionId =
       normalizeSessionId(body.context?.sessionId) ||
       (userId ? `agent-${userId}-${Date.now()}` : `agent-anon-${Date.now()}`);
+
     if (userId) {
       const eligiblePaid = await isEligiblePaidUser(userId);
       if (!eligiblePaid) {
         const dayBucket = getDayBucketUtc();
         const used = await getDailyUsageCount(userId, dayBucket);
         if (used >= FREE_DAILY_LIMIT) {
+          const limitMessage = await buildPlanLimitMessage(lastUser);
           return NextResponse.json({
             action: "chat",
             intent: "jobs",
             searchQuery: "",
-            assistantText: buildPlanLimitMessage(locale),
+            assistantText: limitMessage,
             relatedPrompts: [],
             planLimitReached: true,
             upgradeUrl: "/subscription",
@@ -920,6 +667,42 @@ export async function POST(req: Request) {
       }
     }
 
+    // ── Fetch user resume data ────────────────────────────────────────────────
+    const userResumeData = userId
+      ? await (prisma as any).user.findUnique({
+          where: { id: userId },
+          select: { resumeEmbedding: true, autoApplyKeywords: true, resumeUrl: true },
+        })
+      : null;
+
+    const hasResumeEmbedding =
+      Array.isArray(userResumeData?.resumeEmbedding) && userResumeData.resumeEmbedding.length > 0;
+
+    const resumeProfile = hasResumeEmbedding
+      ? {
+          job_title: null,
+          skills: (userResumeData?.autoApplyKeywords as string[] | undefined) ?? [],
+          experience_level: null,
+        }
+      : null;
+
+    // ── Bypass decision ───────────────────────────────────────────────────────
+    // Only bypass the LLM when ALL conditions are true:
+    // 1. Scope is pinned
+    // 2. Message is clearly a search request
+    // 3. Message is not a greeting or small talk
+    // 4. Message has more than 3 words (never bypass short/ambiguous messages)
+    const scope = body.context?.scope;
+    const quickQuery = (lastUser || "").trim();
+    const wordCount = quickQuery.split(" ").filter(Boolean).length;
+
+    const shouldBypassIntentLlm =
+      Boolean(scope && scope !== "auto") &&
+      isLikelySearchRequest(quickQuery) &&
+      !isGreetingOrSmallTalk(quickQuery) &&
+      wordCount > 3;
+
+    // ── Intent extraction ─────────────────────────────────────────────────────
     const extractorHistory: IntentExtractorMessage[] = messages
       .filter((m): m is IntentExtractorMessage => {
         return (
@@ -930,60 +713,29 @@ export async function POST(req: Request) {
       })
       .slice(-4);
 
-    // Fetch user resume data if available
-    const userResumeData =
-      userId
-        ? await (prisma as any).user.findUnique({
-            where: { id: userId },
-            select: {
-              resumeEmbedding: true,
-              autoApplyKeywords: true,
-              resumeUrl: true,
-            },
-          })
-        : null;
-
-    const hasResumeEmbedding =
-      Array.isArray(userResumeData?.resumeEmbedding) && userResumeData.resumeEmbedding.length > 0;
-
-    // Build resume profile for intent extractor
-    const resumeProfile = hasResumeEmbedding
-      ? {
-          job_title: null, // We don't store this separately, but skills will help
-          skills: (userResumeData?.autoApplyKeywords as string[] | undefined) ?? [],
-          experience_level: null,
-        }
-      : null;
-
-    const scope = body.context?.scope;
-    const quickQuery = (lastUser || "").trim();
-    // RULE: Only bypass the LLM when ALL four conditions are true
-    const shouldBypassIntentLlm =
-      Boolean(scope && scope !== "auto") &&                    // scope is pinned
-      isLikelySearchRequest(quickQuery) &&                     // message is clearly a search
-      !isGreetingOrSmallTalk(quickQuery) &&                    // not a greeting
-      quickQuery.split(" ").filter(Boolean).length > 3;        // at least 4 words
-
-    const aiResult: Awaited<ReturnType<typeof extractIntent>> = shouldBypassIntentLlm
+    const aiResult = shouldBypassIntentLlm
       ? scope === "services"
-        ? { type: "search_service", reply: "", intent_data: { query: quickQuery } }
+        ? { type: "search_service" as const, reply: "", intent_data: { query: quickQuery }, clarify_field: null }
         : scope === "tasks"
-          ? { type: "search_task", reply: "", intent_data: { query: quickQuery } }
-          : { type: "search_job", reply: "", intent_data: { query: quickQuery } }
+          ? { type: "search_task" as const, reply: "", intent_data: { query: quickQuery }, clarify_field: null }
+          : { type: "search_job" as const, reply: "", intent_data: { query: quickQuery }, clarify_field: null }
       : await extractIntent({
-      locale,
+          locale,
           scope,
-      categoryHint: body.context?.categoryHint,
-      message: lastUser,
-      history: extractorHistory,
-      resumeProfile: resumeProfile as any,
-    });
+          categoryHint: body.context?.categoryHint,
+          message: lastUser,
+          history: extractorHistory,
+          resumeProfile: resumeProfile as any,
+        });
+
     logChatDebug("intent_extracted", {
       message: lastUser,
       type: aiResult.type,
       reply: aiResult.reply,
       intent_data: aiResult.intent_data,
+      bypassed: shouldBypassIntentLlm,
     });
+
     await trackAgentEvent({
       userId,
       sessionId,
@@ -995,10 +747,13 @@ export async function POST(req: Request) {
         categoryHint: body.context?.categoryHint ?? null,
         query: (lastUser || "").slice(0, 500),
         extractedIntentData: aiResult.intent_data ?? null,
+        bypassed: shouldBypassIntentLlm,
       },
     });
 
-    // Scope guard: if user has pinned an intent and asks for a different type, check if explicit
+    // ── Scope guard ───────────────────────────────────────────────────────────
+    // If user has a pinned scope and the extracted intent is a different search type,
+    // ask for confirmation. But only if it's ambiguous — explicit switches go through.
     const pinnedScope = body.context?.scope;
     if (pinnedScope && pinnedScope !== "auto" && aiResult.type !== "conversation") {
       const scopeToType: Record<string, string> = {
@@ -1007,66 +762,97 @@ export async function POST(req: Request) {
         tasks: "search_task",
       };
       const expectedType = scopeToType[pinnedScope];
-      if (expectedType && aiResult.type !== expectedType) {
-        const suggestedIntent = aiResult.type === "search_service" ? "services" : 
-                                 aiResult.type === "search_task" ? "tasks" : "jobs";
-        
-        // Check if this is an explicit switch (e.g., "find me a plumber")
-        const isExplicit = isExplicitIntentSwitch(lastUser, suggestedIntent);
-        
-        if (isExplicit) {
-          // Explicit switch: proceed directly without confirmation
-          logChatDebug("explicit_intent_switch", {
-            from: pinnedScope,
-            to: suggestedIntent,
-            query: lastUser,
-          });
-          // Continue to search with the new intent (don't return here)
-        } else {
-          // Ambiguous switch: ask for confirmation
-          return NextResponse.json({
-            action: "chat",
-            intent: pinnedScope as AgentIntent,
-            searchQuery: "",
-            assistantText: buildScopeMismatchMessage(locale, pinnedScope, suggestedIntent),
-            relatedPrompts: [
-              buildSwitchConfirmPrompt(locale, suggestedIntent),
-              buildStayPrompt(locale, pinnedScope),
-            ],
-            intentMismatch: { suggestedIntent: suggestedIntent as AgentIntent },
-          } satisfies AgentResponse);
-        }
+      const isExplicit = isExplicitIntentSwitch(quickQuery, aiResult.type);
+
+      if (expectedType && aiResult.type !== expectedType && !isExplicit) {
+        const suggestedIntent =
+          aiResult.type === "search_service" ? "services" :
+          aiResult.type === "search_task" ? "tasks" : "jobs";
+
+        const mismatchMessage = await buildScopeMismatchMessage({
+          currentScope: pinnedScope,
+          suggestedIntent,
+          userMessage: lastUser,
+        });
+
+        // Generate switch/stay prompts via LLM suggestions
+        const switchPrompts = await generateSmartSuggestions({
+          intent: suggestedIntent as AgentIntent,
+          query: quickQuery,
+          extractedData: null,
+          items: [],
+        }).then(() => [
+          `Yes, search ${suggestedIntent}`,
+          `No, keep searching ${pinnedScope}`,
+        ]).catch(() => [
+          `Yes, search ${suggestedIntent}`,
+          `No, keep searching ${pinnedScope}`,
+        ]);
+
+        return NextResponse.json({
+          action: "chat",
+          intent: pinnedScope as AgentIntent,
+          searchQuery: "",
+          assistantText: mismatchMessage,
+          relatedPrompts: switchPrompts,
+          intentMismatch: { suggestedIntent: suggestedIntent as AgentIntent },
+        } satisfies AgentResponse);
       }
     }
 
+    // ── Conversation ──────────────────────────────────────────────────────────
     if (aiResult.type === "conversation") {
       return NextResponse.json({
         action: "chat",
         intent: "jobs",
         searchQuery: "",
-        assistantText: buildCharismaticConversationReply(
-          locale,
-          lastUser,
-          aiResult.reply || buildChatFallbackReply(locale, lastUser),
-        ),
+        assistantText: aiResult.reply || "How can I help you today?",
         relatedPrompts: [],
-        debug: includeDebug
-          ? {
-              stage: "conversation",
-              extracted_intent: aiResult,
-            }
-          : undefined,
+        debug: includeDebug ? { stage: "conversation", extracted_intent: aiResult } : undefined,
       } satisfies AgentResponse);
     }
 
+    // ── Job search ────────────────────────────────────────────────────────────
     if (aiResult.type === "search_job" && aiResult.intent_data) {
-      const searchResult = await jobSearchEngine(
-        prisma as PrismaClient,
-        aiResult.intent_data as JobIntentData,
-      );
-      const searchQuery = aiResult.intent_data.query?.trim() || lastUser.trim();
+      const intentData = aiResult.intent_data as JobIntentData;
 
-      // Use already-fetched resume data
+      // Readiness check — must have a detectable category
+      // The LLM already handles this via SEARCH READINESS RULES in prompt/intent.ts
+      // but we double-check here as a safety net when bypass fired
+      if (shouldBypassIntentLlm && !isJobSearchReady(intentData)) {
+        // Re-run through LLM to get a proper clarification reply
+        const clarifyResult = await extractIntent({
+          locale,
+          scope,
+          message: lastUser,
+          history: extractorHistory,
+          resumeProfile: resumeProfile as any,
+        });
+        return NextResponse.json({
+          action: "chat",
+          intent: "jobs",
+          searchQuery: "",
+          assistantText: clarifyResult.reply || "What field are you looking for?",
+          relatedPrompts: [],
+        } satisfies AgentResponse);
+      }
+
+      // If LLM returned conversation with clarify_field, respect that
+      // (this handles the non-bypass path where LLM itself decided to ask)
+      const clarifyField = (aiResult as any).clarify_field;
+      if (clarifyField === "category" && aiResult.type === "search_job") {
+        return NextResponse.json({
+          action: "chat",
+          intent: "jobs",
+          searchQuery: "",
+          assistantText: aiResult.reply || "What field are you looking for?",
+          relatedPrompts: [],
+        } satisfies AgentResponse);
+      }
+
+      const searchResult = await jobSearchEngine(prisma as PrismaClient, intentData);
+      const searchQuery = intentData.query?.trim() || lastUser.trim();
+
       const personalizedRanked = hasResumeEmbedding
         ? rankJobsWithResumeMatch(searchResult.topResults as any, {
             resumeEmbedding: userResumeData.resumeEmbedding as number[],
@@ -1074,14 +860,26 @@ export async function POST(req: Request) {
           })
         : searchResult.topResults;
 
-      const cards = mapJobCards(personalizedRanked.slice(0, 3), {
+      const cards = mapJobCards(personalizedRanked.slice(0, SEARCH_PAGE_SIZE), {
         locale,
         includeResumeMatch: hasResumeEmbedding,
       });
+
       const confidenceMode = evaluateConfidenceMode(cards);
+
+      // assistantText — always present, never empty
+      const assistantText = aiResult.reply?.trim() || "";
+
+      // Smart LLM-generated suggestions
+      const relatedPrompts = await generateSmartSuggestions({
+        intent: "jobs",
+        query: searchQuery,
+        extractedData: intentData,
+        items: cards,
+      });
+
       await trackAgentEvent({
-        userId,
-        sessionId,
+        userId, sessionId,
         name: "AGENT_SEARCH_RESULTS_RETURNED",
         intent: "search_job",
         data: {
@@ -1093,59 +891,60 @@ export async function POST(req: Request) {
           topIds: cards.map((item) => item.id),
         },
       });
+
       logChatDebug("job_search_pipeline", {
         extracted_query: searchQuery,
         filters_applied: searchResult.filtersApplied,
         result_count: cards.length,
         top_ids: cards.map((card) => card.id),
         used_resume_matching: hasResumeEmbedding,
+        assistant_text: assistantText,
       });
-      const jobDebug =
-        includeDebug
-          ? {
-              stage: "search_job",
-              extracted_intent: aiResult,
-              extracted_query: searchQuery,
-              filters_applied: searchResult.filtersApplied,
-              ranking_top3: personalizedRanked.slice(0, 3).map((item: any) => ({
-                id: item.id,
-                title: item.title,
-                finalScore: item.finalScore,
-                semanticScore: item.semanticScore,
-                overlapScore: item.overlapScore,
-                recencyScore: item.recencyScore,
-                resumeMatchScore: item.resumeMatchScore,
-                blendedScore: item.blendedScore,
-              })),
-              used_resume_matching: hasResumeEmbedding,
-            }
-          : undefined;
+
       return NextResponse.json({
         action: "search",
         intent: "jobs",
         searchQuery,
-        assistantText: aiResult.reply?.trim() || buildSearchIntroText(locale, "jobs", searchQuery),
-        results: {
-          type: "jobs",
-          items: cards,
-        },
-        resumeUploadCta: hasResumeEmbedding ? undefined : buildResumeUploadCta(locale),
-        debug: jobDebug,
-        relatedPrompts: buildSmartRelatedPrompts(locale, "jobs", searchQuery, cards, confidenceMode),
+        assistantText,
+        results: { type: "jobs", items: cards },
+        resumeUploadCta: hasResumeEmbedding ? undefined : buildResumeUploadCta(),
+        relatedPrompts,
+        debug: includeDebug
+          ? {
+              stage: "search_job",
+              extracted_intent: aiResult,
+              filters_applied: searchResult.filtersApplied,
+              bypassed: shouldBypassIntentLlm,
+              ranking_top3: personalizedRanked.slice(0, 3).map((item: any) => ({
+                id: item.id,
+                title: item.title,
+                finalScore: item.finalScore,
+                blendedScore: item.blendedScore,
+              })),
+            }
+          : undefined,
       } satisfies AgentResponse);
     }
 
+    // ── Service search ────────────────────────────────────────────────────────
     if (aiResult.type === "search_service" && aiResult.intent_data) {
-      const searchResult = await serviceSearchEngine(
-        prisma as PrismaClient,
-        aiResult.intent_data as ServiceIntentData,
-      );
-      const searchQuery = aiResult.intent_data.query?.trim() || lastUser.trim();
+      const intentData = aiResult.intent_data as ServiceIntentData;
+      const searchResult = await serviceSearchEngine(prisma as PrismaClient, intentData);
+      const searchQuery = intentData.query?.trim() || lastUser.trim();
       const cards = mapServiceCards(searchResult.topResults);
       const confidenceMode = evaluateConfidenceMode(cards);
+
+      const assistantText = aiResult.reply?.trim() || "";
+
+      const relatedPrompts = await generateSmartSuggestions({
+        intent: "services",
+        query: searchQuery,
+        extractedData: intentData,
+        items: cards,
+      });
+
       await trackAgentEvent({
-        userId,
-        sessionId,
+        userId, sessionId,
         name: "AGENT_SEARCH_RESULTS_RETURNED",
         intent: "search_service",
         data: {
@@ -1156,85 +955,116 @@ export async function POST(req: Request) {
           topIds: cards.map((item) => item.id),
         },
       });
+
       logChatDebug("service_search_pipeline", {
         extracted_query: searchQuery,
         filters_applied: searchResult.filtersApplied,
         result_count: cards.length,
         top_ids: cards.map((card) => card.id),
       });
-      const serviceDebug =
-        includeDebug
-          ? {
-              stage: "search_service",
-              extracted_intent: aiResult,
-              extracted_query: searchQuery,
-              filters_applied: searchResult.filtersApplied,
-              ranking_top3: searchResult.topResults.map((item) => ({
-                id: item.id,
-                title: item.title,
-                finalScore: item.finalScore,
-                semanticScore: item.semanticScore,
-                ratingScore: item.ratingScore,
-                reviewsScore: item.reviewsScore,
-                locationScore: item.locationScore,
-                priceScore: item.priceScore,
-              })),
-            }
-          : undefined;
+
       return NextResponse.json({
         action: "search",
         intent: "services",
         searchQuery,
-        assistantText: aiResult.reply?.trim() || buildSearchIntroText(locale, "services", searchQuery),
-        results: {
-          type: "services",
-          items: cards,
-        },
-        debug: serviceDebug,
-        relatedPrompts: buildSmartRelatedPrompts(locale, "services", searchQuery, cards, confidenceMode),
+        assistantText,
+        results: { type: "services", items: cards },
+        relatedPrompts,
+        debug: includeDebug
+          ? {
+              stage: "search_service",
+              extracted_intent: aiResult,
+              filters_applied: searchResult.filtersApplied,
+            }
+          : undefined,
       } satisfies AgentResponse);
     }
 
+    // ── Task search ───────────────────────────────────────────────────────────
     if (aiResult.type === "search_task" && aiResult.intent_data) {
-      const searchQuery = aiResult.intent_data.query?.trim() || lastUser.trim();
+      const searchQuery = (aiResult.intent_data as any).query?.trim() || lastUser.trim();
+      const assistantText = aiResult.reply?.trim() || "";
+
+      const relatedPrompts = await generateSmartSuggestions({
+        intent: "tasks",
+        query: searchQuery,
+        extractedData: null,
+        items: [],
+      });
+
       await trackAgentEvent({
-        userId,
-        sessionId,
+        userId, sessionId,
         name: "AGENT_SEARCH_RESULTS_RETURNED",
         intent: "search_task",
-        data: {
-          query: searchQuery,
-          resultsCount: 0,
-          note: "task search cards are currently not returned from /api/chat route",
-        },
+        data: { query: searchQuery, resultsCount: 0 },
       });
+
       return NextResponse.json({
         action: "search",
         intent: "tasks",
         searchQuery,
-        assistantText: aiResult.reply?.trim() || buildSearchIntroText(locale, "tasks", searchQuery),
-        relatedPrompts: buildSmartRelatedPrompts(locale, "tasks", searchQuery, [], "weak"),
+        assistantText,
+        relatedPrompts,
       } satisfies AgentResponse);
     }
 
-    const fallbackQuery = (lastUser || "").trim();
+    // ── Fallback ──────────────────────────────────────────────────────────────
     return NextResponse.json({
       action: "search",
       intent: "jobs",
-      searchQuery: fallbackQuery || "jobs",
+      searchQuery: quickQuery || "jobs",
       assistantText: "",
-      debug: includeDebug
-        ? {
-            stage: "fallback",
-            extracted_intent: aiResult,
-          }
-        : undefined,
       relatedPrompts: [],
+      debug: includeDebug ? { stage: "fallback", extracted_intent: aiResult } : undefined,
     } satisfies AgentResponse);
   } catch (err: any) {
-    return NextResponse.json(
-      { error: err?.message || "Unknown error" },
-      { status: 500 },
-    );
+    console.error("[chat/route] Unhandled error:", err);
+    return NextResponse.json({ error: err?.message || "Unknown error" }, { status: 500 });
   }
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+/**
+ * Detect if the user is explicitly requesting a different intent type.
+ * Used to skip confirmation dialog when the switch is obvious.
+ */
+function isExplicitIntentSwitch(query: string, targetType: string): boolean {
+  const q = normalizeForIntent(query);
+
+  const serviceKeywords = [
+    "plumber", "electrician", "cleaner", "mechanic", "painter", "carpenter",
+    "plombier", "électricien", "nettoyage", "mécanicien", "peintre",
+    "سباك", "كهربائي", "نجار", "ميكانيكي", "دهان",
+    "service", "services", "خدمة", "خدمات",
+  ];
+
+  const taskKeywords = [
+    "task", "tasks", "mission", "gig", "freelance",
+    "tâche", "tâches", "mission",
+    "مهمة", "مهام",
+  ];
+
+  const jobKeywords = [
+    "job", "jobs", "work", "hire", "recruit", "employ",
+    "emploi", "emplois", "travail", "poste",
+    "وظيفة", "وظائف", "عمل",
+  ];
+
+  if (targetType === "search_service") return serviceKeywords.some((k) => q.includes(k));
+  if (targetType === "search_task") return taskKeywords.some((k) => q.includes(k));
+  if (targetType === "search_job") return jobKeywords.some((k) => q.includes(k));
+  return false;
+}
+
+/**
+ * Resume upload CTA — locale-agnostic since we let the frontend i18n handle display.
+ * Returns neutral English keys that the frontend translates.
+ */
+function buildResumeUploadCta(): { title: string; description: string; buttonLabel: string } {
+  return {
+    title: "resume_cta_title",
+    description: "resume_cta_description",
+    buttonLabel: "resume_cta_button",
+  };
 }
