@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
+
 import { usePathname, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { Button } from "@workspace/ui/components/button";
+
 import { useLocale, useTranslations } from "next-intl";
 
 import { PreviewCards } from "@/components/ui/preview-cards";
@@ -843,6 +843,11 @@ function HeroSearchBarComponent({
         if (!pinnedIntent) setSelectedCategory(undefined);
         setPreviewPageSize(12);
 
+        // Ensure content is never empty for directResults
+        const finalAssistantText =
+          agent.assistantText?.trim() ||
+          buildResultsSummary({ type: tab, items: directResults.items, query: q });
+
         // Inject resume insight if provided by agent
         if (agent.resumeInsight) {
           setMessages((prev) => [
@@ -852,7 +857,7 @@ function HeroSearchBarComponent({
                     ...m,
                     thinking: false,
                     kind: "results" as const,
-                    content: agent.assistantText ?? "",
+                    content: finalAssistantText,
                     resumeUploadCta: agent.resumeUploadCta,
                     relatedPrompts: agent.relatedPrompts,
                     results: {
@@ -880,7 +885,7 @@ function HeroSearchBarComponent({
                     ...m,
                     thinking: false,
                     kind: "results" as const,
-                    content: agent.assistantText ?? "",
+                    content: finalAssistantText,
                     resumeUploadCta: agent.resumeUploadCta,
                     relatedPrompts: agent.relatedPrompts,
                     results: {

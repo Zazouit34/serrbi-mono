@@ -843,6 +843,38 @@ function buildStayPrompt(locale: string, currentScope: string): string {
   return labels[currentScope]?.[lang] ?? `No, keep searching ${currentScope}`;
 }
 
+function isExplicitIntentSwitch(query: string, targetIntent: string): boolean {
+  const q = normalizeForIntent(query);
+  const serviceKeywords = ["plumber", "electrician", "cleaner", "mechanic", "painter",
+    "plombier", "électricien", "نجار", "سباك", "كهربائي", "خدمة", "service", "services"];
+  const taskKeywords = ["task", "mission", "gig", "tâche", "مهمة", "مهام"];
+  const jobKeywords = ["job", "emploi", "وظيفة", "travail", "عمل", "hire", "recruit", "jobs", "emplois"];
+  
+  if (targetIntent === "services") return serviceKeywords.some(k => q.includes(k));
+  if (targetIntent === "tasks") return taskKeywords.some(k => q.includes(k));
+  if (targetIntent === "jobs") return jobKeywords.some(k => q.includes(k));
+  return false;
+}
+
+function buildSearchIntroText(locale: string, intent: AgentIntent, query: string): string {
+  const lang = normalizeLocale(locale);
+  const q = query.trim();
+
+  if (intent === "jobs") {
+    if (lang === "fr") return `Voici les meilleures offres d'emploi pour "${q}" que j'ai trouvées pour toi.`;
+    if (lang === "ar") return `إليك أفضل فرص العمل المتعلقة بـ "${q}" التي وجدتها لك.`;
+    return `Here are the best job matches I found for "${q}".`;
+  }
+  if (intent === "services") {
+    if (lang === "fr") return `Voici les meilleurs services disponibles pour "${q}".`;
+    if (lang === "ar") return `إليك أفضل الخدمات المتاحة لـ "${q}".`;
+    return `Here are the top services available for "${q}".`;
+  }
+  if (lang === "fr") return `Voici les meilleures missions disponibles pour "${q}".`;
+  if (lang === "ar") return `إليك أفضل المهام المتاحة لـ "${q}".`;
+  return `Here are the best tasks available for "${q}".`;
+}
+
 export async function POST(req: Request) {
   try {
     const includeDebug = process.env.CHAT_DEBUG === "true" || process.env.NODE_ENV !== "production";
@@ -925,10 +957,12 @@ export async function POST(req: Request) {
 
     const scope = body.context?.scope;
     const quickQuery = (lastUser || "").trim();
+    // RULE: Only bypass the LLM when ALL four conditions are true
     const shouldBypassIntentLlm =
-      Boolean(scope && scope !== "auto" && quickQuery) &&
-      isLikelySearchRequest(quickQuery) &&
-      !isGreetingOrSmallTalk(quickQuery);
+      Boolean(scope && scope !== "auto") &&                    // scope is pinned
+      isLikelySearchRequest(quickQuery) &&                     // message is clearly a search
+      !isGreetingOrSmallTalk(quickQuery) &&                    // not a greeting
+      quickQuery.split(" ").filter(Boolean).length > 3;        // at least 4 words
 
     const aiResult: Awaited<ReturnType<typeof extractIntent>> = shouldBypassIntentLlm
       ? scope === "services"
@@ -964,7 +998,7 @@ export async function POST(req: Request) {
       },
     });
 
-    // Scope guard: if user has pinned an intent and asks for a different type, ask to switch
+    // Scope guard: if user has pinned an intent and asks for a different type, check if explicit
     const pinnedScope = body.context?.scope;
     if (pinnedScope && pinnedScope !== "auto" && aiResult.type !== "conversation") {
       const scopeToType: Record<string, string> = {
@@ -974,18 +1008,34 @@ export async function POST(req: Request) {
       };
       const expectedType = scopeToType[pinnedScope];
       if (expectedType && aiResult.type !== expectedType) {
-        const suggestedIntent = aiResult.type === "search_service" ? "services" : "tasks";
-        return NextResponse.json({
-          action: "chat",
-          intent: pinnedScope as AgentIntent,
-          searchQuery: "",
-          assistantText: buildScopeMismatchMessage(locale, pinnedScope, suggestedIntent),
-          relatedPrompts: [
-            buildSwitchConfirmPrompt(locale, suggestedIntent),
-            buildStayPrompt(locale, pinnedScope),
-          ],
-          intentMismatch: { suggestedIntent: suggestedIntent as AgentIntent },
-        } satisfies AgentResponse);
+        const suggestedIntent = aiResult.type === "search_service" ? "services" : 
+                                 aiResult.type === "search_task" ? "tasks" : "jobs";
+        
+        // Check if this is an explicit switch (e.g., "find me a plumber")
+        const isExplicit = isExplicitIntentSwitch(lastUser, suggestedIntent);
+        
+        if (isExplicit) {
+          // Explicit switch: proceed directly without confirmation
+          logChatDebug("explicit_intent_switch", {
+            from: pinnedScope,
+            to: suggestedIntent,
+            query: lastUser,
+          });
+          // Continue to search with the new intent (don't return here)
+        } else {
+          // Ambiguous switch: ask for confirmation
+          return NextResponse.json({
+            action: "chat",
+            intent: pinnedScope as AgentIntent,
+            searchQuery: "",
+            assistantText: buildScopeMismatchMessage(locale, pinnedScope, suggestedIntent),
+            relatedPrompts: [
+              buildSwitchConfirmPrompt(locale, suggestedIntent),
+              buildStayPrompt(locale, pinnedScope),
+            ],
+            intentMismatch: { suggestedIntent: suggestedIntent as AgentIntent },
+          } satisfies AgentResponse);
+        }
       }
     }
 
@@ -1074,6 +1124,7 @@ export async function POST(req: Request) {
         action: "search",
         intent: "jobs",
         searchQuery,
+        assistantText: aiResult.reply?.trim() || buildSearchIntroText(locale, "jobs", searchQuery),
         results: {
           type: "jobs",
           items: cards,
@@ -1134,6 +1185,7 @@ export async function POST(req: Request) {
         action: "search",
         intent: "services",
         searchQuery,
+        assistantText: aiResult.reply?.trim() || buildSearchIntroText(locale, "services", searchQuery),
         results: {
           type: "services",
           items: cards,
@@ -1160,7 +1212,7 @@ export async function POST(req: Request) {
         action: "search",
         intent: "tasks",
         searchQuery,
-        assistantText: "",
+        assistantText: aiResult.reply?.trim() || buildSearchIntroText(locale, "tasks", searchQuery),
         relatedPrompts: buildSmartRelatedPrompts(locale, "tasks", searchQuery, [], "weak"),
       } satisfies AgentResponse);
     }
