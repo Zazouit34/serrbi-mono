@@ -177,9 +177,8 @@ export function AgentChatContainer({
 
   return (
     <div
-      className={`relative flex w-full flex-col overflow-hidden rounded-xl bg-white transition-all duration-300 md:rounded-2xl ${
-        chatExpanded ? "min-h-0 flex-1" : "min-h-[120px]"
-      }`}
+      className={`relative flex w-full flex-col overflow-hidden rounded-xl bg-white transition-all duration-300 md:rounded-2xl ${chatExpanded ? "min-h-0 flex-1" : "min-h-[120px]"
+        }`}
     >
       {chatExpanded && (
         <ChatContainerRoot className="min-h-0 flex-1 px-2 pt-2 md:px-3 md:pt-3">
@@ -256,15 +255,22 @@ export function AgentChatContainer({
                             <Markdown>{message.content ?? ""}</Markdown>
                           </div>
                         ) : null}
+
                         {!message.results.isLoading && (message.relatedPrompts ?? []).length > 0 && (
-                          <div className="mt-3 flex flex-wrap gap-1.5 md:mt-4 md:gap-2">
-                            {(message.relatedPrompts ?? []).map((prompt) => (
+                          <div className="mt-4 space-y-0.5 border-t border-slate-100 pt-3 md:mt-5 md:pt-4">
+                            {(message.relatedPrompts ?? []).map((prompt, i) => (
                               <button
-                                key={prompt}
+                                key={`${i}-${prompt}`}
+                                type="button"
                                 onClick={() => onSuggestionSelect(prompt)}
-                                className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-100 active:scale-95 md:text-xs"
+                                className="group flex w-full items-start gap-2.5 rounded-lg px-1 py-1.5 text-left transition-colors hover:bg-slate-50 md:py-2"
                               >
-                                {prompt}
+                                <span className="mt-px shrink-0 text-slate-300 transition-colors group-hover:text-slate-500 select-none">
+                                  ↗
+                                </span>
+                                <span className="text-xs leading-5 text-slate-600 underline underline-offset-2 decoration-slate-200 transition-colors group-hover:text-slate-900 group-hover:decoration-slate-400 md:text-sm md:leading-6">
+                                  {prompt}
+                                </span>
                               </button>
                             ))}
                           </div>
@@ -382,13 +388,12 @@ export function AgentChatContainer({
               {/* Pinned intent badge — always show when intent is known */}
               {pinnedIntent ? (
                 <span
-                  className={`group inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium md:px-2.5 md:py-1 md:text-xs ${
-                    pinnedIntent === "jobs"
+                  className={`group inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium md:px-2.5 md:py-1 md:text-xs ${pinnedIntent === "jobs"
                       ? "border-blue-200 bg-blue-50 text-blue-700"
                       : pinnedIntent === "services"
                         ? "border-cyan-200 bg-cyan-50 text-cyan-700"
                         : "border-amber-200 bg-amber-50 text-amber-700"
-                  }`}
+                    }`}
                 >
                   <span className="md:hidden">
                     {pinnedIntent === "jobs"

@@ -77,7 +77,7 @@ type AgentResponse = {
 const FREE_DAILY_LIMIT = 20;
 const SEARCH_PAGE_SIZE = 3;
 
-// ─── Env helpers ──────────────────────────────────────────────────────────────
+// ─── Env ──────────────────────────────────────────────────────────────────────
 
 function getRequiredEnv(name: string): string {
   const value = process.env[name];
@@ -115,29 +115,48 @@ async function callLLM(
   const temperature = opts?.temperature ?? 0.4;
   const max_tokens = opts?.maxTokens ?? 700;
 
-  const dashscopeBody = {
-    model,
-    input: { messages },
-    parameters: { temperature, top_p: 0.9, max_tokens, result_format: "message", enable_thinking: false },
-  };
-
   let response = await fetch(url, {
     method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
-    body: JSON.stringify(dashscopeBody),
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model,
+      input: { messages },
+      parameters: {
+        temperature,
+        top_p: 0.9,
+        max_tokens,
+        result_format: "message",
+        enable_thinking: false,
+      },
+    }),
   });
 
   if (!response.ok) {
     response = await fetch(url, {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
-      body: JSON.stringify({ model, messages, temperature, top_p: 0.9, max_tokens, enable_thinking: false }),
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model,
+        messages,
+        temperature,
+        top_p: 0.9,
+        max_tokens,
+        enable_thinking: false,
+      }),
     });
   }
 
   if (!response.ok) {
     const details = await response.text().catch(() => "");
-    throw new Error(`LLM error ${response.status}${details ? `: ${details.slice(0, 300)}` : ""}`);
+    throw new Error(
+      `LLM error ${response.status}${details ? `: ${details.slice(0, 300)}` : ""}`,
+    );
   }
 
   const json = await response.json();
@@ -173,7 +192,7 @@ function normalizeForIntent(text: string): string {
     : "";
 }
 
-// ─── Intent classification (heuristic — used only for shouldBypassIntentLlm) ──
+// ─── Heuristic classifier (used only for shouldBypassIntentLlm) ───────────────
 
 function countPhraseHits(text: string, phrases: string[]): number {
   let score = 0;
@@ -186,7 +205,6 @@ function countPhraseHits(text: string, phrases: string[]): number {
 function classifyTurnIntent(text: string): "chat" | "search" {
   const normalized = normalizeForIntent(text);
   if (!normalized) return "chat";
-
   const tokens = normalized.split(" ").filter(Boolean);
 
   const greetingPhrases = [
@@ -195,19 +213,16 @@ function classifyTurnIntent(text: string): "chat" | "search" {
     "salut", "bonjour", "bonsoir", "coucou", "ca va", "qui es tu", "merci",
     "مرحبا", "اهلا", "أهلا", "سلام", "السلام عليكم", "كيف حالك", "شكرا", "شكرًا",
   ];
-
   const searchActionPhrases = [
     "find", "search", "looking for", "look for", "show me", "i need", "i want", "hire", "apply",
     "cherche", "recherche", "trouve", "montre moi", "jai besoin", "je veux",
     "بغيت", "كنقلب", "ابحث", "أبحث", "اريد", "أريد", "احتاج", "أحتاج", "وريني",
   ];
-
   const marketplaceNouns = [
     "job", "jobs", "work", "service", "services", "task", "tasks", "freelance",
     "emploi", "emplois", "travail", "mission", "tache", "taches",
     "وظيفة", "وظائف", "خدمة", "خدمات", "مهمة", "مهام", "عمل",
   ];
-
   const constraintSignals = [
     "remote", "onsite", "hybrid", "casablanca", "rabat", "marrakech", "tangier",
     "budget", "salary", "wage", "prix", "salaire", "price", "عن بعد",
@@ -255,16 +270,19 @@ function isLikelySearchRequest(text: string): boolean {
 // ─── Search readiness ─────────────────────────────────────────────────────────
 
 /**
- * For jobs: we need at least a detectable category before running the search engine.
- * The LLM handles the clarification reply — this just signals whether to proceed.
+ * Job search needs at least a detectable domain/category.
+ * Without it, jobSearchEngine has no domain filter and returns irrelevant jobs.
+ *
+ * This runs on ALL paths — both when the LLM was called and when it was bypassed.
+ * The LLM prompt already instructs the model to ask first when category is missing,
+ * but the prompt can slip and the bypass path never calls the LLM at all.
+ * This function is the server-side safety net that enforces the rule unconditionally.
  */
 function isJobSearchReady(intentData: JobIntentData): boolean {
   if (!intentData.query?.trim()) return false;
-
-  // If LLM already extracted a category, we're good
+  // LLM explicitly extracted a category enum value
   if (intentData.category) return true;
-
-  // Try to infer category from the query text
+  // Fallback: infer category from the raw query text
   return inferCategoryFromText(intentData.query, intentData.skills ?? []) !== null;
 }
 
@@ -278,45 +296,74 @@ function inferCategoryFromText(query: string, skills: string[]): string | null {
   const rules: Array<{ category: string; keywords: string[] }> = [
     {
       category: "Tech",
-      keywords: ["developer", "developpeur", "dev", "software", "frontend", "backend",
-        "fullstack", "data", "engineer", "it", "tech", "programmer", "مطور", "برمجة", "تقنية"],
+      keywords: [
+        "developer", "developpeur", "dev", "software", "frontend", "backend",
+        "fullstack", "data", "engineer", "it", "tech", "programmer",
+        "مطور", "برمجة", "تقنية",
+      ],
     },
     {
       category: "Finance",
-      keywords: ["finance", "accountant", "accounting", "comptable", "audit", "bank", "محاسب", "مالية", "بنك"],
+      keywords: [
+        "finance", "accountant", "accounting", "comptable", "audit", "bank",
+        "محاسب", "مالية", "بنك",
+      ],
     },
     {
       category: "Health",
-      keywords: ["doctor", "nurse", "medical", "sante", "health", "pharmac", "طبيب", "ممرض", "صحة", "دكتور"],
+      keywords: [
+        "doctor", "nurse", "medical", "sante", "health", "pharmac",
+        "طبيب", "ممرض", "صحة", "دكتور",
+      ],
     },
     {
       category: "Legal",
-      keywords: ["lawyer", "legal", "juridique", "avocat", "محامي", "قانون", "notaire"],
+      keywords: [
+        "lawyer", "legal", "juridique", "avocat", "notaire",
+        "محامي", "قانون",
+      ],
     },
     {
       category: "Education",
-      keywords: ["teacher", "prof", "education", "formateur", "instructor", "معلم", "أستاذ", "تعليم"],
+      keywords: [
+        "teacher", "prof", "education", "formateur", "instructor",
+        "معلم", "أستاذ", "تعليم",
+      ],
     },
     {
       category: "Construction",
-      keywords: ["construction", "builder", "mason", "maçon", "plumbing", "electric", "بناء", "مقاول"],
+      keywords: [
+        "construction", "builder", "mason", "maçon", "plumbing", "electric",
+        "بناء", "مقاول",
+      ],
     },
     {
       category: "Hospitality",
-      keywords: ["hotel", "restaurant", "hospitality", "serveur", "waiter", "cuisine",
-        "فندق", "استقبال", "مطعم", "نادل", "طباخ"],
+      keywords: [
+        "hotel", "restaurant", "hospitality", "serveur", "waiter", "cuisine",
+        "فندق", "استقبال", "مطعم", "نادل", "طباخ",
+      ],
     },
     {
       category: "CallCenter",
-      keywords: ["call center", "customer support", "teleconseiller", "centre d'appel", "دعم عملاء", "مركز اتصال"],
+      keywords: [
+        "call center", "customer support", "teleconseiller", "centre d'appel",
+        "دعم عملاء", "مركز اتصال",
+      ],
     },
     {
       category: "Auto",
-      keywords: ["mechanic", "mecanicien", "garage", "automotive", "auto", "car repair", "ميكانيكي", "كراج"],
+      keywords: [
+        "mechanic", "mecanicien", "garage", "automotive", "auto", "car repair",
+        "ميكانيكي", "كراج",
+      ],
     },
     {
       category: "Cleaning",
-      keywords: ["cleaning", "cleaner", "menage", "nettoyage", "نظافة", "تنظيف"],
+      keywords: [
+        "cleaning", "cleaner", "menage", "nettoyage",
+        "نظافة", "تنظيف",
+      ],
     },
   ];
 
@@ -326,11 +373,42 @@ function inferCategoryFromText(query: string, skills: string[]): string | null {
   return null;
 }
 
-// ─── LLM-powered helpers ───────────────────────────────────────────────────────
+// ─── LLM-powered helpers ──────────────────────────────────────────────────────
 
 /**
- * Generate smart contextual suggestions using the LLM.
- * Falls back to simple rule-based if LLM fails.
+ * Asks the user for their job domain/category.
+ * Prefers the LLM's own reply if it already wrote a clarification.
+ * Falls back to a fresh LLM call, then a hardcoded string as last resort.
+ */
+async function buildJobClarifyMessage(
+  userMessage: string,
+  existingReply?: string,
+): Promise<string> {
+  if (existingReply?.trim()) return existingReply.trim();
+  try {
+    return await callLLM(
+      [
+        {
+          role: "system",
+          content: `You are a helpful marketplace assistant.
+The user wants a job but hasn't told you their field or domain yet.
+Ask them naturally in their language what domain or field they work in.
+Give 3-4 short examples (e.g. Tech, Finance, Health, Hospitality).
+Keep it under 2 sentences. Sound like a helpful friend.
+Return only the message text — no JSON, no preamble.`,
+        },
+        { role: "user", content: userMessage },
+      ],
+      { temperature: 0.4, maxTokens: 80 },
+    );
+  } catch {
+    return "What field are you looking for? (Tech, Finance, Health, Hospitality...)";
+  }
+}
+
+/**
+ * Generates 3 smart contextual follow-up suggestions via the LLM.
+ * The LLM detects language from the query automatically.
  */
 async function generateSmartSuggestions(opts: {
   intent: AgentIntent;
@@ -343,10 +421,15 @@ async function generateSmartSuggestions(opts: {
     intent: opts.intent,
     extractedFilters: opts.extractedData
       ? {
-          category: (opts.extractedData as any).category ?? (opts.extractedData as any).serviceCategory ?? null,
+          category:
+            (opts.extractedData as any).category ??
+            (opts.extractedData as any).serviceCategory ??
+            null,
           city: (opts.extractedData as any).city ?? null,
-          locationRequirement: (opts.extractedData as any).locationRequirement ?? null,
-          experienceLevel: (opts.extractedData as any).experienceLevel ?? null,
+          locationRequirement:
+            (opts.extractedData as any).locationRequirement ?? null,
+          experienceLevel:
+            (opts.extractedData as any).experienceLevel ?? null,
         }
       : null,
     topResults: opts.items.slice(0, 3).map((item: any) => ({
@@ -364,31 +447,27 @@ async function generateSmartSuggestions(opts: {
       ],
       { temperature: 0.7, maxTokens: 120 },
     );
-
     const first = raw.indexOf("[");
     const last = raw.lastIndexOf("]");
-    if (first === -1 || last === -1) throw new Error("No array in response");
-
+    if (first === -1 || last === -1) throw new Error("No JSON array in response");
     const parsed = JSON.parse(raw.slice(first, last + 1));
-    if (Array.isArray(parsed) && parsed.length >= 1 && parsed.every((s) => typeof s === "string")) {
+    if (
+      Array.isArray(parsed) &&
+      parsed.length >= 1 &&
+      parsed.every((s) => typeof s === "string")
+    ) {
       return parsed.slice(0, 3).filter(Boolean);
     }
     throw new Error("Invalid format");
   } catch {
-    // Rule-based fallback — generic but never crashes
-    if (opts.intent === "jobs") {
-      return ["Show more job opportunities", "Filter by experience level", "Remote positions only"];
-    }
-    if (opts.intent === "services") {
-      return ["Show highest rated providers", "Filter by city", "Compare prices"];
-    }
-    return ["Show more tasks", "Filter by budget", "Urgent tasks only"];
+    if (opts.intent === "jobs")
+      return ["More job opportunities", "Filter by experience level", "Remote positions only"];
+    if (opts.intent === "services")
+      return ["Highest rated providers", "Filter by city", "Compare prices"];
+    return ["More tasks available", "Filter by budget", "Urgent tasks only"];
   }
 }
 
-/**
- * Ask LLM to generate a plan limit message in the user's language.
- */
 async function buildPlanLimitMessage(userMessage: string): Promise<string> {
   try {
     return await callLLM(
@@ -403,24 +482,23 @@ async function buildPlanLimitMessage(userMessage: string): Promise<string> {
   }
 }
 
-/**
- * Ask LLM to generate a scope mismatch confirmation message in the user's language.
- */
 async function buildScopeMismatchMessage(opts: {
   currentScope: string;
   suggestedIntent: string;
   userMessage: string;
 }): Promise<string> {
-  const context = JSON.stringify({
-    currentScope: opts.currentScope,
-    suggestedIntent: opts.suggestedIntent,
-    userMessage: opts.userMessage,
-  });
   try {
     return await callLLM(
       [
         { role: "system", content: buildScopeMismatchPrompt() },
-        { role: "user", content: context },
+        {
+          role: "user",
+          content: JSON.stringify({
+            currentScope: opts.currentScope,
+            suggestedIntent: opts.suggestedIntent,
+            userMessage: opts.userMessage,
+          }),
+        },
       ],
       { temperature: 0.3, maxTokens: 100 },
     );
@@ -429,31 +507,67 @@ async function buildScopeMismatchMessage(opts: {
   }
 }
 
+// ─── Explicit intent switch detection ────────────────────────────────────────
+
+function isExplicitIntentSwitch(query: string, targetType: string): boolean {
+  const q = normalizeForIntent(query);
+  const serviceKeywords = [
+    "plumber", "electrician", "cleaner", "mechanic", "painter", "carpenter",
+    "plombier", "électricien", "nettoyage", "mécanicien", "peintre",
+    "سباك", "كهربائي", "نجار", "ميكانيكي", "دهان",
+    "service", "services", "خدمة", "خدمات",
+  ];
+  const taskKeywords = [
+    "task", "tasks", "mission", "gig", "freelance",
+    "tâche", "tâches", "مهمة", "مهام",
+  ];
+  const jobKeywords = [
+    "job", "jobs", "work", "hire", "recruit", "employ",
+    "emploi", "emplois", "travail", "poste",
+    "وظيفة", "وظائف", "عمل",
+  ];
+  if (targetType === "search_service")
+    return serviceKeywords.some((k) => q.includes(k));
+  if (targetType === "search_task")
+    return taskKeywords.some((k) => q.includes(k));
+  if (targetType === "search_job")
+    return jobKeywords.some((k) => q.includes(k));
+  return false;
+}
+
 // ─── Card mappers ─────────────────────────────────────────────────────────────
 
-function buildJobResumeMatchExplanation(locale: string, input: {
-  matchedSkillsCount: number;
-  requiredSkillsCount: number;
-  matchedSkills: string[];
-}): string {
+function buildJobResumeMatchExplanation(
+  locale: string,
+  input: {
+    matchedSkillsCount: number;
+    requiredSkillsCount: number;
+    matchedSkills: string[];
+  },
+): string {
   const matched = input.matchedSkillsCount;
   const required = input.requiredSkillsCount;
   const sampleSkills = input.matchedSkills.slice(0, 3).join(", ");
   const lang = normalizeLocale(locale);
-
   if (lang === "fr") {
-    if (required > 0) return `Correspondance compétences : ${matched}/${required}${sampleSkills ? ` (ex: ${sampleSkills})` : ""}.`;
+    if (required > 0)
+      return `Correspondance compétences : ${matched}/${required}${sampleSkills ? ` (ex: ${sampleSkills})` : ""}.`;
     return "Correspondance sémantique et niveau d'expérience alignés avec votre CV.";
   }
   if (lang === "ar") {
-    if (required > 0) return `تطابق المهارات: ${matched}/${required}${sampleSkills ? ` (مثل: ${sampleSkills})` : ""}.`;
+    if (required > 0)
+      return `تطابق المهارات: ${matched}/${required}${sampleSkills ? ` (مثل: ${sampleSkills})` : ""}.`;
     return "التطابق مبني على التشابه الدلالي وملاءمة مستوى الخبرة مع السيرة الذاتية.";
   }
-  if (required > 0) return `Skill overlap: ${matched}/${required}${sampleSkills ? ` (e.g. ${sampleSkills})` : ""}.`;
-  return "Match is based on semantic similarity and experience alignment with your resume.";
+  if (required > 0)
+    return `Skill overlap: ${matched}/${required}${sampleSkills ? ` (e.g. ${sampleSkills})` : ""}.`;
+  return "Match based on semantic similarity and experience alignment with your resume.";
 }
 
-function mapJobCards(items: any[], opts?: { locale?: string; includeResumeMatch?: boolean }): any[] {
+function mapJobCards(
+  items: any[],
+  opts?: { locale?: string; includeResumeMatch?: boolean },
+): any[] {
   const locale = opts?.locale ?? "en";
   const includeResumeMatch = opts?.includeResumeMatch ?? false;
   return items.map((item) => ({
@@ -480,14 +594,31 @@ function mapJobCards(items: any[], opts?: { locale?: string; includeResumeMatch?
     description: item.description ?? "",
     resumeMatch: includeResumeMatch
       ? {
-          percent: typeof item.matchPercent === "number" ? item.matchPercent : null,
-          matchedSkillsCount: typeof item.matchedSkillsCount === "number" ? item.matchedSkillsCount : 0,
-          requiredSkillsCount: typeof item.requiredSkillsCount === "number" ? item.requiredSkillsCount : 0,
-          matchedSkills: Array.isArray(item.matchedSkills) ? item.matchedSkills : [],
+          percent:
+            typeof item.matchPercent === "number" ? item.matchPercent : null,
+          matchedSkillsCount:
+            typeof item.matchedSkillsCount === "number"
+              ? item.matchedSkillsCount
+              : 0,
+          requiredSkillsCount:
+            typeof item.requiredSkillsCount === "number"
+              ? item.requiredSkillsCount
+              : 0,
+          matchedSkills: Array.isArray(item.matchedSkills)
+            ? item.matchedSkills
+            : [],
           explanation: buildJobResumeMatchExplanation(locale, {
-            matchedSkillsCount: typeof item.matchedSkillsCount === "number" ? item.matchedSkillsCount : 0,
-            requiredSkillsCount: typeof item.requiredSkillsCount === "number" ? item.requiredSkillsCount : 0,
-            matchedSkills: Array.isArray(item.matchedSkills) ? item.matchedSkills : [],
+            matchedSkillsCount:
+              typeof item.matchedSkillsCount === "number"
+                ? item.matchedSkillsCount
+                : 0,
+            requiredSkillsCount:
+              typeof item.requiredSkillsCount === "number"
+                ? item.requiredSkillsCount
+                : 0,
+            matchedSkills: Array.isArray(item.matchedSkills)
+              ? item.matchedSkills
+              : [],
           }),
         }
       : null,
@@ -505,7 +636,9 @@ function mapServiceCards(items: any[]): any[] {
         ? (() => {
             try {
               const parsed = JSON.parse(item.images);
-              return Array.isArray(parsed) ? parsed.filter((x: unknown) => typeof x === "string") : [];
+              return Array.isArray(parsed)
+                ? parsed.filter((x: unknown) => typeof x === "string")
+                : [];
             } catch {
               return [];
             }
@@ -519,19 +652,24 @@ function mapServiceCards(items: any[]): any[] {
     phoneNumber: item.phoneNumber ?? null,
     averageRating: item.averageRating ?? null,
     numberOfReviews: item.numberOfReviews ?? 0,
-    matchPercent: typeof item.matchPercent === "number" ? item.matchPercent : null,
+    matchPercent:
+      typeof item.matchPercent === "number" ? item.matchPercent : null,
     matchScore:
       typeof item.matchPercent === "number"
         ? Math.round(item.matchPercent)
         : typeof item.finalScore === "number"
           ? Math.round(Math.max(0, Math.min(1, item.finalScore)) * 100)
           : null,
-    selectionReasons: Array.isArray(item.selectionReasons) ? item.selectionReasons.slice(0, 3) : [],
-    confidenceSignals: Array.isArray(item.confidenceSignals) ? item.confidenceSignals.slice(0, 3) : [],
+    selectionReasons: Array.isArray(item.selectionReasons)
+      ? item.selectionReasons.slice(0, 3)
+      : [],
+    confidenceSignals: Array.isArray(item.confidenceSignals)
+      ? item.confidenceSignals.slice(0, 3)
+      : [],
   }));
 }
 
-// ─── Scoring helpers ──────────────────────────────────────────────────────────
+// ─── Scoring ──────────────────────────────────────────────────────────────────
 
 function toNumberOrNull(value: unknown): number | null {
   if (typeof value === "number" && Number.isFinite(value)) return value;
@@ -542,13 +680,28 @@ function toNumberOrNull(value: unknown): number | null {
   return null;
 }
 
-function evaluateConfidenceMode(items: Array<{ matchScore?: number | null }>): ConfidenceMode {
+function evaluateConfidenceMode(
+  items: Array<{ matchScore?: number | null }>,
+): ConfidenceMode {
   const topScore = toNumberOrNull(items[0]?.matchScore) ?? 0;
   const secondScore = toNumberOrNull(items[1]?.matchScore) ?? 0;
   const scoreGap = topScore - secondScore;
   if (topScore >= 75 && scoreGap >= 10) return "strong";
   if (topScore >= 55) return "moderate";
   return "weak";
+}
+
+function buildResumeUploadCta(): {
+  title: string;
+  description: string;
+  buttonLabel: string;
+} {
+  // i18n keys — frontend translates, never hardcode locale strings here
+  return {
+    title: "resume_cta_title",
+    description: "resume_cta_description",
+    buttonLabel: "resume_cta_button",
+  };
 }
 
 // ─── Rate limiting ────────────────────────────────────────────────────────────
@@ -569,7 +722,10 @@ async function isEligiblePaidUser(userId: string): Promise<boolean> {
   return [PLANS.BASIC.id, PLANS.PREMIUM.id].includes(subscription.planId);
 }
 
-async function getDailyUsageCount(userId: string, dayBucket: Date): Promise<number> {
+async function getDailyUsageCount(
+  userId: string,
+  dayBucket: Date,
+): Promise<number> {
   const db = prisma as any;
   const row = await db.aiChatUsage.findUnique({
     where: { userId_dayBucket: { userId, dayBucket } },
@@ -578,7 +734,10 @@ async function getDailyUsageCount(userId: string, dayBucket: Date): Promise<numb
   return row?.requests ?? 0;
 }
 
-async function incrementDailyUsage(userId: string, dayBucket: Date): Promise<void> {
+async function incrementDailyUsage(
+  userId: string,
+  dayBucket: Date,
+): Promise<void> {
   const db = prisma as any;
   await db.aiChatUsage.upsert({
     where: { userId_dayBucket: { userId, dayBucket } },
@@ -614,17 +773,18 @@ async function trackAgentEvent(args: {
   }
 }
 
-// ─── Debug ────────────────────────────────────────────────────────────────────
-
 function logChatDebug(step: string, payload: unknown): void {
   console.log(`[chat-debug] ${step}`, payload);
 }
 
-// ─── Main handler ──────────────────────────────────────────────────────────────
+// ─── Main handler ─────────────────────────────────────────────────────────────
 
 export async function POST(req: Request) {
   try {
-    const includeDebug = process.env.CHAT_DEBUG === "true" || process.env.NODE_ENV !== "production";
+    const includeDebug =
+      process.env.CHAT_DEBUG === "true" ||
+      process.env.NODE_ENV !== "production";
+
     const body = (await req.json()) as ChatRequestBody;
     const messages = Array.isArray(body?.messages) ? body.messages : [];
 
@@ -633,7 +793,11 @@ export async function POST(req: Request) {
     }
 
     const lastUser =
-      [...messages].reverse().find((m) => m?.role === "user" && typeof m.content === "string")?.content ??
+      [...messages]
+        .reverse()
+        .find(
+          (m) => m?.role === "user" && typeof m.content === "string",
+        )?.content ??
       body.context?.query ??
       "";
 
@@ -644,7 +808,9 @@ export async function POST(req: Request) {
     const userId = session?.user?.id;
     const sessionId =
       normalizeSessionId(body.context?.sessionId) ||
-      (userId ? `agent-${userId}-${Date.now()}` : `agent-anon-${Date.now()}`);
+      (userId
+        ? `agent-${userId}-${Date.now()}`
+        : `agent-anon-${Date.now()}`);
 
     if (userId) {
       const eligiblePaid = await isEligiblePaidUser(userId);
@@ -667,31 +833,37 @@ export async function POST(req: Request) {
       }
     }
 
-    // ── Fetch user resume data ────────────────────────────────────────────────
+    // ── Fetch resume data ─────────────────────────────────────────────────────
     const userResumeData = userId
       ? await (prisma as any).user.findUnique({
           where: { id: userId },
-          select: { resumeEmbedding: true, autoApplyKeywords: true, resumeUrl: true },
+          select: {
+            resumeEmbedding: true,
+            autoApplyKeywords: true,
+            resumeUrl: true,
+          },
         })
       : null;
 
     const hasResumeEmbedding =
-      Array.isArray(userResumeData?.resumeEmbedding) && userResumeData.resumeEmbedding.length > 0;
+      Array.isArray(userResumeData?.resumeEmbedding) &&
+      userResumeData.resumeEmbedding.length > 0;
 
     const resumeProfile = hasResumeEmbedding
       ? {
           job_title: null,
-          skills: (userResumeData?.autoApplyKeywords as string[] | undefined) ?? [],
+          skills:
+            (userResumeData?.autoApplyKeywords as string[] | undefined) ?? [],
           experience_level: null,
         }
       : null;
 
     // ── Bypass decision ───────────────────────────────────────────────────────
-    // Only bypass the LLM when ALL conditions are true:
-    // 1. Scope is pinned
+    // Skip the LLM only when ALL four conditions hold:
+    // 1. Scope is already pinned (not auto)
     // 2. Message is clearly a search request
     // 3. Message is not a greeting or small talk
-    // 4. Message has more than 3 words (never bypass short/ambiguous messages)
+    // 4. Message has more than 3 words
     const scope = body.context?.scope;
     const quickQuery = (lastUser || "").trim();
     const wordCount = quickQuery.split(" ").filter(Boolean).length;
@@ -715,10 +887,25 @@ export async function POST(req: Request) {
 
     const aiResult = shouldBypassIntentLlm
       ? scope === "services"
-        ? { type: "search_service" as const, reply: "", intent_data: { query: quickQuery }, clarify_field: null }
+        ? {
+            type: "search_service" as const,
+            reply: "",
+            intent_data: { query: quickQuery },
+            clarify_field: null,
+          }
         : scope === "tasks"
-          ? { type: "search_task" as const, reply: "", intent_data: { query: quickQuery }, clarify_field: null }
-          : { type: "search_job" as const, reply: "", intent_data: { query: quickQuery }, clarify_field: null }
+          ? {
+              type: "search_task" as const,
+              reply: "",
+              intent_data: { query: quickQuery },
+              clarify_field: null,
+            }
+          : {
+              type: "search_job" as const,
+              reply: "",
+              intent_data: { query: quickQuery },
+              clarify_field: null,
+            }
       : await extractIntent({
           locale,
           scope,
@@ -752,10 +939,12 @@ export async function POST(req: Request) {
     });
 
     // ── Scope guard ───────────────────────────────────────────────────────────
-    // If user has a pinned scope and the extracted intent is a different search type,
-    // ask for confirmation. But only if it's ambiguous — explicit switches go through.
     const pinnedScope = body.context?.scope;
-    if (pinnedScope && pinnedScope !== "auto" && aiResult.type !== "conversation") {
+    if (
+      pinnedScope &&
+      pinnedScope !== "auto" &&
+      aiResult.type !== "conversation"
+    ) {
       const scopeToType: Record<string, string> = {
         jobs: "search_job",
         services: "search_service",
@@ -766,8 +955,11 @@ export async function POST(req: Request) {
 
       if (expectedType && aiResult.type !== expectedType && !isExplicit) {
         const suggestedIntent =
-          aiResult.type === "search_service" ? "services" :
-          aiResult.type === "search_task" ? "tasks" : "jobs";
+          aiResult.type === "search_service"
+            ? "services"
+            : aiResult.type === "search_task"
+              ? "tasks"
+              : "jobs";
 
         const mismatchMessage = await buildScopeMismatchMessage({
           currentScope: pinnedScope,
@@ -775,26 +967,15 @@ export async function POST(req: Request) {
           userMessage: lastUser,
         });
 
-        // Generate switch/stay prompts via LLM suggestions
-        const switchPrompts = await generateSmartSuggestions({
-          intent: suggestedIntent as AgentIntent,
-          query: quickQuery,
-          extractedData: null,
-          items: [],
-        }).then(() => [
-          `Yes, search ${suggestedIntent}`,
-          `No, keep searching ${pinnedScope}`,
-        ]).catch(() => [
-          `Yes, search ${suggestedIntent}`,
-          `No, keep searching ${pinnedScope}`,
-        ]);
-
         return NextResponse.json({
           action: "chat",
           intent: pinnedScope as AgentIntent,
           searchQuery: "",
           assistantText: mismatchMessage,
-          relatedPrompts: switchPrompts,
+          relatedPrompts: [
+            `Yes, search ${suggestedIntent}`,
+            `No, keep searching ${pinnedScope}`,
+          ],
           intentMismatch: { suggestedIntent: suggestedIntent as AgentIntent },
         } satisfies AgentResponse);
       }
@@ -808,7 +989,9 @@ export async function POST(req: Request) {
         searchQuery: "",
         assistantText: aiResult.reply || "How can I help you today?",
         relatedPrompts: [],
-        debug: includeDebug ? { stage: "conversation", extracted_intent: aiResult } : undefined,
+        debug: includeDebug
+          ? { stage: "conversation", extracted_intent: aiResult }
+          : undefined,
       } satisfies AgentResponse);
     }
 
@@ -816,61 +999,46 @@ export async function POST(req: Request) {
     if (aiResult.type === "search_job" && aiResult.intent_data) {
       const intentData = aiResult.intent_data as JobIntentData;
 
-      // Readiness check — must have a detectable category
-      // The LLM already handles this via SEARCH READINESS RULES in prompt/intent.ts
-      // but we double-check here as a safety net when bypass fired
-      if (shouldBypassIntentLlm && !isJobSearchReady(intentData)) {
-        // Re-run through LLM to get a proper clarification reply
-        const clarifyResult = await extractIntent({
-          locale,
-          scope,
-          message: lastUser,
-          history: extractorHistory,
-          resumeProfile: resumeProfile as any,
-        });
+      // ── Readiness gate — universal, runs on ALL paths ─────────────────────
+      // Checks both the LLM path (where the prompt may have slipped) and the
+      // bypass path (where no LLM was called at all).
+      // If category cannot be determined, ask the user before touching the DB.
+      if (!isJobSearchReady(intentData)) {
+        const clarifyText = await buildJobClarifyMessage(
+          lastUser,
+          aiResult.reply,
+        );
         return NextResponse.json({
           action: "chat",
           intent: "jobs",
           searchQuery: "",
-          assistantText: clarifyResult.reply || "What field are you looking for?",
+          assistantText: clarifyText,
           relatedPrompts: [],
         } satisfies AgentResponse);
       }
 
-      // If LLM returned conversation with clarify_field, respect that
-      // (this handles the non-bypass path where LLM itself decided to ask)
-      const clarifyField = (aiResult as any).clarify_field;
-      if (clarifyField === "category" && aiResult.type === "search_job") {
-        return NextResponse.json({
-          action: "chat",
-          intent: "jobs",
-          searchQuery: "",
-          assistantText: aiResult.reply || "What field are you looking for?",
-          relatedPrompts: [],
-        } satisfies AgentResponse);
-      }
-
-      const searchResult = await jobSearchEngine(prisma as PrismaClient, intentData);
+      // ── Search engine ─────────────────────────────────────────────────────
+      const searchResult = await jobSearchEngine(
+        prisma as PrismaClient,
+        intentData,
+      );
       const searchQuery = intentData.query?.trim() || lastUser.trim();
 
       const personalizedRanked = hasResumeEmbedding
         ? rankJobsWithResumeMatch(searchResult.topResults as any, {
             resumeEmbedding: userResumeData.resumeEmbedding as number[],
-            resumeSkills: (userResumeData?.autoApplyKeywords as string[] | undefined) ?? [],
+            resumeSkills:
+              (userResumeData?.autoApplyKeywords as string[] | undefined) ?? [],
           })
         : searchResult.topResults;
 
-      const cards = mapJobCards(personalizedRanked.slice(0, SEARCH_PAGE_SIZE), {
-        locale,
-        includeResumeMatch: hasResumeEmbedding,
-      });
-
+      const cards = mapJobCards(
+        personalizedRanked.slice(0, SEARCH_PAGE_SIZE),
+        { locale, includeResumeMatch: hasResumeEmbedding },
+      );
       const confidenceMode = evaluateConfidenceMode(cards);
+      const assistantText = aiResult.reply?.trim() ?? "";
 
-      // assistantText — always present, never empty
-      const assistantText = aiResult.reply?.trim() || "";
-
-      // Smart LLM-generated suggestions
       const relatedPrompts = await generateSmartSuggestions({
         intent: "jobs",
         query: searchQuery,
@@ -879,7 +1047,8 @@ export async function POST(req: Request) {
       });
 
       await trackAgentEvent({
-        userId, sessionId,
+        userId,
+        sessionId,
         name: "AGENT_SEARCH_RESULTS_RETURNED",
         intent: "search_job",
         data: {
@@ -929,12 +1098,14 @@ export async function POST(req: Request) {
     // ── Service search ────────────────────────────────────────────────────────
     if (aiResult.type === "search_service" && aiResult.intent_data) {
       const intentData = aiResult.intent_data as ServiceIntentData;
-      const searchResult = await serviceSearchEngine(prisma as PrismaClient, intentData);
+      const searchResult = await serviceSearchEngine(
+        prisma as PrismaClient,
+        intentData,
+      );
       const searchQuery = intentData.query?.trim() || lastUser.trim();
       const cards = mapServiceCards(searchResult.topResults);
       const confidenceMode = evaluateConfidenceMode(cards);
-
-      const assistantText = aiResult.reply?.trim() || "";
+      const assistantText = aiResult.reply?.trim() ?? "";
 
       const relatedPrompts = await generateSmartSuggestions({
         intent: "services",
@@ -944,7 +1115,8 @@ export async function POST(req: Request) {
       });
 
       await trackAgentEvent({
-        userId, sessionId,
+        userId,
+        sessionId,
         name: "AGENT_SEARCH_RESULTS_RETURNED",
         intent: "search_service",
         data: {
@@ -982,8 +1154,9 @@ export async function POST(req: Request) {
 
     // ── Task search ───────────────────────────────────────────────────────────
     if (aiResult.type === "search_task" && aiResult.intent_data) {
-      const searchQuery = (aiResult.intent_data as any).query?.trim() || lastUser.trim();
-      const assistantText = aiResult.reply?.trim() || "";
+      const searchQuery =
+        (aiResult.intent_data as any).query?.trim() || lastUser.trim();
+      const assistantText = aiResult.reply?.trim() ?? "";
 
       const relatedPrompts = await generateSmartSuggestions({
         intent: "tasks",
@@ -993,7 +1166,8 @@ export async function POST(req: Request) {
       });
 
       await trackAgentEvent({
-        userId, sessionId,
+        userId,
+        sessionId,
         name: "AGENT_SEARCH_RESULTS_RETURNED",
         intent: "search_task",
         data: { query: searchQuery, resultsCount: 0 },
@@ -1015,56 +1189,15 @@ export async function POST(req: Request) {
       searchQuery: quickQuery || "jobs",
       assistantText: "",
       relatedPrompts: [],
-      debug: includeDebug ? { stage: "fallback", extracted_intent: aiResult } : undefined,
+      debug: includeDebug
+        ? { stage: "fallback", extracted_intent: aiResult }
+        : undefined,
     } satisfies AgentResponse);
   } catch (err: any) {
     console.error("[chat/route] Unhandled error:", err);
-    return NextResponse.json({ error: err?.message || "Unknown error" }, { status: 500 });
+    return NextResponse.json(
+      { error: err?.message || "Unknown error" },
+      { status: 500 },
+    );
   }
-}
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-/**
- * Detect if the user is explicitly requesting a different intent type.
- * Used to skip confirmation dialog when the switch is obvious.
- */
-function isExplicitIntentSwitch(query: string, targetType: string): boolean {
-  const q = normalizeForIntent(query);
-
-  const serviceKeywords = [
-    "plumber", "electrician", "cleaner", "mechanic", "painter", "carpenter",
-    "plombier", "électricien", "nettoyage", "mécanicien", "peintre",
-    "سباك", "كهربائي", "نجار", "ميكانيكي", "دهان",
-    "service", "services", "خدمة", "خدمات",
-  ];
-
-  const taskKeywords = [
-    "task", "tasks", "mission", "gig", "freelance",
-    "tâche", "tâches", "mission",
-    "مهمة", "مهام",
-  ];
-
-  const jobKeywords = [
-    "job", "jobs", "work", "hire", "recruit", "employ",
-    "emploi", "emplois", "travail", "poste",
-    "وظيفة", "وظائف", "عمل",
-  ];
-
-  if (targetType === "search_service") return serviceKeywords.some((k) => q.includes(k));
-  if (targetType === "search_task") return taskKeywords.some((k) => q.includes(k));
-  if (targetType === "search_job") return jobKeywords.some((k) => q.includes(k));
-  return false;
-}
-
-/**
- * Resume upload CTA — locale-agnostic since we let the frontend i18n handle display.
- * Returns neutral English keys that the frontend translates.
- */
-function buildResumeUploadCta(): { title: string; description: string; buttonLabel: string } {
-  return {
-    title: "resume_cta_title",
-    description: "resume_cta_description",
-    buttonLabel: "resume_cta_button",
-  };
 }
