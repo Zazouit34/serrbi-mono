@@ -217,14 +217,25 @@ export function AgentChatContainer({
                       </div>
                     ) : message.results ? (
                       <div className="w-full min-w-0 text-left text-sm text-slate-900 md:text-base">
+
+                        {/* ── Agent intro text — shown ABOVE cards, always first ── */}
+                        {!message.results.isLoading && (message.content ?? "").trim() ? (
+                          <div className="mb-3 text-left text-xs leading-5 text-slate-900 md:mb-4 md:text-sm md:leading-6">
+                            <Markdown>{message.content ?? ""}</Markdown>
+                          </div>
+                        ) : null}
+
+                        {/* ── Loading state ── */}
                         {message.results.isLoading ? <ThinkingBar text={labels.searching} /> : null}
 
+                        {/* ── No results ── */}
                         {!message.results.isLoading && message.results.items.length === 0 ? (
                           <div className="text-xs text-slate-700 md:text-sm">{labels.noResults}</div>
                         ) : null}
 
+                        {/* ── Cards ── */}
                         {!message.results.isLoading && message.results.items.length > 0 && (
-                          <div className="mt-2 flex gap-2.5 overflow-x-auto snap-x snap-mandatory pb-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden md:mt-3 md:grid md:grid-cols-3 md:gap-4 md:overflow-visible md:snap-none md:pb-0">
+                          <div className="flex gap-2.5 overflow-x-auto snap-x snap-mandatory pb-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden md:grid md:grid-cols-3 md:gap-4 md:overflow-visible md:snap-none md:pb-0">
                             {message.results.items.map((item: any) => {
                               const cardWrap = "w-[72vw] min-w-[72vw] shrink-0 snap-start md:w-auto md:min-w-0 md:shrink";
                               if (message.results?.type === "jobs") {
@@ -250,12 +261,20 @@ export function AgentChatContainer({
                           </div>
                         )}
 
-                        {!message.results.isLoading && (message.content ?? "").trim() ? (
-                          <div className="mt-3 text-left text-xs leading-5 text-slate-900 md:mt-4 md:text-sm md:leading-6">
-                            <Markdown>{message.content ?? ""}</Markdown>
+                        {/* ── Resume upload CTA ── */}
+                        {!message.results.isLoading && message.resumeUploadCta ? (
+                          <div className="mt-3 flex items-center gap-1.5 text-xs text-slate-700 md:mt-4 md:text-sm md:leading-6">
+                            <span>✨ {message.resumeUploadCta.title}</span>
+                            <button
+                              onClick={openResumePicker}
+                              className="font-medium text-slate-700 underline underline-offset-2 hover:text-slate-900 transition-colors md:text-sm"
+                            >
+                              {message.resumeUploadCta.buttonLabel}
+                            </button>
                           </div>
                         ) : null}
 
+                        {/* ── Conversational suggestions — text links, not pills ── */}
                         {!message.results.isLoading && (message.relatedPrompts ?? []).length > 0 && (
                           <div className="mt-4 space-y-0.5 border-t border-slate-100 pt-3 md:mt-5 md:pt-4">
                             {(message.relatedPrompts ?? []).map((prompt, i) => (
@@ -276,17 +295,6 @@ export function AgentChatContainer({
                           </div>
                         )}
 
-                        {!message.results.isLoading && message.resumeUploadCta ? (
-                          <div className="mt-3 flex items-center gap-1.5 text-xs text-slate-700 md:mt-4 md:text-sm md:leading-6">
-                            <span>✨ {message.resumeUploadCta.title}</span>
-                            <button
-                              onClick={openResumePicker}
-                              className="font-medium text-slate-700 underline underline-offset-2 hover:text-slate-900 transition-colors md:text-sm"
-                            >
-                              {message.resumeUploadCta.buttonLabel}
-                            </button>
-                          </div>
-                        ) : null}
                       </div>
                     ) : (
                       <div className="w-full min-w-0 text-left text-xs leading-5 text-slate-900 md:text-sm md:leading-6">
