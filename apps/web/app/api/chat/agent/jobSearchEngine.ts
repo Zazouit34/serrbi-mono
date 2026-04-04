@@ -152,9 +152,7 @@ export async function jobSearchEngine(db: PrismaClient, intentData: JobIntentDat
 
   if (category) strictWhere.category = category;
   if (experienceLevel) strictWhere.experienceLevel = experienceLevel;
-  if (locationRequirement) strictWhere.locationRequirement = locationRequirement;
   if (type) strictWhere.type = type;
-  if (intentData.city) strictWhere.city = { contains: intentData.city.trim(), mode: "insensitive" };
   if (intentData.stateAbbreviation) strictWhere.stateAbbreviation = intentData.stateAbbreviation.trim();
   if (intentData.countryIso2) strictWhere.countryIso2 = intentData.countryIso2.trim().toUpperCase();
   if (wageRange) {
@@ -164,9 +162,20 @@ export async function jobSearchEngine(db: PrismaClient, intentData: JobIntentDat
     strictWhere.wage = wageFilter;
   }
 
+  if (locationRequirement === "remote") {
+    strictWhere.locationRequirement = "remote";
+  } else if (intentData.city) {
+    strictWhere.city = { contains: intentData.city.trim(), mode: "insensitive" };
+    if (locationRequirement) {
+      strictWhere.locationRequirement = locationRequirement;
+    }
+  } else if (locationRequirement) {
+    strictWhere.locationRequirement = locationRequirement;
+  }
+
+  const SAFETY_CAP = 1000;
   let pool = (await db.job.findMany({
     where: strictWhere,
-    take: 120,
     orderBy: [{ createdAt: "desc" }, { id: "desc" }],
     select: {
       id: true,
@@ -188,41 +197,58 @@ export async function jobSearchEngine(db: PrismaClient, intentData: JobIntentDat
     },
   })) as JobCandidate[];
 
+  if (pool.length > SAFETY_CAP) {
+    pool = pool.slice(0, SAFETY_CAP);
+  }
+
   let fallbackApplied = false;
   if (pool.length === 0) {
-    // Graceful fallback: if strict filters produce 0 rows, widen criteria while
-    // preserving semantic + overlap ranking so we still return relevant jobs.
     const relaxedWhere: Record<string, unknown> = {
       status: JobListingStatus.published,
     };
     if (category) {
-      // Keep category when inferred/provided to avoid totally off-domain results.
       relaxedWhere.category = category;
     }
 
-    pool = (await db.job.findMany({
-      where: relaxedWhere,
-      take: 120,
-      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-      select: {
-        id: true,
-        title: true,
-        companyName: true,
-        companyImage: true,
-        description: true,
-        tags: true,
-        city: true,
-        stateAbbreviation: true,
-        countryIso2: true,
-        category: true,
-        type: true,
-        locationRequirement: true,
-        experienceLevel: true,
-        wage: true,
-        createdAt: true,
-        embedding: true,
-      },
-    })) as JobCandidate[];
+    const relaxSteps: Array<() => void> = [
+      () => { if (experienceLevel) delete strictWhere.experienceLevel; },
+      () => { if (type) delete strictWhere.type; },
+      () => { if (wageRange) delete strictWhere.wage; },
+      () => { if (intentData.stateAbbreviation) delete strictWhere.stateAbbreviation; },
+      () => { if (intentData.city) delete strictWhere.city; },
+      () => { if (locationRequirement) delete strictWhere.locationRequirement; },
+    ];
+
+    for (const relax of relaxSteps) {
+      relax();
+      pool = (await db.job.findMany({
+        where: strictWhere,
+        orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+        select: {
+          id: true,
+          title: true,
+          companyName: true,
+          companyImage: true,
+          description: true,
+          tags: true,
+          city: true,
+          stateAbbreviation: true,
+          countryIso2: true,
+          category: true,
+          type: true,
+          locationRequirement: true,
+          experienceLevel: true,
+          wage: true,
+          createdAt: true,
+          embedding: true,
+        },
+      })) as JobCandidate[];
+      if (pool.length > 0) break;
+    }
+
+    if (pool.length > SAFETY_CAP) {
+      pool = pool.slice(0, SAFETY_CAP);
+    }
     fallbackApplied = true;
   }
 
@@ -259,6 +285,8 @@ export async function jobSearchEngine(db: PrismaClient, intentData: JobIntentDat
     items: pool,
     queryEmbedding,
     overlapTokens,
+    preferredCity: intentData.city ?? null,
+    preferredLocationReq: intentData.locationRequirement ?? null,
   });
 
   return {

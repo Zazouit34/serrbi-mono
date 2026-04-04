@@ -15,7 +15,18 @@ import {
   buildSuggestionsPrompt,
   buildPlanLimitPrompt,
   buildScopeMismatchPrompt,
+  buildPostResultNarrativePrompt,
 } from "./agent/prompt/intent";
+import {
+  shouldBypassIntentLlm,
+  checkJobSearchReadiness,
+  checkScopeGuard,
+} from "./agent/orchestrator";
+import {
+  isGreetingOrSmallTalk,
+  isLikelySearchRequest,
+  isExplicitIntentSwitch,
+} from "./agent/classifier";
 
 export const runtime = "nodejs";
 
@@ -192,186 +203,7 @@ function normalizeForIntent(text: string): string {
     : "";
 }
 
-// ─── Heuristic classifier (used only for shouldBypassIntentLlm) ───────────────
 
-function countPhraseHits(text: string, phrases: string[]): number {
-  let score = 0;
-  for (const phrase of phrases) {
-    if (text.includes(phrase)) score += 1;
-  }
-  return score;
-}
-
-function classifyTurnIntent(text: string): "chat" | "search" {
-  const normalized = normalizeForIntent(text);
-  if (!normalized) return "chat";
-  const tokens = normalized.split(" ").filter(Boolean);
-
-  const greetingPhrases = [
-    "hi", "hey", "hello", "yo", "good morning", "good afternoon", "good evening",
-    "how are you", "who are you", "what can you do", "thanks", "thank you",
-    "salut", "bonjour", "bonsoir", "coucou", "ca va", "qui es tu", "merci",
-    "مرحبا", "اهلا", "أهلا", "سلام", "السلام عليكم", "كيف حالك", "شكرا", "شكرًا",
-  ];
-  const searchActionPhrases = [
-    "find", "search", "looking for", "look for", "show me", "i need", "i want", "hire", "apply",
-    "cherche", "recherche", "trouve", "montre moi", "jai besoin", "je veux",
-    "بغيت", "كنقلب", "ابحث", "أبحث", "اريد", "أريد", "احتاج", "أحتاج", "وريني",
-  ];
-  const marketplaceNouns = [
-    "job", "jobs", "work", "service", "services", "task", "tasks", "freelance",
-    "emploi", "emplois", "travail", "mission", "tache", "taches",
-    "وظيفة", "وظائف", "خدمة", "خدمات", "مهمة", "مهام", "عمل",
-  ];
-  const constraintSignals = [
-    "remote", "onsite", "hybrid", "casablanca", "rabat", "marrakech", "tangier",
-    "budget", "salary", "wage", "prix", "salaire", "price", "عن بعد",
-  ];
-
-  let chatScore = 0;
-  let searchScore = 0;
-
-  chatScore += countPhraseHits(normalized, greetingPhrases);
-  searchScore += countPhraseHits(normalized, searchActionPhrases);
-  searchScore += countPhraseHits(normalized, marketplaceNouns) * 2;
-  searchScore += countPhraseHits(normalized, constraintSignals);
-
-  if (/\b\d{2,}\b/.test(normalized)) searchScore += 1;
-  if (/(dh|mad|usd|eur|\$|€)/.test(text.toLowerCase())) searchScore += 1;
-
-  const hasMarketplaceNoun = marketplaceNouns.some((w) => tokens.includes(w));
-  const hasSearchAction = searchActionPhrases.some((p) => normalized.includes(p));
-
-  if (!hasMarketplaceNoun && !hasSearchAction && tokens.length <= 4) chatScore += 2;
-
-  if (
-    normalized.includes("who are you") ||
-    normalized.includes("what can you do") ||
-    normalized.includes("qui es tu") ||
-    normalized.includes("شنو تقدر") ||
-    normalized.includes("ماذا تستطيع")
-  ) {
-    chatScore += 3;
-  }
-
-  if (searchScore < 2) chatScore += 1;
-
-  return searchScore >= chatScore + 1 ? "search" : "chat";
-}
-
-function isGreetingOrSmallTalk(text: string): boolean {
-  return classifyTurnIntent(text) === "chat";
-}
-
-function isLikelySearchRequest(text: string): boolean {
-  return classifyTurnIntent(text) === "search";
-}
-
-// ─── Search readiness ─────────────────────────────────────────────────────────
-
-/**
- * Job search needs at least a detectable domain/category.
- * Without it, jobSearchEngine has no domain filter and returns irrelevant jobs.
- *
- * This runs on ALL paths — both when the LLM was called and when it was bypassed.
- * The LLM prompt already instructs the model to ask first when category is missing,
- * but the prompt can slip and the bypass path never calls the LLM at all.
- * This function is the server-side safety net that enforces the rule unconditionally.
- */
-function isJobSearchReady(intentData: JobIntentData): boolean {
-  if (!intentData.query?.trim()) return false;
-  // LLM explicitly extracted a category enum value
-  if (intentData.category) return true;
-  // Fallback: infer category from the raw query text
-  return inferCategoryFromText(intentData.query, intentData.skills ?? []) !== null;
-}
-
-function inferCategoryFromText(query: string, skills: string[]): string | null {
-  const text = `${query} ${skills.join(" ")}`;
-  const normalized = text
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase();
-
-  const rules: Array<{ category: string; keywords: string[] }> = [
-    {
-      category: "Tech",
-      keywords: [
-        "developer", "developpeur", "dev", "software", "frontend", "backend",
-        "fullstack", "data", "engineer", "it", "tech", "programmer",
-        "مطور", "برمجة", "تقنية",
-      ],
-    },
-    {
-      category: "Finance",
-      keywords: [
-        "finance", "accountant", "accounting", "comptable", "audit", "bank",
-        "محاسب", "مالية", "بنك",
-      ],
-    },
-    {
-      category: "Health",
-      keywords: [
-        "doctor", "nurse", "medical", "sante", "health", "pharmac",
-        "طبيب", "ممرض", "صحة", "دكتور",
-      ],
-    },
-    {
-      category: "Legal",
-      keywords: [
-        "lawyer", "legal", "juridique", "avocat", "notaire",
-        "محامي", "قانون",
-      ],
-    },
-    {
-      category: "Education",
-      keywords: [
-        "teacher", "prof", "education", "formateur", "instructor",
-        "معلم", "أستاذ", "تعليم",
-      ],
-    },
-    {
-      category: "Construction",
-      keywords: [
-        "construction", "builder", "mason", "maçon", "plumbing", "electric",
-        "بناء", "مقاول",
-      ],
-    },
-    {
-      category: "Hospitality",
-      keywords: [
-        "hotel", "restaurant", "hospitality", "serveur", "waiter", "cuisine",
-        "فندق", "استقبال", "مطعم", "نادل", "طباخ",
-      ],
-    },
-    {
-      category: "CallCenter",
-      keywords: [
-        "call center", "customer support", "teleconseiller", "centre d'appel",
-        "دعم عملاء", "مركز اتصال",
-      ],
-    },
-    {
-      category: "Auto",
-      keywords: [
-        "mechanic", "mecanicien", "garage", "automotive", "auto", "car repair",
-        "ميكانيكي", "كراج",
-      ],
-    },
-    {
-      category: "Cleaning",
-      keywords: [
-        "cleaning", "cleaner", "menage", "nettoyage",
-        "نظافة", "تنظيف",
-      ],
-    },
-  ];
-
-  for (const rule of rules) {
-    if (rule.keywords.some((k) => normalized.includes(k))) return rule.category;
-  }
-  return null;
-}
 
 // ─── LLM-powered helpers ──────────────────────────────────────────────────────
 
@@ -507,32 +339,46 @@ async function buildScopeMismatchMessage(opts: {
   }
 }
 
-// ─── Explicit intent switch detection ────────────────────────────────────────
+async function generatePostResultNarrative(opts: {
+  userMessage: string;
+  searchQuery: string;
+  intent: AgentIntent;
+  items: any[];
+  locale: string;
+  hasResume: boolean;
+}): Promise<string> {
+  const context = {
+    searchQuery: opts.searchQuery,
+    intent: opts.intent,
+    hasResume: opts.hasResume,
+    topResults: opts.items.slice(0, 3).map((item, i) => ({
+      position: i + 1,
+      title: item.title,
+      companyName: item.companyName ?? null,
+      city: item.city ?? null,
+      locationRequirement: item.locationRequirement ?? null,
+      wage: item.wage ?? null,
+      experienceLevel: item.experienceLevel ?? null,
+      matchScore: item.matchScore ?? null,
+      matchedSkills: item.resumeMatch?.matchedSkills ?? [],
+      averageRating: item.averageRating ?? null,
+      price: item.price ?? null,
+    })),
+  };
 
-function isExplicitIntentSwitch(query: string, targetType: string): boolean {
-  const q = normalizeForIntent(query);
-  const serviceKeywords = [
-    "plumber", "electrician", "cleaner", "mechanic", "painter", "carpenter",
-    "plombier", "électricien", "nettoyage", "mécanicien", "peintre",
-    "سباك", "كهربائي", "نجار", "ميكانيكي", "دهان",
-    "service", "services", "خدمة", "خدمات",
-  ];
-  const taskKeywords = [
-    "task", "tasks", "mission", "gig", "freelance",
-    "tâche", "tâches", "مهمة", "مهام",
-  ];
-  const jobKeywords = [
-    "job", "jobs", "work", "hire", "recruit", "employ",
-    "emploi", "emplois", "travail", "poste",
-    "وظيفة", "وظائف", "عمل",
-  ];
-  if (targetType === "search_service")
-    return serviceKeywords.some((k) => q.includes(k));
-  if (targetType === "search_task")
-    return taskKeywords.some((k) => q.includes(k));
-  if (targetType === "search_job")
-    return jobKeywords.some((k) => q.includes(k));
-  return false;
+  const systemPrompt = buildPostResultNarrativePrompt();
+
+  try {
+    return await callLLM(
+      [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: JSON.stringify(context) },
+      ],
+      { temperature: 0.5, maxTokens: 200 },
+    );
+  } catch {
+    return "";
+  }
 }
 
 // ─── Card mappers ─────────────────────────────────────────────────────────────
@@ -858,21 +704,13 @@ export async function POST(req: Request) {
         }
       : null;
 
-    // ── Bypass decision ───────────────────────────────────────────────────────
-    // Skip the LLM only when ALL four conditions hold:
-    // 1. Scope is already pinned (not auto)
-    // 2. Message is clearly a search request
-    // 3. Message is not a greeting or small talk
-    // 4. Message has more than 3 words
     const scope = body.context?.scope;
     const quickQuery = (lastUser || "").trim();
-    const wordCount = quickQuery.split(" ").filter(Boolean).length;
 
-    const shouldBypassIntentLlm =
-      Boolean(scope && scope !== "auto") &&
-      isLikelySearchRequest(quickQuery) &&
-      !isGreetingOrSmallTalk(quickQuery) &&
-      wordCount > 3;
+    const bypassLlm = shouldBypassIntentLlm({
+      scope,
+      query: quickQuery,
+    });
 
     // ── Intent extraction ─────────────────────────────────────────────────────
     const extractorHistory: IntentExtractorMessage[] = messages
@@ -885,7 +723,7 @@ export async function POST(req: Request) {
       })
       .slice(-4);
 
-    const aiResult = shouldBypassIntentLlm
+    const aiResult = bypassLlm
       ? scope === "services"
         ? {
             type: "search_service" as const,
@@ -920,7 +758,7 @@ export async function POST(req: Request) {
       type: aiResult.type,
       reply: aiResult.reply,
       intent_data: aiResult.intent_data,
-      bypassed: shouldBypassIntentLlm,
+      bypassed: bypassLlm,
     });
 
     await trackAgentEvent({
@@ -934,7 +772,7 @@ export async function POST(req: Request) {
         categoryHint: body.context?.categoryHint ?? null,
         query: (lastUser || "").slice(0, 500),
         extractedIntentData: aiResult.intent_data ?? null,
-        bypassed: shouldBypassIntentLlm,
+        bypassed: bypassLlm,
       },
     });
 
@@ -995,15 +833,11 @@ export async function POST(req: Request) {
       } satisfies AgentResponse);
     }
 
-    // ── Job search ────────────────────────────────────────────────────────────
     if (aiResult.type === "search_job" && aiResult.intent_data) {
       const intentData = aiResult.intent_data as JobIntentData;
 
-      // ── Readiness gate — universal, runs on ALL paths ─────────────────────
-      // Checks both the LLM path (where the prompt may have slipped) and the
-      // bypass path (where no LLM was called at all).
-      // If category cannot be determined, ask the user before touching the DB.
-      if (!isJobSearchReady(intentData)) {
+      const readiness = checkJobSearchReadiness(intentData);
+      if (!readiness.ready) {
         const clarifyText = await buildJobClarifyMessage(
           lastUser,
           aiResult.reply,
@@ -1037,7 +871,17 @@ export async function POST(req: Request) {
         { locale, includeResumeMatch: hasResumeEmbedding },
       );
       const confidenceMode = evaluateConfidenceMode(cards);
-      const assistantText = aiResult.reply?.trim() ?? "";
+
+      const assistantText = cards.length > 0
+        ? await generatePostResultNarrative({
+            userMessage: lastUser,
+            searchQuery,
+            intent: "jobs",
+            items: cards,
+            locale,
+            hasResume: hasResumeEmbedding,
+          })
+        : aiResult.reply?.trim() ?? "";
 
       const relatedPrompts = await generateSmartSuggestions({
         intent: "jobs",
@@ -1079,11 +923,11 @@ export async function POST(req: Request) {
         resumeUploadCta: hasResumeEmbedding ? undefined : buildResumeUploadCta(),
         relatedPrompts,
         debug: includeDebug
-          ? {
+            ? {
               stage: "search_job",
               extracted_intent: aiResult,
               filters_applied: searchResult.filtersApplied,
-              bypassed: shouldBypassIntentLlm,
+              bypassed: bypassLlm,
               ranking_top3: personalizedRanked.slice(0, 3).map((item: any) => ({
                 id: item.id,
                 title: item.title,
@@ -1105,7 +949,17 @@ export async function POST(req: Request) {
       const searchQuery = intentData.query?.trim() || lastUser.trim();
       const cards = mapServiceCards(searchResult.topResults);
       const confidenceMode = evaluateConfidenceMode(cards);
-      const assistantText = aiResult.reply?.trim() ?? "";
+
+      const assistantText = cards.length > 0
+        ? await generatePostResultNarrative({
+            userMessage: lastUser,
+            searchQuery,
+            intent: "services",
+            items: cards,
+            locale,
+            hasResume: false,
+          })
+        : aiResult.reply?.trim() ?? "";
 
       const relatedPrompts = await generateSmartSuggestions({
         intent: "services",

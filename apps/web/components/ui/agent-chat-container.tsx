@@ -67,6 +67,7 @@ type AgentChatContainerProps = {
   inSession?: boolean;
   userInitial?: string;
   chatInputRef: RefObject<HTMLTextAreaElement | null>;
+  agentSessionId?: string;
   labels: {
     searching: string;
     thinking: string;
@@ -95,6 +96,32 @@ type AgentChatContainerProps = {
   hasResumeAttached?: boolean;
   resumeAttachedLabel?: string;
 };
+
+function trackCardClick(opts: {
+  cardId: string;
+  cardPosition: number;
+  cardType: "job" | "service" | "task";
+  searchQuery: string;
+  matchScore: number | null;
+  sessionId: string;
+}) {
+  void fetch("/api/events", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      name: "CARD_CLICKED",
+      intent: `search_${opts.cardType}`,
+      sessionId: opts.sessionId,
+      data: {
+        cardId: opts.cardId,
+        cardPosition: opts.cardPosition,
+        cardType: opts.cardType,
+        searchQuery: opts.searchQuery,
+        matchScore: opts.matchScore,
+      },
+    }),
+  }).catch(() => {});
+}
 
 function SuggestionList({
   prompts,
@@ -146,6 +173,7 @@ export function AgentChatContainer({
   inSession = false,
   userInitial,
   chatInputRef,
+  agentSessionId,
   labels,
   onInputChange,
   onSubmit,
@@ -236,24 +264,66 @@ export function AgentChatContainer({
                         {/* ── Cards ── */}
                         {!message.results.isLoading && message.results.items.length > 0 && (
                           <div className="flex gap-2.5 overflow-x-auto snap-x snap-mandatory pb-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden md:grid md:grid-cols-3 md:gap-4 md:overflow-visible md:snap-none md:pb-0">
-                            {message.results.items.map((item: any) => {
+                            {message.results.items.map((item: any, index: number) => {
                               const cardWrap = "w-[72vw] min-w-[72vw] shrink-0 snap-start md:w-auto md:min-w-0 md:shrink";
                               if (message.results?.type === "jobs") {
                                 return (
-                                  <div key={item.id} className={cardWrap}>
+                                  <div
+                                    key={item.id}
+                                    className={cardWrap}
+                                    onClick={() =>
+                                      agentSessionId &&
+                                      trackCardClick({
+                                        cardId: item.id,
+                                        cardPosition: index,
+                                        cardType: "job",
+                                        searchQuery: message.results?.query ?? "",
+                                        matchScore: item.matchScore ?? null,
+                                        sessionId: agentSessionId,
+                                      })
+                                    }
+                                  >
                                     <JobCard className="h-full" job={item} compact />
                                   </div>
                                 );
                               }
                               if (message.results?.type === "services") {
                                 return (
-                                  <div key={item.id} className={cardWrap}>
+                                  <div
+                                    key={item.id}
+                                    className={cardWrap}
+                                    onClick={() =>
+                                      agentSessionId &&
+                                      trackCardClick({
+                                        cardId: item.id,
+                                        cardPosition: index,
+                                        cardType: "service",
+                                        searchQuery: message.results?.query ?? "",
+                                        matchScore: item.matchScore ?? null,
+                                        sessionId: agentSessionId,
+                                      })
+                                    }
+                                  >
                                     <ServiceCard service={item} className="h-full" />
                                   </div>
                                 );
                               }
                               return (
-                                <div key={item.id} className={cardWrap}>
+                                <div
+                                  key={item.id}
+                                  className={cardWrap}
+                                  onClick={() =>
+                                    agentSessionId &&
+                                    trackCardClick({
+                                      cardId: item.id,
+                                      cardPosition: index,
+                                      cardType: "task",
+                                      searchQuery: message.results?.query ?? "",
+                                      matchScore: item.matchScore ?? null,
+                                      sessionId: agentSessionId,
+                                    })
+                                  }
+                                >
                                   <TaskCard task={item} className="h-full" />
                                 </div>
                               );

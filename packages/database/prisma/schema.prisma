@@ -619,6 +619,7 @@ enum WebhookEventType {
 enum EventName {
   AGENT_INTENT_TRIGGERED
   AGENT_SEARCH_RESULTS_RETURNED
+  CARD_CLICKED
 }
 
 enum AgentIntentType {

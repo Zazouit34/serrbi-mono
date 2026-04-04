@@ -262,14 +262,17 @@ export async function serviceSearchEngine(
     embedding: true,
   } as const;
 
+  const SAFETY_CAP = 1000;
   let pool = (await db.service.findMany({
     where,
-    take: 90,
     orderBy: [{ createdAt: "desc" }, { id: "desc" }],
     select: selectFields,
   })) as ServiceCandidate[];
 
-  // Progressive filter relaxation: drop filters one by one until we get results
+  if (pool.length > SAFETY_CAP) {
+    pool = pool.slice(0, SAFETY_CAP);
+  }
+
   if (pool.length === 0) {
     const relaxSteps: Array<() => void> = [
       () => { delete where.type; },
@@ -284,11 +287,13 @@ export async function serviceSearchEngine(
       relax();
       pool = (await db.service.findMany({
         where,
-        take: 90,
         orderBy: [{ createdAt: "desc" }, { id: "desc" }],
         select: selectFields,
       })) as ServiceCandidate[];
       if (pool.length > 0) break;
+    }
+    if (pool.length > SAFETY_CAP) {
+      pool = pool.slice(0, SAFETY_CAP);
     }
   }
 

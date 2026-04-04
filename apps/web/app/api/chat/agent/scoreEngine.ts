@@ -65,11 +65,11 @@ function computeExperienceAlignment(
 ): number {
   const resumeLevel = mapExperienceLevel(resumeExperienceLevel);
   const jobLevel = mapExperienceLevel(jobExperienceLevel);
-  if (resumeLevel == null || jobLevel == null) return 0.5;
+  if (resumeLevel == null || jobLevel == null) return 0;
   const diff = Math.abs(resumeLevel - jobLevel);
-  if (diff === 0) return 1;
-  if (diff === 1) return 0.7;
-  return 0.35;
+  if (diff === 0) return 1.0;
+  if (diff === 1) return 0.6;
+  return 0.2;
 }
 
 export function rankJobsWithResumeMatch<T extends JobForResumeMatch>(
@@ -104,12 +104,14 @@ export function rankJobsWithResumeMatch<T extends JobForResumeMatch>(
       job.experienceLevel ?? null,
     );
 
-    // Resume match formula
     const resumeMatchScore =
       0.6 * semanticResumeScore + 0.25 * skillOverlapScore + 0.15 * experienceAlignmentScore;
 
-    // Blend query relevance from ranking engine with resume personalization.
-    const blendedScore = 0.6 * clamp01(job.finalScore ?? 0) + 0.4 * resumeMatchScore;
+    const hasStrongResume = resumeSkills.length >= 5;
+    const queryWeight = hasStrongResume ? 0.45 : 0.60;
+    const resumeWeight = hasStrongResume ? 0.55 : 0.40;
+
+    const blendedScore = queryWeight * clamp01(job.finalScore ?? 0) + resumeWeight * resumeMatchScore;
     const matchPercent = Math.round(clamp01(resumeMatchScore) * 100);
 
     return {
