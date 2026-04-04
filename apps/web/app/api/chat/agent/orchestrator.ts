@@ -11,24 +11,18 @@ type ReadinessResult =
   | { ready: false; missingField: "category" | "location" | "both" };
 
 export function checkJobSearchReadiness(intentData: JobIntentData): ReadinessResult {
+  if (!intentData.query?.trim()) {
+    return { ready: false, missingField: "category" };
+  }
+
   const hasCategory =
     Boolean(intentData.category) ||
     inferJobCategoryFromText(intentData.query, intentData.skills ?? []) !== null;
 
-  const hasLocation =
-    Boolean(intentData.city) ||
-    Boolean(intentData.locationRequirement) ||
-    Boolean(intentData.stateAbbreviation);
-
-  if (!hasCategory && !hasLocation) {
-    return { ready: false, missingField: "both" };
-  }
   if (!hasCategory) {
     return { ready: false, missingField: "category" };
   }
-  if (!hasLocation) {
-    return { ready: false, missingField: "location" };
-  }
+
   return { ready: true };
 }
 

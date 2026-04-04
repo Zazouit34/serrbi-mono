@@ -22,11 +22,6 @@ import {
   checkJobSearchReadiness,
   checkScopeGuard,
 } from "./agent/orchestrator";
-import {
-  isGreetingOrSmallTalk,
-  isLikelySearchRequest,
-  isExplicitIntentSwitch,
-} from "./agent/classifier";
 
 export const runtime = "nodejs";
 
@@ -214,9 +209,7 @@ function normalizeForIntent(text: string): string {
  */
 async function buildJobClarifyMessage(
   userMessage: string,
-  existingReply?: string,
 ): Promise<string> {
-  if (existingReply?.trim()) return existingReply.trim();
   try {
     return await callLLM(
       [
@@ -776,32 +769,22 @@ export async function POST(req: Request) {
       },
     });
 
-    // ── Scope guard ───────────────────────────────────────────────────────────
     const pinnedScope = body.context?.scope;
     if (
       pinnedScope &&
       pinnedScope !== "auto" &&
       aiResult.type !== "conversation"
     ) {
-      const scopeToType: Record<string, string> = {
-        jobs: "search_job",
-        services: "search_service",
-        tasks: "search_task",
-      };
-      const expectedType = scopeToType[pinnedScope];
-      const isExplicit = isExplicitIntentSwitch(quickQuery, aiResult.type);
+      const guardResult = checkScopeGuard({
+        pinnedScope,
+        extractedType: aiResult.type,
+        query: quickQuery,
+      });
 
-      if (expectedType && aiResult.type !== expectedType && !isExplicit) {
-        const suggestedIntent =
-          aiResult.type === "search_service"
-            ? "services"
-            : aiResult.type === "search_task"
-              ? "tasks"
-              : "jobs";
-
+      if (guardResult.mismatch && !guardResult.isExplicit) {
         const mismatchMessage = await buildScopeMismatchMessage({
           currentScope: pinnedScope,
-          suggestedIntent,
+          suggestedIntent: guardResult.suggestedIntent,
           userMessage: lastUser,
         });
 
@@ -811,10 +794,10 @@ export async function POST(req: Request) {
           searchQuery: "",
           assistantText: mismatchMessage,
           relatedPrompts: [
-            `Yes, search ${suggestedIntent}`,
+            `Yes, search ${guardResult.suggestedIntent}`,
             `No, keep searching ${pinnedScope}`,
           ],
-          intentMismatch: { suggestedIntent: suggestedIntent as AgentIntent },
+          intentMismatch: { suggestedIntent: guardResult.suggestedIntent as AgentIntent },
         } satisfies AgentResponse);
       }
     }
@@ -838,10 +821,7 @@ export async function POST(req: Request) {
 
       const readiness = checkJobSearchReadiness(intentData);
       if (!readiness.ready) {
-        const clarifyText = await buildJobClarifyMessage(
-          lastUser,
-          aiResult.reply,
-        );
+        const clarifyText = await buildJobClarifyMessage(lastUser);
         return NextResponse.json({
           action: "chat",
           intent: "jobs",
