@@ -23,16 +23,31 @@ export function buildIntentExtractorPrompt(context?: PromptContext): string {
 
     resumeContext = `
 
-RESUME CONTEXT:
-The user has uploaded their resume:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+RESUME CONTEXT (HIGH PRIORITY)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+The user has uploaded their resume. This is verified data — treat it as fact.
 - Job Title: ${jobTitle || "not specified"}
 - Skills: ${skills || "not specified"}
 - Experience Level: ${expLevel || "not specified"}
 
-Rules for resume-aware queries:
-- If user query is vague ("find me a job", "I need work", "بغيت خدمة", "cherche emploi"), build the search query from their resume skills and job title.
-- ALWAYS prefer resume context over vague input for job searches.
-- For non-job searches (services/tasks), ignore resume context.`;
+RESUME-AWARE JOB SEARCH RULES (override SEARCH READINESS for category):
+1. When the user asks for a job WITHOUT specifying a category/domain
+   (e.g. "je cherche un emploi", "find me a job", "I need work", "بغيت خدمة"),
+   AND the resume has a job_title → the category IS known. Do NOT ask for category.
+2. In this case return:
+   - type: "search_job"
+   - intent_data.query: built from the resume job title and top skills
+   - intent_data.category: inferred from the resume job title (e.g. "Full Stack Developer" → "Tech")
+   - reply: a short, natural sentence acknowledging the resume. Mention the job title.
+     Example (fr): "Je vois que tu es ${jobTitle}, je te cherche les meilleures offres !"
+     Example (en): "I see you're a ${jobTitle} — let me find matching jobs for you!"
+     Example (ar): "أرى أنك ${jobTitle}، سأبحث لك عن أفضل الفرص!"
+3. If the user has NOT yet provided a location, include a location question IN the reply.
+   Example (fr): "Je vois que tu es ${jobTitle} ! Tu préfères quelle ville ? (Casablanca, Rabat…)"
+   Example (en): "I see you're a ${jobTitle}! Which city do you prefer? (Casablanca, Rabat…)"
+   But NEVER ask for category when the resume already provides the job title.
+4. For non-job searches (services/tasks), ignore resume context entirely.`;
   }
 
   return `
@@ -94,14 +109,15 @@ NEVER drop information the user already provided in an earlier message.
 NEVER re-ask for something the user already told you.
 If the user said "web developer" in message 1 and "casablanca" in message 3,
 the intent_data for message 3 must include BOTH.
-
+${resumeContext}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 SEARCH READINESS RULES (CRITICAL)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 For search_job specifically:
 - You MUST be able to determine a job domain/category from the conversation before returning search_job.
 - Category can come from: explicit mention ("tech job", "emploi finance", "وظيفة طبيب") OR strong domain keywords ("developer", "nurse", "comptable", "سباك") — in ANY user message in the history.
-- If you CANNOT determine any category or domain from the ENTIRE conversation → return type: "conversation" and set clarify_field: "category".
+- **RESUME EXCEPTION**: If RESUME CONTEXT exists with a job_title, category IS satisfied — use the resume job title as the category. Do NOT ask for category again.
+- If you CANNOT determine any category or domain from the ENTIRE conversation AND there is no RESUME CONTEXT with a job_title → return type: "conversation" and set clarify_field: "category".
 - In that case, reply must naturally ask what field/domain in the user's language.
   Example (en): "I'd love to help! What field are you looking for? (Tech, Finance, Health, etc.)"
   Example (fr): "Avec plaisir ! Dans quel domaine travailles-tu ? (Tech, Finance, Santé, etc.)"
@@ -129,7 +145,7 @@ QUERY BILINGUAL BRIDGING
 - "intent_data.query" must include both original user terms AND English translation.
 - Example: "أبحث عن سباك" → "سباك plumber سباكة plumbing"
 - Example: "je cherche un électricien" → "électricien electrician électricité electrical"
-- Keep it concise — key terms only, no full sentences.${resumeContext}
+- Keep it concise — key terms only, no full sentences.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 FIELD MAP

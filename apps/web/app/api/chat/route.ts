@@ -883,9 +883,13 @@ export async function POST(req: Request) {
 
       const readiness = checkJobSearchReadiness(intentData);
       if (!readiness.ready) {
-        const clarifyText = readiness.missingField === "location"
-          ? await buildLocationClarifyMessage(lastUser)
-          : await buildJobClarifyMessage(lastUser);
+        const llmReply = aiResult.reply?.trim();
+        const clarifyText =
+          readiness.missingField === "location" && llmReply
+            ? llmReply
+            : readiness.missingField === "location"
+              ? await buildLocationClarifyMessage(lastUser)
+              : await buildJobClarifyMessage(lastUser);
         return NextResponse.json({
           action: "chat",
           intent: "jobs",
