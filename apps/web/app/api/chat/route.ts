@@ -25,6 +25,7 @@ import {
   checkJobSearchReadiness,
   checkScopeGuard,
   generateDbGroundedSuggestions,
+  detectExplicitIntentOverride,
 } from "./agent/orchestrator";
 
 export const runtime = "nodejs";
@@ -748,7 +749,7 @@ export async function POST(req: Request) {
       })
       .slice(-4);
 
-    const aiResult = bypassLlm
+    let aiResult = bypassLlm
       ? scope === "services"
         ? {
             type: "search_service" as const,
@@ -802,6 +803,15 @@ export async function POST(req: Request) {
     });
 
     const pinnedScope = body.context?.scope;
+
+    // Force-correct the intent type when user query contains explicit
+    // service/task keywords but LLM stayed in the pinned scope
+    if (pinnedScope && pinnedScope !== "auto" && aiResult.type !== "conversation") {
+      const forcedType = detectExplicitIntentOverride(quickQuery, pinnedScope);
+      if (forcedType && forcedType !== aiResult.type) {
+        aiResult = { ...aiResult, type: forcedType };
+      }
+    }
     if (
       pinnedScope &&
       pinnedScope !== "auto" &&
@@ -813,24 +823,36 @@ export async function POST(req: Request) {
         query: quickQuery,
       });
 
-      if (guardResult.mismatch && !guardResult.isExplicit) {
-        const mismatchMessage = await buildScopeMismatchMessage({
-          currentScope: pinnedScope,
-          suggestedIntent: guardResult.suggestedIntent,
-          userMessage: lastUser,
-        });
+      if (guardResult.mismatch) {
+        if (guardResult.isExplicit) {
+          // Auto-switch: force the intent type without asking
+          const typeMap: Record<string, string> = {
+            services: "search_service",
+            tasks: "search_task",
+            jobs: "search_job",
+          };
+          aiResult = { ...aiResult, type: typeMap[guardResult.suggestedIntent] as any };
+          // Fall through to the search blocks with corrected type
+        } else {
+          // Ask user to confirm the switch
+          const mismatchMessage = await buildScopeMismatchMessage({
+            currentScope: pinnedScope,
+            suggestedIntent: guardResult.suggestedIntent,
+            userMessage: lastUser,
+          });
 
-        return NextResponse.json({
-          action: "chat",
-          intent: pinnedScope as AgentIntent,
-          searchQuery: "",
-          assistantText: mismatchMessage,
-          relatedPrompts: [
-            `Yes, search ${guardResult.suggestedIntent}`,
-            `No, keep searching ${pinnedScope}`,
-          ],
-          intentMismatch: { suggestedIntent: guardResult.suggestedIntent as AgentIntent },
-        } satisfies AgentResponse);
+          return NextResponse.json({
+            action: "chat",
+            intent: pinnedScope as AgentIntent,
+            searchQuery: "",
+            assistantText: mismatchMessage,
+            relatedPrompts: [
+              `Yes, search ${guardResult.suggestedIntent}`,
+              `No, keep searching ${pinnedScope}`,
+            ],
+            intentMismatch: { suggestedIntent: guardResult.suggestedIntent as AgentIntent },
+          } satisfies AgentResponse);
+        }
       }
     }
 

@@ -214,8 +214,6 @@ function HeroSearchBarComponent({
     };
   }, [messages]);
 
-  const hasShownInitialInsightRef = useRef(false);
-
   useEffect(() => {
     if (!isLoggedIn) {
       setHasResumeAttached(false);
@@ -225,39 +223,12 @@ function HeroSearchBarComponent({
     const hasSavedResume = Boolean(userData?.resumeUrl);
     if (hasSavedResume) {
       setHasResumeAttached(true);
-      if (!hasInitial && !hasShownInitialInsightRef.current && messages.length === 0) {
-        hasShownInitialInsightRef.current = true;
-        const resumeJobTitle = (userData?.resumeJobTitle as string) || null;
-        const resumeSkills = (userData?.autoApplyKeywords as string[]) || [];
-        if (resumeJobTitle || resumeSkills.length > 0) {
-          const topSkills = resumeSkills.slice(0, 3).join(", ");
-          const greeting = resumeJobTitle
-            ? t("resume.postUploadMessage").replace("{jobTitle}", resumeJobTitle)
-            : t("resume.postUploadMessage").replace("{jobTitle}", topSkills || "your profile");
-          const searchPrompt = resumeJobTitle ?? resumeSkills.slice(0, 3).join(", ");
-          if (!pinnedIntent) {
-            setPinnedIntent("jobs");
-            setActiveTab("jobs");
-          }
-          setMessages((prev) => [
-            ...prev,
-            {
-              id: nextMessageIdRef.current++,
-              role: "assistant" as const,
-              kind: "suggestions" as const,
-              content: greeting,
-              relatedPrompts: searchPrompt ? [searchPrompt] : [],
-            } as ChatMessage,
-          ]);
-          setChatExpanded(true);
-        }
-      }
       return;
     }
     if (!resumeAttachStatusText && resumeAttachProgress == null) {
       setHasResumeAttached(false);
     }
-  }, [isLoggedIn, userDataQuery.data, resumeAttachStatusText, resumeAttachProgress, hasInitial, messages.length, locale]);
+  }, [isLoggedIn, userDataQuery.data, resumeAttachStatusText, resumeAttachProgress]);
 
   const { handleResumeAttach } = useResumeAttach({
     isLoggedIn,

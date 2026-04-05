@@ -96,6 +96,25 @@ export function checkScopeGuard(opts: {
   };
 }
 
+export function detectExplicitIntentOverride(
+  query: string,
+  currentScope: string,
+): "search_service" | "search_task" | "search_job" | null {
+  if (currentScope === "jobs") {
+    if (isExplicitIntentSwitch(query, "search_service")) return "search_service";
+    if (isExplicitIntentSwitch(query, "search_task")) return "search_task";
+  }
+  if (currentScope === "services") {
+    if (isExplicitIntentSwitch(query, "search_job")) return "search_job";
+    if (isExplicitIntentSwitch(query, "search_task")) return "search_task";
+  }
+  if (currentScope === "tasks") {
+    if (isExplicitIntentSwitch(query, "search_job")) return "search_job";
+    if (isExplicitIntentSwitch(query, "search_service")) return "search_service";
+  }
+  return null;
+}
+
 // ─── DB-grounded suggestion generation ─────────────────────────────────────
 
 type RankedJobLike = {
