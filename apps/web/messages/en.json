@@ -389,7 +389,12 @@
       "attachLabel": "Attach resume (PDF)",
       "attachedLabel": "CV attached",
       "noCv": "No CV",
-      "postUploadMessage": "I've analyzed your resume. Based on your profile as a {jobTitle}, let me find you the best matching jobs."
+      "postUploadMessage": "I've analyzed your resume. Based on your profile as a {jobTitle}, let me find you the best matching jobs.",
+      "cta": {
+        "title": "Recommended action: attach your resume",
+        "description": "We found results, but matching becomes much more precise (skills, experience, priorities) once your resume is attached.",
+        "buttonLabel": "Attach my resume"
+      }
     },
     "intentSelect": {
       "placeholder": "Focus on...",

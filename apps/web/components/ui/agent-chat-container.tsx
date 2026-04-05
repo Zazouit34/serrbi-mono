@@ -42,11 +42,7 @@ type ChatMessage = {
   suggestionsForKey?: string;
   upgradeUrl?: string;
   suggestedIntentSwitch?: TabType;
-  resumeUploadCta?: {
-    title: string;
-    description: string;
-    buttonLabel: string;
-  };
+  showResumeUploadCta?: boolean;
   resumeInsight?: {
     score: number;
     skillGaps: string[];
@@ -332,14 +328,14 @@ export function AgentChatContainer({
                         )}
 
                         {/* ── Resume upload CTA ── */}
-                        {!message.results.isLoading && message.resumeUploadCta ? (
+                        {!message.results.isLoading && message.showResumeUploadCta ? (
                           <div className="mt-3 flex items-center gap-1.5 text-xs text-slate-700 md:mt-4 md:text-sm md:leading-6">
-                            <span>✨ {message.resumeUploadCta.title}</span>
+                            <span>✨ {t("resume.cta.title")}</span>
                             <button
                               onClick={openResumePicker}
                               className="font-medium text-slate-700 underline underline-offset-2 hover:text-slate-900 transition-colors md:text-sm"
                             >
-                              {message.resumeUploadCta.buttonLabel}
+                              {t("resume.cta.buttonLabel")}
                             </button>
                           </div>
                         ) : null}

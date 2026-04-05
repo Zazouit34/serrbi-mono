@@ -43,11 +43,7 @@ export type ChatMessage = {
   suggestionsForKey?: string;
   upgradeUrl?: string;
   suggestedIntentSwitch?: TabType;
-  resumeUploadCta?: {
-    title: string;
-    description: string;
-    buttonLabel: string;
-  };
+  showResumeUploadCta?: boolean;
   resumeInsight?: {
     score: number;
     skillGaps: string[];
@@ -90,11 +86,7 @@ type AgentResponse = {
     type: TabType;
     items: any[];
   };
-  resumeUploadCta?: {
-    title: string;
-    description: string;
-    buttonLabel: string;
-  };
+  showResumeUploadCta?: boolean;
   resumeInsight?: {
     score: number;
     skillGaps: string[];
@@ -200,7 +192,7 @@ function HeroSearchBarComponent({
         kind: m.kind,
         results: m.results ? { ...m.results, isLoading: false } : undefined,
         relatedPrompts: m.relatedPrompts,
-        resumeUploadCta: m.resumeUploadCta,
+        showResumeUploadCta: m.showResumeUploadCta,
       }));
 
   const isCreatingSessionRef = useRef(false);
@@ -846,7 +838,7 @@ function HeroSearchBarComponent({
                     thinking: false,
                     kind: "results" as const,
                     content: initialContent,
-                    resumeUploadCta: agent.resumeUploadCta,
+                    showResumeUploadCta: agent.showResumeUploadCta,
                     relatedPrompts: agent.relatedPrompts ?? [],
                     results: {
                       key: resultsKey,
@@ -874,7 +866,7 @@ function HeroSearchBarComponent({
                     thinking: false,
                     kind: "results" as const,
                     content: initialContent,
-                    resumeUploadCta: agent.resumeUploadCta,
+                    showResumeUploadCta: agent.showResumeUploadCta,
                     relatedPrompts: agent.relatedPrompts ?? [],
                     results: {
                       key: resultsKey,
@@ -949,7 +941,7 @@ function HeroSearchBarComponent({
                 thinking: false,
                 kind: "results" as const,
                 content: agent.assistantText?.trim() ?? "",
-                resumeUploadCta: agent.resumeUploadCta,
+                showResumeUploadCta: agent.showResumeUploadCta,
                 relatedPrompts: agent.relatedPrompts ?? [],
                 results: {
                   key: resultsKey,

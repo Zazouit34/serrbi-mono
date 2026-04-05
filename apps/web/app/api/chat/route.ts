@@ -11,6 +11,7 @@ import {
 import { jobSearchEngine } from "./agent/jobSearchEngine";
 import { serviceSearchEngine } from "./agent/serviceSearchEngine";
 import { rankJobsWithResumeMatch } from "./agent/scoreEngine";
+
 import {
   buildSuggestionsPrompt,
   buildPlanLimitPrompt,
@@ -61,11 +62,7 @@ type AgentResponse = {
     type: AgentIntent;
     items: any[];
   };
-  resumeUploadCta?: {
-    title: string;
-    description: string;
-    buttonLabel: string;
-  };
+  showResumeUploadCta?: boolean;
   resumeInsight?: {
     score: number;
     skillGaps: string[];
@@ -530,17 +527,8 @@ function evaluateConfidenceMode(
   return "weak";
 }
 
-function buildResumeUploadCta(): {
-  title: string;
-  description: string;
-  buttonLabel: string;
-} {
-  // i18n keys — frontend translates, never hardcode locale strings here
-  return {
-    title: "resume_cta_title",
-    description: "resume_cta_description",
-    buttonLabel: "resume_cta_button",
-  };
+function shouldShowResumeUploadCta(hasResumeEmbedding: boolean): boolean {
+  return !hasResumeEmbedding;
 }
 
 // ─── Rate limiting ────────────────────────────────────────────────────────────
@@ -900,7 +888,7 @@ export async function POST(req: Request) {
         searchQuery,
         assistantText,
         results: { type: "jobs", items: cards },
-        resumeUploadCta: hasResumeEmbedding ? undefined : buildResumeUploadCta(),
+        showResumeUploadCta: shouldShowResumeUploadCta(hasResumeEmbedding),
         relatedPrompts,
         debug: includeDebug
             ? {

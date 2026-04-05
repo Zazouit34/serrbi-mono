@@ -404,7 +404,12 @@
       "attachLabel": "Joindre un CV (PDF)",
       "attachedLabel": "CV actif",
       "noCv": "Sans CV",
-      "postUploadMessage": "J'ai analysé votre CV. Basé sur votre profil en tant que {jobTitle}, je vais vous trouver les meilleures offres correspondantes."
+      "postUploadMessage": "J'ai analysé votre CV. Basé sur votre profil en tant que {jobTitle}, je vais vous trouver les meilleures offres correspondantes.",
+      "cta": {
+        "title": "Action recommandée: ajoutez votre CV",
+        "description": "Nous avons des résultats, mais pour un matching plus précis (compétences, expérience, priorités), joignez votre CV maintenant.",
+        "buttonLabel": "Joindre mon CV"
+      }
     },
     "intentSelect": {
       "placeholder": "Se concentrer sur...",
