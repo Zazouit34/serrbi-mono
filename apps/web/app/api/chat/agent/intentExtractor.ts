@@ -54,6 +54,7 @@ export type AgentResponse = {
   type: IntentType;
   reply: string;
   intent_data: IntentData | null;
+  clarify_field?: "category" | null;
 };
 
 export type ResumeProfile = {
@@ -228,10 +229,12 @@ function safeParseResponse(text: string): AgentResponse | null {
       : null;
 
   if (type === "conversation") {
+    const clarify = obj.clarify_field === "category" ? "category" as const : null;
     return {
       type,
       reply: reply || "How can I help you today?",
       intent_data: null,
+      clarify_field: clarify,
     };
   }
 

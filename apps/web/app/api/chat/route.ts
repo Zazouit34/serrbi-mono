@@ -27,6 +27,7 @@ import {
   generateDbGroundedSuggestions,
   detectExplicitIntentOverride,
 } from "./agent/orchestrator";
+import { inferJobCategoryFromText } from "./agent/classifier";
 
 export const runtime = "nodejs";
 
@@ -858,16 +859,34 @@ export async function POST(req: Request) {
 
     // ── Conversation ──────────────────────────────────────────────────────────
     if (aiResult.type === "conversation") {
-      return NextResponse.json({
-        action: "chat",
-        intent: "jobs",
-        searchQuery: "",
-        assistantText: aiResult.reply || "How can I help you today?",
-        relatedPrompts: [],
-        debug: includeDebug
-          ? { stage: "conversation", extracted_intent: aiResult }
-          : undefined,
-      } satisfies AgentResponse);
+      if (
+        aiResult.clarify_field === "category" &&
+        resumeProfile?.job_title
+      ) {
+        const jobTitle = resumeProfile.job_title;
+        const topSkills = resumeProfile.skills?.slice(0, 5).join(", ") || "";
+        const category = inferJobCategoryFromText(jobTitle, resumeProfile.skills ?? []) ?? "Tech";
+        aiResult = {
+          type: "search_job",
+          reply: "",
+          intent_data: {
+            query: `${jobTitle} ${topSkills}`.trim(),
+            category,
+          } as JobIntentData,
+          clarify_field: null,
+        };
+      } else {
+        return NextResponse.json({
+          action: "chat",
+          intent: "jobs",
+          searchQuery: "",
+          assistantText: aiResult.reply || "How can I help you today?",
+          relatedPrompts: [],
+          debug: includeDebug
+            ? { stage: "conversation", extracted_intent: aiResult }
+            : undefined,
+        } satisfies AgentResponse);
+      }
     }
 
     if (aiResult.type === "search_job" && aiResult.intent_data) {

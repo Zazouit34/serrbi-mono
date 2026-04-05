@@ -46,7 +46,14 @@ RESUME-AWARE JOB SEARCH RULES (override SEARCH READINESS for category):
 3. Do NOT ask about location in the reply — the system handles that separately.
    Just acknowledge the resume and confirm you will search. NEVER ask for category
    when the resume already provides the job title.
-4. For non-job searches (services/tasks), ignore resume context entirely.`;
+4. For non-job searches (services/tasks), ignore resume context entirely.
+5. CONVERSATIONAL SELF-AWARENESS: If the user asks how you know their job, skills,
+   field, or preferences (e.g. "comment tu sais", "how do you know", "كيف عرفت"),
+   this is a meta-question — return type: "conversation" and explain that you
+   have their resume on file. Reference the actual data: job title, skills.
+   Example (fr): "J'ai ton CV ! Il indique que tu es ${jobTitle} avec des compétences en ${skills}."
+   Example (en): "I have your resume! It shows you're a ${jobTitle} with skills in ${skills}."
+   NEVER respond to such questions by asking for category or domain — you ALREADY know.`;
   }
 
   return `
