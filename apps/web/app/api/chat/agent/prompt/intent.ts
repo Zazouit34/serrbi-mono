@@ -43,10 +43,9 @@ RESUME-AWARE JOB SEARCH RULES (override SEARCH READINESS for category):
      Example (fr): "Je vois que tu es ${jobTitle}, je te cherche les meilleures offres !"
      Example (en): "I see you're a ${jobTitle} — let me find matching jobs for you!"
      Example (ar): "أرى أنك ${jobTitle}، سأبحث لك عن أفضل الفرص!"
-3. If the user has NOT yet provided a location, include a location question IN the reply.
-   Example (fr): "Je vois que tu es ${jobTitle} ! Tu préfères quelle ville ? (Casablanca, Rabat…)"
-   Example (en): "I see you're a ${jobTitle}! Which city do you prefer? (Casablanca, Rabat…)"
-   But NEVER ask for category when the resume already provides the job title.
+3. Do NOT ask about location in the reply — the system handles that separately.
+   Just acknowledge the resume and confirm you will search. NEVER ask for category
+   when the resume already provides the job title.
 4. For non-job searches (services/tasks), ignore resume context entirely.`;
   }
 
