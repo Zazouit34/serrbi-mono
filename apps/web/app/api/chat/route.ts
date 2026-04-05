@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma, SubscriptionStatus, type PrismaClient } from "@workspace/db";
 import { PLANS } from "@/lib/plans";
+import { trackAgentEvent } from "@/lib/agent/tracker";
 import {
   extractIntent,
   type JobIntentData,
@@ -17,11 +18,13 @@ import {
   buildPlanLimitPrompt,
   buildScopeMismatchPrompt,
   buildPostResultNarrativePrompt,
+  buildLocationClarifyPrompt,
 } from "./agent/prompt/intent";
 import {
   shouldBypassIntentLlm,
   checkJobSearchReadiness,
   checkScopeGuard,
+  generateDbGroundedSuggestions,
 } from "./agent/orchestrator";
 
 export const runtime = "nodejs";
@@ -204,6 +207,29 @@ function normalizeForIntent(text: string): string {
  * Prefers the LLM's own reply if it already wrote a clarification.
  * Falls back to a fresh LLM call, then a hardcoded string as last resort.
  */
+async function buildLocationClarifyMessage(
+  userMessage: string,
+): Promise<string> {
+  try {
+    return await callLLM(
+      [
+        { role: "system", content: buildLocationClarifyPrompt() },
+        { role: "user", content: userMessage },
+      ],
+      { temperature: 0.4, maxTokens: 80 },
+    );
+  } catch {
+    if (/[\u0600-\u06ff]/.test(userMessage)) {
+      return "في أي مدينة تفضل العمل؟ (الدار البيضاء، الرباط...) أو تفضل العمل عن بعد؟";
+    }
+    const lower = userMessage.toLowerCase();
+    if (["je", "un", "une", "des", "dans", "pour", "avec", "cherche"].some(w => lower.includes(w))) {
+      return "Dans quelle ville tu préfères travailler ? (Casablanca, Rabat...) Ou tu préfères le remote ou hybride ?";
+    }
+    return "Which city do you prefer? (Casablanca, Rabat...) Or do you prefer remote or hybrid?";
+  }
+}
+
 async function buildJobClarifyMessage(
   userMessage: string,
 ): Promise<string> {
@@ -368,6 +394,50 @@ async function generatePostResultNarrative(opts: {
     );
   } catch {
     return "";
+  }
+}
+
+async function localizeSuggestionLabels(opts: {
+  rawSuggestions: Array<{ label: string; query: string }>;
+  userQuery: string;
+  intent: string;
+}): Promise<string[]> {
+  if (opts.rawSuggestions.length === 0) return [];
+
+  const systemPrompt = `
+You convert structured suggestion data into short natural-language labels.
+Detect the language from the "userQuery" field and write ALL labels in that language.
+Each label must be under 8 words — a short phrase a user would naturally say.
+
+Input format: JSON array of { label: "type:value:category", query: string }
+label types:
+  "remote:Tech" → "Remote tech positions" / "Postes tech en remote" / "وظائف تقنية عن بعد"
+  "hybrid:Finance" → "Hybrid finance roles" / "Postes finance hybrides"
+  "city:Rabat:Tech" → "Tech jobs in Rabat" / "Emplois tech à Rabat" / "وظائف تقنية في الرباط"
+  "level:junior:Tech" → "Junior tech roles" / "Postes tech junior" / "وظائف تقنية جونيور"
+  "level:senior:Tech" → "Senior tech roles" / "Postes tech senior"
+
+Output: JSON array of strings (labels only, same order as input). Nothing else.
+`.trim();
+
+  try {
+    const raw = await callLLM(
+      [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: JSON.stringify({ userQuery: opts.userQuery, suggestions: opts.rawSuggestions }) },
+      ],
+      { temperature: 0.3, maxTokens: 100 },
+    );
+    const first = raw.indexOf("[");
+    const last = raw.lastIndexOf("]");
+    if (first === -1 || last === -1) throw new Error("No array");
+    const parsed = JSON.parse(raw.slice(first, last + 1));
+    if (Array.isArray(parsed) && parsed.every((s: unknown) => typeof s === "string")) {
+      return parsed.slice(0, 3);
+    }
+    throw new Error("Invalid format");
+  } catch {
+    return opts.rawSuggestions.map(s => s.query);
   }
 }
 
@@ -573,33 +643,6 @@ async function incrementDailyUsage(
   });
 }
 
-// ─── Event tracking ───────────────────────────────────────────────────────────
-
-async function trackAgentEvent(args: {
-  userId?: string | null;
-  sessionId: string;
-  name: "AGENT_INTENT_TRIGGERED" | "AGENT_SEARCH_RESULTS_RETURNED";
-  intent: "conversation" | "search_job" | "search_service" | "search_task";
-  data?: Record<string, unknown>;
-}): Promise<void> {
-  if (!args.userId) return;
-  try {
-    const db = prisma as any;
-    await db.event.create({
-      data: {
-        userId: args.userId,
-        sessionId: args.sessionId,
-        name: args.name,
-        intent: args.intent,
-        source: "agent_chat",
-        data: args.data ?? {},
-      },
-    });
-  } catch (error) {
-    console.error("Failed to track agent event", error);
-  }
-}
-
 function logChatDebug(step: string, payload: unknown): void {
   console.log(`[chat-debug] ${step}`, payload);
 }
@@ -668,6 +711,7 @@ export async function POST(req: Request) {
             resumeEmbedding: true,
             autoApplyKeywords: true,
             resumeUrl: true,
+            resumeJobTitle: true,
           },
         })
       : null;
@@ -678,7 +722,7 @@ export async function POST(req: Request) {
 
     const resumeProfile = hasResumeEmbedding
       ? {
-          job_title: null,
+          job_title: (userResumeData?.resumeJobTitle as string | undefined) ?? null,
           skills:
             (userResumeData?.autoApplyKeywords as string[] | undefined) ?? [],
           experience_level: null,
@@ -807,9 +851,19 @@ export async function POST(req: Request) {
     if (aiResult.type === "search_job" && aiResult.intent_data) {
       const intentData = aiResult.intent_data as JobIntentData;
 
+      console.log("[readiness-debug]", {
+        category: intentData.category,
+        city: intentData.city,
+        locationRequirement: intentData.locationRequirement,
+        stateAbbreviation: intentData.stateAbbreviation,
+        query: intentData.query,
+      });
+
       const readiness = checkJobSearchReadiness(intentData);
       if (!readiness.ready) {
-        const clarifyText = await buildJobClarifyMessage(lastUser);
+        const clarifyText = readiness.missingField === "location"
+          ? await buildLocationClarifyMessage(lastUser)
+          : await buildJobClarifyMessage(lastUser);
         return NextResponse.json({
           action: "chat",
           intent: "jobs",
@@ -851,12 +905,21 @@ export async function POST(req: Request) {
           })
         : aiResult.reply?.trim() ?? "";
 
-      const relatedPrompts = await generateSmartSuggestions({
-        intent: "jobs",
-        query: searchQuery,
-        extractedData: intentData,
-        items: cards,
+      const rawSuggestions = generateDbGroundedSuggestions({
+        topResults: cards,
+        suggestionPool: searchResult.suggestionPool,
+        intentData,
       });
+
+      const localizedLabels = await localizeSuggestionLabels({
+        rawSuggestions,
+        userQuery: searchQuery,
+        intent: "jobs",
+      });
+
+      const relatedPrompts = localizedLabels.length > 0
+        ? localizedLabels
+        : rawSuggestions.map(s => s.query);
 
       await trackAgentEvent({
         userId,

@@ -194,7 +194,9 @@ export const authRouter = router({
         role: true,
         image: true,
         resumeUrl: true,
+        resumeJobTitle: true,
         resumeEmbedding: true,
+        autoApplyKeywords: true,
       },
     });
 
@@ -273,7 +275,10 @@ export const authRouter = router({
 
       await (db.user.update as any)({
         where: { id: user.id },
-        data: { resumeEmbedding: embedding },
+        data: {
+          resumeEmbedding: embedding,
+          resumeJobTitle: profile.job_title ?? null,
+        },
       });
 
       return {

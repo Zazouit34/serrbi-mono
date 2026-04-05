@@ -3,7 +3,7 @@
 import { useRef, type ChangeEvent, type RefObject } from "react";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
-import { FileCheck2, Search, X } from "lucide-react";
+import { ArrowUpRight, FileCheck2, Search, X } from "lucide-react";
 import { FiPaperclip } from "react-icons/fi";
 import { ChatResumeInsight } from "@/components/ui/chat-resume-insight";
 import { Progress } from "@workspace/ui/components/progress";
@@ -105,16 +105,12 @@ function trackCardClick(opts: {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      name: "CARD_CLICKED",
-      intent: `search_${opts.cardType}`,
       sessionId: opts.sessionId,
-      data: {
-        cardId: opts.cardId,
-        cardPosition: opts.cardPosition,
-        cardType: opts.cardType,
-        searchQuery: opts.searchQuery,
-        matchScore: opts.matchScore,
-      },
+      cardId: opts.cardId,
+      cardPosition: opts.cardPosition,
+      cardType: opts.cardType,
+      searchQuery: opts.searchQuery,
+      matchScore: opts.matchScore,
     }),
   }).catch(() => {});
 }
@@ -350,9 +346,7 @@ export function AgentChatContainer({
                                 onClick={() => onSuggestionSelect(prompt)}
                                 className="group flex w-full items-start gap-2.5 rounded-lg px-1 py-1.5 text-left transition-colors hover:bg-slate-50 md:py-2"
                               >
-                                <span className="mt-px shrink-0 text-slate-300 transition-colors group-hover:text-slate-500 select-none">
-                                  ↗
-                                </span>
+                                <ArrowUpRight className="mt-px h-3.5 w-3.5 shrink-0 text-slate-300 transition-colors group-hover:text-slate-500" />
                                 <span className="text-xs leading-5 text-slate-600 underline underline-offset-2 decoration-slate-200 transition-colors group-hover:text-slate-900 group-hover:decoration-slate-400 md:text-sm md:leading-6">
                                   {prompt}
                                 </span>

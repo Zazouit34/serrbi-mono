@@ -99,31 +99,6 @@ type AgentResponse = {
   upgradeUrl?: string;
 };
 
-type ResultsSummaryResponse = {
-  summary: string;
-};
-
-type ConfidenceMode = "strong" | "moderate" | "weak";
-
-function buildResultsSummary(params: {
-  type: TabType;
-  items: any[];
-  query: string;
-}): string {
-  const { type, items, query } = params;
-  if (!items.length) return "";
-  const first = items[0];
-  if (type === "jobs") {
-    return [
-      `## Results for "${query}"`,
-      `- **Top match:** ${first?.title ?? "Top result"}${first?.city ? ` (${first.city})` : ""}.`,
-    ].join("\n");
-  }
-  if (type === "services") {
-    return `## Results for "${query}"\n- **Top match:** ${first?.title ?? "Top result"}.`;
-  }
-  return `## Tasks for "${query}"\n- **Top option:** ${first?.title ?? "Top result"}.`;
-}
 
 function HeroSearchBarComponent({
   onPreviewChange,
@@ -246,42 +221,36 @@ function HeroSearchBarComponent({
       setHasResumeAttached(false);
       return;
     }
-    const hasSavedResume = Boolean((userDataQuery.data as any)?.user?.resumeUrl);
+    const userData = (userDataQuery.data as any)?.user;
+    const hasSavedResume = Boolean(userData?.resumeUrl);
     if (hasSavedResume) {
       setHasResumeAttached(true);
       if (!hasInitial && !hasShownInitialInsightRef.current && messages.length === 0) {
         hasShownInitialInsightRef.current = true;
-        void (async () => {
-          try {
-            const resumeText = (userDataQuery.data as any)?.user?.resumeText || "";
-            if (!resumeText) return;
-            const res = await fetch("/api/chat/resume-insight", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ text: resumeText, locale }),
-            });
-            if (res.ok) {
-              const data = await res.json();
-              setMessages((prev) => [
-                ...prev,
-                {
-                  id: nextMessageIdRef.current++,
-                  role: "assistant" as const,
-                  kind: "resume-insight" as const,
-                  resumeInsight: {
-                    score: data.score,
-                    skillGaps: data.skillGaps || [],
-                    improvements: data.improvements || [],
-                    suggestedRoles: data.suggestedRoles || [],
-                  },
-                } as ChatMessage,
-              ]);
-              setChatExpanded(true);
-            }
-          } catch (error) {
-            console.error("Failed to fetch resume insight:", error);
+        const resumeJobTitle = (userData?.resumeJobTitle as string) || null;
+        const resumeSkills = (userData?.autoApplyKeywords as string[]) || [];
+        if (resumeJobTitle || resumeSkills.length > 0) {
+          const topSkills = resumeSkills.slice(0, 3).join(", ");
+          const greeting = resumeJobTitle
+            ? t("resume.postUploadMessage").replace("{jobTitle}", resumeJobTitle)
+            : t("resume.postUploadMessage").replace("{jobTitle}", topSkills || "your profile");
+          const searchPrompt = resumeJobTitle ?? resumeSkills.slice(0, 3).join(", ");
+          if (!pinnedIntent) {
+            setPinnedIntent("jobs");
+            setActiveTab("jobs");
           }
-        })();
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: nextMessageIdRef.current++,
+              role: "assistant" as const,
+              kind: "suggestions" as const,
+              content: greeting,
+              relatedPrompts: searchPrompt ? [searchPrompt] : [],
+            } as ChatMessage,
+          ]);
+          setChatExpanded(true);
+        }
       }
       return;
     }
@@ -426,86 +395,6 @@ function HeroSearchBarComponent({
     return `${intent} category: ${raw}${humanized && humanized !== raw ? ` (${humanized})` : ""}`;
   };
 
-  const callResultsSummary = async (opts: {
-    locale: string;
-    intent: AgentIntent;
-    query: string;
-    items: any[];
-  }): Promise<string> => {
-    const toScore = (value: unknown): number | null => {
-      if (typeof value === "number" && Number.isFinite(value)) return value;
-      if (typeof value === "string" && value.trim()) {
-        const parsed = Number(value);
-        return Number.isFinite(parsed) ? parsed : null;
-      }
-      return null;
-    };
-
-    const compactItems = opts.items.slice(0, SEARCH_PAGE_SIZE).map((item: any) => {
-      const matchScore =
-        toScore(item?.matchScore) ??
-        toScore(item?.matchPercent) ??
-        (typeof item?.finalScore === "number" ? Math.round(item.finalScore * 100) : null) ??
-        (typeof item?._score === "number" ? Math.round(item._score * 100) : null);
-      if (opts.intent === "jobs") {
-        return {
-          title: item?.title ?? null,
-          companyName: item?.companyName ?? null,
-          city: item?.city ?? null,
-          experienceLevel: item?.experienceLevel ?? null,
-          locationRequirement: item?.locationRequirement ?? null,
-          wage: item?.wage ?? null,
-          type: item?.type ?? null,
-          matchScore,
-        };
-      }
-      if (opts.intent === "services") {
-        return {
-          title: item?.title ?? null,
-          serviceCategory: item?.serviceCategory ?? null,
-          city: item?.city ?? null,
-          price: item?.price ?? null,
-          type: item?.type ?? null,
-          averageRating: item?.averageRating ?? null,
-          numberOfReviews: item?.numberOfReviews ?? null,
-          matchScore,
-        };
-      }
-      return {
-        title: item?.title ?? null,
-        category: item?.category ?? null,
-        city: item?.city ?? null,
-        budget: item?.budget ?? null,
-        status: item?.status ?? null,
-        matchScore,
-      };
-    });
-
-    const topScore = toScore(compactItems[0]?.matchScore) ?? 0;
-    const secondScore = toScore(compactItems[1]?.matchScore) ?? 0;
-    const scoreGap = topScore - secondScore;
-    const confidenceMode: ConfidenceMode =
-      topScore >= 75 && scoreGap >= 10 ? "strong" : topScore >= 55 ? "moderate" : "weak";
-
-    const res = await fetch("/api/chat/results-summary", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        locale: opts.locale,
-        intent: opts.intent,
-        query: opts.query,
-        confidenceMode,
-        items: compactItems,
-      }),
-    });
-    if (!res.ok) {
-      const text = await res.text().catch(() => "");
-      throw new Error(text || `Results summary API error ${res.status}`);
-    }
-    const json = (await res.json()) as ResultsSummaryResponse;
-    return typeof json?.summary === "string" ? json.summary.trim() : "";
-  };
-
   const handlePromptSelection = (prompt: string, upgradeUrl?: string, intentSwitch?: TabType) => {
     const normalized = prompt.trim().toLowerCase();
     if (normalized === "plans" || normalized === "plan" || normalized === "pricing") {
@@ -624,69 +513,6 @@ function HeroSearchBarComponent({
       : activeTab === "services"
         ? searchServicesQuery.isFetching
         : searchTasksQuery.isFetching;
-
-  const topSearchItems = useMemo(() => {
-    if (!hasSearched || !submittedQuery.trim()) return [];
-    if (activeTab === "jobs") return (searchJobsQuery.data?.items ?? []).slice(0, SEARCH_PAGE_SIZE);
-    if (activeTab === "services") return (searchServicesQuery.data?.items ?? []).slice(0, SEARCH_PAGE_SIZE);
-    return (searchTasksQuery.data?.items ?? []).slice(0, SEARCH_PAGE_SIZE);
-  }, [hasSearched, submittedQuery, activeTab, searchJobsQuery.data?.items, searchServicesQuery.data?.items, searchTasksQuery.data?.items]);
-
-  const topSearchLoading = useMemo(() => {
-    if (!hasSearched || !submittedQuery.trim()) return false;
-    if (activeTab === "jobs") return searchJobsQuery.isFetching;
-    if (activeTab === "services") return searchServicesQuery.isFetching;
-    return searchTasksQuery.isFetching;
-  }, [hasSearched, submittedQuery, activeTab, searchJobsQuery.isFetching, searchServicesQuery.isFetching, searchTasksQuery.isFetching]);
-
-  const submittedResultsKey = useMemo(() => {
-    if (!submittedQuery.trim()) return "";
-    return `${activeTab}|${submittedQuery.trim()}`;
-  }, [activeTab, submittedQuery]);
-
-  // Summary effect — fires for the useEffect (non-directResults) path
-  useEffect(() => {
-    if (!hasSearched || !submittedQuery.trim() || topSearchLoading) return;
-    let cancelled = false;
-
-    void (async () => {
-      try {
-        const rawSummary = await callResultsSummary({
-          locale,
-          intent: activeTab,
-          query: submittedQuery,
-          items: topSearchItems,
-        });
-        if (cancelled || !rawSummary) return;
-
-        const summary = hasResumeAttached && activeTab === "jobs"
-          ? `📈 Based on your resume\n\n${rawSummary}`
-          : rawSummary;
-
-        setMessages((prev) =>
-          prev.map((msg) => {
-            if (!msg.results) return msg;
-            if (msg.results.key !== submittedResultsKey) return msg;
-            return { ...msg, content: summary };
-          }),
-        );
-      } catch {
-        const fallback = buildResultsSummary({ type: activeTab, items: topSearchItems, query: submittedQuery });
-        if (cancelled || !fallback) return;
-        setMessages((prev) =>
-          prev.map((msg) => {
-            if (!msg.results) return msg;
-            if (msg.results.key !== submittedResultsKey) return msg;
-            return { ...msg, content: fallback };
-          }),
-        );
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [hasSearched, submittedQuery, submittedResultsKey, topSearchLoading, topSearchItems, locale, activeTab, hasResumeAttached]);
 
   const handleSearch = async (overrideQuery?: string, overrideIntent?: TabType) => {
     const effectiveQuery = (overrideQuery ?? chatInput).trim();
@@ -824,9 +650,6 @@ function HeroSearchBarComponent({
 
         const cards = directResults.items.slice(0, SEARCH_PAGE_SIZE);
 
-        // ── FIX: inject agent's assistantText as the message content immediately
-        // Then fire the results-summary API manually since the useEffect path
-        // won't run (hasSearched is false for directResults)
         const initialContent = agent.assistantText?.trim() ?? "";
 
         if (agent.resumeInsight) {
@@ -879,48 +702,6 @@ function HeroSearchBarComponent({
                 : m,
             ),
           );
-        }
-
-        // ── FIX: fire results-summary manually for directResults path ──────────
-        // The useEffect summary won't fire because hasSearched=false.
-        // We call it here and append the summary to the message content.
-        if (cards.length > 0) {
-          void callResultsSummary({
-            locale,
-            intent: tab,
-            query: q,
-            items: cards,
-          })
-            .then((summary) => {
-              if (!summary) return;
-              const finalContent = hasResumeAttached && tab === "jobs"
-                ? `📈 Based on your resume\n\n${summary}`
-                : summary;
-              setMessages((prev) =>
-                prev.map((msg) => {
-                  if (msg.id !== assistantMessageId) return msg;
-                  // Append summary after the assistantText intro
-                  const existing = msg.content ?? "";
-                  const combined = existing
-                    ? `${existing}\n\n${finalContent}`
-                    : finalContent;
-                  return { ...msg, content: combined };
-                }),
-              );
-            })
-            .catch(() => {
-              // Fallback inline summary
-              const fallback = buildResultsSummary({ type: tab, items: cards, query: q });
-              if (!fallback) return;
-              setMessages((prev) =>
-                prev.map((msg) => {
-                  if (msg.id !== assistantMessageId) return msg;
-                  const existing = msg.content ?? "";
-                  const combined = existing ? `${existing}\n\n${fallback}` : fallback;
-                  return { ...msg, content: combined };
-                }),
-              );
-            });
         }
 
         return;
@@ -1032,6 +813,7 @@ function HeroSearchBarComponent({
             inSession={inSession}
             userInitial={session?.user?.name?.slice(0, 1)?.toUpperCase() || "U"}
             chatInputRef={chatInputRef}
+            agentSessionId={getOrCreateAgentSessionId()}
             labels={{
               searching: t("searching"),
               thinking: t("thinking"),

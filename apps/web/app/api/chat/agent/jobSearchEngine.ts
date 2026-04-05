@@ -40,6 +40,7 @@ export type JobSearchResult = {
   query: string;
   filtersApplied: Record<string, unknown>;
   topResults: RankedJob[];
+  suggestionPool: RankedJob[];
 };
 
 function parseEnumValue<TEnum extends Record<string, string>>(
@@ -262,7 +263,8 @@ export async function jobSearchEngine(db: PrismaClient, intentData: JobIntentDat
         type,
         city: intentData.city ?? null,
       },
-      topResults: [], // No published jobs available in DB.
+      topResults: [],
+      suggestionPool: [],
     };
   }
 
@@ -304,5 +306,6 @@ export async function jobSearchEngine(db: PrismaClient, intentData: JobIntentDat
       fallbackApplied,
     },
     topResults: ranked.slice(0, 30),
+    suggestionPool: ranked.slice(3, 10),
   };
 }
