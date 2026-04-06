@@ -1,10 +1,12 @@
-import type { JobIntentData } from "./intentExtractor";
+import type { JobIntentData, ServiceIntentData } from "./intentExtractor";
 import {
   inferJobCategoryFromText,
+  inferServiceCategoryFromText,
   isLikelySearchRequest,
   isGreetingOrSmallTalk,
   isExplicitIntentSwitch,
 } from "./classifier";
+import { PROXIMITY_SIGNALS } from "./keywords";
 
 export type SuggestionPrompt = {
   label: string;
@@ -24,11 +26,19 @@ export function checkJobSearchReadiness(intentData: JobIntentData): ReadinessRes
     Boolean(intentData.category) ||
     inferJobCategoryFromText(intentData.query, intentData.skills ?? []) !== null;
 
-  const hasLocation = !!(
+  // Check explicit location fields
+  const hasExplicitLocation = !!(
     (intentData.city?.trim() || null) ??
     (intentData.locationRequirement?.trim() || null) ??
     (intentData.stateAbbreviation?.trim() || null)
   );
+
+  // Check for proximity signal in the query ("near me", "في موقعي", etc.)
+  const hasProximitySignal = PROXIMITY_SIGNALS.some(signal =>
+    intentData.query?.toLowerCase().includes(signal.toLowerCase())
+  );
+
+  const hasLocation = hasExplicitLocation || hasProximitySignal;
 
   if (!hasCategory && !hasLocation) {
     return { ready: false, missingField: "both" };
@@ -40,6 +50,27 @@ export function checkJobSearchReadiness(intentData: JobIntentData): ReadinessRes
     return { ready: false, missingField: "location" };
   }
 
+  return { ready: true };
+}
+
+export function checkServiceSearchReadiness(intentData: ServiceIntentData): 
+  | { ready: true }
+  | { ready: false; reason: "too_vague" } {
+  
+  const query = intentData.query?.trim() ?? "";
+  
+  // If serviceCategory was extracted → always ready
+  if (intentData.serviceCategory) return { ready: true };
+  
+  // If query is very short and generic with no category keyword → ask for type
+  const inferredCategory = inferServiceCategoryFromText(query);
+  if (inferredCategory) return { ready: true };
+  
+  // Query is too vague — "أفضل خدمة", "best service", "un service"
+  const isTooVague = query.split(" ").filter(Boolean).length <= 3 && !inferredCategory;
+  if (isTooVague) return { ready: false, reason: "too_vague" };
+  
+  // Default: proceed — longer queries have enough semantic content for embedding search
   return { ready: true };
 }
 

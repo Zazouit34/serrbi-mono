@@ -33,20 +33,34 @@ The user has uploaded their resume. This is verified data — treat it as fact.
 
 RESUME-AWARE JOB SEARCH RULES (override SEARCH READINESS for category):
 1. When the user asks for a job WITHOUT specifying a category/domain
-   (e.g. "je cherche un emploi", "find me a job", "I need work", "بغيت خدمة"),
-   AND the resume has a job_title → the category IS known. Do NOT ask for category.
-2. In this case return:
+   AND the resume has a job_title → category IS known. Do NOT ask for category.
+
+2. In this case:
    - type: "search_job"
-   - intent_data.query: built from the resume job title and top skills
-   - intent_data.category: inferred from the resume job title (e.g. "Full Stack Developer" → "Tech")
-   - reply: a short, natural sentence acknowledging the resume. Mention the job title.
-     Example (fr): "Je vois que tu es ${jobTitle}, je te cherche les meilleures offres !"
-     Example (en): "I see you're a ${jobTitle} — let me find matching jobs for you!"
-     Example (ar): "أرى أنك ${jobTitle}، سأبحث لك عن أفضل الفرص!"
-3. Do NOT ask about location in the reply — the system handles that separately.
-   Just acknowledge the resume and confirm you will search. NEVER ask for category
-   when the resume already provides the job title.
-4. For non-job searches (services/tasks), ignore resume context entirely.
+   - intent_data.query: built from resume job title and top skills (bilingual)
+   - intent_data.category: inferred from resume job title
+   - reply: ONE short sentence ONLY. Acknowledge the resume and confirm searching.
+     Do NOT ask about location in the reply. The system asks about location separately.
+     
+     CORRECT reply examples:
+     (fr): "J'ai ton CV — je te cherche les meilleures offres de ${jobTitle} !"
+     (en): "Got your resume — looking for ${jobTitle} positions for you!"
+     (ar): "عندي سيرتك الذاتية — أبحث لك عن وظائف ${jobTitle} الآن!"
+     
+     WRONG reply (do NOT combine with location question):
+     "J'ai ton CV ! Je te cherche... Préfères-tu travailler à Casablanca ou en remote ?"
+     ← This is wrong because it mixes acknowledgment with a location question.
+        The location question comes in a SEPARATE turn handled by the system.
+
+3. Do NOT ask about location, city, or work mode in the reply when resume is present.
+   The readiness check handles location separately after category is confirmed.
+
+4. SPECIAL CASE — User explicitly mentions their resume ("tu as mon resume", "j'ai envoyé mon CV",
+   "you have my resume", "عندك سيرتي"):
+   This is NOT a greeting — it is a reminder that they have a resume.
+   Treat it as implicitly requesting a job search using resume data.
+   Return type: "search_job" with resume-based intent_data and an acknowledging reply.
+   NEVER return type: "conversation" for this pattern.
 5. CONVERSATIONAL SELF-AWARENESS: If the user asks how you know their job, skills,
    field, or preferences (e.g. "comment tu sais", "how do you know", "كيف عرفت"),
    this is a meta-question — return type: "conversation" and explain that you
@@ -223,21 +237,6 @@ Example output for query "وظيفة تقنية":
 
 Example output for query "plombier Rabat":
 ["Électricien disponible Rabat", "Plombier prix abordable", "Réparation fuite eau urgence"]
-`.trim();
-}
-
-export function buildLocationClarifyPrompt(): string {
-  return `
-You are a helpful marketplace assistant.
-The user wants a job and you already know their field/domain, but you do not know
-their preferred location yet.
-
-Ask them naturally in their language TWO things:
-1. Which city they prefer (give 2 examples: Casablanca, Rabat)
-2. Or if they have a work mode preference (remote, hybrid, on-site / présentiel)
-
-Keep it under 2 sentences. Sound like a helpful friend, not a form.
-Return only the message text — no JSON, no preamble.
 `.trim();
 }
 

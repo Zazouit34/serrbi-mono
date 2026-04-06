@@ -586,8 +586,18 @@ function HeroSearchBarComponent({
       }
 
       // ── Search result ───────────────────────────────────────────────────────
-      const tab: TabType = overrideIntent ?? pinnedIntent ?? agent.intent;
-      if (!pinnedIntent && !overrideIntent) {
+      // When the backend returns a different intent than the current pinnedScope,
+      // it means an explicit switch was approved — use the agent's intent.
+      // Only keep pinnedIntent when agent.intent matches it (normal same-scope search).
+      const tab: TabType =
+        overrideIntent ??
+        (agent.intent !== pinnedIntent && agent.action === "search" ? agent.intent : null) ??
+        pinnedIntent ??
+        agent.intent;
+
+      // Always sync pinnedIntent to the actual search type that ran
+      // This updates the badge and scope for future messages
+      if (tab !== pinnedIntent) {
         setPinnedIntent(tab);
         setActiveTab(tab);
       }
@@ -604,7 +614,8 @@ function HeroSearchBarComponent({
         return;
       }
 
-      const resultsKey = `${tab}|${q}`;
+      const resultType = agent.results?.type ?? tab;
+      const resultsKey = `${resultType}|${q}`;
       const directResults =
         agent.results &&
         Array.isArray(agent.results.items) &&
@@ -637,7 +648,7 @@ function HeroSearchBarComponent({
                     results: {
                       key: resultsKey,
                       query: q,
-                      type: tab,
+                      type: resultType,
                       items: cards,
                       isLoading: false,
                     },
@@ -665,7 +676,7 @@ function HeroSearchBarComponent({
                     results: {
                       key: resultsKey,
                       query: q,
-                      type: tab,
+                      type: resultType,
                       items: cards,
                       isLoading: false,
                     },
@@ -698,7 +709,7 @@ function HeroSearchBarComponent({
                 results: {
                   key: resultsKey,
                   query: q,
-                  type: tab,
+                  type: resultType,
                   items: [],
                   isLoading: true,
                 },

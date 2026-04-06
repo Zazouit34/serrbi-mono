@@ -63,6 +63,15 @@ export function classifyTurnIntent(text: string): "chat" | "search" {
 
   if (searchScore < 2) chatScore += 1;
 
+  // Check if the query contains a job or service category keyword
+  // Single professional terms ("ميكانيكي", "graphic designer", "plumber") are searches
+  const isJobCategoryKeyword = inferJobCategoryFromText(normalized) !== null;
+  const isServiceCategoryKeyword = inferServiceCategoryFromText(normalized) !== null;
+
+  if (isJobCategoryKeyword || isServiceCategoryKeyword) {
+    searchScore += 3; // strong signal — professional keyword always means search
+  }
+
   return searchScore >= chatScore + 1 ? "search" : "chat";
 }
 

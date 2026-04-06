@@ -1,4 +1,5 @@
 import { buildIntentExtractorPrompt } from "./prompt/intent";
+import { inferServiceCategoryFromText } from "./classifier";
 
 type ChatRole = "system" | "user" | "assistant";
 
@@ -316,7 +317,9 @@ function fallbackExtractor(input: ExtractIntentInput): AgentResponse {
     return { type: "search_task", reply: "", intent_data: { query: q } };
   }
 
-  if (/(service|services|plumber|lawyer|doctor|electrician|خدمة|خدمات)/i.test(lowered)) {
+  // Use inferServiceCategoryFromText which has comprehensive keywords
+  const inferredServiceCategory = inferServiceCategoryFromText(q);
+  if (inferredServiceCategory) {
     return { type: "search_service", reply: "", intent_data: { query: q } };
   }
   if (/(task|tasks|mission|مهمة|مهام)/i.test(lowered)) {

@@ -18,11 +18,11 @@ import {
   buildPlanLimitPrompt,
   buildScopeMismatchPrompt,
   buildPostResultNarrativePrompt,
-  buildLocationClarifyPrompt,
 } from "./agent/prompt/intent";
 import {
   shouldBypassIntentLlm,
   checkJobSearchReadiness,
+  checkServiceSearchReadiness,
   checkScopeGuard,
   generateDbGroundedSuggestions,
   detectExplicitIntentOverride,
@@ -209,26 +209,59 @@ function normalizeForIntent(text: string): string {
  * Prefers the LLM's own reply if it already wrote a clarification.
  * Falls back to a fresh LLM call, then a hardcoded string as last resort.
  */
-async function buildLocationClarifyMessage(
-  userMessage: string,
-): Promise<string> {
+async function buildSmartClarifyMessage(opts: {
+  userMessage: string;
+  intentData: JobIntentData;
+  missingField: "category" | "location" | "both";
+  existingReply?: string;
+}): Promise<string> {
+  // If LLM already wrote a good clarification in its reply, use it
+  if (opts.existingReply?.trim()) return opts.existingReply.trim();
+
+  const { intentData, missingField, userMessage } = opts;
+
+  // Build context for the LLM so it can write a targeted question
+  const knownContext = [
+    intentData.category ? `domain: ${intentData.category}` : null,
+    intentData.city ? `city: ${intentData.city}` : null,
+    intentData.locationRequirement ? `work mode: ${intentData.locationRequirement}` : null,
+    intentData.experienceLevel ? `level: ${intentData.experienceLevel}` : null,
+    intentData.query ? `query: "${intentData.query}"` : null,
+  ]
+    .filter(Boolean)
+    .join(", ");
+
+  const systemPrompt = `You are a helpful marketplace assistant in a chat.
+The user wants a job. You already know some context: ${knownContext || "nothing yet"}.
+You need to ask for: ${missingField === "both" ? "their domain AND preferred location" : missingField === "category" ? "their domain or field" : "their preferred location (city or work mode)"}.
+
+Rules:
+- Detect the language from the user's message and write in that language
+- Ask ONLY for what is missing — never ask for something already known
+- If asking for location: mention city examples AND remote/hybrid as options — but only if work mode is also unknown
+- If asking for location AND city is already known: ask only about work mode (remote/hybrid/on-site)
+- If asking for location AND work mode is already known: ask only about which city
+- Keep it under 2 sentences. Sound like a curious helpful friend.
+- Do NOT use bullet points or lists — one flowing question only
+- Return only the question text, nothing else`;
+
   try {
     return await callLLM(
       [
-        { role: "system", content: buildLocationClarifyPrompt() },
+        { role: "system", content: systemPrompt },
         { role: "user", content: userMessage },
       ],
       { temperature: 0.4, maxTokens: 80 },
     );
   } catch {
-    if (/[\u0600-\u06ff]/.test(userMessage)) {
-      return "في أي مدينة تفضل العمل؟ (الدار البيضاء، الرباط...) أو تفضل العمل عن بعد؟";
+    // Minimal safe fallback — no language detection, just a neutral question
+    if (missingField === "category") {
+      return "What field are you looking for? (Tech, Finance, Health, Hospitality...)";
     }
-    const lower = userMessage.toLowerCase();
-    if (["je", "un", "une", "des", "dans", "pour", "avec", "cherche"].some(w => lower.includes(w))) {
-      return "Dans quelle ville tu préfères travailler ? (Casablanca, Rabat...) Ou tu préfères le remote ou hybride ?";
+    if (missingField === "location") {
+      return "Which city do you prefer, or are you open to remote?";
     }
-    return "Which city do you prefer? (Casablanca, Rabat...) Or do you prefer remote or hybrid?";
+    return "What field and location are you looking for?";
   }
 }
 
@@ -722,7 +755,13 @@ export async function POST(req: Request) {
       Array.isArray(userResumeData?.resumeEmbedding) &&
       userResumeData.resumeEmbedding.length > 0;
 
-    const resumeProfile = hasResumeEmbedding
+    const hasAnyResumeData = !!(
+      userResumeData?.resumeUrl ||
+      userResumeData?.resumeJobTitle ||
+      (Array.isArray(userResumeData?.autoApplyKeywords) && userResumeData.autoApplyKeywords.length > 0)
+    );
+
+    const resumeProfile = hasAnyResumeData
       ? {
           job_title: (userResumeData?.resumeJobTitle as string | undefined) ?? null,
           skills:
@@ -730,6 +769,13 @@ export async function POST(req: Request) {
           experience_level: null,
         }
       : null;
+
+    console.log("[resume-debug]", {
+      hasResumeEmbedding,
+      resumeJobTitle: userResumeData?.resumeJobTitle,
+      autoApplyKeywords: userResumeData?.autoApplyKeywords,
+      resumeProfilePassed: resumeProfile,
+    });
 
     const scope = body.context?.scope;
     const quickQuery = (lastUser || "").trim();
@@ -745,10 +791,12 @@ export async function POST(req: Request) {
         return (
           (m.role === "user" || m.role === "assistant") &&
           typeof m.content === "string" &&
-          m.content.trim().length > 0
+          m.content.trim().length > 0 &&
+          // Filter out thinking/loading placeholder messages
+          m.content.trim().length > 3
         );
       })
-      .slice(-4);
+      .slice(-8);
 
     let aiResult = bypassLlm
       ? scope === "services"
@@ -805,6 +853,53 @@ export async function POST(req: Request) {
 
     const pinnedScope = body.context?.scope;
 
+    // ── Resume Reference Pattern ──────────────────────────────────────────────
+    // Detect if user is explicitly referencing their resume
+    const resumeReferencePatterns = [
+      /tu as mon (cv|resume|curricul)/i,
+      /you have my (cv|resume)/i,
+      /j'ai envoy[ée] mon (cv|resume)/i,
+      /عندك سيرت/,
+      /لديك سيرت/,
+      /عندي سيرة/,
+    ];
+
+    const isResumeReference =
+      resumeReferencePatterns.some(p => p.test(quickQuery)) && hasAnyResumeData;
+
+    if (isResumeReference && resumeProfile?.job_title) {
+      const category = inferJobCategoryFromText(
+        resumeProfile.job_title,
+        resumeProfile.skills ?? [],
+      ) ?? "Tech";
+      
+      const ackText = await callLLM(
+        [
+          {
+            role: "system",
+            content: `The user is reminding you they have a resume on file. 
+You have their profile: job title "${resumeProfile.job_title}", 
+skills: ${(resumeProfile.skills ?? []).slice(0, 5).join(", ")}.
+Write ONE short, warm sentence in the user's language acknowledging you have their resume
+and that you're about to search based on their profile.
+Keep it under 12 words. No questions. Return only the message text.`,
+          },
+          { role: "user", content: quickQuery },
+        ],
+        { temperature: 0.4, maxTokens: 60 },
+      ).catch(() => `Got it — searching for ${resumeProfile.job_title} positions for you!`);
+
+      aiResult = {
+        type: "search_job",
+        reply: ackText,
+        intent_data: {
+          query: `${resumeProfile.job_title} ${(resumeProfile.skills ?? []).slice(0, 5).join(" ")}`.trim(),
+          category,
+        } as JobIntentData,
+        clarify_field: null,
+      };
+    }
+
     // Force-correct the intent type when user query contains explicit
     // service/task keywords but LLM stayed in the pinned scope
     if (pinnedScope && pinnedScope !== "auto" && aiResult.type !== "conversation") {
@@ -859,22 +954,48 @@ export async function POST(req: Request) {
 
     // ── Conversation ──────────────────────────────────────────────────────────
     if (aiResult.type === "conversation") {
-      if (
-        aiResult.clarify_field === "category" &&
-        resumeProfile?.job_title
-      ) {
-        const jobTitle = resumeProfile.job_title;
-        const topSkills = resumeProfile.skills?.slice(0, 5).join(", ") || "";
-        const category = inferJobCategoryFromText(jobTitle, resumeProfile.skills ?? []) ?? "Tech";
+      // If user is asking about jobs vaguely AND we have their resume,
+      // treat this as an implicit job search request — no need to ask for category
+      const isVagueJobRequest =
+        hasAnyResumeData &&
+        resumeProfile?.job_title &&
+        /emploi|job|work|travail|وظيف|خدم/i.test(quickQuery) &&
+        aiResult.clarify_field === "category";
+
+      if (isVagueJobRequest) {
+        // Redirect to search_job using resume data
+        // The system will then ask for location only
+        const category = inferJobCategoryFromText(
+          resumeProfile!.job_title!,
+          resumeProfile!.skills ?? [],
+        ) ?? "Tech";
+
+        const proactiveReply = await callLLM(
+          [
+            {
+              role: "system",
+              content: `The user wants a job and you have their resume on file.
+Job title: "${resumeProfile!.job_title}". Skills: ${(resumeProfile!.skills ?? []).slice(0, 5).join(", ")}.
+Write ONE short warm sentence in the user's language saying you see their profile
+and you'll find matching jobs. Mention their job title. No questions.
+Under 12 words. Return only the text.`,
+            },
+            { role: "user", content: quickQuery },
+          ],
+          { temperature: 0.4, maxTokens: 60 },
+        ).catch(() => "");
+
+        // Mutate aiResult to trigger a job search instead of asking for domain
         aiResult = {
           type: "search_job",
-          reply: "",
+          reply: proactiveReply,
           intent_data: {
-            query: `${jobTitle} ${topSkills}`.trim(),
+            query: `${resumeProfile!.job_title} ${(resumeProfile!.skills ?? []).slice(0, 5).join(" ")}`.trim(),
             category,
           } as JobIntentData,
           clarify_field: null,
         };
+        // Fall through to the search_job block below
       } else {
         return NextResponse.json({
           action: "chat",
@@ -902,16 +1023,12 @@ export async function POST(req: Request) {
 
       const readiness = checkJobSearchReadiness(intentData);
       if (!readiness.ready) {
-        const llmReply = aiResult.reply?.trim();
-        let clarifyText: string;
-        if (readiness.missingField === "location") {
-          const locationQ = await buildLocationClarifyMessage(lastUser);
-          clarifyText = llmReply
-            ? `${llmReply} ${locationQ}`
-            : locationQ;
-        } else {
-          clarifyText = await buildJobClarifyMessage(lastUser);
-        }
+        const clarifyText = await buildSmartClarifyMessage({
+          userMessage: lastUser,
+          intentData,
+          missingField: readiness.missingField,
+          existingReply: aiResult.reply?.trim(),
+        });
         return NextResponse.json({
           action: "chat",
           intent: "jobs",
@@ -1021,6 +1138,33 @@ export async function POST(req: Request) {
     // ── Service search ────────────────────────────────────────────────────────
     if (aiResult.type === "search_service" && aiResult.intent_data) {
       const intentData = aiResult.intent_data as ServiceIntentData;
+      
+      const serviceReadiness = checkServiceSearchReadiness(intentData);
+      if (!serviceReadiness.ready) {
+        const clarifyText = await callLLM(
+          [
+            {
+              role: "system",
+              content: `The user wants a service but hasn't specified what kind.
+Ask them naturally in their language what type of service they need.
+Give 3-4 short examples relevant to a marketplace (plumber, car wash, graphic designer, tutor).
+Keep it under 2 sentences. Sound like a helpful friend.
+Return only the question text.`,
+            },
+            { role: "user", content: lastUser },
+          ],
+          { temperature: 0.4, maxTokens: 80 },
+        ).catch(() => "What kind of service are you looking for?");
+
+        return NextResponse.json({
+          action: "chat",
+          intent: "services",
+          searchQuery: "",
+          assistantText: clarifyText,
+          relatedPrompts: [],
+        } satisfies AgentResponse);
+      }
+      
       const searchResult = await serviceSearchEngine(
         prisma as PrismaClient,
         intentData,

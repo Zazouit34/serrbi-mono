@@ -37,6 +37,9 @@ export const CONSTRAINT_SIGNALS = [
   "tanger", "kenitra", "salé", "الدار البيضاء", "الرباط", "مراكش", "أكادير",
   "budget", "salary", "wage", "prix", "salaire", "price", "راتب",
   "عن بعد", "حضوري",
+  "temps plein", "temps partiel", "full-time", "part-time",
+  "full time", "part time", "دوام كامل", "دوام جزئي",
+  "cdi", "cdd", "contrat", "stage", "internship",
 ] as const;
 
 // Job category keyword map — maps to your JobCategory enum values
@@ -47,6 +50,10 @@ export const JOB_CATEGORY_KEYWORDS: Record<string, string[]> = {
     "tech", "programmer", "programmeur", "informatique", "devops",
     "mobile", "android", "ios", "react", "node", "python", "java",
     "مطور", "برمجة", "تقنية", "مهندس", "حاسوب",
+    "graphic designer", "graphiste", "graphic design", "مصمم جرافيك",
+    "designer", "design graphique", "creative director", "directeur créatif",
+    "ui designer", "ux designer", "ui/ux", "product designer",
+    "motion designer", "illustrateur", "illustrator",
   ],
   Finance: [
     "finance", "accountant", "accounting", "comptable", "audit", "auditor",
@@ -99,14 +106,14 @@ export const JOB_CATEGORY_KEYWORDS: Record<string, string[]> = {
 // Service category keyword map — maps to your ServiceCategory enum values
 export const SERVICE_CATEGORY_KEYWORDS: Record<string, string[]> = {
   HomeMaintenance: [
-    "plumber", "plombier", "سباك",
-    "electrician", "électricien", "كهربائي",
+    "plumber", "plombier", "سباك", "سباكة",
+    "electrician", "électricien", "كهربائي", "كهرباء",
     "painter", "peintre", "دهان",
     "carpenter", "menuisier", "نجار",
     "locksmith", "serrurier",
     "cleaning", "nettoyage", "نظافة", "تنظيف",
     "maintenance", "entretien", "صيانة",
-    "repair", "réparation",
+    "repair", "réparation", "تصليح", "إصلاح",
   ],
   ConstructionInstallation: [
     "construction", "بناء", "architect", "architecture", "هندسة",
@@ -153,9 +160,12 @@ export const SERVICE_CATEGORY_KEYWORDS: Record<string, string[]> = {
   ],
   AutomotiveTransport: [
     "mechanic", "mécanicien", "ميكانيكي",
-    "garage", "كراج",
+    "garage", "كراج", "ورشة",
     "driver", "chauffeur", "سائق",
     "transport", "نقل",
+    "غسيل سيارة", "غسيل السيارة", "غسيل", "غسيل السيارات",
+    "تغيير زيت", "تغيير الزيت",
+    "إطارات", "بنشر",
   ],
 };
 
@@ -176,4 +186,10 @@ export const EXPLICIT_JOB_KEYWORDS = [
   "job", "jobs", "work", "hire", "recruit", "employ",
   "emploi", "emplois", "travail", "poste",
   "وظيفة", "وظائف", "عمل",
+] as const;
+
+export const PROXIMITY_SIGNALS = [
+  "near me", "nearby", "close to me", "around me",
+  "في موقعي", "قريب مني", "بالقرب مني", "حولي",
+  "près de moi", "à proximité", "autour de moi", "proche",
 ] as const;
