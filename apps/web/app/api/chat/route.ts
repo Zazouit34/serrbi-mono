@@ -215,10 +215,8 @@ async function buildSmartClarifyMessage(opts: {
   missingField: "category" | "location" | "both";
   existingReply?: string;
 }): Promise<string> {
-  // If LLM already wrote a good clarification in its reply, use it
-  if (opts.existingReply?.trim()) return opts.existingReply.trim();
-
   const { intentData, missingField, userMessage } = opts;
+  const prefix = opts.existingReply?.trim() || "";
 
   // Build context for the LLM so it can write a targeted question
   const knownContext = [
@@ -246,22 +244,25 @@ Rules:
 - Return only the question text, nothing else`;
 
   try {
-    return await callLLM(
+    const question = await callLLM(
       [
         { role: "system", content: systemPrompt },
         { role: "user", content: userMessage },
       ],
       { temperature: 0.4, maxTokens: 80 },
     );
+    // Combine resume acknowledgment with the clarify question
+    return prefix ? `${prefix} ${question}` : question;
   } catch {
-    // Minimal safe fallback — no language detection, just a neutral question
+    let fallback: string;
     if (missingField === "category") {
-      return "What field are you looking for? (Tech, Finance, Health, Hospitality...)";
+      fallback = "What field are you looking for? (Tech, Finance, Health, Hospitality...)";
+    } else if (missingField === "location") {
+      fallback = "Which city do you prefer, or are you open to remote?";
+    } else {
+      fallback = "What field and location are you looking for?";
     }
-    if (missingField === "location") {
-      return "Which city do you prefer, or are you open to remote?";
-    }
-    return "What field and location are you looking for?";
+    return prefix ? `${prefix} ${fallback}` : fallback;
   }
 }
 
