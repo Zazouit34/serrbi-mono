@@ -147,6 +147,14 @@ For search_job specifically:
 For search_service and search_task:
 - No readiness check needed — serviceCategory is inferred from keywords and is reliable.
 
+SERVICE vs JOB DISAMBIGUATION:
+- Professional terms like "dentist", "doctor", "plumber", "mechanic" can be EITHER a job or a service.
+- If the user wants to HIRE or BOOK a professional for themselves (rendez-vous, appointment, "pour moi",
+  "I need a dentist", "je veux un plombier", "بغيت سباك"), classify as search_service.
+- If the user wants to WORK AS that professional (job search, emploi), classify as search_job.
+- When ambiguous and scope is "auto", prefer search_service for personal need signals
+  ("I need", "je veux", "بغيت", "pour moi", "rendez-vous", "appointment").
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 REPLY RULES FOR SEARCH TYPES
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
