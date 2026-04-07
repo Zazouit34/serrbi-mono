@@ -3,23 +3,43 @@ import {
   SEARCH_ACTION_PHRASES,
   MARKETPLACE_NOUNS,
   CONSTRAINT_SIGNALS,
-  JOB_CATEGORY_KEYWORDS,
-  SERVICE_CATEGORY_KEYWORDS,
+  JOB_LABEL_INDEX,
+  SERVICE_LABEL_INDEX,
   EXPLICIT_SERVICE_KEYWORDS,
   EXPLICIT_TASK_KEYWORDS,
   EXPLICIT_JOB_KEYWORDS,
+  normalizeIntentText,
+  type LabelIndexMatch,
 } from "./keywords";
 
 function normalizeForIntent(text: string): string {
-  return text
-    ? text
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .toLowerCase()
-        .trim()
-        .replace(/[.,!?;:()[\]{}'"`~@#$%^&*_+=<>|\\/.-]/g, " ")
-        .replace(/\s+/g, " ")
-    : "";
+  return normalizeIntentText(text);
+}
+
+function classifyFromLabelIndex(
+  text: string,
+  labelIndex: Map<string, LabelIndexMatch>,
+): { category: string; typeKey: string } | null {
+  const normalized = normalizeForIntent(text);
+  if (!normalized) return null;
+
+  const words = normalized.split(" ").filter(Boolean);
+  const maxPhraseLength = Math.min(words.length, 5);
+
+  for (let len = maxPhraseLength; len >= 1; len -= 1) {
+    for (let i = 0; i <= words.length - len; i += 1) {
+      const phrase = words.slice(i, i + len).join(" ");
+      const match = labelIndex.get(phrase);
+      if (match) {
+        return {
+          category: match.category,
+          typeKey: match.key,
+        };
+      }
+    }
+  }
+
+  return null;
 }
 
 function countPhraseHits(text: string, phrases: readonly string[]): number {
@@ -65,8 +85,8 @@ export function classifyTurnIntent(text: string): "chat" | "search" {
 
   // Check if the query contains a job or service category keyword
   // Single professional terms ("ميكانيكي", "graphic designer", "plumber") are searches
-  const isJobCategoryKeyword = inferJobCategoryFromText(normalized) !== null;
-  const isServiceCategoryKeyword = inferServiceCategoryFromText(normalized) !== null;
+  const isJobCategoryKeyword = classifyJobQuery(normalized) !== null;
+  const isServiceCategoryKeyword = classifyServiceQuery(normalized) !== null;
 
   if (isJobCategoryKeyword || isServiceCategoryKeyword) {
     searchScore += 3; // strong signal — professional keyword always means search
@@ -75,27 +95,27 @@ export function classifyTurnIntent(text: string): "chat" | "search" {
   return searchScore >= chatScore + 1 ? "search" : "chat";
 }
 
-export function inferJobCategoryFromText(query: string, skills?: string[]): string | null {
+export function classifyJobQuery(query: string, skills?: string[]): {
+  category: string;
+  typeKey: string;
+} | null {
   const text = `${query} ${(skills ?? []).join(" ")}`;
-  const normalized = normalizeForIntent(text);
+  return classifyFromLabelIndex(text, JOB_LABEL_INDEX);
+}
 
-  for (const [category, keywords] of Object.entries(JOB_CATEGORY_KEYWORDS)) {
-    if (keywords.some((k) => normalized.includes(k.toLowerCase()))) {
-      return category;
-    }
-  }
-  return null;
+export function inferJobCategoryFromText(query: string, skills?: string[]): string | null {
+  return classifyJobQuery(query, skills)?.category ?? null;
+}
+
+export function classifyServiceQuery(query: string): {
+  category: string;
+  typeKey: string;
+} | null {
+  return classifyFromLabelIndex(query, SERVICE_LABEL_INDEX);
 }
 
 export function inferServiceCategoryFromText(query: string): string | null {
-  const normalized = normalizeForIntent(query);
-
-  for (const [category, keywords] of Object.entries(SERVICE_CATEGORY_KEYWORDS)) {
-    if (keywords.some((k) => normalized.includes(k.toLowerCase()))) {
-      return category;
-    }
-  }
-  return null;
+  return classifyServiceQuery(query)?.category ?? null;
 }
 
 export function isExplicitIntentSwitch(query: string, targetType: string): boolean {

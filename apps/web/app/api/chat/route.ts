@@ -27,7 +27,7 @@ import {
   generateDbGroundedSuggestions,
   detectExplicitIntentOverride,
 } from "./agent/orchestrator";
-import { inferJobCategoryFromText } from "./agent/classifier";
+import { classifyServiceQuery, inferJobCategoryFromText } from "./agent/classifier";
 
 export const runtime = "nodejs";
 
@@ -1139,6 +1139,21 @@ Under 12 words. Return only the text.`,
     // ── Service search ────────────────────────────────────────────────────────
     if (aiResult.type === "search_service" && aiResult.intent_data) {
       const intentData = aiResult.intent_data as ServiceIntentData;
+
+      if (!intentData.typeKey || !intentData.serviceCategory) {
+        const classifiedService = classifyServiceQuery(
+          intentData.query?.trim() || lastUser,
+        );
+
+        if (classifiedService) {
+          if (!intentData.typeKey) {
+            intentData.typeKey = classifiedService.typeKey;
+          }
+          if (!intentData.serviceCategory) {
+            intentData.serviceCategory = classifiedService.category;
+          }
+        }
+      }
       
       const serviceReadiness = checkServiceSearchReadiness(intentData);
       if (!serviceReadiness.ready) {

@@ -1,5 +1,6 @@
 import type { JobIntentData, ServiceIntentData } from "./intentExtractor";
 import {
+  classifyServiceQuery,
   inferJobCategoryFromText,
   inferServiceCategoryFromText,
   isLikelySearchRequest,
@@ -60,11 +61,12 @@ export function checkServiceSearchReadiness(intentData: ServiceIntentData):
   const query = intentData.query?.trim() ?? "";
   
   // If serviceCategory was extracted → always ready
-  if (intentData.serviceCategory) return { ready: true };
+  if (intentData.serviceCategory || intentData.typeKey) return { ready: true };
   
   // If query is very short and generic with no category keyword → ask for type
   const inferredCategory = inferServiceCategoryFromText(query);
-  if (inferredCategory) return { ready: true };
+  const inferredClassification = classifyServiceQuery(query);
+  if (inferredCategory || inferredClassification) return { ready: true };
   
   // Query is too vague — "أفضل خدمة", "best service", "un service"
   const isTooVague = query.split(" ").filter(Boolean).length <= 3 && !inferredCategory;

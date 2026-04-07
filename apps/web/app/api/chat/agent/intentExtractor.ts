@@ -1,5 +1,5 @@
 import { buildIntentExtractorPrompt } from "./prompt/intent";
-import { inferServiceCategoryFromText } from "./classifier";
+import { classifyServiceQuery } from "./classifier";
 
 type ChatRole = "system" | "user" | "assistant";
 
@@ -31,6 +31,7 @@ export type JobIntentData = {
 export type ServiceIntentData = {
   query: string;
   serviceCategory?: string | null;
+  typeKey?: string | null;
   type?: string | null;
   city?: string | null;
   stateAbbreviation?: string | null;
@@ -263,6 +264,7 @@ function safeParseResponse(text: string): AgentResponse | null {
     const intentData: ServiceIntentData = {
       query,
       serviceCategory: parseString(rawIntentData?.serviceCategory),
+      typeKey: parseString(rawIntentData?.typeKey),
       type: parseString(rawIntentData?.type),
       city: parseString(rawIntentData?.city),
       stateAbbreviation: parseString(rawIntentData?.stateAbbreviation),
@@ -317,10 +319,17 @@ function fallbackExtractor(input: ExtractIntentInput): AgentResponse {
     return { type: "search_task", reply: "", intent_data: { query: q } };
   }
 
-  // Use inferServiceCategoryFromText which has comprehensive keywords
-  const inferredServiceCategory = inferServiceCategoryFromText(q);
-  if (inferredServiceCategory) {
-    return { type: "search_service", reply: "", intent_data: { query: q } };
+  const classifiedService = classifyServiceQuery(q);
+  if (classifiedService) {
+    return {
+      type: "search_service",
+      reply: "",
+      intent_data: {
+        query: q,
+        serviceCategory: classifiedService.category,
+        typeKey: classifiedService.typeKey,
+      },
+    };
   }
   if (/(task|tasks|mission|مهمة|مهام)/i.test(lowered)) {
     return { type: "search_task", reply: "", intent_data: { query: q } };
