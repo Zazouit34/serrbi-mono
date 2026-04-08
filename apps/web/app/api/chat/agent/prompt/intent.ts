@@ -1,3 +1,5 @@
+import serviceTypesData from "../serviceTypes.json";
+
 type ResumeProfile = {
   job_title?: string | null;
   skills?: string[];
@@ -9,6 +11,25 @@ type PromptContext = {
   categoryHint?: string;
   resumeProfile?: ResumeProfile | null;
 };
+
+type ServiceTypePromptEntry = {
+  key: string;
+  category: string;
+};
+
+const SERVICE_TYPE_KEYS_BY_CATEGORY = Object.entries(
+  (serviceTypesData as ServiceTypePromptEntry[]).reduce<Record<string, string[]>>(
+    (acc, entry) => {
+      const keys = acc[entry.category] ?? [];
+      keys.push(entry.key);
+      acc[entry.category] = keys;
+      return acc;
+    },
+    {},
+  ),
+)
+  .map(([category, keys]) => `  ${category}: ${keys.join(", ")}`)
+  .join("\n");
 
 export function buildIntentExtractorPrompt(context?: PromptContext): string {
   const scope = context?.scope ?? "auto";
@@ -146,6 +167,10 @@ For search_job specifically:
 
 For search_service and search_task:
 - No readiness check needed — serviceCategory is inferred from keywords and is reliable.
+- For search_service, return intent_data.typeKey when a specific service type is clearly detectable.
+- typeKey must be the canonical snake_case key from the SERVICE TYPE KEY MAP below.
+- If you set typeKey, serviceCategory must match the same category as that typeKey.
+- If no specific service type is confidently detectable, set typeKey: null.
 
 SERVICE vs JOB DISAMBIGUATION:
 - Professional terms like "dentist", "doctor", "plumber", "mechanic" can be EITHER a job or a service.
@@ -186,10 +211,20 @@ search_job intent_data fields:
   category enum: Tech | Finance | Hospitality | Health | Legal | Construction | Education | CallCenter | Auto | Cleaning | Other
 
 search_service intent_data fields:
-  query (string, required), serviceCategory, type, city, stateAbbreviation,
+  query (string, required), serviceCategory, typeKey, type, city, stateAbbreviation,
   minPrice, maxPrice, minAverageRating, minNumberOfReviews
 
   serviceCategory enum: HomeMaintenance | ConstructionInstallation | HealthWellness | BeautyPersonalCare | EventsMedia | FoodCatering | DigitalCreative | LegalFinance | EducationCoaching | AutomotiveTransport | Other
+  typeKey: string | null
+    - Use only canonical keys from this map:
+${SERVICE_TYPE_KEYS_BY_CATEGORY}
+    - Examples:
+      "je veux un plombier" -> typeKey: "plumber"
+      "i need a dentist" -> typeKey: "dentist"
+      "kan 7taj chi wahed ydirli plomberie" -> typeKey: "plumber"
+    - Prefer typeKey over a free-form type when the service is recognizable.
+    - If uncertain, set typeKey to null.
+  type: optional raw user wording or free-form type if mentioned; do not invent it.
 
 search_task intent_data fields:
   query (string, required), category, city, stateAbbreviation, minBudget, maxBudget
