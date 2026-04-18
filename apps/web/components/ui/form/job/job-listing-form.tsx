@@ -38,7 +38,6 @@ import { jobCategoryValues, locationRequirementValues, experienceLevelValues, jo
 import { formatJobCategory, formatLocationRequirement, formatExperienceLevel, formatJobType } from "@workspace/ui/lib/formatter";
 import { jobCategoryIcons } from "@/components/ui/config/job-filters-config";
 import { Check } from "lucide-react";
-import { isSecondaryClient } from "@/lib/domain";
 import countries from "@workspace/ui/data/countries.json" assert { type: "json" };
 
 import keywordsByCategory from "@workspace/ui/data/auto-apply-keyword.json";
@@ -334,58 +333,6 @@ export function JobListingForm() {
                         }}
                       />
                     </div>
-                    {/* Country (secondary only) */}
-                    {isSecondaryClient() && (
-                      <FormField
-                        control={form.control}
-                        name="countryIso2"
-                        render={({ field }) => {
-                          const [open, setOpen] = useState(false);
-                          const allowedIso2 = new Set(["DZ","TN","FR","DE","ES","IT","BE","AT","AE","SA","QA"]);
-                          const options = (countries as any[]).filter(c => allowedIso2.has(String(c.iso2)));
-                          const display = field.value ? options.find((c:any) => c.iso2 === field.value)?.name : undefined;
-                          return (
-                            <FormItem>
-                              <FormLabel>{tForm("selectLocation")}</FormLabel>
-                              <Popover open={open} onOpenChange={setOpen}>
-                                <PopoverTrigger asChild>
-                                  <Button type="button" variant="outline" className="justify-between w-full h-11 rounded-full">
-                                    {display ? (
-                                      <span className="font-medium text-black">{display}</span>
-                                    ) : (
-                                      <span className="text-gray-500">Country</span>
-                                    )}
-                                  </Button>
-                                </PopoverTrigger>
-                                <PopoverContent align="center" sideOffset={12} className="rounded-3xl p-6 w-[700px] max-w-[90vw] bg-white shadow-lg border border-gray-100">
-                                  <div className="flex flex-wrap justify-center gap-3 max-h-[320px] overflow-auto">
-                                    {options.map((c:any) => {
-                                      const isSelected = field.value === c.iso2;
-                                      return (
-                                        <Button
-                                          key={c.iso2}
-                                          variant="outline"
-                                          size="lg"
-                                          className={`flex items-center gap-3 px-6 py-3 rounded-full text-base font-medium transition-colors border ${isSelected ? "text-gray-900 bg-gray-100 border-gray-400" : "text-gray-700 border-gray-200 hover:bg-gray-50"}`}
-                                          onClick={() => {
-                                            field.onChange(c.iso2);
-                                            setOpen(false);
-                                          }}
-                                        >
-                                          {c.name}
-                                          {isSelected && <Check className="w-4 h-4 text-black" />}
-                                        </Button>
-                                      );
-                                    })}
-                                  </div>
-                                </PopoverContent>
-                              </Popover>
-                              <FormMessage />
-                            </FormItem>
-                          );
-                        }}
-                      />
-                    )}
                     <FormField
                       control={form.control}
                       name="companyImage"

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma, SubscriptionStatus, type PrismaClient } from "@workspace/db";
 import { PLANS } from "@/lib/plans";
+import { trackAgentEvent } from "@/lib/agent/tracker";
 import {
   extractIntent,
   type JobIntentData,
@@ -12,7 +13,25 @@ import { jobSearchEngine } from "./agent/jobSearchEngine";
 import { serviceSearchEngine } from "./agent/serviceSearchEngine";
 import { rankJobsWithResumeMatch } from "./agent/scoreEngine";
 
+import {
+  buildSuggestionsPrompt,
+  buildPlanLimitPrompt,
+  buildScopeMismatchPrompt,
+  buildPostResultNarrativePrompt,
+} from "./agent/prompt/intent";
+import {
+  shouldBypassIntentLlm,
+  checkJobSearchReadiness,
+  checkServiceSearchReadiness,
+  checkScopeGuard,
+  generateDbGroundedSuggestions,
+  detectExplicitIntentOverride,
+} from "./agent/orchestrator";
+import { classifyServiceQuery, inferJobCategoryFromText } from "./agent/classifier";
+
 export const runtime = "nodejs";
+
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 type ChatRole = "system" | "user" | "assistant";
 
@@ -36,7 +55,6 @@ type ChatRequestBody = {
 
 type AgentIntent = "jobs" | "services" | "tasks";
 type ConfidenceMode = "strong" | "moderate" | "weak";
-
 type AgentAction = "chat" | "search";
 
 type AgentResponse = {
@@ -49,23 +67,33 @@ type AgentResponse = {
     type: AgentIntent;
     items: any[];
   };
-  resumeUploadCta?: {
-    title: string;
-    description: string;
-    buttonLabel: string;
+  showResumeUploadCta?: boolean;
+  resumeInsight?: {
+    score: number;
+    skillGaps: string[];
+    improvements: string[];
+    suggestedRoles?: string[];
   };
+  intentMismatch?: { suggestedIntent: AgentIntent };
   debug?: Record<string, unknown>;
   planLimitReached?: boolean;
   upgradeUrl?: string;
 };
 
+// ─── Constants ────────────────────────────────────────────────────────────────
+
 const FREE_DAILY_LIMIT = 20;
+const SEARCH_PAGE_SIZE = 3;
+
+// ─── Env ──────────────────────────────────────────────────────────────────────
 
 function getRequiredEnv(name: string): string {
   const value = process.env[name];
   if (!value) throw new Error(`Missing required environment variable: ${name}`);
   return value;
 }
+
+// ─── LLM caller ───────────────────────────────────────────────────────────────
 
 function pickFirstString(...candidates: unknown[]): string | null {
   for (const c of candidates) {
@@ -75,41 +103,25 @@ function pickFirstString(...candidates: unknown[]): string | null {
 }
 
 function extractAssistantText(json: any): string | null {
-  // DashScope generation commonly returns under output.choices[0].message.content
   return pickFirstString(
     json?.output?.choices?.[0]?.message?.content,
     json?.output?.text,
     json?.output?.texts?.[0],
     json?.output?.choices?.[0]?.text,
-    // OpenAI-compatible fallbacks
     json?.choices?.[0]?.message?.content,
     json?.choices?.[0]?.text,
   );
 }
 
-async function callDashScope(body: {
-  model: string;
-  messages: ChatMessage[];
-}): Promise<string> {
+async function callLLM(
+  messages: Array<{ role: "system" | "user" | "assistant"; content: string }>,
+  opts?: { temperature?: number; maxTokens?: number },
+): Promise<string> {
   const url = getRequiredEnv("CHAT_API_URL");
   const apiKey = getRequiredEnv("DASHSCOPE_API_KEY");
-  // Use a fixed Qwen 3 model (no env needed).
   const model = "qwen3-32b";
-
-  // Try DashScope native format first: { model, input: { messages }, parameters: {...} }
-  const dashscopeBody = {
-    model,
-    input: { messages: body.messages },
-    parameters: {
-      temperature: 0.2,
-      top_p: 0.9,
-      max_tokens: 700,
-      // If supported, ask for message-shaped output.
-      result_format: "message",
-      // Qwen3 may default to "thinking" mode; DashScope requires disabling it for non-streaming calls.
-      enable_thinking: false,
-    },
-  };
+  const temperature = opts?.temperature ?? 0.4;
+  const max_tokens = opts?.maxTokens ?? 700;
 
   let response = await fetch(url, {
     method: "POST",
@@ -117,233 +129,51 @@ async function callDashScope(body: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${apiKey}`,
     },
-    body: JSON.stringify(dashscopeBody),
+    body: JSON.stringify({
+      model,
+      input: { messages },
+      parameters: {
+        temperature,
+        top_p: 0.9,
+        max_tokens,
+        result_format: "message",
+        enable_thinking: false,
+      },
+    }),
   });
 
-  // Fallback to OpenAI-compatible shape if the endpoint is configured that way.
   if (!response.ok) {
-    const openaiBody = {
-      model,
-      messages: body.messages,
-      temperature: 0.4,
-      top_p: 0.9,
-      max_tokens: 700,
-      // DashScope OpenAI-compatible mode may also enforce this for non-streaming.
-      enable_thinking: false,
-    };
-
     response = await fetch(url, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${apiKey}`,
       },
-      body: JSON.stringify(openaiBody),
+      body: JSON.stringify({
+        model,
+        messages,
+        temperature,
+        top_p: 0.9,
+        max_tokens,
+        enable_thinking: false,
+      }),
     });
   }
 
   if (!response.ok) {
     const details = await response.text().catch(() => "");
     throw new Error(
-      `DashScope error ${response.status}${details ? `: ${details.slice(0, 300)}` : ""}`,
+      `LLM error ${response.status}${details ? `: ${details.slice(0, 300)}` : ""}`,
     );
   }
 
-  const json = (await response.json()) as any;
+  const json = await response.json();
   const text = extractAssistantText(json);
-  if (!text) {
-    throw new Error("DashScope returned an unexpected payload shape.");
-  }
+  if (!text) throw new Error("LLM returned unexpected payload shape");
   return text;
 }
 
-function normalizeForIntent(text: string): string {
-  const withoutDiacritics = text.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-  return text
-    ? withoutDiacritics
-        .toLowerCase()
-        .trim()
-        .replace(/[.,!?;:()[\]{}'"`~@#$%^&*_+=<>|\\/.-]/g, " ")
-        .replace(/\s+/g, " ")
-    : "";
-}
-
-function countPhraseHits(text: string, phrases: string[]): number {
-  let score = 0;
-  for (const phrase of phrases) {
-    if (text.includes(phrase)) score += 1;
-  }
-  return score;
-}
-
-function classifyTurnIntent(text: string): "chat" | "search" {
-  const normalized = normalizeForIntent(text);
-  if (!normalized) return "chat";
-
-  const tokens = normalized.split(" ").filter(Boolean);
-
-  const greetingOrSmalltalkPhrases = [
-    // English
-    "hi",
-    "hey",
-    "hello",
-    "yo",
-    "good morning",
-    "good afternoon",
-    "good evening",
-    "how are you",
-    "who are you",
-    "what can you do",
-    "thanks",
-    "thank you",
-    // French
-    "salut",
-    "bonjour",
-    "bonsoir",
-    "coucou",
-    "ca va",
-    "qui es tu",
-    "tu fais quoi",
-    "merci",
-    // Arabic
-    "مرحبا",
-    "اهلا",
-    "أهلا",
-    "سلام",
-    "السلام عليكم",
-    "كيف حالك",
-    "شكرا",
-    "شكرًا",
-  ];
-
-  const searchActionPhrases = [
-    // English
-    "find",
-    "search",
-    "looking for",
-    "look for",
-    "show me",
-    "i need",
-    "i want",
-    "hire",
-    "apply",
-    // French
-    "cherche",
-    "recherche",
-    "trouve",
-    "montre moi",
-    "jai besoin",
-    "je veux",
-    // Arabic / Darija common
-    "بغيت",
-    "كنقلب",
-    "ابحث",
-    "أبحث",
-    "اريد",
-    "أريد",
-    "احتاج",
-    "أحتاج",
-    "وريني",
-  ];
-
-  const marketplaceNouns = [
-    // English
-    "job",
-    "jobs",
-    "work",
-    "service",
-    "services",
-    "task",
-    "tasks",
-    "freelance",
-    // French
-    "emploi",
-    "emplois",
-    "travail",
-    "service",
-    "services",
-    "mission",
-    "tache",
-    "taches",
-    // Arabic
-    "وظيفة",
-    "وظائف",
-    "خدمة",
-    "خدمات",
-    "مهمة",
-    "مهام",
-    "عمل",
-  ];
-
-  const constraintSignals = [
-    "remote",
-    "onsite",
-    "hybrid",
-    "distance",
-    "casablanca",
-    "rabat",
-    "marrakech",
-    "tangier",
-    "agadir",
-    "en ligne",
-    "a distance",
-    "عن بعد",
-    "في",
-    "بال",
-    "budget",
-    "salary",
-    "wage",
-    "prix",
-    "salaire",
-    "price",
-  ];
-
-  let chatScore = 0;
-  let searchScore = 0;
-
-  chatScore += countPhraseHits(normalized, greetingOrSmalltalkPhrases);
-  searchScore += countPhraseHits(normalized, searchActionPhrases);
-  searchScore += countPhraseHits(normalized, marketplaceNouns) * 2;
-  searchScore += countPhraseHits(normalized, constraintSignals);
-
-  // Numeric/currency hints usually mean search filters.
-  if (/\b\d{2,}\b/.test(normalized)) searchScore += 1;
-  if (/(dh|mad|usd|eur|\$|€)/.test(text.toLowerCase())) searchScore += 1;
-
-  const hasMarketplaceNoun = marketplaceNouns.some((w) => tokens.includes(w));
-  const hasSearchAction = searchActionPhrases.some((p) => normalized.includes(p));
-
-  // Very short non-domain messages should remain chat.
-  if (!hasMarketplaceNoun && !hasSearchAction && tokens.length <= 4) {
-    chatScore += 2;
-  }
-
-  // Questions about agent identity/capability are chat even if short.
-  if (
-    normalized.includes("who are you") ||
-    normalized.includes("what can you do") ||
-    normalized.includes("qui es tu") ||
-    normalized.includes("شنو تقدر") ||
-    normalized.includes("ماذا تستطيع")
-  ) {
-    chatScore += 3;
-  }
-
-  // If explicit marketplace intent is weak, default to conversational.
-  if (searchScore < 2) {
-    chatScore += 1;
-  }
-
-  return searchScore >= chatScore + 1 ? "search" : "chat";
-}
-
-function isGreetingOrSmallTalk(text: string): boolean {
-  return classifyTurnIntent(text) === "chat";
-}
-
-function isLikelySearchRequest(text: string): boolean {
-  return classifyTurnIntent(text) === "search";
-}
+// ─── Normalizers ──────────────────────────────────────────────────────────────
 
 function normalizeLocale(locale: string): "en" | "fr" | "ar" {
   const lower = locale.toLowerCase();
@@ -352,666 +182,334 @@ function normalizeLocale(locale: string): "en" | "fr" | "ar" {
   return "en";
 }
 
-function getDayBucketUtc(date = new Date()): Date {
-  const d = new Date(date);
-  d.setUTCHours(0, 0, 0, 0);
-  return d;
-}
-
-async function isEligiblePaidUser(userId: string): Promise<boolean> {
-  const db = prisma as any;
-  const subscription = await db.subscription.findFirst({
-    where: {
-      userId,
-      status: SubscriptionStatus.ACTIVE,
-    },
-    select: {
-      planId: true,
-    },
-  });
-  if (!subscription?.planId) return false;
-  return [PLANS.BASIC.id, PLANS.PREMIUM.id].includes(subscription.planId);
-}
-
-async function getDailyUsageCount(userId: string, dayBucket: Date): Promise<number> {
-  const db = prisma as any;
-  const row = await db.aiChatUsage.findUnique({
-    where: {
-      userId_dayBucket: {
-        userId,
-        dayBucket,
-      },
-    },
-    select: {
-      requests: true,
-    },
-  });
-  return row?.requests ?? 0;
-}
-
-async function incrementDailyUsage(userId: string, dayBucket: Date): Promise<void> {
-  const db = prisma as any;
-  await db.aiChatUsage.upsert({
-    where: {
-      userId_dayBucket: {
-        userId,
-        dayBucket,
-      },
-    },
-    create: {
-      userId,
-      dayBucket,
-      requests: 1,
-    },
-    update: {
-      requests: {
-        increment: 1,
-      },
-    },
-  });
-}
-
-function buildChatFallbackReply(locale: string, lastUser: string): string {
-  const normalizedLocale = normalizeLocale(locale);
-  const normalizedInput = normalizeForIntent(lastUser);
-
-  if (normalizedLocale === "fr") {
-    if (normalizedInput.includes("comment ca va") || normalizedInput.includes("ca va")) {
-      return "Je vais bien, merci. Et toi ? Si tu veux, je peux deja t’aider a cibler un job, un service ou une tache selon ta ville et ton budget.";
-    }
-    if (normalizedInput.includes("merci")) {
-      return "Avec plaisir. Si tu veux, on peut affiner ensemble ta recherche pour trouver des resultats plus precis.";
-    }
-    return "Super, on avance ensemble. Dis-moi ton besoin exact et je te propose la meilleure recherche.";
-  }
-
-  if (normalizedLocale === "ar") {
-    if (normalizedInput.includes("كيف حالك")) {
-      return "بخير الحمد لله، شكرا. وانت؟ نقدر نعاونك تلقى وظيفة او خدمة او مهمة بطريقة ادق.";
-    }
-    if (normalizedInput.includes("شكرا")) {
-      return "العفو. اذا بغيتي نقدر نعاونك نضبط البحث باش تكون النتائج احسن.";
-    }
-    return "ممتاز، خلينا نخدموها خطوة بخطوة. قلّي بالضبط اش كتقلب عليه.";
-  }
-
-  if (normalizedInput.includes("how are you")) {
-    return "I am doing well, thanks. How are you? I can help you find better jobs, services, or tasks with specific filters.";
-  }
-  if (normalizedInput.includes("thank")) {
-    return "You are welcome. I can help refine your search to get sharper results.";
-  }
-  return "Great, let’s do it step by step. Tell me exactly what you need and I’ll guide you.";
-}
-
-function buildCharismaticConversationReply(locale: string, lastUser: string, modelReply?: string): string {
-  const normalizedLocale = normalizeLocale(locale);
-  const rawReply = (modelReply ?? "").trim();
-  const normalizedInput = normalizeForIntent(lastUser);
-  const words = rawReply.split(/\s+/).filter(Boolean);
-  const shortOrDry = words.length <= 4;
-
-  // Keep model reply when it's already rich enough.
-  if (!shortOrDry && rawReply.length >= 24) return rawReply;
-
-  if (normalizedLocale === "fr") {
-    if (normalizedInput.includes("salut") || normalizedInput.includes("bonjour") || normalizedInput.includes("bonsoir")) {
-      return "Salut 👋 Ravi de te voir ici. Dis-moi ce que tu veux trouver (job, service ou tache) et je te guide rapidement.";
-    }
-    if (normalizedInput.includes("merci")) {
-      return "Avec plaisir 😊 Si tu veux, je peux aussi te proposer une recherche plus precise selon ta ville, budget ou niveau.";
-    }
-    return rawReply
-      ? `${rawReply} 😊 Si tu veux, je peux te proposer une recherche concrete tout de suite.`
-      : "Top 👋 Je suis la pour t’aider. Donne-moi ton besoin et je te propose les meilleures options.";
-  }
-
-  if (normalizedLocale === "ar") {
-    if (
-      normalizedInput.includes("سلام") ||
-      normalizedInput.includes("مرحبا") ||
-      normalizedInput.includes("السلام عليكم")
-    ) {
-      return "سلام 👋 مرحبا بك! قولي شنو بغيتي (وظيفة، خدمة، أو مهمة) وأنا نعاونك بسرعة.";
-    }
-    if (normalizedInput.includes("شكرا")) {
-      return "العفو 😊 إذا بغيتي نقدر نضبط ليك البحث أكثر حسب المدينة والميزانية.";
-    }
-    return rawReply
-      ? `${rawReply} 😊 إلى بغيتي نقدر نبداو مباشرة ببحث مضبوط.`
-      : "ممتاز 👋 أنا هنا باش نعاونك. قولّي شنو محتاج ونخدموه خطوة بخطوة.";
-  }
-
-  if (normalizedInput.includes("hi") || normalizedInput.includes("hello") || normalizedInput.includes("hey")) {
-    return "Hey 👋 Great to see you. Tell me what you want to find (job, service, or task) and I’ll help you right away.";
-  }
-  if (normalizedInput.includes("thank")) {
-    return "You’re welcome 😊 If you want, I can refine your search by city, budget, or level.";
-  }
-  return rawReply
-    ? `${rawReply} 😊 Want me to turn this into a focused search now?`
-    : "Awesome 👋 I’m here to help. Tell me what you need and I’ll guide you step by step.";
-}
-
 function normalizeSessionId(raw: unknown): string | null {
   if (typeof raw !== "string") return null;
   const cleaned = raw.trim().slice(0, 120);
   return cleaned || null;
 }
 
-async function trackAgentEvent(args: {
-  userId?: string | null;
-  sessionId: string;
-  name: "AGENT_INTENT_TRIGGERED" | "AGENT_SEARCH_RESULTS_RETURNED";
-  intent: "conversation" | "search_job" | "search_service" | "search_task";
-  data?: Record<string, unknown>;
-}): Promise<void> {
-  if (!args.userId) return;
+function normalizeForIntent(text: string): string {
+  return text
+    ? text
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .trim()
+        .replace(/[.,!?;:()[\]{}'"`~@#$%^&*_+=<>|\\/.-]/g, " ")
+        .replace(/\s+/g, " ")
+    : "";
+}
+
+
+
+// ─── LLM-powered helpers ──────────────────────────────────────────────────────
+
+/**
+ * Asks the user for their job domain/category.
+ * Prefers the LLM's own reply if it already wrote a clarification.
+ * Falls back to a fresh LLM call, then a hardcoded string as last resort.
+ */
+async function buildSmartClarifyMessage(opts: {
+  userMessage: string;
+  intentData: JobIntentData;
+  missingField: "category" | "location" | "both";
+  existingReply?: string;
+}): Promise<string> {
+  const { intentData, missingField, userMessage } = opts;
+  const prefix = opts.existingReply?.trim() || "";
+
+  // Build context for the LLM so it can write a targeted question
+  const knownContext = [
+    intentData.category ? `domain: ${intentData.category}` : null,
+    intentData.city ? `city: ${intentData.city}` : null,
+    intentData.locationRequirement ? `work mode: ${intentData.locationRequirement}` : null,
+    intentData.experienceLevel ? `level: ${intentData.experienceLevel}` : null,
+    intentData.query ? `query: "${intentData.query}"` : null,
+  ]
+    .filter(Boolean)
+    .join(", ");
+
+  const systemPrompt = `You are a helpful marketplace assistant in a chat.
+The user wants a job. You already know some context: ${knownContext || "nothing yet"}.
+You need to ask for: ${missingField === "both" ? "their domain AND preferred location" : missingField === "category" ? "their domain or field" : "their preferred location (city or work mode)"}.
+
+Rules:
+- Detect the language from the user's message and write in that language
+- Ask ONLY for what is missing — never ask for something already known
+- If asking for location: mention city examples AND remote/hybrid as options — but only if work mode is also unknown
+- If asking for location AND city is already known: ask only about work mode (remote/hybrid/on-site)
+- If asking for location AND work mode is already known: ask only about which city
+- Keep it under 2 sentences. Sound like a curious helpful friend.
+- Do NOT use bullet points or lists — one flowing question only
+- Return only the question text, nothing else`;
+
   try {
-    const db = prisma as any;
-    await db.event.create({
-      data: {
-        userId: args.userId,
-        sessionId: args.sessionId,
-        name: args.name,
-        intent: args.intent,
-        source: "agent_chat",
-        data: args.data ?? {},
-      },
-    });
-  } catch (error) {
-    console.error("Failed to track agent event", error);
+    const question = await callLLM(
+      [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userMessage },
+      ],
+      { temperature: 0.4, maxTokens: 80 },
+    );
+    // Combine resume acknowledgment with the clarify question
+    return prefix ? `${prefix} ${question}` : question;
+  } catch {
+    let fallback: string;
+    if (missingField === "category") {
+      fallback = "What field are you looking for? (Tech, Finance, Health, Hospitality...)";
+    } else if (missingField === "location") {
+      fallback = "Which city do you prefer, or are you open to remote?";
+    } else {
+      fallback = "What field and location are you looking for?";
+    }
+    return prefix ? `${prefix} ${fallback}` : fallback;
   }
 }
 
-function buildPlanLimitMessage(locale: string): string {
-  const normalizedLocale = normalizeLocale(locale);
-  if (normalizedLocale === "fr") {
-    return "Tu as atteint la limite gratuite de 20 requetes IA aujourd’hui. Pour continuer, passe a un plan payant depuis la page Plans.";
+async function buildJobClarifyMessage(
+  userMessage: string,
+): Promise<string> {
+  try {
+    return await callLLM(
+      [
+        {
+          role: "system",
+          content: `You are a helpful marketplace assistant.
+The user wants a job but hasn't told you their field or domain yet.
+Ask them naturally in their language what domain or field they work in.
+Give 3-4 short examples (e.g. Tech, Finance, Health, Hospitality).
+Keep it under 2 sentences. Sound like a helpful friend.
+Return only the message text — no JSON, no preamble.`,
+        },
+        { role: "user", content: userMessage },
+      ],
+      { temperature: 0.4, maxTokens: 80 },
+    );
+  } catch {
+    return "What field are you looking for? (Tech, Finance, Health, Hospitality...)";
   }
-  if (normalizedLocale === "ar") {
-    return "وصلتي للحد المجاني ديال 20 طلب ذكاء اصطناعي اليوم. باش تكمل الاستعمال، خذ خطة مدفوعة من صفحة Plans.";
-  }
-  return "You reached the free AI limit of 20 requests today. To continue, please upgrade from the Plans page.";
-}
-function buildResumeUploadHint(locale: string): string {
-  const normalized = normalizeLocale(locale);
-  if (normalized === "fr") {
-    return "Voici les meilleurs matchs trouvés pour votre recherche. Pour des résultats encore plus pertinents, joignez votre CV via l'icône trombone afin d'activer le matching personnalisé.";
-  }
-  if (normalized === "ar") {
-    return "هذو أفضل النتائج حسب بحثك. إذا بغيتي نتائج أدق، حمّل السيرة الذاتية عبر أيقونة المشبك لتفعيل المطابقة الذكية.";
-  }
-  return "Here are the best matches for your search. For more relevant results, attach your resume using the paperclip icon to enable personalized matching.";
 }
 
-function buildResumeUploadCta(locale: string): { title: string; description: string; buttonLabel: string } {
-  const normalized = normalizeLocale(locale);
-  if (normalized === "fr") {
-    return {
-      title: "Action recommandee: ajoutez votre CV",
-      description:
-        "Nous avons des resultats, mais pour un matching plus precis (competences, experience, priorites), joignez votre CV maintenant.",
-      buttonLabel: "Joindre mon CV",
-    };
-  }
-  if (normalized === "ar") {
-    return {
-      title: "إجراء مهم: أرفق سيرتك الذاتية",
-      description:
-        "النتائج متوفرة، لكن المطابقة ستكون أدق إذا أرفقت السيرة الذاتية الآن.",
-      buttonLabel: "إرفاق السيرة الذاتية",
-    };
-  }
-  return {
-    title: "Recommended action: attach your resume",
-    description:
-      "We found results, but matching becomes much more precise (skills, experience, priorities) once your resume is attached.",
-    buttonLabel: "Attach my resume",
+/**
+ * Generates 3 smart contextual follow-up suggestions via the LLM.
+ * The LLM detects language from the query automatically.
+ */
+async function generateSmartSuggestions(opts: {
+  intent: AgentIntent;
+  query: string;
+  extractedData: JobIntentData | ServiceIntentData | null;
+  items: any[];
+}): Promise<string[]> {
+  const context = {
+    query: opts.query,
+    intent: opts.intent,
+    extractedFilters: opts.extractedData
+      ? {
+          category:
+            (opts.extractedData as any).category ??
+            (opts.extractedData as any).serviceCategory ??
+            null,
+          city: (opts.extractedData as any).city ?? null,
+          locationRequirement:
+            (opts.extractedData as any).locationRequirement ?? null,
+          experienceLevel:
+            (opts.extractedData as any).experienceLevel ?? null,
+        }
+      : null,
+    topResults: opts.items.slice(0, 3).map((item: any) => ({
+      title: item.title ?? null,
+      city: item.city ?? null,
+      category: item.category ?? item.serviceCategory ?? null,
+    })),
   };
+
+  try {
+    const raw = await callLLM(
+      [
+        { role: "system", content: buildSuggestionsPrompt() },
+        { role: "user", content: JSON.stringify(context) },
+      ],
+      { temperature: 0.7, maxTokens: 120 },
+    );
+    const first = raw.indexOf("[");
+    const last = raw.lastIndexOf("]");
+    if (first === -1 || last === -1) throw new Error("No JSON array in response");
+    const parsed = JSON.parse(raw.slice(first, last + 1));
+    if (
+      Array.isArray(parsed) &&
+      parsed.length >= 1 &&
+      parsed.every((s) => typeof s === "string")
+    ) {
+      return parsed.slice(0, 3).filter(Boolean);
+    }
+    throw new Error("Invalid format");
+  } catch {
+    if (opts.intent === "jobs")
+      return ["More job opportunities", "Filter by experience level", "Remote positions only"];
+    if (opts.intent === "services")
+      return ["Highest rated providers", "Filter by city", "Compare prices"];
+    return ["More tasks available", "Filter by budget", "Urgent tasks only"];
+  }
 }
 
-function buildJobResumeMatchExplanation(locale: string, input: {
-  matchedSkillsCount: number;
-  requiredSkillsCount: number;
-  matchedSkills: string[];
-}): string {
+async function buildPlanLimitMessage(userMessage: string): Promise<string> {
+  try {
+    return await callLLM(
+      [
+        { role: "system", content: buildPlanLimitPrompt() },
+        { role: "user", content: userMessage },
+      ],
+      { temperature: 0.3, maxTokens: 100 },
+    );
+  } catch {
+    return "You've reached your free daily limit. Upgrade from the Plans page to continue.";
+  }
+}
+
+async function buildScopeMismatchMessage(opts: {
+  currentScope: string;
+  suggestedIntent: string;
+  userMessage: string;
+}): Promise<string> {
+  try {
+    return await callLLM(
+      [
+        { role: "system", content: buildScopeMismatchPrompt() },
+        {
+          role: "user",
+          content: JSON.stringify({
+            currentScope: opts.currentScope,
+            suggestedIntent: opts.suggestedIntent,
+            userMessage: opts.userMessage,
+          }),
+        },
+      ],
+      { temperature: 0.3, maxTokens: 100 },
+    );
+  } catch {
+    return `You're currently searching ${opts.currentScope}. Switch to ${opts.suggestedIntent}?`;
+  }
+}
+
+async function generatePostResultNarrative(opts: {
+  userMessage: string;
+  searchQuery: string;
+  intent: AgentIntent;
+  items: any[];
+  locale: string;
+  hasResume: boolean;
+}): Promise<string> {
+  const context = {
+    searchQuery: opts.searchQuery,
+    intent: opts.intent,
+    hasResume: opts.hasResume,
+    topResults: opts.items.slice(0, 3).map((item, i) => ({
+      position: i + 1,
+      title: item.title,
+      companyName: item.companyName ?? null,
+      city: item.city ?? null,
+      locationRequirement: item.locationRequirement ?? null,
+      wage: item.wage ?? null,
+      experienceLevel: item.experienceLevel ?? null,
+      matchScore: item.matchScore ?? null,
+      matchedSkills: item.resumeMatch?.matchedSkills ?? [],
+      averageRating: item.averageRating ?? null,
+      price: item.price ?? null,
+    })),
+  };
+
+  const systemPrompt = buildPostResultNarrativePrompt();
+
+  try {
+    return await callLLM(
+      [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: JSON.stringify(context) },
+      ],
+      { temperature: 0.5, maxTokens: 200 },
+    );
+  } catch {
+    return "";
+  }
+}
+
+async function localizeSuggestionLabels(opts: {
+  rawSuggestions: Array<{ label: string; query: string }>;
+  userQuery: string;
+  intent: string;
+}): Promise<string[]> {
+  if (opts.rawSuggestions.length === 0) return [];
+
+  const systemPrompt = `
+You convert structured suggestion data into short natural-language labels.
+Detect the language from the "userQuery" field and write ALL labels in that language.
+Each label must be under 8 words — a short phrase a user would naturally say.
+
+Input format: JSON array of { label: "type:value:category", query: string }
+label types:
+  "remote:Tech" → "Remote tech positions" / "Postes tech en remote" / "وظائف تقنية عن بعد"
+  "hybrid:Finance" → "Hybrid finance roles" / "Postes finance hybrides"
+  "city:Rabat:Tech" → "Tech jobs in Rabat" / "Emplois tech à Rabat" / "وظائف تقنية في الرباط"
+  "level:junior:Tech" → "Junior tech roles" / "Postes tech junior" / "وظائف تقنية جونيور"
+  "level:senior:Tech" → "Senior tech roles" / "Postes tech senior"
+
+Output: JSON array of strings (labels only, same order as input). Nothing else.
+`.trim();
+
+  try {
+    const raw = await callLLM(
+      [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: JSON.stringify({ userQuery: opts.userQuery, suggestions: opts.rawSuggestions }) },
+      ],
+      { temperature: 0.3, maxTokens: 100 },
+    );
+    const first = raw.indexOf("[");
+    const last = raw.lastIndexOf("]");
+    if (first === -1 || last === -1) throw new Error("No array");
+    const parsed = JSON.parse(raw.slice(first, last + 1));
+    if (Array.isArray(parsed) && parsed.every((s: unknown) => typeof s === "string")) {
+      return parsed.slice(0, 3);
+    }
+    throw new Error("Invalid format");
+  } catch {
+    return opts.rawSuggestions.map(s => s.query);
+  }
+}
+
+// ─── Card mappers ─────────────────────────────────────────────────────────────
+
+function buildJobResumeMatchExplanation(
+  locale: string,
+  input: {
+    matchedSkillsCount: number;
+    requiredSkillsCount: number;
+    matchedSkills: string[];
+  },
+): string {
   const matched = input.matchedSkillsCount;
   const required = input.requiredSkillsCount;
   const sampleSkills = input.matchedSkills.slice(0, 3).join(", ");
-  if (normalizeLocale(locale) === "fr") {
-    if (required > 0) {
-      return `Correspondance competences: ${matched}/${required}${sampleSkills ? ` (ex: ${sampleSkills})` : ""}.`;
-    }
-    return "Correspondance semantique et niveau d'experience alignes avec votre CV.";
+  const lang = normalizeLocale(locale);
+  if (lang === "fr") {
+    if (required > 0)
+      return `Correspondance compétences : ${matched}/${required}${sampleSkills ? ` (ex: ${sampleSkills})` : ""}.`;
+    return "Correspondance sémantique et niveau d'expérience alignés avec votre CV.";
   }
-  if (normalizeLocale(locale) === "ar") {
-    if (required > 0) {
+  if (lang === "ar") {
+    if (required > 0)
       return `تطابق المهارات: ${matched}/${required}${sampleSkills ? ` (مثل: ${sampleSkills})` : ""}.`;
-    }
     return "التطابق مبني على التشابه الدلالي وملاءمة مستوى الخبرة مع السيرة الذاتية.";
   }
-  if (required > 0) {
+  if (required > 0)
     return `Skill overlap: ${matched}/${required}${sampleSkills ? ` (e.g. ${sampleSkills})` : ""}.`;
-  }
-  return "Match is based on semantic similarity and experience alignment with your resume.";
+  return "Match based on semantic similarity and experience alignment with your resume.";
 }
 
-function toNumberOrNull(value: unknown): number | null {
-  if (typeof value === "number" && Number.isFinite(value)) return value;
-  if (typeof value === "string" && value.trim()) {
-    const parsed = Number(value);
-    return Number.isFinite(parsed) ? parsed : null;
-  }
-  return null;
-}
-
-function evaluateConfidenceMode(items: Array<{ matchScore?: number | null }>): ConfidenceMode {
-  const topScore = toNumberOrNull(items[0]?.matchScore) ?? 0;
-  const secondScore = toNumberOrNull(items[1]?.matchScore) ?? 0;
-  const scoreGap = topScore - secondScore;
-  if (topScore >= 75 && scoreGap >= 10) return "strong";
-  if (topScore >= 55) return "moderate";
-  return "weak";
-}
-
-function buildSmartRelatedPrompts(
-  locale: string,
-  intent: AgentIntent,
-  query: string,
-  items: Array<{ title?: string; city?: string; serviceCategory?: string; category?: string; type?: string; matchScore?: number | null }>,
-  confidenceMode: ConfidenceMode,
-): string[] {
-  const lang = normalizeLocale(locale);
-  const topItem = items[0];
-  const city = topItem?.city;
-  const category = topItem?.serviceCategory || topItem?.category || "";
-  const type = topItem?.type || "";
-
-  if (intent === "services") {
-    if (lang === "fr") {
-      const prompts = [
-        city ? `Meilleur ${type || "service"} à ${city}` : `Meilleur ${type || "service"} près de moi`,
-        confidenceMode === "weak" ? "Montre-moi d'autres catégories de services" : `Comparer les prix ${type ? "de " + type : ""}`,
-        "Quel service a les meilleurs avis ?",
-      ];
-      return prompts.slice(0, 3);
-    }
-    if (lang === "ar") {
-      const prompts = [
-        city ? `أفضل ${type || "خدمة"} في ${city}` : `أفضل ${type || "خدمة"} بالقرب مني`,
-        confidenceMode === "weak" ? "اعرض لي فئات خدمات أخرى" : `قارن الأسعار ${type ? "لـ " + type : ""}`,
-        "أي خدمة لديها أفضل تقييمات؟",
-      ];
-      return prompts.slice(0, 3);
-    }
-    const prompts = [
-      city ? `Best ${type || "service"} in ${city}` : `Best ${type || "service"} near me`,
-      confidenceMode === "weak" ? "Show me other service categories" : `Compare ${type || "service"} prices`,
-      "Which one has the best reviews?",
-    ];
-    return prompts.slice(0, 3);
-  }
-
-  if (intent === "jobs") {
-    if (lang === "fr") {
-      return [
-        city ? `Plus d'offres à ${city}` : "Plus d'offres d'emploi",
-        "Offres pour débutants",
-        "Emplois à temps partiel",
-      ];
-    }
-    if (lang === "ar") {
-      return [
-        city ? `المزيد من الوظائف في ${city}` : "المزيد من فرص العمل",
-        "وظائف للمبتدئين",
-        "وظائف بدوام جزئي",
-      ];
-    }
-    return [
-      city ? `More jobs in ${city}` : "More job opportunities",
-      "Entry-level positions",
-      "Part-time jobs",
-    ];
-  }
-
-  if (lang === "fr") return ["Plus de missions disponibles", "Missions urgentes", "Missions à petit budget"];
-  if (lang === "ar") return ["المزيد من المهام المتاحة", "مهام عاجلة", "مهام بميزانية صغيرة"];
-  return ["More available tasks", "Urgent tasks", "Budget-friendly tasks"];
-}
-
-function formatLocationRequirement(locale: string, value: unknown): string {
-  const normalizedLocale = normalizeLocale(locale);
-  const key = typeof value === "string" ? value.trim().toLowerCase() : "";
-  if (!key) {
-    if (normalizedLocale === "fr") return "mode non precise";
-    if (normalizedLocale === "ar") return "نمط العمل غير محدد";
-    return "work mode n/a";
-  }
-
-  const labels = {
-    fr: {
-      remote: "a distance",
-      hybrid: "hybride",
-      in_office: "sur site",
-    },
-    ar: {
-      remote: "عن بُعد",
-      hybrid: "هجين",
-      in_office: "حضوري",
-    },
-    en: {
-      remote: "remote",
-      hybrid: "hybrid",
-      in_office: "in office",
-    },
-  } as const;
-
-  if (normalizedLocale === "fr") return labels.fr[key as keyof typeof labels.fr] ?? key;
-  if (normalizedLocale === "ar") return labels.ar[key as keyof typeof labels.ar] ?? key;
-  return labels.en[key as keyof typeof labels.en] ?? key;
-}
-
-function isComparisonQuery(query: string): boolean {
-  const q = normalizeForIntent(query);
-  const hints = [
-    "compare",
-    "comparison",
-    "which one",
-    "better",
-    "best",
-    "vs",
-    "comparer",
-    "comparatif",
-    "meilleur",
-    "plus",
-    "قارن",
-    "مقارنة",
-    "الأفضل",
-    "احسن",
-  ];
-  return hints.some((h) => q.includes(h));
-}
-
-function buildResumeJobMatchMarkdownSummary(
-  locale: string,
-  query: string,
-  cards: any[],
-  confidenceMode: ConfidenceMode,
-): string {
-  const normalized = normalizeLocale(locale);
-  const top = cards[0];
-  if (!top) {
-    if (normalized === "fr") return "## Emplois\n- Nous recherchons les meilleures offres pour vous.\n- Pouvez-vous preciser le poste ou la ville souhaitee ?";
-    if (normalized === "ar") return "## الوظائف\n- نبحث عن أفضل العروض لك.\n- هل يمكنك توضيح المنصب أو المدينة المطلوبة؟";
-    return "## Jobs\n- We're looking for the best offers for you.\n- Could you specify the role or preferred city?";
-  }
-
-  const topPercent = top?.resumeMatch?.percent ?? top?.matchScore ?? null;
-  const matched = top?.resumeMatch?.matchedSkillsCount ?? 0;
-  const required = top?.resumeMatch?.requiredSkillsCount ?? 0;
-  const skills = Array.isArray(top?.resumeMatch?.matchedSkills)
-    ? top.resumeMatch.matchedSkills.slice(0, 3).join(", ")
-    : "";
-  const style: "recommendation" | "comparison" | "natural" =
-    confidenceMode === "strong"
-      ? "recommendation"
-      : isComparisonQuery(query)
-        ? "comparison"
-        : "natural";
-
-  const alternatives = cards
-    .slice(1, 3)
-    .map((c) => c?.title)
-    .filter(Boolean);
-  const alternativesText = alternatives.length ? alternatives.join(", ") : null;
-
-  if (normalized === "fr") {
-    if (style === "recommendation") {
-    return [
-        `## Recommandation pour "${query}"`,
-        `- ${top.title ?? "Poste"}${top?.city ? ` — ${top.city}` : ""}${top?.type ? ` — ${top.type}` : ""}.`,
-        `- Cette offre semble bien alignee avec votre recherche${typeof topPercent === "number" ? ` (${topPercent}% de match)` : ""}${skills ? `, notamment sur ${skills}` : ""}.`,
-        `- Je peux aussi vous montrer d'autres offres proches${alternativesText ? ` (${alternativesText})` : ""} si vous voulez comparer.`,
-        `- Souhaitez-vous voir des offres similaires ?`,
-      ].join("\n");
-    }
-    if (style === "comparison") {
-      return [
-        `## Comparaison rapide pour "${query}"`,
-        `- ${cards[0]?.title ?? "Offre 1"}${cards[0]?.city ? ` — ${cards[0].city}` : ""}${cards[0]?.wage ? ` — ${cards[0].wage} MAD` : ""}.`,
-        `- ${cards[1]?.title ?? "Offre 2"}${cards[1]?.city ? ` — ${cards[1].city}` : ""}${cards[1]?.wage ? ` — ${cards[1].wage} MAD` : ""}.`,
-        `- ${cards[2]?.title ?? "Offre 3"}${cards[2]?.city ? ` — ${cards[2].city}` : ""}${cards[2]?.wage ? ` — ${cards[2].wage} MAD` : ""}.`,
-        `- Souhaitez-vous comparer en priorite le salaire, la ville ou le teletravail ?`,
-      ].join("\n");
-    }
-    if (confidenceMode === "weak") {
-      return [
-        `## Offres les plus proches pour "${query}"`,
-        `- ${cards[0]?.title ?? "Offre 1"}${cards[0]?.city ? ` — ${cards[0].city}` : ""}.`,
-        `- ${cards[1]?.title ?? "Offre 2"}${cards[1]?.city ? ` — ${cards[1].city}` : ""}.`,
-        `- ${cards[2]?.title ?? "Offre 3"}${cards[2]?.city ? ` — ${cards[2].city}` : ""}.`,
-        `- Voulez-vous que j'affine avec un critere plus precis ?`,
-      ].join("\n");
-    }
-    return [
-      `## Offres pour "${query}"`,
-      `- ${cards[0]?.title ?? "Offre 1"}${cards[0]?.city ? ` — ${cards[0].city}` : ""}${cards[0]?.type ? ` — ${cards[0].type}` : ""}.`,
-      `- ${cards[1]?.title ?? "Offre 2"}${cards[1]?.city ? ` — ${cards[1].city}` : ""}${cards[1]?.type ? ` — ${cards[1].type}` : ""}.`,
-      `- ${cards[2]?.title ?? "Offre 3"}${cards[2]?.city ? ` — ${cards[2].city}` : ""}${cards[2]?.type ? ` — ${cards[2].type}` : ""}.`,
-      `- Je peux aussi filtrer par salaire, ville, teletravail, ou niveau d'experience.`,
-      `- Souhaitez-vous que je fasse ce filtre maintenant ?`,
-    ].join("\n");
-  }
-  if (normalized === "ar") {
-    if (style === "recommendation") {
-    return [
-        `## توصية لـ "${query}"`,
-        `- ${top.title ?? "وظيفة"}${top?.city ? ` — ${top.city}` : ""}${top?.type ? ` — ${top.type}` : ""}.`,
-        `- هذا العرض يبدو مناسباً لطلبك${typeof topPercent === "number" ? ` (${topPercent}% مطابقة)` : ""}${skills ? ` خاصة في ${skills}` : ""}.`,
-        `- أقدر أيضاً أعرض لك بدائل مشابهة${alternativesText ? ` (${alternativesText})` : ""} إذا رغبت بالمقارنة.`,
-        `- هل تريد رؤية وظائف مشابهة؟`,
-    ].join("\n");
-  }
-    if (style === "comparison") {
-  return [
-        `## مقارنة سريعة لـ "${query}"`,
-        `- ${cards[0]?.title ?? "الخيار 1"}${cards[0]?.city ? ` — ${cards[0].city}` : ""}${cards[0]?.wage ? ` — ${cards[0].wage} MAD` : ""}.`,
-        `- ${cards[1]?.title ?? "الخيار 2"}${cards[1]?.city ? ` — ${cards[1].city}` : ""}${cards[1]?.wage ? ` — ${cards[1].wage} MAD` : ""}.`,
-        `- ${cards[2]?.title ?? "الخيار 3"}${cards[2]?.city ? ` — ${cards[2].city}` : ""}${cards[2]?.wage ? ` — ${cards[2].wage} MAD` : ""}.`,
-        `- هل تريد مقارنة الراتب أو المدينة أو نمط العمل؟`,
-      ].join("\n");
-    }
-    if (confidenceMode === "weak") {
-      return [
-        `## أقرب الوظائف الحالية لـ "${query}"`,
-        `- ${cards[0]?.title ?? "الخيار 1"}${cards[0]?.city ? ` — ${cards[0].city}` : ""}.`,
-        `- ${cards[1]?.title ?? "الخيار 2"}${cards[1]?.city ? ` — ${cards[1].city}` : ""}.`,
-        `- ${cards[2]?.title ?? "الخيار 3"}${cards[2]?.city ? ` — ${cards[2].city}` : ""}.`,
-        `- هل تريد أن أحدد النتائج أكثر حسب شرط واحد واضح؟`,
-      ].join("\n");
-    }
-    return [
-      `## وظائف "${query}"`,
-      `- ${cards[0]?.title ?? "الخيار 1"}${cards[0]?.city ? ` — ${cards[0].city}` : ""}${cards[0]?.type ? ` — ${cards[0].type}` : ""}.`,
-      `- ${cards[1]?.title ?? "الخيار 2"}${cards[1]?.city ? ` — ${cards[1].city}` : ""}${cards[1]?.type ? ` — ${cards[1].type}` : ""}.`,
-      `- ${cards[2]?.title ?? "الخيار 3"}${cards[2]?.city ? ` — ${cards[2].city}` : ""}${cards[2]?.type ? ` — ${cards[2].type}` : ""}.`,
-      `- أقدر أفلتر لك حسب الراتب أو المدينة أو العمل عن بُعد.`,
-      `- هل تريد تطبيق هذا الفلتر الآن؟`,
-    ].join("\n");
-  }
-  if (style === "recommendation") {
-    return [
-      `## Recommendation for "${query}"`,
-      `- ${top.title ?? "Role"}${top?.city ? ` — ${top.city}` : ""}${top?.type ? ` — ${top.type}` : ""}.`,
-      `- This role looks like a strong fit${typeof topPercent === "number" ? ` (${topPercent}% match)` : ""}${skills ? `, especially for ${skills}` : ""}.`,
-      `- I can also show similar alternatives${alternativesText ? ` (${alternativesText})` : ""} if you want to compare.`,
-      `- Would you like to see similar jobs?`,
-    ].join("\n");
-  }
-  if (style === "comparison") {
-    return [
-      `## Quick Comparison for "${query}"`,
-      `- ${cards[0]?.title ?? "Option 1"}${cards[0]?.city ? ` — ${cards[0].city}` : ""}${cards[0]?.wage ? ` — ${cards[0].wage} MAD` : ""}.`,
-      `- ${cards[1]?.title ?? "Option 2"}${cards[1]?.city ? ` — ${cards[1].city}` : ""}${cards[1]?.wage ? ` — ${cards[1].wage} MAD` : ""}.`,
-      `- ${cards[2]?.title ?? "Option 3"}${cards[2]?.city ? ` — ${cards[2].city}` : ""}${cards[2]?.wage ? ` — ${cards[2].wage} MAD` : ""}.`,
-      `- Would you like to compare salary, city, or work mode?`,
-    ].join("\n");
-  }
-  if (confidenceMode === "weak") {
-    return [
-      `## Closest Matches So Far for "${query}"`,
-      `- ${cards[0]?.title ?? "Option 1"}${cards[0]?.city ? ` — ${cards[0].city}` : ""}.`,
-      `- ${cards[1]?.title ?? "Option 2"}${cards[1]?.city ? ` — ${cards[1].city}` : ""}.`,
-      `- ${cards[2]?.title ?? "Option 3"}${cards[2]?.city ? ` — ${cards[2].city}` : ""}.`,
-      `- Would you like me to narrow this with one clear constraint?`,
-    ].join("\n");
-  }
-  return [
-    `## Jobs for "${query}"`,
-    `- ${cards[0]?.title ?? "Option 1"}${cards[0]?.city ? ` — ${cards[0].city}` : ""}${cards[0]?.type ? ` — ${cards[0].type}` : ""}.`,
-    `- ${cards[1]?.title ?? "Option 2"}${cards[1]?.city ? ` — ${cards[1].city}` : ""}${cards[1]?.type ? ` — ${cards[1].type}` : ""}.`,
-    `- ${cards[2]?.title ?? "Option 3"}${cards[2]?.city ? ` — ${cards[2].city}` : ""}${cards[2]?.type ? ` — ${cards[2].type}` : ""}.`,
-    `- I can filter by salary, city, remote, or experience.`,
-    `- Want me to apply one of these filters now?`,
-  ].join("\n");
-}
-
-function buildServiceMarkdownSummary(
-  locale: string,
-  query: string,
-  cards: any[],
-  confidenceMode: ConfidenceMode,
-): string {
-  const normalized = normalizeLocale(locale);
-  const top = cards[0];
-  if (!top) {
-    if (normalized === "fr") return "## Services\n- Nous recherchons les meilleures options pour vous.\n- Pouvez-vous preciser votre besoin ou la ville souhaitee ?";
-    if (normalized === "ar") return "## الخدمات\n- نبحث عن أفضل الخيارات لك.\n- هل يمكنك توضيح حاجتك أو المدينة المطلوبة؟";
-    return "## Services\n- We're looking for the best options for you.\n- Could you specify your need or preferred city?";
-  }
-
-  const topReasons = Array.isArray(top.selectionReasons) ? top.selectionReasons.slice(0, 2) : [];
-  const style: "recommendation" | "comparison" | "natural" =
-    confidenceMode === "strong"
-      ? "recommendation"
-      : isComparisonQuery(query)
-        ? "comparison"
-        : "natural";
-  const alternatives = cards.slice(1, 3).map((c) => c?.title).filter(Boolean);
-  const alternativesText = alternatives.length ? alternatives.join(", ") : null;
-  if (normalized === "fr") {
-    if (style === "recommendation") {
-      return [
-        `## Recommandation principale pour "${query}"`,
-        `- ${top.title ?? "Service"}${top?.city ? ` — ${top.city}` : ""}.`,
-        `- Ce cabinet semble etre une bonne option${typeof top.matchScore === "number" ? ` (${top.matchScore}% de confiance)` : ""}${topReasons.length ? `: ${topReasons.join(" · ")}` : ""}.`,
-        `- Je peux aussi vous montrer d'autres cabinets similaires${alternativesText ? ` (${alternativesText})` : ""} si vous voulez comparer.`,
-        `- Voulez-vous que je vous montre des options similaires ?`,
-      ].join("\n");
-    }
-    if (style === "comparison") {
-      return [
-        `## Comparaison des services pour "${query}"`,
-        `- ${cards[0]?.title ?? "Service 1"}${cards[0]?.city ? ` — ${cards[0].city}` : ""}.`,
-        `- ${cards[1]?.title ?? "Service 2"}${cards[1]?.city ? ` — ${cards[1].city}` : ""}.`,
-        `- ${cards[2]?.title ?? "Service 3"}${cards[2]?.city ? ` — ${cards[2].city}` : ""}.`,
-        `- Voulez-vous comparer les prix, les avis clients, ou la specialite ?`,
-      ].join("\n");
-    }
-    if (confidenceMode === "weak") {
-      return [
-        `## Services les plus proches pour "${query}"`,
-        `- ${cards[0]?.title ?? "Service 1"}${cards[0]?.city ? ` — ${cards[0].city}` : ""}.`,
-        `- ${cards[1]?.title ?? "Service 2"}${cards[1]?.city ? ` — ${cards[1].city}` : ""}.`,
-        `- ${cards[2]?.title ?? "Service 3"}${cards[2]?.city ? ` — ${cards[2].city}` : ""}.`,
-        `- Voulez-vous preciser votre besoin pour des resultats plus pertinents ?`,
-      ].join("\n");
-    }
-    return [
-      `## Services trouves pour "${query}"`,
-      `- ${cards[0]?.title ?? "Service 1"}${cards[0]?.city ? ` — ${cards[0].city}` : ""}.`,
-      `- ${cards[1]?.title ?? "Service 2"}${cards[1]?.city ? ` — ${cards[1].city}` : ""}.`,
-      `- ${cards[2]?.title ?? "Service 3"}${cards[2]?.city ? ` — ${cards[2].city}` : ""}.`,
-      `- Si vous voulez, je peux filtrer les moins chers, les mieux notes, ou seulement votre quartier.`,
-      `- Souhaitez-vous que je fasse ce filtre ?`,
-    ].join("\n");
-  }
-  if (normalized === "ar") {
-    if (style === "recommendation") {
-    return [
-        `## التوصية الأساسية لـ "${query}"`,
-        `- ${top.title ?? "خدمة"}${top?.city ? ` — ${top.city}` : ""}.`,
-        `- يبدو خياراً جيداً${typeof top.matchScore === "number" ? ` (${top.matchScore}% ثقة)` : ""}${topReasons.length ? `: ${topReasons.join(" · ")}` : ""}.`,
-        `- أقدر أيضاً أعرض لك مزودين مشابهين${alternativesText ? ` (${alternativesText})` : ""} إذا رغبت بالمقارنة.`,
-        `- هل تريد رؤية خيارات مشابهة؟`,
-    ].join("\n");
-  }
-    if (style === "comparison") {
-  return [
-        `## مقارنة الخدمات لـ "${query}"`,
-        `- ${cards[0]?.title ?? "الخيار 1"}${cards[0]?.city ? ` — ${cards[0].city}` : ""}.`,
-        `- ${cards[1]?.title ?? "الخيار 2"}${cards[1]?.city ? ` — ${cards[1].city}` : ""}.`,
-        `- ${cards[2]?.title ?? "الخيار 3"}${cards[2]?.city ? ` — ${cards[2].city}` : ""}.`,
-        `- هل تريد مقارنة السعر، التقييم، أم التخصص؟`,
-      ].join("\n");
-    }
-    if (confidenceMode === "weak") {
-      return [
-        `## أقرب الخدمات الحالية لـ "${query}"`,
-        `- ${cards[0]?.title ?? "الخيار 1"}${cards[0]?.city ? ` — ${cards[0].city}` : ""}.`,
-        `- ${cards[1]?.title ?? "الخيار 2"}${cards[1]?.city ? ` — ${cards[1].city}` : ""}.`,
-        `- ${cards[2]?.title ?? "الخيار 3"}${cards[2]?.city ? ` — ${cards[2].city}` : ""}.`,
-        `- هل تريد توضيح طلبك أكثر لتحسين النتائج؟`,
-      ].join("\n");
-    }
-    return [
-      `## خدمات "${query}"`,
-      `- ${cards[0]?.title ?? "الخيار 1"}${cards[0]?.city ? ` — ${cards[0].city}` : ""}.`,
-      `- ${cards[1]?.title ?? "الخيار 2"}${cards[1]?.city ? ` — ${cards[1].city}` : ""}.`,
-      `- ${cards[2]?.title ?? "الخيار 3"}${cards[2]?.city ? ` — ${cards[2].city}` : ""}.`,
-      `- أقدر أفلتر الأقل سعراً، الأعلى تقييماً، أو الأقرب منك.`,
-      `- هل تريد تطبيق هذا الفلتر؟`,
-    ].join("\n");
-  }
-  if (style === "recommendation") {
-    return [
-      `## Primary Recommendation for "${query}"`,
-      `- ${top.title ?? "Service"}${top?.city ? ` — ${top.city}` : ""}.`,
-      `- It looks like a strong choice${typeof top.matchScore === "number" ? ` (${top.matchScore}% confidence)` : ""}${topReasons.length ? `: ${topReasons.join(" · ")}` : ""}.`,
-      `- I can also show similar providers${alternativesText ? ` (${alternativesText})` : ""} if you want to compare.`,
-      `- Do you want to see similar providers?`,
-    ].join("\n");
-  }
-  if (style === "comparison") {
-    return [
-      `## Service Comparison for "${query}"`,
-      `- ${cards[0]?.title ?? "Option 1"}${cards[0]?.city ? ` — ${cards[0].city}` : ""}.`,
-      `- ${cards[1]?.title ?? "Option 2"}${cards[1]?.city ? ` — ${cards[1].city}` : ""}.`,
-      `- ${cards[2]?.title ?? "Option 3"}${cards[2]?.city ? ` — ${cards[2].city}` : ""}.`,
-      `- Do you want to compare price, reviews, or specialty?`,
-    ].join("\n");
-  }
-  if (confidenceMode === "weak") {
-    return [
-      `## Closest Matches So Far for "${query}"`,
-      `- ${cards[0]?.title ?? "Option 1"}${cards[0]?.city ? ` — ${cards[0].city}` : ""}.`,
-      `- ${cards[1]?.title ?? "Option 2"}${cards[1]?.city ? ` — ${cards[1].city}` : ""}.`,
-      `- ${cards[2]?.title ?? "Option 3"}${cards[2]?.city ? ` — ${cards[2].city}` : ""}.`,
-      `- Would you like to clarify your request for a better match?`,
-    ].join("\n");
-  }
-  return [
-    `## Services for "${query}"`,
-    `- ${cards[0]?.title ?? "Option 1"}${cards[0]?.city ? ` — ${cards[0].city}` : ""}.`,
-    `- ${cards[1]?.title ?? "Option 2"}${cards[1]?.city ? ` — ${cards[1].city}` : ""}.`,
-    `- ${cards[2]?.title ?? "Option 3"}${cards[2]?.city ? ` — ${cards[2].city}` : ""}.`,
-    `- I can filter by price, top-rated, or nearby only.`,
-    `- Want me to apply one of these filters now?`,
-  ].join("\n");
-}
-
-function mapJobCards(items: any[], opts?: { locale?: string; includeResumeMatch?: boolean }): any[] {
+function mapJobCards(
+  items: any[],
+  opts?: { locale?: string; includeResumeMatch?: boolean },
+): any[] {
   const locale = opts?.locale ?? "en";
   const includeResumeMatch = opts?.includeResumeMatch ?? false;
   return items.map((item) => ({
@@ -1038,18 +536,31 @@ function mapJobCards(items: any[], opts?: { locale?: string; includeResumeMatch?
     description: item.description ?? "",
     resumeMatch: includeResumeMatch
       ? {
-          percent: typeof item.matchPercent === "number" ? item.matchPercent : null,
+          percent:
+            typeof item.matchPercent === "number" ? item.matchPercent : null,
           matchedSkillsCount:
-            typeof item.matchedSkillsCount === "number" ? item.matchedSkillsCount : 0,
+            typeof item.matchedSkillsCount === "number"
+              ? item.matchedSkillsCount
+              : 0,
           requiredSkillsCount:
-            typeof item.requiredSkillsCount === "number" ? item.requiredSkillsCount : 0,
-          matchedSkills: Array.isArray(item.matchedSkills) ? item.matchedSkills : [],
+            typeof item.requiredSkillsCount === "number"
+              ? item.requiredSkillsCount
+              : 0,
+          matchedSkills: Array.isArray(item.matchedSkills)
+            ? item.matchedSkills
+            : [],
           explanation: buildJobResumeMatchExplanation(locale, {
             matchedSkillsCount:
-              typeof item.matchedSkillsCount === "number" ? item.matchedSkillsCount : 0,
+              typeof item.matchedSkillsCount === "number"
+                ? item.matchedSkillsCount
+                : 0,
             requiredSkillsCount:
-              typeof item.requiredSkillsCount === "number" ? item.requiredSkillsCount : 0,
-            matchedSkills: Array.isArray(item.matchedSkills) ? item.matchedSkills : [],
+              typeof item.requiredSkillsCount === "number"
+                ? item.requiredSkillsCount
+                : 0,
+            matchedSkills: Array.isArray(item.matchedSkills)
+              ? item.matchedSkills
+              : [],
           }),
         }
       : null,
@@ -1061,19 +572,20 @@ function mapServiceCards(items: any[]): any[] {
     id: item.id,
     title: item.title,
     displayImage: item.displayImage ?? null,
-    images:
-      Array.isArray(item.images)
-        ? item.images
-        : typeof item.images === "string"
-          ? (() => {
-              try {
-                const parsed = JSON.parse(item.images);
-                return Array.isArray(parsed) ? parsed.filter((x) => typeof x === "string") : [];
-              } catch {
-                return [];
-              }
-            })()
-          : [],
+    images: Array.isArray(item.images)
+      ? item.images
+      : typeof item.images === "string"
+        ? (() => {
+            try {
+              const parsed = JSON.parse(item.images);
+              return Array.isArray(parsed)
+                ? parsed.filter((x: unknown) => typeof x === "string")
+                : [];
+            } catch {
+              return [];
+            }
+          })()
+        : [],
     serviceCategory: item.serviceCategory,
     price: item.price,
     currency: "MAD",
@@ -1082,58 +594,142 @@ function mapServiceCards(items: any[]): any[] {
     phoneNumber: item.phoneNumber ?? null,
     averageRating: item.averageRating ?? null,
     numberOfReviews: item.numberOfReviews ?? 0,
-    matchPercent: typeof item.matchPercent === "number" ? item.matchPercent : null,
+    matchPercent:
+      typeof item.matchPercent === "number" ? item.matchPercent : null,
     matchScore:
       typeof item.matchPercent === "number"
         ? Math.round(item.matchPercent)
         : typeof item.finalScore === "number"
           ? Math.round(Math.max(0, Math.min(1, item.finalScore)) * 100)
           : null,
-    selectionReasons: Array.isArray(item.selectionReasons) ? item.selectionReasons.slice(0, 3) : [],
-    confidenceSignals: Array.isArray(item.confidenceSignals) ? item.confidenceSignals.slice(0, 3) : [],
+    selectionReasons: Array.isArray(item.selectionReasons)
+      ? item.selectionReasons.slice(0, 3)
+      : [],
+    confidenceSignals: Array.isArray(item.confidenceSignals)
+      ? item.confidenceSignals.slice(0, 3)
+      : [],
   }));
+}
+
+// ─── Scoring ──────────────────────────────────────────────────────────────────
+
+function toNumberOrNull(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string" && value.trim()) {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
+}
+
+function evaluateConfidenceMode(
+  items: Array<{ matchScore?: number | null }>,
+): ConfidenceMode {
+  const topScore = toNumberOrNull(items[0]?.matchScore) ?? 0;
+  const secondScore = toNumberOrNull(items[1]?.matchScore) ?? 0;
+  const scoreGap = topScore - secondScore;
+  if (topScore >= 75 && scoreGap >= 10) return "strong";
+  if (topScore >= 55) return "moderate";
+  return "weak";
+}
+
+function shouldShowResumeUploadCta(hasResumeEmbedding: boolean): boolean {
+  return !hasResumeEmbedding;
+}
+
+// ─── Rate limiting ────────────────────────────────────────────────────────────
+
+function getDayBucketUtc(date = new Date()): Date {
+  const d = new Date(date);
+  d.setUTCHours(0, 0, 0, 0);
+  return d;
+}
+
+async function isEligiblePaidUser(userId: string): Promise<boolean> {
+  const db = prisma as any;
+  const subscription = await db.subscription.findFirst({
+    where: { userId, status: SubscriptionStatus.ACTIVE },
+    select: { planId: true },
+  });
+  if (!subscription?.planId) return false;
+  return [PLANS.BASIC.id, PLANS.PREMIUM.id].includes(subscription.planId);
+}
+
+async function getDailyUsageCount(
+  userId: string,
+  dayBucket: Date,
+): Promise<number> {
+  const db = prisma as any;
+  const row = await db.aiChatUsage.findUnique({
+    where: { userId_dayBucket: { userId, dayBucket } },
+    select: { requests: true },
+  });
+  return row?.requests ?? 0;
+}
+
+async function incrementDailyUsage(
+  userId: string,
+  dayBucket: Date,
+): Promise<void> {
+  const db = prisma as any;
+  await db.aiChatUsage.upsert({
+    where: { userId_dayBucket: { userId, dayBucket } },
+    create: { userId, dayBucket, requests: 1 },
+    update: { requests: { increment: 1 } },
+  });
 }
 
 function logChatDebug(step: string, payload: unknown): void {
   console.log(`[chat-debug] ${step}`, payload);
 }
 
+// ─── Main handler ─────────────────────────────────────────────────────────────
+
 export async function POST(req: Request) {
   try {
-    const includeDebug = process.env.CHAT_DEBUG === "true" || process.env.NODE_ENV !== "production";
+    const includeDebug =
+      process.env.CHAT_DEBUG === "true" ||
+      process.env.NODE_ENV !== "production";
+
     const body = (await req.json()) as ChatRequestBody;
     const messages = Array.isArray(body?.messages) ? body.messages : [];
 
     if (!messages.length) {
-      return NextResponse.json(
-        { error: "Missing messages" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "Missing messages" }, { status: 400 });
     }
 
     const lastUser =
-      [...messages].reverse().find((m) => m?.role === "user" && typeof m.content === "string")?.content ??
+      [...messages]
+        .reverse()
+        .find(
+          (m) => m?.role === "user" && typeof m.content === "string",
+        )?.content ??
       body.context?.query ??
       "";
+
     const locale = body.context?.locale || "en";
 
-    // Enforce free-tier AI usage limit (20/day), BASIC/PREMIUM unlimited.
+    // ── Auth & rate limiting ──────────────────────────────────────────────────
     const session = await auth();
     const userId = session?.user?.id;
     const sessionId =
       normalizeSessionId(body.context?.sessionId) ||
-      (userId ? `agent-${userId}-${Date.now()}` : `agent-anon-${Date.now()}`);
+      (userId
+        ? `agent-${userId}-${Date.now()}`
+        : `agent-anon-${Date.now()}`);
+
     if (userId) {
       const eligiblePaid = await isEligiblePaidUser(userId);
       if (!eligiblePaid) {
         const dayBucket = getDayBucketUtc();
         const used = await getDailyUsageCount(userId, dayBucket);
         if (used >= FREE_DAILY_LIMIT) {
+          const limitMessage = await buildPlanLimitMessage(lastUser);
           return NextResponse.json({
             action: "chat",
             intent: "jobs",
             searchQuery: "",
-            assistantText: buildPlanLimitMessage(locale),
+            assistantText: limitMessage,
             relatedPrompts: [],
             planLimitReached: true,
             upgradeUrl: "/subscription",
@@ -1143,42 +739,104 @@ export async function POST(req: Request) {
       }
     }
 
+    // ── Fetch resume data ─────────────────────────────────────────────────────
+    const userResumeData = userId
+      ? await (prisma as any).user.findUnique({
+          where: { id: userId },
+          select: {
+            resumeEmbedding: true,
+            autoApplyKeywords: true,
+            resumeUrl: true,
+            resumeJobTitle: true,
+          },
+        })
+      : null;
+
+    const hasResumeEmbedding =
+      Array.isArray(userResumeData?.resumeEmbedding) &&
+      userResumeData.resumeEmbedding.length > 0;
+
+    const hasAnyResumeData = !!(
+      userResumeData?.resumeUrl ||
+      userResumeData?.resumeJobTitle ||
+      (Array.isArray(userResumeData?.autoApplyKeywords) && userResumeData.autoApplyKeywords.length > 0)
+    );
+
+    const resumeProfile = hasAnyResumeData
+      ? {
+          job_title: (userResumeData?.resumeJobTitle as string | undefined) ?? null,
+          skills:
+            (userResumeData?.autoApplyKeywords as string[] | undefined) ?? [],
+          experience_level: null,
+        }
+      : null;
+
+    console.log("[resume-debug]", {
+      hasResumeEmbedding,
+      resumeJobTitle: userResumeData?.resumeJobTitle,
+      autoApplyKeywords: userResumeData?.autoApplyKeywords,
+      resumeProfilePassed: resumeProfile,
+    });
+
+    const scope = body.context?.scope;
+    const quickQuery = (lastUser || "").trim();
+
+    const bypassLlm = shouldBypassIntentLlm({
+      scope,
+      query: quickQuery,
+    });
+
+    // ── Intent extraction ─────────────────────────────────────────────────────
     const extractorHistory: IntentExtractorMessage[] = messages
       .filter((m): m is IntentExtractorMessage => {
         return (
           (m.role === "user" || m.role === "assistant") &&
           typeof m.content === "string" &&
-          m.content.trim().length > 0
+          m.content.trim().length > 0 &&
+          // Filter out thinking/loading placeholder messages
+          m.content.trim().length > 3
         );
       })
-      .slice(-4);
+      .slice(-8);
 
-    const scope = body.context?.scope;
-    const quickQuery = (lastUser || "").trim();
-    const shouldBypassIntentLlm =
-      Boolean(scope && scope !== "auto" && quickQuery) &&
-      isLikelySearchRequest(quickQuery) &&
-      !isGreetingOrSmallTalk(quickQuery);
-
-    const aiResult: Awaited<ReturnType<typeof extractIntent>> = shouldBypassIntentLlm
+    let aiResult = bypassLlm
       ? scope === "services"
-        ? { type: "search_service", reply: "", intent_data: { query: quickQuery } }
+        ? {
+            type: "search_service" as const,
+            reply: "",
+            intent_data: { query: quickQuery },
+            clarify_field: null,
+          }
         : scope === "tasks"
-          ? { type: "search_task", reply: "", intent_data: { query: quickQuery } }
-          : { type: "search_job", reply: "", intent_data: { query: quickQuery } }
+          ? {
+              type: "search_task" as const,
+              reply: "",
+              intent_data: { query: quickQuery },
+              clarify_field: null,
+            }
+          : {
+              type: "search_job" as const,
+              reply: "",
+              intent_data: { query: quickQuery },
+              clarify_field: null,
+            }
       : await extractIntent({
-      locale,
+          locale,
           scope,
-      categoryHint: body.context?.categoryHint,
-      message: lastUser,
-      history: extractorHistory,
-    });
+          categoryHint: body.context?.categoryHint,
+          message: lastUser,
+          history: extractorHistory,
+          resumeProfile: resumeProfile as any,
+        });
+
     logChatDebug("intent_extracted", {
       message: lastUser,
       type: aiResult.type,
       reply: aiResult.reply,
       intent_data: aiResult.intent_data,
+      bypassed: bypassLlm,
     });
+
     await trackAgentEvent({
       userId,
       sessionId,
@@ -1190,61 +848,245 @@ export async function POST(req: Request) {
         categoryHint: body.context?.categoryHint ?? null,
         query: (lastUser || "").slice(0, 500),
         extractedIntentData: aiResult.intent_data ?? null,
+        bypassed: bypassLlm,
       },
     });
 
+    const pinnedScope = body.context?.scope;
+
+    // ── Resume Reference Pattern ──────────────────────────────────────────────
+    // Detect if user is explicitly referencing their resume
+    const resumeReferencePatterns = [
+      /tu as mon (cv|resume|curricul)/i,
+      /you have my (cv|resume)/i,
+      /j'ai envoy[ée] mon (cv|resume)/i,
+      /عندك سيرت/,
+      /لديك سيرت/,
+      /عندي سيرة/,
+    ];
+
+    const isResumeReference =
+      resumeReferencePatterns.some(p => p.test(quickQuery)) && hasAnyResumeData;
+
+    if (isResumeReference && resumeProfile?.job_title) {
+      const category = inferJobCategoryFromText(
+        resumeProfile.job_title,
+        resumeProfile.skills ?? [],
+      ) ?? "Tech";
+      
+      const ackText = await callLLM(
+        [
+          {
+            role: "system",
+            content: `The user is reminding you they have a resume on file. 
+You have their profile: job title "${resumeProfile.job_title}", 
+skills: ${(resumeProfile.skills ?? []).slice(0, 5).join(", ")}.
+Write ONE short, warm sentence in the user's language acknowledging you have their resume
+and that you're about to search based on their profile.
+Keep it under 12 words. No questions. Return only the message text.`,
+          },
+          { role: "user", content: quickQuery },
+        ],
+        { temperature: 0.4, maxTokens: 60 },
+      ).catch(() => `Got it — searching for ${resumeProfile.job_title} positions for you!`);
+
+      aiResult = {
+        type: "search_job",
+        reply: ackText,
+        intent_data: {
+          query: `${resumeProfile.job_title} ${(resumeProfile.skills ?? []).slice(0, 5).join(" ")}`.trim(),
+          category,
+        } as JobIntentData,
+        clarify_field: null,
+      };
+    }
+
+    // Force-correct the intent type when user query contains explicit
+    // service/task keywords but LLM stayed in the pinned scope
+    if (pinnedScope && pinnedScope !== "auto" && aiResult.type !== "conversation") {
+      const forcedType = detectExplicitIntentOverride(quickQuery, pinnedScope);
+      if (forcedType && forcedType !== aiResult.type) {
+        aiResult = { ...aiResult, type: forcedType };
+      }
+    }
+    if (
+      pinnedScope &&
+      pinnedScope !== "auto" &&
+      aiResult.type !== "conversation"
+    ) {
+      const guardResult = checkScopeGuard({
+        pinnedScope,
+        extractedType: aiResult.type,
+        query: quickQuery,
+      });
+
+      if (guardResult.mismatch) {
+        if (guardResult.isExplicit) {
+          // Auto-switch: force the intent type without asking
+          const typeMap: Record<string, string> = {
+            services: "search_service",
+            tasks: "search_task",
+            jobs: "search_job",
+          };
+          aiResult = { ...aiResult, type: typeMap[guardResult.suggestedIntent] as any };
+          // Fall through to the search blocks with corrected type
+        } else {
+          // Ask user to confirm the switch
+          const mismatchMessage = await buildScopeMismatchMessage({
+            currentScope: pinnedScope,
+            suggestedIntent: guardResult.suggestedIntent,
+            userMessage: lastUser,
+          });
+
+          return NextResponse.json({
+            action: "chat",
+            intent: pinnedScope as AgentIntent,
+            searchQuery: "",
+            assistantText: mismatchMessage,
+            relatedPrompts: [
+              `Yes, search ${guardResult.suggestedIntent}`,
+              `No, keep searching ${pinnedScope}`,
+            ],
+            intentMismatch: { suggestedIntent: guardResult.suggestedIntent as AgentIntent },
+          } satisfies AgentResponse);
+        }
+      }
+    }
+
+    // ── Conversation ──────────────────────────────────────────────────────────
     if (aiResult.type === "conversation") {
-      return NextResponse.json({
-        action: "chat",
-        intent: "jobs",
-        searchQuery: "",
-        assistantText: buildCharismaticConversationReply(
-          locale,
-          lastUser,
-          aiResult.reply || buildChatFallbackReply(locale, lastUser),
-        ),
-        relatedPrompts: [],
-        debug: includeDebug
-          ? {
-              stage: "conversation",
-              extracted_intent: aiResult,
-            }
-          : undefined,
-      } satisfies AgentResponse);
+      // If user is asking about jobs vaguely AND we have their resume,
+      // treat this as an implicit job search request — no need to ask for category
+      const isVagueJobRequest =
+        hasAnyResumeData &&
+        resumeProfile?.job_title &&
+        /emploi|job|work|travail|وظيف|خدم/i.test(quickQuery) &&
+        aiResult.clarify_field === "category";
+
+      if (isVagueJobRequest) {
+        // Redirect to search_job using resume data
+        // The system will then ask for location only
+        const category = inferJobCategoryFromText(
+          resumeProfile!.job_title!,
+          resumeProfile!.skills ?? [],
+        ) ?? "Tech";
+
+        const proactiveReply = await callLLM(
+          [
+            {
+              role: "system",
+              content: `The user wants a job and you have their resume on file.
+Job title: "${resumeProfile!.job_title}". Skills: ${(resumeProfile!.skills ?? []).slice(0, 5).join(", ")}.
+Write ONE short warm sentence in the user's language saying you see their profile
+and you'll find matching jobs. Mention their job title. No questions.
+Under 12 words. Return only the text.`,
+            },
+            { role: "user", content: quickQuery },
+          ],
+          { temperature: 0.4, maxTokens: 60 },
+        ).catch(() => "");
+
+        // Mutate aiResult to trigger a job search instead of asking for domain
+        aiResult = {
+          type: "search_job",
+          reply: proactiveReply,
+          intent_data: {
+            query: `${resumeProfile!.job_title} ${(resumeProfile!.skills ?? []).slice(0, 5).join(" ")}`.trim(),
+            category,
+          } as JobIntentData,
+          clarify_field: null,
+        };
+        // Fall through to the search_job block below
+      } else {
+        return NextResponse.json({
+          action: "chat",
+          intent: "jobs",
+          searchQuery: "",
+          assistantText: aiResult.reply || "How can I help you today?",
+          relatedPrompts: [],
+          debug: includeDebug
+            ? { stage: "conversation", extracted_intent: aiResult }
+            : undefined,
+        } satisfies AgentResponse);
+      }
     }
 
     if (aiResult.type === "search_job" && aiResult.intent_data) {
+      const intentData = aiResult.intent_data as JobIntentData;
+
+      console.log("[readiness-debug]", {
+        category: intentData.category,
+        city: intentData.city,
+        locationRequirement: intentData.locationRequirement,
+        stateAbbreviation: intentData.stateAbbreviation,
+        query: intentData.query,
+      });
+
+      const readiness = checkJobSearchReadiness(intentData);
+      if (!readiness.ready) {
+        const clarifyText = await buildSmartClarifyMessage({
+          userMessage: lastUser,
+          intentData,
+          missingField: readiness.missingField,
+          existingReply: aiResult.reply?.trim(),
+        });
+        return NextResponse.json({
+          action: "chat",
+          intent: "jobs",
+          searchQuery: "",
+          assistantText: clarifyText,
+          relatedPrompts: [],
+        } satisfies AgentResponse);
+      }
+
+      // ── Search engine ─────────────────────────────────────────────────────
       const searchResult = await jobSearchEngine(
         prisma as PrismaClient,
-        aiResult.intent_data as JobIntentData,
+        intentData,
       );
-      const searchQuery = aiResult.intent_data.query?.trim() || lastUser.trim();
-      const userResumeData =
-        userId
-          ? await (prisma as any).user.findUnique({
-              where: { id: userId },
-              select: {
-                resumeEmbedding: true,
-                autoApplyKeywords: true,
-              },
-            })
-          : null;
-
-      const hasResumeEmbedding =
-        Array.isArray(userResumeData?.resumeEmbedding) && userResumeData.resumeEmbedding.length > 0;
+      const searchQuery = intentData.query?.trim() || lastUser.trim();
 
       const personalizedRanked = hasResumeEmbedding
         ? rankJobsWithResumeMatch(searchResult.topResults as any, {
             resumeEmbedding: userResumeData.resumeEmbedding as number[],
-            resumeSkills: (userResumeData?.autoApplyKeywords as string[] | undefined) ?? [],
+            resumeSkills:
+              (userResumeData?.autoApplyKeywords as string[] | undefined) ?? [],
           })
         : searchResult.topResults;
 
-      const cards = mapJobCards(personalizedRanked.slice(0, 3), {
-        locale,
-        includeResumeMatch: hasResumeEmbedding,
-      });
+      const cards = mapJobCards(
+        personalizedRanked.slice(0, SEARCH_PAGE_SIZE),
+        { locale, includeResumeMatch: hasResumeEmbedding },
+      );
       const confidenceMode = evaluateConfidenceMode(cards);
+
+      const assistantText = cards.length > 0
+        ? await generatePostResultNarrative({
+            userMessage: lastUser,
+            searchQuery,
+            intent: "jobs",
+            items: cards,
+            locale,
+            hasResume: hasResumeEmbedding,
+          })
+        : aiResult.reply?.trim() ?? "";
+
+      const rawSuggestions = generateDbGroundedSuggestions({
+        topResults: cards,
+        suggestionPool: searchResult.suggestionPool,
+        intentData,
+      });
+
+      const localizedLabels = await localizeSuggestionLabels({
+        rawSuggestions,
+        userQuery: searchQuery,
+        intent: "jobs",
+      });
+
+      const relatedPrompts = localizedLabels.length > 0
+        ? localizedLabels
+        : rawSuggestions.map(s => s.query);
+
       await trackAgentEvent({
         userId,
         sessionId,
@@ -1259,58 +1101,112 @@ export async function POST(req: Request) {
           topIds: cards.map((item) => item.id),
         },
       });
+
       logChatDebug("job_search_pipeline", {
         extracted_query: searchQuery,
         filters_applied: searchResult.filtersApplied,
         result_count: cards.length,
         top_ids: cards.map((card) => card.id),
         used_resume_matching: hasResumeEmbedding,
+        assistant_text: assistantText,
       });
-      const jobDebug =
-        includeDebug
-          ? {
-              stage: "search_job",
-              extracted_intent: aiResult,
-              extracted_query: searchQuery,
-              filters_applied: searchResult.filtersApplied,
-              ranking_top3: personalizedRanked.slice(0, 3).map((item: any) => ({
-                id: item.id,
-                title: item.title,
-                finalScore: item.finalScore,
-                semanticScore: item.semanticScore,
-                overlapScore: item.overlapScore,
-                recencyScore: item.recencyScore,
-                resumeMatchScore: item.resumeMatchScore,
-                blendedScore: item.blendedScore,
-              })),
-              used_resume_matching: hasResumeEmbedding,
-            }
-          : undefined;
+
       return NextResponse.json({
         action: "search",
         intent: "jobs",
         searchQuery,
-        assistantText: hasResumeEmbedding
-          ? buildResumeJobMatchMarkdownSummary(locale, searchQuery, cards, confidenceMode)
-          : buildResumeUploadHint(locale),
-        results: {
-          type: "jobs",
-          items: cards,
-        },
-        resumeUploadCta: hasResumeEmbedding ? undefined : buildResumeUploadCta(locale),
-        debug: jobDebug,
-        relatedPrompts: buildSmartRelatedPrompts(locale, "jobs", searchQuery, cards, confidenceMode),
+        assistantText,
+        results: { type: "jobs", items: cards },
+        showResumeUploadCta: shouldShowResumeUploadCta(hasResumeEmbedding),
+        relatedPrompts,
+        debug: includeDebug
+            ? {
+              stage: "search_job",
+              extracted_intent: aiResult,
+              filters_applied: searchResult.filtersApplied,
+              bypassed: bypassLlm,
+              ranking_top3: personalizedRanked.slice(0, 3).map((item: any) => ({
+                id: item.id,
+                title: item.title,
+                finalScore: item.finalScore,
+                blendedScore: item.blendedScore,
+              })),
+            }
+          : undefined,
       } satisfies AgentResponse);
     }
 
+    // ── Service search ────────────────────────────────────────────────────────
     if (aiResult.type === "search_service" && aiResult.intent_data) {
+      const intentData = aiResult.intent_data as ServiceIntentData;
+
+      if (!intentData.typeKey || !intentData.serviceCategory) {
+        const classifiedService = classifyServiceQuery(
+          intentData.query?.trim() || lastUser,
+        );
+
+        if (classifiedService) {
+          if (!intentData.typeKey) {
+            intentData.typeKey = classifiedService.typeKey;
+          }
+          if (!intentData.serviceCategory) {
+            intentData.serviceCategory = classifiedService.category;
+          }
+        }
+      }
+      
+      const serviceReadiness = checkServiceSearchReadiness(intentData);
+      if (!serviceReadiness.ready) {
+        const clarifyText = await callLLM(
+          [
+            {
+              role: "system",
+              content: `The user wants a service but hasn't specified what kind.
+Ask them naturally in their language what type of service they need.
+Give 3-4 short examples relevant to a marketplace (plumber, car wash, graphic designer, tutor).
+Keep it under 2 sentences. Sound like a helpful friend.
+Return only the question text.`,
+            },
+            { role: "user", content: lastUser },
+          ],
+          { temperature: 0.4, maxTokens: 80 },
+        ).catch(() => "What kind of service are you looking for?");
+
+        return NextResponse.json({
+          action: "chat",
+          intent: "services",
+          searchQuery: "",
+          assistantText: clarifyText,
+          relatedPrompts: [],
+        } satisfies AgentResponse);
+      }
+      
       const searchResult = await serviceSearchEngine(
         prisma as PrismaClient,
-        aiResult.intent_data as ServiceIntentData,
+        intentData,
       );
-      const searchQuery = aiResult.intent_data.query?.trim() || lastUser.trim();
+      const searchQuery = intentData.query?.trim() || lastUser.trim();
       const cards = mapServiceCards(searchResult.topResults);
       const confidenceMode = evaluateConfidenceMode(cards);
+
+      const assistantText = cards.length > 0
+        ? await generatePostResultNarrative({
+            userMessage: lastUser,
+            searchQuery,
+            intent: "services",
+            items: cards,
+            locale,
+            hasResume: false,
+          })
+        : aiResult.reply?.trim() ?? "";
+
+      const relatedPrompts = await generateSmartSuggestions({
+        intent: "services",
+        query: searchQuery,
+        extractedData: intentData,
+        items: cards,
+      });
+
       await trackAgentEvent({
         userId,
         sessionId,
@@ -1324,86 +1220,77 @@ export async function POST(req: Request) {
           topIds: cards.map((item) => item.id),
         },
       });
+
       logChatDebug("service_search_pipeline", {
         extracted_query: searchQuery,
         filters_applied: searchResult.filtersApplied,
         result_count: cards.length,
         top_ids: cards.map((card) => card.id),
       });
-      const serviceDebug =
-        includeDebug
-          ? {
-              stage: "search_service",
-              extracted_intent: aiResult,
-              extracted_query: searchQuery,
-              filters_applied: searchResult.filtersApplied,
-              ranking_top3: searchResult.topResults.map((item) => ({
-                id: item.id,
-                title: item.title,
-                finalScore: item.finalScore,
-                semanticScore: item.semanticScore,
-                ratingScore: item.ratingScore,
-                reviewsScore: item.reviewsScore,
-                locationScore: item.locationScore,
-                priceScore: item.priceScore,
-              })),
-            }
-          : undefined;
+
       return NextResponse.json({
         action: "search",
         intent: "services",
         searchQuery,
-        assistantText: buildServiceMarkdownSummary(locale, searchQuery, cards, confidenceMode),
-        results: {
-          type: "services",
-          items: cards,
-        },
-        debug: serviceDebug,
-        relatedPrompts: buildSmartRelatedPrompts(locale, "services", searchQuery, cards, confidenceMode),
+        assistantText,
+        results: { type: "services", items: cards },
+        relatedPrompts,
+        debug: includeDebug
+          ? {
+              stage: "search_service",
+              extracted_intent: aiResult,
+              filters_applied: searchResult.filtersApplied,
+            }
+          : undefined,
       } satisfies AgentResponse);
     }
 
+    // ── Task search ───────────────────────────────────────────────────────────
     if (aiResult.type === "search_task" && aiResult.intent_data) {
-      const searchQuery = aiResult.intent_data.query?.trim() || lastUser.trim();
+      const searchQuery =
+        (aiResult.intent_data as any).query?.trim() || lastUser.trim();
+      const assistantText = aiResult.reply?.trim() ?? "";
+
+      const relatedPrompts = await generateSmartSuggestions({
+        intent: "tasks",
+        query: searchQuery,
+        extractedData: null,
+        items: [],
+      });
+
       await trackAgentEvent({
         userId,
         sessionId,
         name: "AGENT_SEARCH_RESULTS_RETURNED",
         intent: "search_task",
-        data: {
-          query: searchQuery,
-          resultsCount: 0,
-          note: "task search cards are currently not returned from /api/chat route",
-        },
+        data: { query: searchQuery, resultsCount: 0 },
       });
+
       return NextResponse.json({
         action: "search",
         intent: "tasks",
         searchQuery,
-        assistantText: "",
-        relatedPrompts: buildSmartRelatedPrompts(locale, "tasks", searchQuery, [], "weak"),
+        assistantText,
+        relatedPrompts,
       } satisfies AgentResponse);
     }
 
-    const fallbackQuery = (lastUser || "").trim();
+    // ── Fallback ──────────────────────────────────────────────────────────────
     return NextResponse.json({
       action: "search",
       intent: "jobs",
-      searchQuery: fallbackQuery || "jobs",
+      searchQuery: quickQuery || "jobs",
       assistantText: "",
-      debug: includeDebug
-        ? {
-            stage: "fallback",
-            extracted_intent: aiResult,
-          }
-        : undefined,
       relatedPrompts: [],
+      debug: includeDebug
+        ? { stage: "fallback", extracted_intent: aiResult }
+        : undefined,
     } satisfies AgentResponse);
   } catch (err: any) {
+    console.error("[chat/route] Unhandled error:", err);
     return NextResponse.json(
       { error: err?.message || "Unknown error" },
       { status: 500 },
     );
   }
 }
-

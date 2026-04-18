@@ -18,6 +18,7 @@ model User {
   phone             String?
   image             String?
   resumeUrl         String?
+  resumeJobTitle    String?
   // Dense embedding vector for the latest uploaded resume / cv
   resumeEmbedding   Float[]            @default([])
   createdAt         DateTime           @default(now())
@@ -619,6 +620,7 @@ enum WebhookEventType {
 enum EventName {
   AGENT_INTENT_TRIGGERED
   AGENT_SEARCH_RESULTS_RETURNED
+  CARD_CLICKED
 }
 
 enum AgentIntentType {

@@ -1,0 +1,327 @@
+[
+  {
+    "key": "plumber",
+    "category": "HomeMaintenance",
+    "dbTypeValues": ["Plumber"],
+    "labels": {
+      "en": ["plumber", "plumbing", "pipe repair", "leak repair", "sink repair", "fix sink", "fix my sink"],
+      "fr": ["plombier", "plomberie", "fuite d'eau", "réparation tuyau", "réparation évier", "réparer évier"],
+      "ar": ["سباك", "سباكة", "إصلاح تسرب", "إصلاح حنفية", "تصليح السخان"],
+      "darija": ["plombier", "chi plombier", "tsrib dial lma", "sbbak", "plomberie"]
+    }
+  },
+  {
+    "key": "electrician",
+    "category": "HomeMaintenance",
+    "dbTypeValues": ["Electrician", "Electrician Services"],
+    "labels": {
+      "en": ["electrician", "electrical repair", "wiring", "power issue", "electric service"],
+      "fr": ["électricien", "électricité", "panne électrique", "câblage", "service électrique"],
+      "ar": ["كهربائي", "كهرباء", "عطل كهربائي", "تمديد كهرباء", "إصلاح كهرباء"],
+      "darija": ["kahrabai", "chi kahrabai", "mouchkil dial do", "lektrika", "service dial lektrika"]
+    }
+  },
+  {
+    "key": "cleaning",
+    "category": "HomeMaintenance",
+    "dbTypeValues": ["Cleaning", "Cleaning Service"],
+    "labels": {
+      "en": ["cleaning", "cleaner", "house cleaning", "deep cleaning", "cleaning service"],
+      "fr": ["nettoyage", "service ménage", "femme de ménage", "grand ménage", "nettoyer maison"],
+      "ar": ["تنظيف", "خدمة تنظيف", "مساعدة منزلية", "تنظيف المنزل", "تنظيف عميق"],
+      "darija": ["tn9iya", "chi wahed yn9i", "nettoyage", "ménage", "nettoyer dar"]
+    }
+  },
+  {
+    "key": "pest_control",
+    "category": "HomeMaintenance",
+    "dbTypeValues": ["Pest Control"],
+    "labels": {
+      "en": ["pest control", "exterminator", "bug treatment", "cockroach removal", "rat removal"],
+      "fr": ["désinsectisation", "anti nuisibles", "traitement cafards", "dératisation", "pest control"],
+      "ar": ["مكافحة الحشرات", "إبادة الحشرات", "رش الحشرات", "مكافحة الفئران", "إزالة الصراصير"],
+      "darija": ["mou7arabat l7chrat", "chi wahed y7ayed l7chrat", "cafards", "7chrat", "dératisation"]
+    }
+  },
+  {
+    "key": "architect",
+    "category": "ConstructionInstallation",
+    "dbTypeValues": [
+      "Architect",
+      "Architectural Services",
+      "Architectural Design",
+      "Architecture Services",
+      "Architectural Design Services"
+    ],
+    "labels": {
+      "en": ["architect", "architectural design", "house plan", "building design", "architecture service"],
+      "fr": ["architecte", "plan maison", "conception architecturale", "dessin architectural", "service architecture"],
+      "ar": ["مهندس معماري", "تصميم معماري", "مخطط منزل", "خدمة معمارية", "تصميم بناء"],
+      "darija": ["architecte", "mohandis mi3mari", "plan dyal dar", "design dyal dar", "khadma dial architecture"]
+    }
+  },
+  {
+    "key": "lawyer",
+    "category": "LegalFinance",
+    "dbTypeValues": ["Lawyer", "Law Firm"],
+    "labels": {
+      "en": ["lawyer", "attorney", "legal advice", "legal consultation", "law firm"],
+      "fr": ["avocat", "cabinet d'avocat", "conseil juridique", "consultation juridique", "service juridique"],
+      "ar": ["محامي", "استشارة قانونية", "مكتب محاماة", "خدمة قانونية", "محامي قضايا"],
+      "darija": ["avocat", "m7ami", "conseil juridique", "chi m7ami", "cabinet avocat"]
+    }
+  },
+  {
+    "key": "accountant",
+    "category": "LegalFinance",
+    "dbTypeValues": ["Accountant", "Accounting Services", "Accounting Firm", "Accounting Service"],
+    "labels": {
+      "en": ["accountant", "accounting", "bookkeeping", "tax filing", "accounting service"],
+      "fr": ["comptable", "comptabilité", "cabinet comptable", "déclaration fiscale", "service comptable"],
+      "ar": ["محاسب", "محاسبة", "خدمة محاسبة", "تصريح ضريبي", "مكتب محاسبة"],
+      "darija": ["comptable", "mou7asib", "mohassaba", "tax", "cabinet comptable"]
+    }
+  },
+  {
+    "key": "doctor",
+    "category": "HealthWellness",
+    "dbTypeValues": [],
+    "labels": {
+      "en": ["doctor", "medical doctor", "clinic", "medical consultation", "health service"],
+      "fr": ["docteur", "médecin", "clinique", "consultation médicale", "service médical"],
+      "ar": ["طبيب", "دكتور", "عيادة", "استشارة طبية", "خدمة طبية"],
+      "darija": ["doktor", "tbib", "clinique", "consultation", "chi tbib"]
+    }
+  },
+  {
+    "key": "general_practitioner",
+    "category": "HealthWellness",
+    "dbTypeValues": ["general practitioner"],
+    "labels": {
+      "en": ["general practitioner", "family doctor", "gp doctor", "general medicine", "primary care doctor"],
+      "fr": ["médecin généraliste", "généraliste", "médecine générale", "docteur généraliste", "médecin de famille"],
+      "ar": ["طبيب عام", "طبيب الأسرة", "طب عام", "استشارة عامة", "دكتور عام"],
+      "darija": ["tbib 3am", "docteur généraliste", "chi tbib 3am", "médecine générale", "tbib dial l3a2ila"]
+    }
+  },
+  {
+    "key": "dentist",
+    "category": "HealthWellness",
+    "dbTypeValues": ["dentist"],
+    "labels": {
+      "en": ["dentist", "tooth doctor", "dental care", "toothache", "dental consultation"],
+      "fr": ["dentiste", "soin dentaire", "mal de dent", "consultation dentaire", "médecin des dents"],
+      "ar": ["طبيب أسنان", "أسنان", "ألم الأسنان", "علاج الأسنان", "استشارة أسنان"],
+      "darija": ["tbib snan", "dentiste", "snan", "wje3 snan", "chi dentiste"]
+    }
+  },
+  {
+    "key": "gynecologist",
+    "category": "HealthWellness",
+    "dbTypeValues": ["gynecologist"],
+    "labels": {
+      "en": ["gynecologist", "women's doctor", "pregnancy doctor", "gynecology", "ob gyn"],
+      "fr": ["gynécologue", "médecin des femmes", "suivi grossesse", "gynécologie", "consultation gynécologue"],
+      "ar": ["طبيب نساء", "أخصائي نساء", "متابعة الحمل", "طب النساء", "طبيبة نساء"],
+      "darija": ["gynécologue", "tbiba nssa", "docteur dial nssa", "suivi dial l7aml", "chi gynécologue"]
+    }
+  },
+  {
+    "key": "cardiologist",
+    "category": "HealthWellness",
+    "dbTypeValues": ["cardiologist"],
+    "labels": {
+      "en": ["cardiologist", "heart doctor", "heart specialist"],
+      "fr": ["cardiologue", "médecin du coeur", "spécialiste du coeur"],
+      "ar": ["طبيب قلب", "أخصائي قلب", "دكتور قلب"],
+      "darija": ["cardiologue", "doktor dial l9elb", "tbib l9elb"]
+    }
+  },
+  {
+    "key": "ophthalmologist",
+    "category": "HealthWellness",
+    "dbTypeValues": ["ophthalmologist"],
+    "labels": {
+      "en": ["ophthalmologist", "eye doctor", "eye specialist"],
+      "fr": ["ophtalmologue", "médecin des yeux", "spécialiste des yeux"],
+      "ar": ["طبيب عيون", "أخصائي عيون", "دكتور عيون"],
+      "darija": ["ophtalmologue", "tbib l3inin", "doktor dial l3inin"]
+    }
+  },
+  {
+    "key": "gastroenterologist",
+    "category": "HealthWellness",
+    "dbTypeValues": ["gastroenterologist"],
+    "labels": {
+      "en": ["gastroenterologist", "stomach doctor", "digestive specialist"],
+      "fr": ["gastro-entérologue", "médecin de l'estomac", "spécialiste digestif"],
+      "ar": ["طبيب جهاز هضمي", "أخصائي هضم", "دكتور معدة"],
+      "darija": ["gastro", "tbib dial lma3ida", "doktor dial الهضم"]
+    }
+  },
+  {
+    "key": "otolaryngologist",
+    "category": "HealthWellness",
+    "dbTypeValues": ["otolaryngologist"],
+    "labels": {
+      "en": ["ent doctor", "ear nose throat doctor", "otolaryngologist"],
+      "fr": ["orl", "oto-rhino-laryngologiste", "médecin orl"],
+      "ar": ["طبيب أنف وأذن وحنجرة", "أخصائي أنف وأذن", "دكتور ORL"],
+      "darija": ["orl", "tbib dn w wdnin", "doktor orl"]
+    }
+  },
+  {
+    "key": "urologist",
+    "category": "HealthWellness",
+    "dbTypeValues": ["urologist"],
+    "labels": {
+      "en": ["urologist", "urinary doctor", "kidney specialist"],
+      "fr": ["urologue", "médecin urinaire", "spécialiste urologie"],
+      "ar": ["طبيب مسالك بولية", "أخصائي مسالك", "دكتور كلى ومسالك"],
+      "darija": ["urologue", "tbib lmasalik", "doktor dial lmasalik"]
+    }
+  },
+  {
+    "key": "pediatrician",
+    "category": "HealthWellness",
+    "dbTypeValues": ["pediatrician"],
+    "labels": {
+      "en": ["pediatrician", "children doctor", "baby doctor", "kids doctor"],
+      "fr": ["pédiatre", "médecin pour enfants", "docteur bébé", "médecin enfant"],
+      "ar": ["طبيب أطفال", "دكتور أطفال", "أخصائي أطفال", "طبيب رضيع"],
+      "darija": ["pédiatre", "tbib drari", "doktor dial l3yalat sghar", "chi pédiatre"]
+    }
+  },
+  {
+    "key": "dermatologist",
+    "category": "HealthWellness",
+    "dbTypeValues": ["dermatologist"],
+    "labels": {
+      "en": ["dermatologist", "skin doctor", "skin specialist", "acne doctor"],
+      "fr": ["dermatologue", "médecin de la peau", "spécialiste peau", "acné"],
+      "ar": ["طبيب جلد", "أخصائي جلد", "دكتور بشرة", "علاج البشرة"],
+      "darija": ["dermatologue", "tbib jeld", "doktor dial lbchra", "chi dermatologue"]
+    }
+  },
+  {
+    "key": "psychiatrist",
+    "category": "HealthWellness",
+    "dbTypeValues": ["psychiatrist"],
+    "labels": {
+      "en": ["psychiatrist", "mental health doctor", "psychiatry", "anxiety doctor"],
+      "fr": ["psychiatre", "médecin santé mentale", "psychiatrie", "docteur anxiété"],
+      "ar": ["طبيب نفسي", "أخصائي نفسي", "صحة نفسية", "استشارة نفسية"],
+      "darija": ["psychiatre", "tbib nafsi", "s7a nafsiya", "chi psy"]
+    }
+  },
+  {
+    "key": "orthopedic",
+    "category": "HealthWellness",
+    "dbTypeValues": ["orthopedic"],
+    "labels": {
+      "en": ["orthopedic", "bone doctor", "joint specialist"],
+      "fr": ["orthopédiste", "médecin des os", "spécialiste articulations"],
+      "ar": ["طبيب عظام", "أخصائي عظام", "دكتور مفاصل"],
+      "darija": ["orthopédiste", "tbib l3dam", "doktor dial l3dam"]
+    }
+  },
+  {
+    "key": "neurologist",
+    "category": "HealthWellness",
+    "dbTypeValues": ["neurologist"],
+    "labels": {
+      "en": ["neurologist", "brain doctor", "nerve specialist"],
+      "fr": ["neurologue", "médecin du cerveau", "spécialiste nerfs"],
+      "ar": ["طبيب أعصاب", "أخصائي أعصاب", "دكتور دماغ وأعصاب"],
+      "darija": ["neurologue", "tbib l3sab", "doktor dial l3sab"]
+    }
+  },
+  {
+    "key": "rheumatologist",
+    "category": "HealthWellness",
+    "dbTypeValues": ["rheumatologist"],
+    "labels": {
+      "en": ["rheumatologist", "arthritis doctor", "joint pain specialist"],
+      "fr": ["rhumatologue", "médecin arthrite", "douleur articulations"],
+      "ar": ["طبيب روماتيزم", "أخصائي روماتيزم", "دكتور مفاصل"],
+      "darija": ["rhumatologue", "tbib romatizm", "doktor dial lmafasil"]
+    }
+  },
+  {
+    "key": "endocrinologist",
+    "category": "HealthWellness",
+    "dbTypeValues": ["endocrinologist"],
+    "labels": {
+      "en": ["endocrinologist", "hormone doctor", "diabetes specialist"],
+      "fr": ["endocrinologue", "médecin hormones", "spécialiste diabète"],
+      "ar": ["طبيب غدد", "أخصائي غدد", "دكتور سكري وغدد"],
+      "darija": ["endocrinologue", "tbib lghdad", "doktor dial السكري"]
+    }
+  },
+  {
+    "key": "pulmonologist",
+    "category": "HealthWellness",
+    "dbTypeValues": ["pulmonologist"],
+    "labels": {
+      "en": ["pulmonologist", "lung doctor", "respiratory specialist"],
+      "fr": ["pneumologue", "médecin des poumons", "spécialiste respiratoire"],
+      "ar": ["طبيب رئة", "أخصائي صدر", "دكتور تنفس"],
+      "darija": ["pneumologue", "tbib rriya", "doktor dial tnfass"]
+    }
+  },
+  {
+    "key": "angiologist",
+    "category": "HealthWellness",
+    "dbTypeValues": ["angiologist"],
+    "labels": {
+      "en": ["angiologist", "blood vessel doctor", "vascular specialist"],
+      "fr": ["angiologue", "médecin des vaisseaux", "spécialiste vasculaire"],
+      "ar": ["طبيب أوعية دموية", "أخصائي أوعية", "دكتور شرايين"],
+      "darija": ["angiologue", "tbib chrayen", "doktor dial lwa3iya"]
+    }
+  },
+  {
+    "key": "nutritionist",
+    "category": "HealthWellness",
+    "dbTypeValues": ["nutritionist"],
+    "labels": {
+      "en": ["nutritionist", "dietitian", "food coach", "weight loss specialist", "nutrition advice"],
+      "fr": ["nutritionniste", "diététicien", "conseil nutrition", "perte de poids", "régime alimentaire"],
+      "ar": ["أخصائي تغذية", "تغذية", "دايت", "إنقاص الوزن", "استشارة تغذية"],
+      "darija": ["nutritionniste", "taghdia", "regime", "chi nutritionniste", "perte de poids"]
+    }
+  },
+  {
+    "key": "esthetician",
+    "category": "BeautyPersonalCare",
+    "dbTypeValues": ["Esthetician", "Esthetician Services", "Esthetician Service", "Skincare", "Skincare Services"],
+    "labels": {
+      "en": ["esthetician", "facial", "skincare", "skin treatment", "beauty treatment"],
+      "fr": ["esthéticienne", "soin visage", "soin peau", "traitement peau", "service beauté"],
+      "ar": ["أخصائية تجميل", "عناية بالبشرة", "تنظيف بشرة", "علاج البشرة", "جلسة تجميل"],
+      "darija": ["esthéticienne", "soin visage", "lbchra", "chi esthéticienne", "beauty care"]
+    }
+  },
+  {
+    "key": "beauty_salon",
+    "category": "BeautyPersonalCare",
+    "dbTypeValues": ["Hair Salon", "Beauty Salon", "Hair and Beauty Salon", "Hair and Beauty Studio", "Hair Stylist", "Beauty Spa", "Spa"],
+    "labels": {
+      "en": ["beauty salon", "hair salon", "hairdresser", "hair styling", "salon"],
+      "fr": ["salon de beauté", "salon coiffure", "coiffeur", "coiffure", "salon"],
+      "ar": ["صالون تجميل", "صالون حلاقة", "كوافير", "تصفيف شعر", "صالون"],
+      "darija": ["salon", "coiffeur", "koifir", "chi salon", "salon dial zzin"]
+    }
+  },
+  {
+    "key": "barber",
+    "category": "BeautyPersonalCare",
+    "dbTypeValues": ["Barber Shop", "Barbershop"],
+    "labels": {
+      "en": ["barber", "barber shop", "men haircut", "beard trim", "barbershop"],
+      "fr": ["barbier", "barbershop", "coupe homme", "taille barbe", "salon homme"],
+      "ar": ["حلاق", "محل حلاقة", "قص شعر رجال", "تهذيب اللحية", "حلاقة رجال"],
+      "darija": ["7la9", "barber", "barbershop", "chi 7la9", "9ss ch3er"]
+    }
+  }
+]

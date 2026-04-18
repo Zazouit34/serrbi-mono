@@ -1,4 +1,5 @@
 import { buildIntentExtractorPrompt } from "./prompt/intent";
+import { classifyServiceQuery } from "./classifier";
 
 type ChatRole = "system" | "user" | "assistant";
 
@@ -30,6 +31,7 @@ export type JobIntentData = {
 export type ServiceIntentData = {
   query: string;
   serviceCategory?: string | null;
+  typeKey?: string | null;
   type?: string | null;
   city?: string | null;
   stateAbbreviation?: string | null;
@@ -54,6 +56,7 @@ export type AgentResponse = {
   type: IntentType;
   reply: string;
   intent_data: IntentData | null;
+  clarify_field?: "category" | null;
 };
 
 export type ResumeProfile = {
@@ -78,6 +81,7 @@ type ExtractIntentInput = {
   categoryHint?: string;
   message: string;
   history?: ChatMessage[];
+  resumeProfile?: Partial<ResumeProfile> | null;
 };
 
 function getRequiredEnv(name: string): string {
@@ -227,10 +231,12 @@ function safeParseResponse(text: string): AgentResponse | null {
       : null;
 
   if (type === "conversation") {
+    const clarify = obj.clarify_field === "category" ? "category" as const : null;
     return {
       type,
       reply: reply || "How can I help you today?",
       intent_data: null,
+      clarify_field: clarify,
     };
   }
 
@@ -258,6 +264,7 @@ function safeParseResponse(text: string): AgentResponse | null {
     const intentData: ServiceIntentData = {
       query,
       serviceCategory: parseString(rawIntentData?.serviceCategory),
+      typeKey: parseString(rawIntentData?.typeKey),
       type: parseString(rawIntentData?.type),
       city: parseString(rawIntentData?.city),
       stateAbbreviation: parseString(rawIntentData?.stateAbbreviation),
@@ -312,8 +319,17 @@ function fallbackExtractor(input: ExtractIntentInput): AgentResponse {
     return { type: "search_task", reply: "", intent_data: { query: q } };
   }
 
-  if (/(service|services|plumber|lawyer|doctor|electrician|خدمة|خدمات)/i.test(lowered)) {
-    return { type: "search_service", reply: "", intent_data: { query: q } };
+  const classifiedService = classifyServiceQuery(q);
+  if (classifiedService) {
+    return {
+      type: "search_service",
+      reply: "",
+      intent_data: {
+        query: q,
+        serviceCategory: classifiedService.category,
+        typeKey: classifiedService.typeKey,
+      },
+    };
   }
   if (/(task|tasks|mission|مهمة|مهام)/i.test(lowered)) {
     return { type: "search_task", reply: "", intent_data: { query: q } };
@@ -325,6 +341,7 @@ export async function extractIntent(input: ExtractIntentInput): Promise<AgentRes
   const systemPrompt = buildIntentExtractorPrompt({
     scope: input.scope,
     categoryHint: input.categoryHint,
+    resumeProfile: input.resumeProfile,
   });
   const compactHistory = (input.history ?? []).slice(-6);
   const messages: ChatMessage[] = [

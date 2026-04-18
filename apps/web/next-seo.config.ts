@@ -1,8 +1,6 @@
 const siteName = 'Serrbi'
-const primary = process.env.NEXT_PUBLIC_PRIMARY_DOMAIN || 'serrbi.ma'
-const secondary = process.env.NEXT_PUBLIC_SECONDARY_DOMAIN || 'serrbi.com'
-
-const baseUrl = `https://${primary}`
+const domain = process.env.NEXT_PUBLIC_PRIMARY_DOMAIN || 'serrbi.ma'
+const baseUrl = `https://${domain}`
 
 const config = {
   titleTemplate: `%s | ${siteName}`,

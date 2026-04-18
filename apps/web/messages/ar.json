@@ -401,6 +401,34 @@
     },
     "browseJobs": "تصفح الوظائف",
     "loadMore": "تحميل المزيد",
+    "errorMessage": "عذرًا، لا أستطيع بدء البحث الآن. حاول مرة أخرى بعد قليل.",
+    "jobsShort": "وظائف",
+    "servicesShort": "خدمات",
+    "tasksShort": "مهام",
+    "whyPicked": "سبب الاختيار",
+    "confidence": "مستوى الثقة",
+    "resume": {
+      "uploadText": "جاري رفع السيرة الذاتية...",
+      "receiveText": "تم استلام السيرة الذاتية — جاري تحليل خبرتك...",
+      "doneText": "تم إرفاق السيرة الذاتية وتحديث الملف. ستكون عمليات البحث التالية أكثر دقة بفضل مطابقة السيرة الذاتية.",
+      "errorText": "تعذر إرفاق السيرة الذاتية الآن. الرجاء المحاولة مرة أخرى.",
+      "pdfOnly": "يرجى إرفاق ملف PDF.",
+      "attachLabel": "إرفاق السيرة الذاتية (PDF)",
+      "attachedLabel": "السيرة مرفقة",
+      "noCv": "بدون سيرة",
+      "postUploadMessage": "لقد حللت سيرتك الذاتية. بناءً على ملفك كـ {jobTitle}، سأجد لك أفضل الوظائف المناسبة.",
+      "cta": {
+        "title": "إجراء مهم: أرفق سيرتك الذاتية",
+        "description": "النتائج متوفرة، لكن المطابقة ستكون أدق إذا أرفقت السيرة الذاتية الآن.",
+        "buttonLabel": "إرفاق السيرة الذاتية"
+      }
+    },
+    "intentSelect": {
+      "placeholder": "التركيز على...",
+      "jobs": "وظائف",
+      "services": "خدمات",
+      "tasks": "مهام"
+    },
     "onboarding": {
       "greeting": "مرحباً، أنا سيربي! يمكنني مساعدتك في إيجاد",
       "chooseAction": "اختر",
@@ -411,6 +439,35 @@
       "confirmChoiceService": "ممتاز! لقد اخترت **خدمات**. أخبرني عن الخدمة التي تحتاجها (مثال: سباك، محامي، مصمم).",
       "confirmChoiceTask": "ممتاز! لقد اخترت **مهام**. أخبرني عن المهمة التي تحتاج المساعدة فيها."
     }
+  },
+  "ChatResumeInsight": {
+    "cvBadge": "سيرة",
+    "resumeScore": "تقييم السيرة",
+    "scoreLabels": {
+      "excellent": "ممتاز",
+      "good": "جيد",
+      "average": "متوسط",
+      "needsWork": "يحتاج تحسيناً"
+    },
+    "scoreSeparator": "—",
+    "outOfHundred": "/ 100",
+    "missingPrefix": "ناقص:",
+    "viewInsights": "عرض التفاصيل",
+    "keyIssues": "أهم النقاط",
+    "suggestions": "اقتراحات",
+    "suggestedRoles": "أدوار مقترحة",
+    "improveResume": "تحسين السيرة",
+    "moreDetails": "المزيد من التفاصيل",
+    "hideDetails": "إخفاء التفاصيل",
+    "breakdown": {
+      "skillsMatch": "تطابق المهارات",
+      "experience": "الخبرة",
+      "formatting": "التنسيق",
+      "atsCompatibility": "توافق ATS"
+    },
+    "reengagementTitle": "يمكن تحسين سيرتك الذاتية لمطابقة أفضل",
+    "reengagementPotential": "+12% زيادة محتملة في النقاط",
+    "improveNow": "حسّن الآن"
   },
   "Routes": {
     "resumeAnalyzer": "محلل السيرة الذاتية",
@@ -959,14 +1016,20 @@
       "queue": "وظائف قيد التركيز",
       "queueHint": "أفضل التطابقات تتجدد مع كل وظيفة جديدة.",
       "resumed": "تم استئناف الذكاء الاصطناعي",
-      "pausedToast": "تم إيقاف الذكاء الاصطناعي"
+      "pausedToast": "تم إيقاف الذكاء الاصطناعي",
+      "strictMatch": "مطابقة صارمة",
+      "strictMatchHint": "إرجاع الوظائف المطابقة فقط للفئة والأدوار والكلمات المفتاحية المحددة",
+      "smartOutreach": "بحث ذكي",
+      "smartOutreachHint": "ترتيب الوظائف بناءً على الملف الدلالي لسيرتك الذاتية"
     },
     "prefs": {
       "title": "التفضيلات",
       "subtitle": "عدّلها فقط عند الحاجة.",
-      "hint": "نستمر في التعلم من طلباتك الأخيرة.",
+      "hint": "محرك منطق الوكيل",
       "edit": "تعديل",
-      "hide": "إخفاء"
+      "hide": "إخفاء",
+      "agentLogic": "منطق الأتمتة",
+      "addMore": "إضافة"
     },
     "activity": {
       "title": "نشاط الذكاء الاصطناعي",
@@ -984,14 +1047,19 @@
     },
     "listing": {
       "title": "مختارة لك بعناية",
+      "curatedTitle": "قائمة المطابقات المنتقاة",
+      "curatedSubtitle": "حدّد الذكاء الاصطناعي {total} فرصة واعدة لملفك الشخصي.",
       "subtitle": "استنادًا إلى خبرتك وتفضيلاتك وإشارات سيرتك الذاتية.",
+      "refine": "تحسين",
       "updating": "جارٍ التحديث…",
       "jobsInQueue": "{count} وظيفة في الانتظار",
       "noMatching": "لا توجد حتى الآن وظائف مطابقة لتفضيلات التقديم الآلي الخاصة بك.",
       "resumeHint": "متوافق مع سيرتك الذاتية وتفضيلاتك",
       "bestMatches": "عرض أفضل {count} وظيفة مرتّبة لك.",
-      "refresh": "تحديث الاقتراحات",
-      "applyPage": "التقديم على كل الوظائف في هذه الصفحة",
+      "pageRange": "عرض {from} إلى {to} من {total} مطابقة",
+      "refresh": "تحديث",
+      "applyPage": "تقديم جماعي",
+      "pageOf": "صفحة {page} من {totalPages} · {total} وظيفة",
       "bulkApplying": "جارٍ إرسال الطلبات…",
       "bulkAppliedSuccess": "تم التقديم على {applied} وظائف. تم تجاهل {skipped}.",
       "bulkAppliedNone": "لم يتم إرسال أي طلبات جديدة. تم تجاهل {skipped} وظائف.",

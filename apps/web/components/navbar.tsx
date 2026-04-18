@@ -7,7 +7,7 @@ import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { cn } from "@workspace/ui/lib/utils";
-import { Globe2, CircleCheckIcon, CircleIcon, Wallet, Zap, Menu, TrendingUp, FileText } from "lucide-react";
+import { Globe2, CircleCheckIcon, CircleIcon, Wallet, Zap, Menu } from "lucide-react";
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -17,7 +17,7 @@ import {
   NavigationMenuTrigger,
 } from "@workspace/ui/components/navigation-menu";
 import { Container } from "@workspace/ui/components/container";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { SerrbiLogo } from "./SerrbiLogo";
 import { UserMenu } from "./user-menu"; // 👈 your existing user menu component
 import {
@@ -26,23 +26,21 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu";
-import { isSecondaryClient } from "@/lib/domain";
 
 const DEFAULT_LINKS = [
   //{ href: "/jobs", key: "jobs", image: "/images/jobs.png" },
   //{ href: "/services", key: "services", image: "/images/services.png" },
   //{ href: "/tasks", key: "tasks", image: "/images/tasks.png" },
-  { href: "/career-switch", key: "careerSwitch", image: "/images/jobs.png" },
+  //{ href: "/career-switch", key: "careerSwitch", image: "/images/jobs.png" },
   { href: "/account/auto-apply", key: "autoApply", image: "/images/services.png" },
-  { href: "/resume-analyzer", key: "resumeAnalyzer", image: "/images/tasks.png" },
+  //{ href: "/resume-analyzer", key: "resumeAnalyzer", image: "/images/tasks.png" },
 ];
 
 const LINKS = [
-  { href:"/career-switch", key: "careerSwitch", icon: TrendingUp },
-  { href:"/resume-analyzer", key: "resumeAnalyzer", icon: FileText },
+  //{ href:"/career-switch", key: "careerSwitch", icon: TrendingUp },
+  //{ href:"/resume-analyzer", key: "resumeAnalyzer", icon: FileText },
   { href:"/subscription", key: "plans", icon: Wallet },
   { href:"/account/auto-apply", key: "autoApply", icon: Zap },
-
 ]
 
 const DEFAULT_LANGUAGES: Array<{ code: string; label: string }> = [
@@ -53,16 +51,13 @@ const DEFAULT_LANGUAGES: Array<{ code: string; label: string }> = [
 
 export function Navbar() {
   const t = useTranslations("Navbar");
+  const locale = useLocale();
   const [selectedLang, setSelectedLang] = React.useState("fr");
   const pathname = usePathname();
   const router = useRouter();
 
   const [scrolled, setScrolled] = useState(false);
-  const isSecondary = isSecondaryClient();
-  const NAV_LINKS = React.useMemo(
-    () => (isSecondary ? [] : DEFAULT_LINKS),
-    [isSecondary]
-  );
+  const NAV_LINKS = DEFAULT_LINKS;
 
   useEffect(() => {
     // Initialize selected language from cookie
@@ -116,14 +111,42 @@ export function Navbar() {
             >
               <NavigationMenuList>
                 {NAV_LINKS.map((link) => {
-                  const isActive = pathname === link.href;
+                  const isAutoApply = link.key === "autoApply";
+                  // For autoApply, never include locale in href:
+                  const href = isAutoApply
+                    ? link.href
+                    : `/${locale}${link.href}`;
+                  const isActive = isAutoApply
+                    ? pathname === link.href
+                    : pathname === `/${locale}${link.href}` || pathname === link.href;
                   const visibleLabel = t(link.key as any);
+
+                  if (isAutoApply) {
+                    return (
+                      <NavigationMenuItem key={link.href}>
+                        <NavigationMenuLink asChild>
+                          <Link
+                            href={href}
+                            className={cn(
+                              "inline-flex !flex-row items-center whitespace-nowrap gap-2 px-5 py-2.5 rounded-full font-bold text-sm leading-none transition-all duration-200",
+                              isActive
+                                ? "bg-slate-900 text-white shadow-lg shadow-slate-900/20"
+                                : "bg-slate-100 text-slate-700 hover:bg-slate-900 hover:text-white hover:shadow-md"
+                            )}
+                          >
+                            <Zap className="w-4 h-4" />
+                            {visibleLabel}
+                          </Link>
+                        </NavigationMenuLink>
+                      </NavigationMenuItem>
+                    );
+                  }
 
                   return (
                     <NavigationMenuItem key={link.href}>
                       <NavigationMenuLink asChild>
                         <Link
-                          href={link.href}
+                          href={href}
                           className={cn(
                             "flex relative flex-row gap-3 items-center px-3 py-2 transition-all duration-300 group",
                             isActive
@@ -131,16 +154,7 @@ export function Navbar() {
                               : "text-gray-500 hover:scale-105"
                           )}
                         >
-                          <Image
-                            src={link.image}
-                            alt={visibleLabel}
-                            width={40}
-                            height={40}
-                            priority={link.href === "/career-switch"}
-                          />
                           <span className="relative">{visibleLabel}</span>
-
-                          {/* underline */}
                           <div
                             className={cn(
                               "absolute bottom-0 left-0 w-full bg-black transition-transform duration-300 ease-in-out h-[2px]",
@@ -213,14 +227,27 @@ export function Navbar() {
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-56">
-              {LINKS.map((link) => (
-                <DropdownMenuItem key={link.href} asChild>
-                  <Link href={link.href} className="flex gap-2 items-center w-full">
-                    {link.icon && <link.icon className="size-4" />}
-                    {t(link.key as any)}
-                  </Link>
-                </DropdownMenuItem>
-              ))}
+              {LINKS.map((link) => {
+                const isAutoApply = link.key === "autoApply";
+                // For autoApply, never include locale in href:
+                const href = isAutoApply
+                  ? link.href
+                  : `/${locale}${link.href}`;
+                return (
+                  <DropdownMenuItem key={link.href} asChild>
+                    <Link
+                      href={href}
+                      className={cn(
+                        "flex gap-2 items-center w-full",
+                        isAutoApply && "font-semibold"
+                      )}
+                    >
+                      {link.icon && <link.icon className="size-4" />}
+                      {t(link.key as any)}
+                    </Link>
+                  </DropdownMenuItem>
+                );
+              })}
             </DropdownMenuContent>
           </DropdownMenu>
 
@@ -255,41 +282,27 @@ export function Navbar() {
           </DropdownMenu>
         </div>
 
-        {/* Bottom row: scroll-hiding icons */}
-        <nav className="overflow-x-auto relative w-full no-scrollbar">
-          <div className="flex justify-between items-center px-4 w-full">
-            {NAV_LINKS.map((link) => (
+        {/* Bottom row: auto-apply pill */}
+        <nav className="flex justify-center items-center px-4 py-2">
+          {NAV_LINKS.filter((l) => l.key === "autoApply").map((link) => {
+            // For autoApply, never include locale in href:
+            const isActive = pathname === link.href;
+            return (
               <Link
                 key={link.href}
                 href={link.href}
                 className={cn(
-                  "group flex relative flex-col justify-center items-center px-4 flex-1 text-xs font-medium transition-all duration-300 hover:text-black data-[active=true]:text-black",
-                  scrolled ? "py-2" : "py-3"
+                  "flex items-center gap-2 px-5 py-2 rounded-full font-bold text-sm transition-all duration-200",
+                  isActive
+                    ? "bg-slate-900 text-white shadow-md"
+                    : "bg-slate-100 text-slate-700 hover:bg-slate-900 hover:text-white"
                 )}
-                data-active={pathname === link.href}
               >
-                <Image
-                  src={link.image}
-                  alt={t(link.key as any)}
-                  width={40}
-                  height={40}
-                  className={cn(
-                    "mb-1 transition-all duration-300 ease-in-out",
-                    scrolled
-                      ? "mb-0 h-0 opacity-0 scale-75"
-                      : "opacity-100 scale-100"
-                  )}
-                />
+                <Zap className="w-4 h-4" />
                 {t(link.key as any)}
-                <div
-                  className="absolute bottom-0 left-1/4 w-1/2 h-0.5 bg-black transform scale-x-0 
-            transition-transform duration-300 ease-in-out 
-            group-hover:scale-x-100 group-data-[active=true]:scale-x-100 
-            sm:left-0 sm:w-full sm:h-1"
-                />
               </Link>
-            ))}
-          </div>
+            );
+          })}
         </nav>
       </header>
     </>

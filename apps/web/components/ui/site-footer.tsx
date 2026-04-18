@@ -10,7 +10,6 @@ import {
   CollapsibleTrigger,
   CollapsibleContent,
 } from "@workspace/ui/components/collapsible";
-import { isSecondaryClient } from "@/lib/domain";
 
 const navigation = {
   product: [
@@ -18,9 +17,6 @@ const navigation = {
     { key: "services", href: "/services" },
     { key: "tasks", href: "/tasks" },
     { key: "Auto Apply", href: "/account/auto-apply" },
-    { key: "AI Resume Analyzer", href: "/resume-analyzer" },
-    { key: "AI Career Switch", href: "/career-switch" },
-    
   ],
   support: [
     { key: "Talents", href: "mailto:talents@serrbi.com", displayName: "talents@serrbi.com" },
@@ -40,11 +36,7 @@ const navigation = {
 
 export function SiteFooter() {
   const t = useTranslations("Footer");
-  const isSecondary = isSecondaryClient();
-  const productItems = (isSecondary
-    ? navigation.product.filter((i) => !["services", "tasks"].includes(i.key))
-    : navigation.product
-  ).map((i) => ({ name: t(`links.${i.key}`), href: i.href, target: (i as any).target }));
+  const productItems = navigation.product.map((i) => ({ name: t(`links.${i.key}`), href: i.href, target: (i as any).target }));
   return (
     <footer className="relative">
       <div className="mx-auto w-full overflow-hidden bg-[#0b0b0f] px-6 pt-20 text-gray-300 sm:px-8 sm:pt-24">

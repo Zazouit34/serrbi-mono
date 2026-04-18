@@ -389,6 +389,34 @@
     },
     "browseJobs": "Parcourir Emplois",
     "loadMore": "Charger plus",
+    "errorMessage": "Désolé, je ne peux pas lancer la recherche pour le moment. Réessayez dans un instant.",
+    "jobsShort": "Emplois",
+    "servicesShort": "Services",
+    "tasksShort": "Tâches",
+    "whyPicked": "Pourquoi ce choix",
+    "confidence": "Niveau de confiance",
+    "resume": {
+      "uploadText": "Upload du CV en cours...",
+      "receiveText": "CV reçu — Analyse de votre expérience...",
+      "doneText": "CV joint et profil mis à jour. Vos prochaines recherches seront plus pertinentes grâce au matching CV.",
+      "errorText": "Impossible d'ajouter le CV pour le moment. Réessayez.",
+      "pdfOnly": "Veuillez joindre un fichier PDF.",
+      "attachLabel": "Joindre un CV (PDF)",
+      "attachedLabel": "CV actif",
+      "noCv": "Sans CV",
+      "postUploadMessage": "J'ai analysé votre CV. Basé sur votre profil en tant que {jobTitle}, je vais vous trouver les meilleures offres correspondantes.",
+      "cta": {
+        "title": "Action recommandée: ajoutez votre CV",
+        "description": "Nous avons des résultats, mais pour un matching plus précis (compétences, expérience, priorités), joignez votre CV maintenant.",
+        "buttonLabel": "Joindre mon CV"
+      }
+    },
+    "intentSelect": {
+      "placeholder": "Se concentrer sur...",
+      "jobs": "Emplois",
+      "services": "Services",
+      "tasks": "Tâches"
+    },
     "onboarding": {
       "greeting": "Bonjour, je suis Serrbi ! Je peux vous aider à trouver des",
       "chooseAction": "Choisir",
@@ -399,6 +427,35 @@
       "confirmChoiceService": "Parfait ! Vous avez choisi **services**. Dites-moi de quel service vous avez besoin (par ex., plombier, avocat, designer).",
       "confirmChoiceTask": "Excellent ! Vous avez choisi **tâches**. Dites-moi de quelle tâche vous avez besoin."
     }
+  },
+  "ChatResumeInsight": {
+    "cvBadge": "CV",
+    "resumeScore": "Score du CV",
+    "scoreLabels": {
+      "excellent": "Excellent",
+      "good": "Bon",
+      "average": "Moyen",
+      "needsWork": "À améliorer"
+    },
+    "scoreSeparator": "—",
+    "outOfHundred": "/ 100",
+    "missingPrefix": "Manquants :",
+    "viewInsights": "Voir les détails",
+    "keyIssues": "Points clés",
+    "suggestions": "Suggestions",
+    "suggestedRoles": "Rôles suggérés",
+    "improveResume": "Améliorer le CV",
+    "moreDetails": "Plus de détails",
+    "hideDetails": "Masquer les détails",
+    "breakdown": {
+      "skillsMatch": "Adéquation des compétences",
+      "experience": "Expérience",
+      "formatting": "Mise en forme",
+      "atsCompatibility": "Compatibilité ATS"
+    },
+    "reengagementTitle": "Votre CV peut être amélioré pour de meilleures correspondances",
+    "reengagementPotential": "+12 % de score potentiel",
+    "improveNow": "Améliorer maintenant"
   },
   "Routes": {
     "resumeAnalyzer": "Analyseur de CV",
@@ -951,14 +1008,20 @@
       "queue": "Jobs en focus",
       "queueHint": "Les meilleurs matchs se mettent à jour quand de nouvelles offres arrivent.",
       "resumed": "IA relancée",
-      "pausedToast": "IA mise en pause"
+      "pausedToast": "IA mise en pause",
+      "strictMatch": "Correspondance stricte",
+      "strictMatchHint": "Retourne uniquement les offres correspondant à votre catégorie, rôles et mots-clés",
+      "smartOutreach": "Recherche intelligente",
+      "smartOutreachHint": "Classe les offres grâce au profil sémantique de votre CV"
     },
     "prefs": {
       "title": "Préférences",
       "subtitle": "À ajuster seulement si besoin.",
-      "hint": "Nous apprenons en continu de vos dernières candidatures.",
+      "hint": "Moteur de logique agent",
       "edit": "Modifier",
-      "hide": "Masquer"
+      "hide": "Masquer",
+      "agentLogic": "Logique d'automatisation",
+      "addMore": "Ajouter"
     },
     "activity": {
       "title": "Activité de l’IA",
@@ -976,14 +1039,19 @@
     },
     "listing": {
       "title": "Sélection pour vous",
+      "curatedTitle": "Liste de matchs sélectionnés",
+      "curatedSubtitle": "L'IA a identifié {total} correspondances à fort potentiel pour votre profil.",
       "subtitle": "Basée sur votre expérience, vos préférences et les signaux de votre CV.",
+      "refine": "Affiner",
       "updating": "Mise à jour…",
       "jobsInQueue": "{count} emplois en file",
       "noMatching": "Aucun emploi correspondant pour le moment à vos préférences AI Serrbi.",
       "resumeHint": "Correspondant à votre CV et à vos préférences",
       "bestMatches": "Affichage des {count} meilleures offres classées pour vous.",
-      "refresh": "Actualiser les suggestions",
-      "applyPage": "Postuler à tous les emplois de cette page",
+      "pageRange": "Affichage de {from} à {to} sur {total} matchs",
+      "refresh": "Actualiser",
+      "applyPage": "Candidature groupée",
+      "pageOf": "Page {page} sur {totalPages} · {total} offres",
       "bulkApplying": "Candidatures en cours…",
       "bulkAppliedSuccess": "Candidature envoyée pour {applied} offres. {skipped} ignorées.",
       "bulkAppliedNone": "Aucune nouvelle candidature envoyée. {skipped} offres ignorées.",

@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { FilterBar } from "@/components/ui/filter-bar";
 import { getJobFiltersConfig } from "@/components/ui/config/job-filters-config";
-import { isSecondaryClient } from "@/lib/domain";
 import { JobListingGrid } from "./job-listing-grid";
 
 export function JobListing() {
@@ -31,7 +30,7 @@ export function JobListing() {
       {/* Filters bar */}
 
       <FilterBar
-        filtersConfig={getJobFiltersConfig(isSecondaryClient())}
+        filtersConfig={getJobFiltersConfig()}
         onFilterChange={(values) => setFilters(values)}
         initialFilters={filters}
       />

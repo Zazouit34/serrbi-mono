@@ -2,7 +2,7 @@ import type { NextMiddleware } from "next/server"
 import NextAuth from 'next-auth'
 import authConfig from './auth.config'
 import { publicRoutes, authRoutes, apiAuthPrefix, DEFAULT_LOGIN_REDIRECT, privateRoutes } from "./routes"
-import { isSecondaryHost } from "@/lib/domain"
+
 
 
 const { auth } = NextAuth(authConfig)
@@ -21,14 +21,7 @@ const middleware: NextMiddleware = auth((req) => {
     return null;
   }
 
-  // Domain-based variant restrictions
-  const host = nextUrl.hostname
-  if (isSecondaryHost(host)) {
-    const blocked = nextUrl.pathname.startsWith("/services") || nextUrl.pathname.startsWith("/tasks")
-    if (blocked) {
-      return Response.redirect(new URL('/', nextUrl))
-    }
-  }
+  
 
   if(isAuthRoute) {
     if(isLoggedIn) {

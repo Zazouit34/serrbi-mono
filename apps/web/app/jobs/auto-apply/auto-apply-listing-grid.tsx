@@ -1,22 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Mail, Sparkles, Info, Shield } from "lucide-react";
+import { Zap, ChevronLeft, ChevronRight, SlidersHorizontal } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { trpc } from "@/app/_trpc/client";
 import { AutoApplyCard } from "@/components/ui/form/job/auto-apply-card";
 import { Skeleton } from "@workspace/ui/components/skeleton";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-  PaginationEllipsis,
-} from "@workspace/ui/components/pagination";
-import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui/components/card";
-import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
 import { toast } from "sonner";
 
@@ -27,6 +16,9 @@ type AutoApplyListingGridProps = {
   category: JobCategory | null;
   keywords: string[];
   roles: string[];
+  strictMatch: boolean;
+  smartOutreach: boolean;
+  onOpenPrefs?: () => void;
 };
 
 type MatchReason = {
@@ -40,18 +32,51 @@ type MatchReason = {
   value?: string;
 };
 
+// ── Custom pagination button ─────────────────────────────────────────
+function PageBtn({
+  children,
+  active,
+  disabled,
+  onClick,
+}: {
+  children: React.ReactNode;
+  active?: boolean;
+  disabled?: boolean;
+  onClick?: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className={`w-9 h-9 sm:w-11 sm:h-11 flex items-center justify-center rounded-xl sm:rounded-2xl text-xs sm:text-sm font-bold transition-all border
+        ${
+          active
+            ? "bg-slate-900 text-white border-slate-900 shadow-lg shadow-slate-900/10"
+            : disabled
+              ? "text-slate-300 border-transparent cursor-not-allowed"
+              : "bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:shadow-sm"
+        }`}
+    >
+      {children}
+    </button>
+  );
+}
+
 export function AutoApplyListingGrid({
   enabled,
   category,
   keywords,
   roles,
+  strictMatch,
+  smartOutreach,
+  onOpenPrefs,
 }: AutoApplyListingGridProps) {
   const [page, setPage] = useState(1);
   const tA = useTranslations("AutoApply");
 
   const filtersKey = useMemo(
-    () => JSON.stringify({ enabled, category, keywords, roles }),
-    [enabled, category, keywords, roles]
+    () => JSON.stringify({ enabled, category, keywords, roles, strictMatch, smartOutreach }),
+    [enabled, category, keywords, roles, strictMatch, smartOutreach]
   );
 
   useEffect(() => {
@@ -60,11 +85,13 @@ export function AutoApplyListingGrid({
 
   const queryInput = {
     page,
-    pageSize: 10,
+    pageSize: 3,
     enabled,
     category,
     keywords,
     roles,
+    strictMatch,
+    smartOutreach,
   };
 
   const { data, isLoading, isFetching, refetch } = trpc.job.getAutoApplyJobs.useQuery(queryInput, {
@@ -77,8 +104,9 @@ export function AutoApplyListingGrid({
 
   const totalPages = data ? Math.ceil(data.total / data.pageSize) : 0;
   const totalQueue = data?.total ?? 0;
-  const usedResumeEmbedding =
-    data && "usedResumeEmbedding" in data ? (data as any).usedResumeEmbedding : false;
+  const pageSize = data?.pageSize ?? 5;
+  const rangeFrom = totalQueue === 0 ? 0 : (page - 1) * pageSize + 1;
+  const rangeTo = Math.min(page * pageSize, totalQueue);
 
   const formatTimeAgo = (createdAt?: Date | string | null): string => {
     if (!createdAt) return "";
@@ -125,292 +153,180 @@ export function AutoApplyListingGrid({
     return { level, label };
   };
 
-  const renderPaginationItems = () => {
-    const items = [];
-    const maxVisiblePages = 5;
-
-    if (!totalPages) return null;
-
-    if (totalPages <= maxVisiblePages) {
-      for (let i = 1; i <= totalPages; i++) {
-        items.push(
-          <PaginationItem key={i}>
-            <PaginationLink
-              href="#"
-              onClick={(e) => {
-                e.preventDefault();
-                setPage(i);
-              }}
-              isActive={page === i}
-            >
-              {i}
-            </PaginationLink>
-          </PaginationItem>
-        );
-      }
-    } else {
-      items.push(
-        <PaginationItem key={1}>
-          <PaginationLink
-            href="#"
-            onClick={(e) => {
-              e.preventDefault();
-              setPage(1);
-            }}
-            isActive={page === 1}
-          >
-            1
-          </PaginationLink>
-        </PaginationItem>
-      );
-
-      if (page > 3) {
-        items.push(
-          <PaginationItem key="ellipsis-start">
-            <PaginationEllipsis />
-          </PaginationItem>
-        );
-      }
-
-      let start = Math.max(2, page - 1);
-      let end = Math.min(totalPages - 1, page + 1);
-
-      const middlePages = end - start + 1;
-      const totalVisible = middlePages + 2;
-
-      if (totalVisible < 3 && totalPages >= 3) {
-        if (page <= 2) {
-          end = Math.min(totalPages - 1, 2);
-        } else if (page >= totalPages - 1) {
-          start = Math.max(2, totalPages - 2);
-        }
-      }
-
-      for (let i = start; i <= end; i++) {
-        items.push(
-          <PaginationItem key={i}>
-            <PaginationLink
-              href="#"
-              onClick={(e) => {
-                e.preventDefault();
-                setPage(i);
-              }}
-              isActive={page === i}
-            >
-              {i}
-            </PaginationLink>
-          </PaginationItem>
-        );
-      }
-
-      if (page < totalPages - 2) {
-        items.push(
-          <PaginationItem key="ellipsis-end">
-            <PaginationEllipsis />
-          </PaginationItem>
-        );
-      }
-
-      if (totalPages > 1) {
-        items.push(
-          <PaginationItem key={totalPages}>
-            <PaginationLink
-              href="#"
-              onClick={(e) => {
-                e.preventDefault();
-                setPage(totalPages);
-              }}
-              isActive={page === totalPages}
-            >
-              {totalPages}
-            </PaginationLink>
-          </PaginationItem>
-        );
-      }
+  // ── Pagination pages array ──────────────────────────────────────────
+  const pageNumbers = useMemo<(number | "...")[]>(() => {
+    if (totalPages <= 7) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
     }
+    const pages: (number | "...")[] = [1];
+    if (page > 3) pages.push("...");
+    const start = Math.max(2, page - 1);
+    const end = Math.min(totalPages - 1, page + 1);
+    for (let i = start; i <= end; i++) pages.push(i);
+    if (page < totalPages - 2) pages.push("...");
+    if (totalPages > 1) pages.push(totalPages);
+    return pages;
+  }, [page, totalPages]);
 
-    return items;
-  };
-
-  if (!enabled || !category) {
-    return null;
-  }
+  if (!enabled || !category) return null;
 
   return (
-    <Card className="w-full max-w-full rounded-3xl border border-slate-100 shadow-none bg-white">
-      <CardHeader className="flex flex-col gap-3 pb-2 md:flex-row md:items-center md:justify-between">
-        <div className="flex gap-3 items-start">
-          <div className="flex justify-center items-center w-10 h-10 bg-slate-900 text-white rounded-2xl shadow-sm">
-            <Sparkles className="w-5 h-5" />
-          </div>
-          <div className="space-y-1">
-            <CardTitle className="text-lg font-semibold tracking-tight md:text-xl">
-              {tA("listing.title")}
-            </CardTitle>
-            <p className="text-sm text-slate-500 max-w-xl">
-              {tA("listing.subtitle")}
-            </p>
-            {usedResumeEmbedding && (
-              <p className="text-[12px] text-emerald-700 flex items-center gap-1">
-                <Shield className="h-4 w-4" />
-                {tA("listing.resumeHint")}
-              </p>
-            )}
-          </div>
+    <div className="flex flex-col flex-grow h-full space-y-0">
+      {/* ── Section header ── */}
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 px-1 mb-8">
+        <div>
+          <h2 className="text-lg sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+            {tA("listing.curatedTitle")}
+          </h2>
+          <p className="text-xs sm:text-base text-slate-500 mt-1 sm:mt-1.5 font-medium opacity-80">
+            {totalQueue > 0
+              ? tA("listing.curatedSubtitle", { total: totalQueue })
+              : tA("listing.subtitle")}
+          </p>
         </div>
+        <div className="flex items-center gap-2 shrink-0">
+          {/* Preferences button — mobile only, next to bulk-apply */}
+          {onOpenPrefs && (
+            <button
+              onClick={onOpenPrefs}
+              className="lg:hidden flex items-center justify-center w-9 h-9 rounded-xl active:scale-95 transition-transform shrink-0"
+              style={{ backgroundColor: "#ff040E" }}
+              aria-label="Preferences"
+            >
+              <SlidersHorizontal className="w-4 h-4 text-white" />
+            </button>
+          )}
+          <Button
+            size="sm"
+            disabled={
+              bulkApplyMutation.isPending ||
+              !data?.items.some((j: any) => !j.alreadyApplied)
+            }
+            onClick={async () => {
+              if (!data) return;
+              const jobIds = data.items
+                .filter((j: any) => !j.alreadyApplied)
+                .map((j: any) => j.id);
+              if (!jobIds.length) return;
+              try {
+                const res = await bulkApplyMutation.mutateAsync({ jobIds });
+                const appliedCount = res.applied.length;
+                const skippedCount = res.skipped.length;
+                if (appliedCount) {
+                  toast.success(
+                    tA("listing.bulkAppliedSuccess", {
+                      applied: appliedCount,
+                      skipped: skippedCount,
+                    })
+                  );
+                } else {
+                  toast.info(tA("listing.bulkAppliedNone", { skipped: skippedCount }));
+                }
+                await refetch();
+              } catch (err: any) {
+                toast.error(err?.message || tA("listing.bulkAppliedError"));
+              }
+            }}
+            className="flex items-center gap-2 px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-lg text-sm border border-slate-900 active:scale-95 transition-all"
+          >
+            <Zap className="w-4 h-4" />
+            {bulkApplyMutation.isPending ? tA("listing.bulkApplying") : tA("listing.applyPage")}
+          </Button>
+        </div>
+      </div>
 
-        <Badge className="self-start bg-emerald-50 text-emerald-700 border-emerald-200 text-[11px] px-3 py-1 rounded-full md:self-auto">
-          {isFetching ? tA("listing.updating") : tA("listing.jobsInQueue", { count: totalQueue })}
-        </Badge>
-      </CardHeader>
-
-      <CardContent className="pt-1 space-y-4 w-full">
-        {data && data.items.length > 0 && (
-          <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-            <p className="text-xs text-slate-500">
-              {tA("listing.bestMatches", {
-                count: data.total,
-              })}
-            </p>
-            <div className="flex flex-wrap gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={isFetching || bulkApplyMutation.isPending}
-                onClick={() => refetch()}
-                className="h-7 px-3 text-[11px]"
-              >
-                {tA("listing.refresh")}
-              </Button>
-              <Button
-                size="sm"
-                disabled={bulkApplyMutation.isPending || !data.items.some((j: any) => !j.alreadyApplied)}
-                onClick={async () => {
-                  if (!data) return;
-                  const jobIds = data.items
-                    .filter((j: any) => !j.alreadyApplied)
-                    .map((j: any) => j.id);
-
-                  if (!jobIds.length) return;
-
-                  try {
-                    const res = await bulkApplyMutation.mutateAsync({ jobIds });
-                    const appliedCount = res.applied.length;
-                    const skippedCount = res.skipped.length;
-                    if (appliedCount) {
-                      toast.success(
-                        tA("listing.bulkAppliedSuccess", {
-                          applied: appliedCount,
-                          skipped: skippedCount,
-                        }),
-                      );
-                    } else {
-                      toast.info(
-                        tA("listing.bulkAppliedNone", {
-                          skipped: skippedCount,
-                        }),
-                      );
-                    }
-                    await refetch();
-                  } catch (err: any) {
-                    toast.error(
-                      err?.message || tA("listing.bulkAppliedError"),
-                    );
-                  }
-                }}
-                className="h-7 px-3 text-[11px]"
-              >
-                {bulkApplyMutation.isPending
-                  ? tA("listing.bulkApplying")
-                  : tA("listing.applyPage")}
-              </Button>
-            </div>
-          </div>
-        )}
-
+      {/* ── Job list ── */}
+      <div className="flex-grow">
         {isLoading ? (
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-            {Array.from({ length: 4 }).map((_, i) => (
+          <div className="flex flex-col gap-5">
+            {Array.from({ length: 5 }).map((_, i) => (
               <div
                 key={i}
-                className="flex gap-3 justify-between items-start px-3 py-3 rounded-2xl border border-slate-100 bg-slate-50/70"
+                className="flex gap-4 items-start p-6 rounded-[2rem] border border-slate-100 bg-slate-50/60"
               >
-                <div className="flex gap-3 items-start w-full">
-                  <Skeleton className="w-9 h-9 rounded-lg" />
-                  <div className="flex-1 space-y-2">
-                    <Skeleton className="w-3/4 h-4" />
-                    <Skeleton className="w-1/2 h-3" />
-                    <Skeleton className="w-full h-3" />
-                  </div>
+                <Skeleton className="w-14 h-14 rounded-2xl shrink-0" />
+                <div className="flex-1 space-y-2.5">
+                  <Skeleton className="w-2/3 h-5" />
+                  <Skeleton className="w-1/3 h-3.5" />
+                  <Skeleton className="w-full h-3.5" />
                 </div>
               </div>
             ))}
           </div>
         ) : !data || data.items.length === 0 ? (
-          <div className="py-8 text-sm text-center rounded-xl border border-dashed border-slate-200 bg-slate-50/60 text-slate-500">
+          <div className="py-14 text-xs sm:text-sm text-center rounded-[2rem] border border-dashed border-slate-200 bg-slate-50/60 text-slate-500">
             {tA("listing.noMatching")}
           </div>
         ) : (
-          <>
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-              {data.items.map((job: any) => {
-                const reasons = (Array.isArray(job.matchReasons) ? job.matchReasons : [])
-                  .map((reason: MatchReason) => buildReasonLabel(job, reason))
-                  .filter((reason: string | null): reason is string => Boolean(reason))
-                  .slice(0, 3);
-                const confidence = buildConfidence(job.matchPercent);
-                return (
-                  <AutoApplyCard
-                    key={job.id}
-                    job={job}
-                    alreadyApplied={job.alreadyApplied}
-                    confidence={confidence}
-                    reasons={reasons}
-                    matchPercent={job.matchPercent}
-                    postedAgo={formatTimeAgo(job.createdAt)}
-                    onApply={async () => {
-                      const res = await applyMutation.mutateAsync({ jobId: job.id });
-                      return { message: res.message };
-                    }}
-                  />
-                );
-              })}
-            </div>
-
-            {totalPages > 1 && (
-              <Pagination>
-                <PaginationContent>
-                  <PaginationItem>
-                    <PaginationPrevious
-                      href="#"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        if (page > 1) setPage(page - 1);
-                      }}
-                      className={page <= 1 ? "pointer-events-none opacity-50" : ""}
-                    />
-                  </PaginationItem>
-
-                  {renderPaginationItems()}
-
-                  <PaginationItem>
-                    <PaginationNext
-                      href="#"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        if (page < totalPages) setPage(page + 1);
-                      }}
-                      className={page >= totalPages ? "pointer-events-none opacity-50" : ""}
-                    />
-                  </PaginationItem>
-                </PaginationContent>
-              </Pagination>
-            )}
-          </>
+          <div className="flex flex-col gap-5">
+            {data.items.map((job: any) => {
+              const reasons = (Array.isArray(job.matchReasons) ? job.matchReasons : [])
+                .map((reason: MatchReason) => buildReasonLabel(job, reason))
+                .filter((r: string | null): r is string => Boolean(r))
+                .slice(0, 3);
+              const confidence = buildConfidence(job.matchPercent);
+              return (
+                <AutoApplyCard
+                  key={job.id}
+                  job={job}
+                  alreadyApplied={job.alreadyApplied}
+                  confidence={confidence}
+                  reasons={reasons}
+                  matchPercent={job.matchPercent}
+                  postedAgo={formatTimeAgo(job.createdAt)}
+                  onApply={async () => {
+                    const res = await applyMutation.mutateAsync({ jobId: job.id });
+                    return { message: res.message };
+                  }}
+                />
+              );
+            })}
+          </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+
+      {/* ── Pagination ── */}
+      {totalPages > 1 && (
+        <div className="flex flex-col items-center gap-3 pt-8 mt-auto px-1 sm:flex-row sm:justify-between">
+          {/* Range info — centred on mobile, left on desktop */}
+          <p className="text-[11px] sm:text-sm font-bold text-slate-400 text-center sm:text-left">
+            {tA("listing.pageRange", { from: rangeFrom, to: rangeTo, total: totalQueue })}
+          </p>
+
+          {/* Page buttons — always centred */}
+          <div className="flex items-center gap-1">
+            <PageBtn
+              disabled={page <= 1}
+              onClick={() => page > 1 && setPage(page - 1)}
+            >
+              <ChevronLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            </PageBtn>
+
+            {pageNumbers.map((p, idx) =>
+              p === "..." ? (
+                <span key={`ellipsis-${idx}`} className="px-1.5 text-slate-300 font-bold text-xs sm:text-sm">
+                  …
+                </span>
+              ) : (
+                <PageBtn
+                  key={p}
+                  active={page === p}
+                  onClick={() => setPage(p as number)}
+                >
+                  {p}
+                </PageBtn>
+              )
+            )}
+
+            <PageBtn
+              disabled={page >= totalPages}
+              onClick={() => page < totalPages && setPage(page + 1)}
+            >
+              <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            </PageBtn>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
-
-

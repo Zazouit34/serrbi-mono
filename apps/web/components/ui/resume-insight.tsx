@@ -179,7 +179,7 @@ export function ResumeInsight({
       try {
         setAnalyzing(true);
         const text = await parsePDF(file);
-        const r = await scoreResume(text);
+        const r = await scoreResume(text, locale);
         if (!cancelled) {
           setScoreData(r);
         }
@@ -366,7 +366,7 @@ export function ResumeInsight({
             </div>
           </div>
         ) : (
-          <div className="p-6 bg-gradient-to-br to-white sm:p-10 from-slate-50">
+          <div className="p-6 to-white sm:p-10 from-slate-50">
             <div className="grid gap-6 lg:grid-cols-[32%_68%] items-start">
               <div className="self-start w-full lg:sticky lg:top-18">
                 <ResumeScoreCard
@@ -413,41 +413,91 @@ function defaultBreakdown(overall: number): BreakdownItem[] {
   ];
 }
 
+// Keyword hints used to match LLM improvements to breakdown categories
+const CATEGORY_HINTS: Record<string, string[]> = {
+  "Contact Info": ["contact", "email", "phone", "header"],
+  "Experience": ["experience", "work", "role", "career", "position", "job"],
+  "Education": ["education", "degree", "academic", "school", "university"],
+  "Skills": ["skill", "keyword", "technology", "tool", "competency", "proficien"],
+  "Summary/Profile": ["summary", "profile", "objective", "headline", "introduction"],
+  "Projects / Certifications": ["project", "certification", "portfolio", "certificate"],
+  "Professional Links": ["linkedin", "link", "github", "portfolio", "website"],
+  "Dates / Timeline": ["date", "timeline", "period", "duration", "chronolog"],
+  "Bullets / Formatting": ["bullet", "format", "layout", "structure", "readabilit", "concise"],
+  "Action Verbs": ["verb", "action word", "language", "phrasing", "strong word"],
+  "Length / Structure": ["length", "word", "structure", "section", "organiz"],
+  "Recency": ["recent", "current", "updated", "latest", "up-to-date"],
+  "Impact / Metrics": ["metric", "impact", "measurable", "result", "number", "quantif", "achiev", "percentage", "%"],
+};
+
 function mapToInsightData(
   scoreData: ResumeScore,
   formatIssueCount: (count: number) => string,
   tr: (key: string, fallback: string) => string
 ): InsightData {
   const breakdown = (scoreData.breakdown as any as BreakdownItem[]) ?? [];
+  const llm = scoreData.llm;
+  const improvementPool: string[] = llm?.improvements ?? [];
+  const skillGaps: string[] = llm?.skillGaps ?? [];
+
+  // Track which LLM improvements have been assigned so we don't repeat them
+  const usedImprovements = new Set<string>();
+
+  function pickImprovements(category: string, max: number): string[] {
+    const hints = CATEGORY_HINTS[category] ?? [category.toLowerCase()];
+    const matched = improvementPool.filter(
+      (imp) => !usedImprovements.has(imp) && hints.some((h) => imp.toLowerCase().includes(h))
+    );
+    const picked = matched.slice(0, max);
+    // Fill remaining slots with any unused improvements
+    if (picked.length < max) {
+      const unused = improvementPool.filter(
+        (imp) => !usedImprovements.has(imp) && !picked.includes(imp)
+      );
+      picked.push(...unused.slice(0, max - picked.length));
+    }
+    picked.forEach((imp) => usedImprovements.add(imp));
+    return picked;
+  }
 
   const rows: DetailRow[] = breakdown.map((b) => {
     const pct = b.max > 0 ? Math.round((b.score / b.max) * 100) : 0;
     const hasMissing = (b.missing?.length ?? 0) > 0;
-    const status: "success" | "error" =
-      hasMissing || pct < 75 ? "error" : "success";
+    const status: "success" | "error" = hasMissing || pct < 75 ? "error" : "success";
     const issueCount = status === "error" ? 1 : 0;
+
+    let details: string[];
+
+    if (b.missing?.length) {
+      // Heuristic-detected gaps are the primary signal
+      details = [...b.missing];
+      // Augment with up to 1 matched LLM improvement for more actionable advice
+      const extra = pickImprovements(b.category, 1);
+      details.push(...extra);
+    } else if (status === "success") {
+      // Genuinely good section — confirm it clearly
+      details = [tr("ResumeInsight.looksGood", "This section looks good — no critical issues found.")];
+    } else {
+      // Low score but no heuristic gap found → surface LLM-derived guidance
+      const picked = pickImprovements(b.category, 3);
+      details = picked.length
+        ? picked
+        : [tr("ResumeInsight.reviewSection", "Review this section and consider improving its content and clarity.")];
+    }
+
+    // Enrich the Skills row with LLM-identified skill gaps
+    if (b.category === "Skills" && skillGaps.length > 0) {
+      const prefix = tr("ResumeInsight.skillGapPrefix", "Skill gap");
+      skillGaps.slice(0, 4).forEach((g) => details.push(`${prefix}: ${g}`));
+    }
+
     return {
       label: b.category,
       status,
       badge: issueCount > 0 ? formatIssueCount(issueCount) : `${pct}%`,
       issueCount,
       scorePct: pct,
-      details: b.missing?.length
-        ? b.missing
-        : [
-            tr(
-              "ResumeInsight.defaultDetail1",
-              "An Applicant Tracking System needs clear headings and measurable outcomes."
-            ),
-            tr(
-              "ResumeInsight.defaultDetail2",
-              "Add specific achievements, quantify impact, and keep formatting consistent."
-            ),
-            tr(
-              "ResumeInsight.defaultDetail3",
-              "Use strong action verbs and avoid repetition to improve readability."
-            ),
-          ],
+      details,
     };
   });
 
@@ -541,7 +591,7 @@ function GroupCard({
   formatIssuesFound: (count: number) => string;
   tr: (key: string, fallback: string) => string;
 }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(true);
   return (
     <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-4">
       <button
@@ -549,7 +599,7 @@ function GroupCard({
         className="flex items-center justify-between w-full text-left"
       >
         <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
+          <div className="w-7 h-7 rounded-lg from-slate-50 to-slate-100 flex items-center justify-center">
             {renderIcon(group.icon)}
           </div>
           <h3 className="text-sm font-semibold text-slate-900">{group.title}</h3>
@@ -590,7 +640,7 @@ function RowDetail({
   row: DetailRow;
   tr: (key: string, fallback: string) => string;
 }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(true);
   return (
     <div className="space-y-1.5">
       <button

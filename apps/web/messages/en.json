@@ -374,6 +374,34 @@
     },
     "browseJobs": "Browse Jobs",
     "loadMore": "Load more",
+    "errorMessage": "Sorry, I can't start the search right now. Please try again in a moment.",
+    "jobsShort": "Jobs",
+    "servicesShort": "Services",
+    "tasksShort": "Tasks",
+    "whyPicked": "Why picked",
+    "confidence": "Confidence level",
+    "resume": {
+      "uploadText": "Uploading resume...",
+      "receiveText": "Resume received — Analyzing your experience...",
+      "doneText": "Resume attached and profile updated. Your next searches will be more relevant thanks to resume matching.",
+      "errorText": "Failed to attach resume right now. Please try again.",
+      "pdfOnly": "Please attach a PDF file.",
+      "attachLabel": "Attach resume (PDF)",
+      "attachedLabel": "CV attached",
+      "noCv": "No CV",
+      "postUploadMessage": "I've analyzed your resume. Based on your profile as a {jobTitle}, let me find you the best matching jobs.",
+      "cta": {
+        "title": "Recommended action: attach your resume",
+        "description": "We found results, but matching becomes much more precise (skills, experience, priorities) once your resume is attached.",
+        "buttonLabel": "Attach my resume"
+      }
+    },
+    "intentSelect": {
+      "placeholder": "Focus on...",
+      "jobs": "Jobs",
+      "services": "Services",
+      "tasks": "Tasks"
+    },
     "onboarding": {
       "greeting": "Hi, I am Serrbi! I can help you find",
       "chooseAction": "Choose",
@@ -384,6 +412,35 @@
       "confirmChoiceService": "Perfect! You chose **services**. Tell me what service you need (e.g., plumber, lawyer, designer).",
       "confirmChoiceTask": "Excellent! You chose **tasks**. Tell me what task you need help with."
     }
+  },
+  "ChatResumeInsight": {
+    "cvBadge": "CV",
+    "resumeScore": "Resume Score",
+    "scoreLabels": {
+      "excellent": "Excellent",
+      "good": "Good",
+      "average": "Average",
+      "needsWork": "Needs work"
+    },
+    "scoreSeparator": "—",
+    "outOfHundred": "/ 100",
+    "missingPrefix": "Missing:",
+    "viewInsights": "View insights",
+    "keyIssues": "Key Issues",
+    "suggestions": "Suggestions",
+    "suggestedRoles": "Suggested Roles",
+    "improveResume": "Improve Resume",
+    "moreDetails": "More details",
+    "hideDetails": "Hide details",
+    "breakdown": {
+      "skillsMatch": "Skills Match",
+      "experience": "Experience",
+      "formatting": "Formatting",
+      "atsCompatibility": "ATS Compatibility"
+    },
+    "reengagementTitle": "Your resume could be improved for better matches",
+    "reengagementPotential": "+12% potential score increase",
+    "improveNow": "Improve now"
   },
   "Routes": {
     "resumeAnalyzer": "Resume Analyzer",
@@ -961,14 +1018,20 @@
       "queue": "Jobs in focus",
       "queueHint": "Top matches refresh as new roles appear.",
       "resumed": "AI resumed",
-      "pausedToast": "AI paused"
+      "pausedToast": "AI paused",
+      "strictMatch": "Strict Match",
+      "strictMatchHint": "Only return jobs that match your selected category, roles & keywords",
+      "smartOutreach": "Smart Outreach",
+      "smartOutreachHint": "Rank jobs using your uploaded resume's semantic profile"
     },
     "prefs": {
       "title": "Preferences",
       "subtitle": "Tune only when needed.",
-      "hint": "We'll keep learning from your recent applications.",
+      "hint": "Agent Logic Engine",
       "edit": "Edit",
-      "hide": "Hide"
+      "hide": "Hide",
+      "agentLogic": "Automation Logic",
+      "addMore": "Add"
     },
     "activity": {
       "title": "AI activity",
@@ -986,14 +1049,19 @@
     },
     "listing": {
       "title": "Handpicked for you",
+      "curatedTitle": "Curated Match List",
+      "curatedSubtitle": "AI identified {total} high-potential matches for your profile.",
       "subtitle": "Based on your experience, preferences, and resume signals.",
+      "refine": "Refine",
       "updating": "Updating…",
       "jobsInQueue": "{count} jobs in queue",
       "noMatching": "No matching jobs yet for your auto-apply preferences.",
       "resumeHint": "Matched to your resume and preferences",
       "bestMatches": "Showing top {count} jobs ranked for you.",
-      "refresh": "Refresh suggestions",
-      "applyPage": "Apply to all on this page",
+      "pageRange": "Showing {from} to {to} of {total} curated matches",
+      "refresh": "Refresh",
+      "applyPage": "Bulk Apply",
+      "pageOf": "Page {page} of {totalPages} · {total} jobs",
       "bulkApplying": "Applying…",
       "bulkAppliedSuccess": "Applied to {applied} jobs. Skipped {skipped}.",
       "bulkAppliedNone": "No new jobs were applied. Skipped {skipped}.",

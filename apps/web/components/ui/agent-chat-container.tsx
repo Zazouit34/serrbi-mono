@@ -2,9 +2,10 @@
 
 import { useRef, type ChangeEvent, type RefObject } from "react";
 import Image from "next/image";
-
-import { AlertTriangle, FileCheck2, Search, X } from "lucide-react";
+import { useTranslations } from "next-intl";
+import { ArrowUpRight, FileCheck2, Search, X } from "lucide-react";
 import { FiPaperclip } from "react-icons/fi";
+import { ChatResumeInsight } from "@/components/ui/chat-resume-insight";
 import { Progress } from "@workspace/ui/components/progress";
 import { ChatContainerRoot, ChatContainerContent } from "@/components/ui/chat-container";
 import { Message, MessageAvatar } from "@/components/ui/message";
@@ -14,6 +15,13 @@ import { ServiceCard } from "@/components/ui/form/service/service-card";
 import { TaskCard } from "@/components/ui/form/task/task-card";
 import { ThinkingBar } from "@/components/ui/thinking-bar";
 import { SiGoogleassistant } from "react-icons/si";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@workspace/ui/components/select";
 
 type TabType = "jobs" | "services" | "tasks";
 
@@ -22,7 +30,7 @@ type ChatMessage = {
   role: "user" | "assistant";
   content?: string;
   thinking?: boolean;
-  kind?: "text" | "results" | "suggestions";
+  kind?: "text" | "results" | "suggestions" | "resume-insight";
   results?: {
     key: string;
     query: string;
@@ -33,10 +41,13 @@ type ChatMessage = {
   relatedPrompts?: string[];
   suggestionsForKey?: string;
   upgradeUrl?: string;
-  resumeUploadCta?: {
-    title: string;
-    description: string;
-    buttonLabel: string;
+  suggestedIntentSwitch?: TabType;
+  showResumeUploadCta?: boolean;
+  resumeInsight?: {
+    score: number;
+    skillGaps: string[];
+    improvements: string[];
+    suggestedRoles?: string[];
   };
 };
 
@@ -49,8 +60,10 @@ type AgentChatContainerProps = {
   isSearching: boolean;
   isAgentWorking: boolean;
   pinnedIntent: TabType | null;
+  inSession?: boolean;
   userInitial?: string;
   chatInputRef: RefObject<HTMLTextAreaElement | null>;
+  agentSessionId?: string;
   labels: {
     searching: string;
     thinking: string;
@@ -69,7 +82,8 @@ type AgentChatContainerProps = {
   onInputChange: (value: string) => void;
   onSubmit: () => void;
   onPinnedIntentClear: () => void;
-  onSuggestionSelect: (prompt: string, upgradeUrl?: string) => void;
+  onIntentChange?: (intent: TabType | null) => void;
+  onSuggestionSelect: (prompt: string, upgradeUrl?: string, intentSwitch?: TabType) => void;
   onResumeAttach: (file: File) => void;
   resumeAttachLabel?: string;
   resumeAttachStatusText?: string;
@@ -79,14 +93,38 @@ type AgentChatContainerProps = {
   resumeAttachedLabel?: string;
 };
 
+function trackCardClick(opts: {
+  cardId: string;
+  cardPosition: number;
+  cardType: "job" | "service" | "task";
+  searchQuery: string;
+  matchScore: number | null;
+  sessionId: string;
+}) {
+  void fetch("/api/events", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      sessionId: opts.sessionId,
+      cardId: opts.cardId,
+      cardPosition: opts.cardPosition,
+      cardType: opts.cardType,
+      searchQuery: opts.searchQuery,
+      matchScore: opts.matchScore,
+    }),
+  }).catch(() => {});
+}
+
 function SuggestionList({
   prompts,
   title,
   onSelect,
+  suggestedIntentSwitch,
 }: {
   prompts: string[];
   title?: string;
-  onSelect: (prompt: string) => void;
+  onSelect: (prompt: string, intentSwitch?: TabType) => void;
+  suggestedIntentSwitch?: TabType;
 }) {
   if (!Array.isArray(prompts) || prompts.length === 0) return null;
 
@@ -104,7 +142,7 @@ function SuggestionList({
             key={`${index}-${prompt}`}
             type="button"
             className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-slate-50 group"
-            onClick={() => onSelect(prompt)}
+            onClick={() => onSelect(prompt, index === 0 ? suggestedIntentSwitch : undefined)}
           >
             <Search className="h-3.5 w-3.5 shrink-0 text-slate-400 group-hover:text-slate-700" />
             <span className="text-slate-800">{prompt}</span>
@@ -124,12 +162,15 @@ export function AgentChatContainer({
   isSearching,
   isAgentWorking,
   pinnedIntent,
+  inSession = false,
   userInitial,
   chatInputRef,
+  agentSessionId,
   labels,
   onInputChange,
   onSubmit,
   onPinnedIntentClear,
+  onIntentChange,
   onSuggestionSelect,
   onResumeAttach,
   resumeAttachLabel,
@@ -139,8 +180,11 @@ export function AgentChatContainer({
   hasResumeAttached,
   resumeAttachedLabel,
 }: AgentChatContainerProps) {
+  const t = useTranslations("HeroSearchBar");
   const resumeInputRef = useRef<HTMLInputElement | null>(null);
-  const showCvBadge = Boolean(hasResumeAttached) && (!pinnedIntent || pinnedIntent === "jobs");
+  // Show CV badge whenever intent is jobs (or no intent pinned — neutral)
+  const showCvBadge = !pinnedIntent || pinnedIntent === "jobs";
+
   const onFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -153,9 +197,8 @@ export function AgentChatContainer({
 
   return (
     <div
-      className={`relative flex w-full flex-col overflow-hidden rounded-xl bg-white transition-all duration-300 md:rounded-2xl ${
-        chatExpanded ? "min-h-0 flex-1" : "min-h-[120px]"
-      }`}
+      className={`relative flex w-full flex-col overflow-hidden rounded-xl bg-white transition-all duration-300 md:rounded-2xl ${chatExpanded ? "min-h-0 flex-1" : "min-h-[120px]"
+        }`}
     >
       {chatExpanded && (
         <ChatContainerRoot className="min-h-0 flex-1 px-2 pt-2 md:px-3 md:pt-3">
@@ -174,42 +217,105 @@ export function AgentChatContainer({
                     />
                   ) : null}
                   {isAssistant ? (
-                    message.kind === "suggestions" ? (
+                    message.kind === "resume-insight" && message.resumeInsight ? (
+                      <div className="w-full min-w-0 text-left">
+                        <ChatResumeInsight
+                          score={message.resumeInsight.score}
+                          skillGaps={message.resumeInsight.skillGaps}
+                          improvements={message.resumeInsight.improvements}
+                          suggestedRoles={message.resumeInsight.suggestedRoles}
+                        />
+                      </div>
+                    ) : message.kind === "suggestions" ? (
                       <div className="w-full min-w-0 text-left">
                         <SuggestionList
                           prompts={message.relatedPrompts ?? []}
                           title={message.content || labels.related}
-                          onSelect={(p) => onSuggestionSelect(p, message.upgradeUrl)}
+                          suggestedIntentSwitch={message.suggestedIntentSwitch}
+                          onSelect={(p, intentSwitch) => onSuggestionSelect(p, message.upgradeUrl, intentSwitch)}
                         />
                       </div>
                     ) : message.results ? (
                       <div className="w-full min-w-0 text-left text-sm text-slate-900 md:text-base">
+
+                        {/* ── Agent intro text — shown ABOVE cards, always first ── */}
+                        {!message.results.isLoading && (message.content ?? "").trim() ? (
+                          <div className="mb-3 text-left text-xs leading-5 text-slate-900 md:mb-4 md:text-sm md:leading-6">
+                            <Markdown>{message.content ?? ""}</Markdown>
+                          </div>
+                        ) : null}
+
+                        {/* ── Loading state ── */}
                         {message.results.isLoading ? <ThinkingBar text={labels.searching} /> : null}
 
+                        {/* ── No results ── */}
                         {!message.results.isLoading && message.results.items.length === 0 ? (
                           <div className="text-xs text-slate-700 md:text-sm">{labels.noResults}</div>
                         ) : null}
 
+                        {/* ── Cards ── */}
                         {!message.results.isLoading && message.results.items.length > 0 && (
-                          <div className="mt-2 flex gap-2.5 overflow-x-auto snap-x snap-mandatory pb-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden md:mt-3 md:grid md:grid-cols-3 md:gap-4 md:overflow-visible md:snap-none md:pb-0">
-                            {message.results.items.map((item: any) => {
+                          <div className="flex gap-2.5 overflow-x-auto snap-x snap-mandatory pb-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden md:grid md:grid-cols-3 md:gap-4 md:overflow-visible md:snap-none md:pb-0">
+                            {message.results.items.map((item: any, index: number) => {
                               const cardWrap = "w-[72vw] min-w-[72vw] shrink-0 snap-start md:w-auto md:min-w-0 md:shrink";
                               if (message.results?.type === "jobs") {
                                 return (
-                                  <div key={item.id} className={cardWrap}>
+                                  <div
+                                    key={item.id}
+                                    className={cardWrap}
+                                    onClick={() =>
+                                      agentSessionId &&
+                                      trackCardClick({
+                                        cardId: item.id,
+                                        cardPosition: index,
+                                        cardType: "job",
+                                        searchQuery: message.results?.query ?? "",
+                                        matchScore: item.matchScore ?? null,
+                                        sessionId: agentSessionId,
+                                      })
+                                    }
+                                  >
                                     <JobCard className="h-full" job={item} compact />
                                   </div>
                                 );
                               }
                               if (message.results?.type === "services") {
                                 return (
-                                  <div key={item.id} className={cardWrap}>
+                                  <div
+                                    key={item.id}
+                                    className={cardWrap}
+                                    onClick={() =>
+                                      agentSessionId &&
+                                      trackCardClick({
+                                        cardId: item.id,
+                                        cardPosition: index,
+                                        cardType: "service",
+                                        searchQuery: message.results?.query ?? "",
+                                        matchScore: item.matchScore ?? null,
+                                        sessionId: agentSessionId,
+                                      })
+                                    }
+                                  >
                                     <ServiceCard service={item} className="h-full" />
                                   </div>
                                 );
                               }
                               return (
-                                <div key={item.id} className={cardWrap}>
+                                <div
+                                  key={item.id}
+                                  className={cardWrap}
+                                  onClick={() =>
+                                    agentSessionId &&
+                                    trackCardClick({
+                                      cardId: item.id,
+                                      cardPosition: index,
+                                      cardType: "task",
+                                      searchQuery: message.results?.query ?? "",
+                                      matchScore: item.matchScore ?? null,
+                                      sessionId: agentSessionId,
+                                    })
+                                  }
+                                >
                                   <TaskCard task={item} className="h-full" />
                                 </div>
                               );
@@ -217,46 +323,38 @@ export function AgentChatContainer({
                           </div>
                         )}
 
-                        {!message.results.isLoading && (message.content ?? "").trim() ? (
-                          <div className="mt-3 text-left text-xs leading-5 text-slate-900 md:mt-4 md:text-sm md:leading-6">
-                            <Markdown>{message.content ?? ""}</Markdown>
+                        {/* ── Resume upload CTA ── */}
+                        {!message.results.isLoading && message.showResumeUploadCta ? (
+                          <div className="mt-3 flex items-center gap-1.5 text-xs text-slate-700 md:mt-4 md:text-sm md:leading-6">
+                            <span>✨ {t("resume.cta.title")}</span>
+                            <button
+                              onClick={openResumePicker}
+                              className="font-medium text-slate-700 underline underline-offset-2 hover:text-slate-900 transition-colors md:text-sm"
+                            >
+                              {t("resume.cta.buttonLabel")}
+                            </button>
                           </div>
                         ) : null}
+
+                        {/* ── Conversational suggestions — text links, not pills ── */}
                         {!message.results.isLoading && (message.relatedPrompts ?? []).length > 0 && (
-                          <div className="mt-3 flex flex-wrap gap-1.5 md:mt-4 md:gap-2">
-                            {(message.relatedPrompts ?? []).map((prompt) => (
+                          <div className="mt-4 space-y-0.5 border-t border-slate-100 pt-3 md:mt-5 md:pt-4">
+                            {(message.relatedPrompts ?? []).map((prompt, i) => (
                               <button
-                                key={prompt}
+                                key={`${i}-${prompt}`}
+                                type="button"
                                 onClick={() => onSuggestionSelect(prompt)}
-                                className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-100 active:scale-95 md:text-xs"
+                                className="group flex w-full items-start gap-2.5 rounded-lg px-1 py-1.5 text-left transition-colors hover:bg-slate-50 md:py-2"
                               >
-                                {prompt}
+                                <ArrowUpRight className="mt-px h-3.5 w-3.5 shrink-0 text-slate-300 transition-colors group-hover:text-slate-500" />
+                                <span className="text-xs leading-5 text-slate-600 underline underline-offset-2 decoration-slate-200 transition-colors group-hover:text-slate-900 group-hover:decoration-slate-400 md:text-sm md:leading-6">
+                                  {prompt}
+                                </span>
                               </button>
                             ))}
                           </div>
                         )}
 
-                        {!message.results.isLoading && message.resumeUploadCta ? (
-                          <div className="mt-4 rounded-xl border border-slate-300 bg-slate-50 p-4">
-                            <div className="flex items-start gap-3">
-                              <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-slate-600" />
-                              <div className="min-w-0 flex-1">
-                                <p className="text-sm font-extrabold tracking-tight text-slate-900">
-                                  {message.resumeUploadCta.title}
-                                </p>
-                                <p className="mt-1 text-sm leading-6 text-slate-700">
-                                  {message.resumeUploadCta.description}
-                                </p>
-                                <a
-                                  onClick={openResumePicker}
-                                  className="mt-3 inline-block cursor-pointer text-sm font-bold text-slate-900 underline transition hover:text-slate-700"
-                                >
-                                  {message.resumeUploadCta.buttonLabel}
-                                </a>
-                              </div>
-                            </div>
-                          </div>
-                        ) : null}
                       </div>
                     ) : (
                       <div className="w-full min-w-0 text-left text-xs leading-5 text-slate-900 md:text-sm md:leading-6">
@@ -324,6 +422,7 @@ export function AgentChatContainer({
           </div>
           <div className="mt-2 flex items-center justify-between gap-2 md:mt-3">
             <div className="flex min-h-7 items-center gap-1.5 md:min-h-8 md:gap-2">
+              {/* Resume attach button */}
               <button
                 type="button"
                 onClick={openResumePicker}
@@ -333,22 +432,36 @@ export function AgentChatContainer({
               >
                 <FiPaperclip className="h-4 w-4" />
               </button>
+
+              {/* CV status badge (jobs context only) */}
               {showCvBadge ? (
-                <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 md:px-2.5 md:py-1 md:text-xs">
-                  <FileCheck2 className="h-3 w-3 md:h-3.5 md:w-3.5" />
-                  <span className="md:hidden">{labels.cvShort || "CV"}</span>
-                  <span className="hidden md:inline">{resumeAttachedLabel || "CV"}</span>
-                </span>
+                hasResumeAttached ? (
+                  <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 md:px-2.5 md:py-1 md:text-xs">
+                    <FileCheck2 className="h-3 w-3 md:h-3.5 md:w-3.5" />
+                    <span className="md:hidden">{labels.cvShort || "CV"}</span>
+                    <span className="hidden md:inline">{resumeAttachedLabel || "CV"}</span>
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={openResumePicker}
+                    className="inline-flex items-center gap-1 rounded-full border border-red-200 bg-red-50 px-2 py-0.5 text-[11px] font-semibold text-red-600 hover:bg-red-100 transition-colors md:px-2.5 md:py-1 md:text-xs"
+                  >
+                    <FileCheck2 className="h-3 w-3 md:h-3.5 md:w-3.5" />
+                    <span>{t("resume.noCv")}</span>
+                  </button>
+                )
               ) : null}
+
+              {/* Pinned intent badge — always show when intent is known */}
               {pinnedIntent ? (
                 <span
-                  className={`group inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium md:px-2.5 md:py-1 md:text-xs ${
-                    pinnedIntent === "jobs"
+                  className={`group inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium md:px-2.5 md:py-1 md:text-xs ${pinnedIntent === "jobs"
                       ? "border-blue-200 bg-blue-50 text-blue-700"
                       : pinnedIntent === "services"
                         ? "border-cyan-200 bg-cyan-50 text-cyan-700"
                         : "border-amber-200 bg-amber-50 text-amber-700"
-                  }`}
+                    }`}
                 >
                   <span className="md:hidden">
                     {pinnedIntent === "jobs"
@@ -360,31 +473,58 @@ export function AgentChatContainer({
                   <span className="hidden md:inline">
                     {pinnedIntent === "jobs" ? labels.jobs : pinnedIntent === "services" ? labels.services : labels.tasks}
                   </span>
-                  <button
-                    type="button"
-                    onClick={onPinnedIntentClear}
-                    className="opacity-0 transition-opacity group-hover:opacity-100"
-                    aria-label="Remove selected action"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
+                  {/* Only show clear button outside of session (in-session: use the Select) */}
+                  {!inSession ? (
+                    <button
+                      type="button"
+                      onClick={onPinnedIntentClear}
+                      className="opacity-0 transition-opacity group-hover:opacity-100"
+                      aria-label="Remove selected action"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  ) : null}
                 </span>
               ) : null}
             </div>
-            <button
-              type="button"
-              onClick={onSubmit}
-              disabled={isSearching || isAgentWorking}
-              className="flex h-7 w-10 items-center justify-center rounded-lg border border-gray-200 disabled:opacity-60 md:h-8 md:w-12"
-            >
-              <Image
-                src="/icons/arrow.svg"
-                alt="Send"
-                width={20}
-                height={20}
-                className={dir === "rtl" ? "rotate-180" : ""}
-              />
-            </button>
+
+            <div className="flex items-center gap-2">
+              {/* Intent select — only in session page */}
+              {inSession && onIntentChange ? (
+                <Select
+                  value={pinnedIntent ?? ""}
+                  onValueChange={(val) => {
+                    if (!val) onIntentChange(null);
+                    else onIntentChange(val as TabType);
+                  }}
+                >
+                  <SelectTrigger className="h-7 w-auto min-w-[90px] rounded-lg border border-gray-200 bg-white px-2 text-xs text-slate-700 shadow-none focus:ring-0 md:h-8">
+                    <SelectValue placeholder={t("intentSelect.placeholder")} />
+                  </SelectTrigger>
+                  <SelectContent align="end" className="text-xs">
+                    <SelectItem value="jobs">{t("intentSelect.jobs")}</SelectItem>
+                    <SelectItem value="services">{t("intentSelect.services")}</SelectItem>
+                    <SelectItem value="tasks">{t("intentSelect.tasks")}</SelectItem>
+                  </SelectContent>
+                </Select>
+              ) : null}
+
+              {/* Send button */}
+              <button
+                type="button"
+                onClick={onSubmit}
+                disabled={isSearching || isAgentWorking}
+                className="flex h-7 w-10 items-center justify-center rounded-lg border border-gray-200 disabled:opacity-60 md:h-8 md:w-12"
+              >
+                <Image
+                  src="/icons/arrow.svg"
+                  alt="Send"
+                  width={20}
+                  height={20}
+                  className={dir === "rtl" ? "rotate-180" : ""}
+                />
+              </button>
+            </div>
           </div>
           <input
             ref={resumeInputRef}

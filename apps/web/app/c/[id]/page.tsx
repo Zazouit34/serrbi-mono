@@ -53,6 +53,7 @@ export default function ChatSessionPage() {
             onChatExpandedChange={() => {}}
             sessionId={params.id}
             initialMessages={messages}
+            inSession
           />
         </div>
       </div>

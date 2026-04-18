@@ -53,8 +53,7 @@ export function computeOverlapScore(a: string[], b: string[]): number {
 export function computeRecencyScore(createdAt: Date): number {
   const ageMs = Date.now() - createdAt.getTime();
   const ageDays = Math.max(0, ageMs / (1000 * 60 * 60 * 24));
-  // Exponential decay with ~14-day half-life.
-  return clamp01(Math.exp((-Math.log(2) * ageDays) / 14));
+  return clamp01(Math.exp((-Math.log(2) * ageDays) / 30));
 }
 
 type JobRankable = ScorableWithDate & {
@@ -89,6 +88,36 @@ function computeLocationMatchScore(preferredCity: string | null | undefined, cit
   if (!wanted || !got) return 0;
   if (wanted === got) return 1;
   return got.includes(wanted) || wanted.includes(got) ? 0.8 : 0;
+}
+
+function computeJobLocationScore(
+  preferredCity: string | null,
+  preferredLocationReq: string | null,
+  jobCity: string | null,
+  jobLocationReq: string,
+): number {
+  if (preferredLocationReq === "remote" && jobLocationReq === "remote") return 1.0;
+  if (preferredLocationReq === "remote" && jobLocationReq === "hybrid") return 0.6;
+  if (preferredCity && jobCity) {
+    const wanted = preferredCity.trim().toLowerCase();
+    const got = jobCity.trim().toLowerCase();
+    if (wanted === got) return 1.0;
+    if (got.includes(wanted) || wanted.includes(got)) return 0.8;
+  }
+  if (!preferredCity && !preferredLocationReq) return 0.5;
+  return 0;
+}
+
+function computeWeightedOverlapScore(
+  queryTokens: string[],
+  titleTokens: string[],
+  descriptionTokens: string[],
+  tagTokens: string[],
+): number {
+  const titleScore = computeOverlapScore(queryTokens, titleTokens);
+  const descScore = computeOverlapScore(queryTokens, descriptionTokens);
+  const tagScore = computeOverlapScore(queryTokens, tagTokens);
+  return clamp01((3 * titleScore + descScore + 2 * tagScore) / 6);
 }
 
 function computePriceFitScore(
@@ -126,20 +155,29 @@ export function rankJobs<T extends JobRankable>(args: {
   items: T[];
   queryEmbedding: number[] | null;
   overlapTokens: string[];
-}): Array<T & { finalScore: number; semanticScore: number; overlapScore: number; recencyScore: number }> {
-  const { items, queryEmbedding, overlapTokens } = args;
+  preferredCity?: string | null;
+  preferredLocationReq?: string | null;
+}): Array<T & { finalScore: number; semanticScore: number; overlapScore: number; recencyScore: number; locationScore: number }> {
+  const { items, queryEmbedding, overlapTokens, preferredCity, preferredLocationReq } = args;
   const scored = items.map((item) => {
     const semanticScore =
       queryEmbedding && item.embedding.length > 0
         ? clamp01((cosineSimilarity(queryEmbedding, item.embedding) + 1) / 2)
         : 0;
-    const jobTextTokens = tokenize(`${item.title} ${item.description}`);
-    const jobTagTokens = item.tags.flatMap((tag) => tokenize(tag));
-    const overlapScore = clamp01(computeOverlapScore(overlapTokens, [...jobTextTokens, ...jobTagTokens]));
+    const titleTokens = tokenize(item.title);
+    const descriptionTokens = tokenize(item.description);
+    const tagTokens = item.tags.flatMap((tag) => tokenize(tag));
+    const overlapScore = computeWeightedOverlapScore(overlapTokens, titleTokens, descriptionTokens, tagTokens);
     const recencyScore = computeRecencyScore(item.createdAt);
-    const finalScore = 0.5 * semanticScore + 0.3 * overlapScore + 0.2 * recencyScore;
+    const locationScore = computeJobLocationScore(
+      preferredCity ?? null,
+      preferredLocationReq ?? null,
+      (item as any).city ?? null,
+      (item as any).locationRequirement ?? "in_office",
+    );
+    const finalScore = 0.55 * semanticScore + 0.25 * overlapScore + 0.10 * recencyScore + 0.10 * locationScore;
 
-    return { ...item, semanticScore, overlapScore, recencyScore, finalScore };
+    return { ...item, semanticScore, overlapScore, recencyScore, locationScore, finalScore };
   });
 
   scored.sort((a, b) => b.finalScore - a.finalScore);
@@ -186,11 +224,11 @@ export function rankServices<T extends ServiceRankable>(args: {
     const priceScore = computePriceFitScore(item.price, minPrice, maxPrice);
 
     const finalScore =
-      0.25 * semanticScore +
-      0.28 * ratingScore +
-      0.17 * reviewsScore +
+      0.40 * semanticScore +
+      0.20 * ratingScore +
+      0.15 * reviewsScore +
       0.15 * locationScore +
-      0.15 * priceScore;
+      0.10 * priceScore;
 
     const selectionReasons: string[] = [];
     if (ratingScore >= 0.8) selectionReasons.push("Top-rated provider");

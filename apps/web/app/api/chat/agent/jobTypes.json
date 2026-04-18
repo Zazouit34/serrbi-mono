@@ -1,0 +1,152 @@
+[
+  {
+    "key": "tech_general",
+    "category": "Tech",
+    "labels": {
+      "en": ["tech job", "developer", "software engineer", "programmer", "it job", "web developer"],
+      "fr": ["emploi tech", "développeur", "ingénieur logiciel", "informatique", "développeur web", "poste it"],
+      "ar": ["وظيفة تقنية", "مطور", "مهندس برمجيات", "وظيفة معلوماتية", "برمجة", "وظيفة ويب"],
+      "darija": ["job tech", "dev", "programmeur", "khdma f tech", "web developer", "informatique"]
+    }
+  },
+  {
+    "key": "frontend_developer",
+    "category": "Tech",
+    "labels": {
+      "en": ["frontend developer", "front end developer", "react developer", "ui developer", "javascript developer"],
+      "fr": ["développeur frontend", "développeur front end", "développeur react", "intégrateur web", "développeur interface"],
+      "ar": ["مطور واجهات", "مطور فرونت", "مطور رياكت", "مطور جافاسكريبت", "مطور واجهة"],
+      "darija": ["dev frontend", "frontend", "react dev", "mwtr frontend", "dev interface"]
+    }
+  },
+  {
+    "key": "graphic_designer",
+    "category": "Tech",
+    "labels": {
+      "en": ["graphic designer", "designer", "ui designer", "ux designer", "visual designer", "creative designer"],
+      "fr": ["graphiste", "designer graphique", "ui designer", "ux designer", "design graphique", "créatif"],
+      "ar": ["مصمم جرافيك", "مصمم", "مصمم واجهات", "مصمم ux", "مصمم بصري", "تصميم جرافيك"],
+      "darija": ["graphiste", "designer", "disiner", "ui ux", "creative designer", "design"]
+    }
+  },
+  {
+    "key": "finance_general",
+    "category": "Finance",
+    "labels": {
+      "en": ["finance job", "finance", "accounting", "bank job", "financial analyst", "audit"],
+      "fr": ["emploi finance", "finance", "comptabilité", "banque", "analyste financier", "audit"],
+      "ar": ["وظيفة مالية", "مالية", "محاسبة", "بنك", "تحليل مالي", "تدقيق"],
+      "darija": ["job finance", "finance", "mohassaba", "banque", "audit", "khdma f finance"]
+    }
+  },
+  {
+    "key": "accountant",
+    "category": "Finance",
+    "labels": {
+      "en": ["accountant", "bookkeeper", "accounting clerk", "tax accountant", "comptroller"],
+      "fr": ["comptable", "aide comptable", "comptabilité", "comptable fiscal", "cabinet comptable"],
+      "ar": ["محاسب", "مساعد محاسب", "محاسبة", "محاسب ضرائب", "محاسب شركة"],
+      "darija": ["comptable", "mou7asib", "aide comptable", "tax accountant", "mohassaba"]
+    }
+  },
+  {
+    "key": "health_general",
+    "category": "Health",
+    "labels": {
+      "en": ["health job", "medical job", "doctor job", "nurse job", "clinic job", "hospital job"],
+      "fr": ["emploi santé", "emploi médical", "poste médecin", "poste infirmier", "clinique", "hôpital"],
+      "ar": ["وظيفة صحة", "وظيفة طبية", "وظيفة طبيب", "وظيفة ممرض", "عمل في عيادة", "عمل في مستشفى"],
+      "darija": ["job santé", "medical job", "khdma f clinique", "khdma f sbitar", "job tbib", "job infirmier"]
+    }
+  },
+  {
+    "key": "nurse",
+    "category": "Health",
+    "labels": {
+      "en": ["nurse", "registered nurse", "care assistant", "clinic nurse", "hospital nurse"],
+      "fr": ["infirmier", "infirmière", "aide soignant", "infirmier clinique", "infirmier hôpital"],
+      "ar": ["ممرض", "ممرضة", "مساعد رعاية", "ممرض عيادة", "ممرض مستشفى"],
+      "darija": ["infirmier", "infirmière", "moumarid", "khdma infirmier", "soins"]
+    }
+  },
+  {
+    "key": "legal_general",
+    "category": "Legal",
+    "labels": {
+      "en": ["legal job", "law job", "lawyer job", "legal assistant", "jurist"],
+      "fr": ["emploi juridique", "emploi droit", "poste avocat", "assistant juridique", "juriste"],
+      "ar": ["وظيفة قانونية", "وظيفة محامي", "قانون", "مساعد قانوني", "مستشار قانوني"],
+      "darija": ["job juridique", "job avocat", "9انون", "assistant juridique", "juriste"]
+    }
+  },
+  {
+    "key": "education_general",
+    "category": "Education",
+    "labels": {
+      "en": ["teaching job", "teacher", "tutor", "education job", "instructor", "school job"],
+      "fr": ["emploi enseignement", "professeur", "tuteur", "emploi éducation", "formateur", "poste école"],
+      "ar": ["وظيفة تعليم", "معلم", "أستاذ", "مدرس خصوصي", "مدرب", "عمل في مدرسة"],
+      "darija": ["job ta3lim", "prof", "mo3alim", "tuteur", "formateur", "khdma f madrassa"]
+    }
+  },
+  {
+    "key": "construction_general",
+    "category": "Construction",
+    "labels": {
+      "en": ["construction job", "builder", "mason", "site worker", "civil engineer", "electrician job"],
+      "fr": ["emploi construction", "bâtiment", "maçon", "chantier", "ingénieur civil", "poste électricien"],
+      "ar": ["وظيفة بناء", "عامل بناء", "بنّاء", "ورش", "مهندس مدني", "وظيفة كهربائي"],
+      "darija": ["job construction", "bâtiment", "bna", "chantier", "ing civil", "khdma f lbina"]
+    }
+  },
+  {
+    "key": "hospitality_general",
+    "category": "Hospitality",
+    "labels": {
+      "en": ["hotel job", "restaurant job", "hospitality", "waiter", "chef", "receptionist"],
+      "fr": ["emploi hôtel", "emploi restauration", "hôtellerie", "serveur", "chef", "réceptionniste"],
+      "ar": ["وظيفة فندق", "وظيفة مطعم", "ضيافة", "نادل", "طباخ", "موظف استقبال"],
+      "darija": ["job hotel", "restaurant", "hospitality", "serveur", "chef", "réception"]
+    }
+  },
+  {
+    "key": "hotel_receptionist",
+    "category": "Hospitality",
+    "labels": {
+      "en": ["hotel receptionist", "front desk", "receptionist", "guest relations", "hotel front office"],
+      "fr": ["réceptionniste hôtel", "accueil hôtel", "réceptionniste", "front desk", "agent d'accueil hôtel"],
+      "ar": ["موظف استقبال فندق", "استقبال فندق", "موظف استقبال", "واجهة الفندق", "خدمة الضيوف"],
+      "darija": ["réception hôtel", "استقبال", "réceptionniste", "front desk", "hotel accueil"]
+    }
+  },
+  {
+    "key": "call_center_agent",
+    "category": "CallCenter",
+    "labels": {
+      "en": ["call center", "customer support", "customer service", "teleoperator", "support agent"],
+      "fr": ["centre d'appel", "service client", "support client", "téléconseiller", "agent support"],
+      "ar": ["مركز اتصال", "خدمة العملاء", "دعم العملاء", "موظف كول سنتر", "وكيل دعم"],
+      "darija": ["call center", "service client", "support", "téléconseiller", "khdma centre d'appel"]
+    }
+  },
+  {
+    "key": "mechanic",
+    "category": "Auto",
+    "labels": {
+      "en": ["mechanic", "automotive technician", "garage worker", "car repair", "auto mechanic"],
+      "fr": ["mécanicien", "technicien automobile", "garage", "réparation auto", "mécano"],
+      "ar": ["ميكانيكي", "تقني سيارات", "كراج", "إصلاح سيارات", "ميكانيك"],
+      "darija": ["mécanicien", "mikanik", "garage", "réparation auto", "khdma dial tomobil"]
+    }
+  },
+  {
+    "key": "cleaning_staff",
+    "category": "Cleaning",
+    "labels": {
+      "en": ["cleaner", "cleaning staff", "housekeeping", "janitor", "cleaning job"],
+      "fr": ["agent de nettoyage", "personnel ménage", "ménage", "agent d'entretien", "emploi nettoyage"],
+      "ar": ["عامل نظافة", "موظف تنظيف", "تدبير منزلي", "عامل صيانة نظافة", "وظيفة تنظيف"],
+      "darija": ["nettoyage", "ménage", "agent d'entretien", "khdma n9afa", "cleaner"]
+    }
+  }
+]

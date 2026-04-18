@@ -2,6 +2,8 @@ import type { PrismaClient } from "@workspace/db";
 import { ServiceCategory, ServiceStatus } from "@workspace/db";
 import { embedText } from "@/lib/embedding";
 import type { ServiceIntentData } from "./intentExtractor";
+import { classifyServiceQuery } from "./classifier";
+import { getServiceDbTypeValues, getServiceTypeEntry } from "./keywords";
 import { rankServices, tokenize } from "./rankingEngine";
 
 type ServiceCandidate = {
@@ -56,137 +58,6 @@ function parseEnumValue<TEnum extends Record<string, string>>(
   return null;
 }
 
-function inferServiceCategoryFromText(text: string): ServiceCategory | null {
-  const normalized = text
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase();
-
-  const rules: Array<{ category: ServiceCategory; keywords: string[] }> = [
-    {
-      category: ServiceCategory.HomeMaintenance,
-      keywords: [
-        "plumber", "plombier", "سباك",
-        "electrician", "electricien", "كهربائي",
-        "painter", "peintre", "دهان",
-        "carpenter", "menuisier", "نجار",
-        "locksmith", "serrurier",
-        "cleaning", "nettoyage", "نظافة", "تنظيف",
-        "maintenance", "entretien", "صيانة",
-        "reparation", "repair",
-      ],
-    },
-    {
-      category: ServiceCategory.ConstructionInstallation,
-      keywords: [
-        "construction", "بناء", "architect", "architecture", "هندسة",
-        "pool", "piscine", "مسبح",
-        "elevator", "ascenseur", "مصعد",
-        "security system", "securite", "أمن",
-        "renovation", "ترميم", "maconnerie",
-      ],
-    },
-    {
-      category: ServiceCategory.HealthWellness,
-      keywords: [
-        "doctor", "medecin", "طبيب",
-        "medical", "health", "sante", "صحة",
-        "nurse", "infirmier", "ممرض",
-        "therapist", "therapeute", "معالج",
-        "nutrition", "تغذية",
-        "fitness", "لياقة",
-        "clinic", "clinique", "عيادة",
-      ],
-    },
-    {
-      category: ServiceCategory.BeautyPersonalCare,
-      keywords: [
-        "beauty", "beaute", "جمال", "تجميل",
-        "hairstylist", "coiffeur", "coiffure", "حلاق",
-        "makeup", "maquillage", "مكياج",
-        "esthetician", "estheticienne",
-        "spa", "سبا",
-        "barber", "barbier",
-      ],
-    },
-    {
-      category: ServiceCategory.EventsMedia,
-      keywords: [
-        "event", "evenement", "فعالية",
-        "wedding", "mariage", "زفاف", "عرس",
-        "decoration", "ديكور",
-        "photographer", "photographe", "مصور",
-        "videographer", "videast", "فيديو",
-        "dj", "music", "musique",
-      ],
-    },
-    {
-      category: ServiceCategory.FoodCatering,
-      keywords: [
-        "food", "alimentation", "طعام",
-        "catering", "traiteur", "تموين",
-        "chef", "طباخ", "cuisinier",
-        "bakery", "boulangerie", "مخبزة",
-        "restaurant", "مطعم",
-        "patisserie",
-      ],
-    },
-    {
-      category: ServiceCategory.DigitalCreative,
-      keywords: [
-        "design", "تصميم",
-        "graphic", "graphique", "جرافيك",
-        "digital", "numerique", "رقمي",
-        "developer", "developpeur", "مطور",
-        "marketing", "تسويق",
-        "social media", "reseaux sociaux",
-        "content creator", "contenu", "محتوى",
-        "seo", "web",
-      ],
-    },
-    {
-      category: ServiceCategory.LegalFinance,
-      keywords: [
-        "lawyer", "avocat", "محامي",
-        "legal", "juridique", "قانوني",
-        "accountant", "comptable", "محاسب",
-        "finance", "مالي",
-        "tax", "fiscalite", "ضرائب",
-        "notaire", "conseil",
-      ],
-    },
-    {
-      category: ServiceCategory.EducationCoaching,
-      keywords: [
-        "teacher", "prof", "professeur", "أستاذ", "معلم",
-        "education", "تعليم",
-        "cours", "دروس",
-        "tutor", "tuteur", "مدرس",
-        "coach", "coaching", "تدريب",
-        "training", "formateur", "formation",
-      ],
-    },
-    {
-      category: ServiceCategory.AutomotiveTransport,
-      keywords: [
-        "mechanic", "mecanicien", "ميكانيكي",
-        "garage", "كراج",
-        "auto", "automobile", "car", "voiture", "سيارة",
-        "transport", "نقل",
-        "driver", "chauffeur", "سائق",
-      ],
-    },
-  ];
-
-  for (const rule of rules) {
-    if (rule.keywords.some((keyword) => normalized.includes(keyword))) {
-      return rule.category;
-    }
-  }
-
-  return null;
-}
-
 function parseRange(minValue: number | null | undefined, maxValue: number | null | undefined) {
   const min = typeof minValue === "number" && Number.isFinite(minValue) ? minValue : null;
   const max = typeof maxValue === "number" && Number.isFinite(maxValue) ? maxValue : null;
@@ -202,11 +73,22 @@ export async function serviceSearchEngine(
     minAverageRating?: number | null;
     minNumberOfReviews?: number | null;
   };
-  const parsedServiceCategory = parseEnumValue(intentData.serviceCategory, ServiceCategory);
-  const inferredServiceCategory = inferServiceCategoryFromText(
+  const typeEntry = intentData.typeKey ? getServiceTypeEntry(intentData.typeKey) : null;
+  const classifiedService = classifyServiceQuery(
     `${intentData.query} ${intentData.type ?? ""}`,
   );
+  const parsedServiceCategory = parseEnumValue(
+    intentData.serviceCategory ?? typeEntry?.category,
+    ServiceCategory,
+  );
+  const inferredServiceCategory = parseEnumValue(
+    classifiedService?.category ?? typeEntry?.category,
+    ServiceCategory,
+  );
   const serviceCategory = parsedServiceCategory ?? inferredServiceCategory;
+  const matchedDbTypes = intentData.typeKey
+    ? getServiceDbTypeValues(intentData.typeKey)
+    : [];
   const priceRange = parseRange(intentData.minPrice, intentData.maxPrice);
   const minAverageRating =
     typeof normalizedIntent.minAverageRating === "number" &&
@@ -224,7 +106,13 @@ export async function serviceSearchEngine(
   };
 
   if (serviceCategory) where.serviceCategory = serviceCategory;
-  if (intentData.type) where.type = { contains: intentData.type.trim(), mode: "insensitive" };
+  if (matchedDbTypes.length > 0) {
+    where.OR = matchedDbTypes.map((value) => ({
+      type: { equals: value, mode: "insensitive" as const },
+    }));
+  } else if (intentData.type) {
+    where.type = { contains: intentData.type.trim(), mode: "insensitive" };
+  }
   if (intentData.city) where.city = { contains: intentData.city.trim(), mode: "insensitive" };
   if (intentData.stateAbbreviation) where.stateAbbreviation = intentData.stateAbbreviation.trim();
   if (minAverageRating != null) where.averageRating = { gte: minAverageRating };
@@ -262,17 +150,23 @@ export async function serviceSearchEngine(
     embedding: true,
   } as const;
 
+  const SAFETY_CAP = 1000;
   let pool = (await db.service.findMany({
     where,
-    take: 90,
     orderBy: [{ createdAt: "desc" }, { id: "desc" }],
     select: selectFields,
   })) as ServiceCandidate[];
 
-  // Progressive filter relaxation: drop filters one by one until we get results
+  if (pool.length > SAFETY_CAP) {
+    pool = pool.slice(0, SAFETY_CAP);
+  }
+
   if (pool.length === 0) {
     const relaxSteps: Array<() => void> = [
-      () => { delete where.type; },
+      () => {
+        delete where.type;
+        delete where.OR;
+      },
       () => { delete where.city; },
       () => { delete where.stateAbbreviation; },
       () => { delete where.price; },
@@ -284,11 +178,13 @@ export async function serviceSearchEngine(
       relax();
       pool = (await db.service.findMany({
         where,
-        take: 90,
         orderBy: [{ createdAt: "desc" }, { id: "desc" }],
         select: selectFields,
       })) as ServiceCandidate[];
       if (pool.length > 0) break;
+    }
+    if (pool.length > SAFETY_CAP) {
+      pool = pool.slice(0, SAFETY_CAP);
     }
   }
 
@@ -311,6 +207,8 @@ export async function serviceSearchEngine(
     query: intentData.query,
     filtersApplied: {
       serviceCategory,
+      typeKey: intentData.typeKey ?? classifiedService?.typeKey ?? null,
+      matchedDbTypes,
       type: intentData.type ?? null,
       city: intentData.city ?? null,
       stateAbbreviation: intentData.stateAbbreviation ?? null,

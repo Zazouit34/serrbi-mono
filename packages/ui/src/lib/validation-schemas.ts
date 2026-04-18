@@ -224,6 +224,8 @@ export const autoApplyJobListQuerySchema = z.object({
   category: z.enum(jobCategoryValues).nullable().optional(),
   keywords: z.array(z.string()).optional(),
   roles: z.array(z.string()).optional(),
+  strictMatch: z.boolean().default(false),
+  smartOutreach: z.boolean().default(true),
 })
 export type AutoApplyJobListQueryValues = z.infer<typeof autoApplyJobListQuerySchema>
 
