@@ -27,7 +27,7 @@ const Careers4 = ({
       openings: [
         {
           title: "Senior Frontend Developer",
-          location: "Remote",
+          location: "on-site",
           url: "#",
         },
         {
