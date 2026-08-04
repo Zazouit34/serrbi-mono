@@ -1,3 +1,4 @@
+import { callChatLlm } from "@/lib/chat-llm";
 import { buildIntentExtractorPrompt } from "./prompt/intent";
 import { classifyServiceQuery } from "./classifier";
 
@@ -84,85 +85,8 @@ type ExtractIntentInput = {
   resumeProfile?: Partial<ResumeProfile> | null;
 };
 
-function getRequiredEnv(name: string): string {
-  const value = process.env[name];
-  if (!value) throw new Error(`Missing required environment variable: ${name}`);
-  return value;
-}
-
-function pickFirstString(...candidates: unknown[]): string | null {
-  for (const candidate of candidates) {
-    if (typeof candidate === "string" && candidate.trim()) return candidate.trim();
-  }
-  return null;
-}
-
-function extractAssistantText(payload: unknown): string | null {
-  const json = payload as Record<string, any>;
-  return pickFirstString(
-    json?.output?.choices?.[0]?.message?.content,
-    json?.output?.text,
-    json?.output?.texts?.[0],
-    json?.output?.choices?.[0]?.text,
-    json?.choices?.[0]?.message?.content,
-    json?.choices?.[0]?.text,
-  );
-}
-
 async function callIntentLlm(messages: ChatMessage[]): Promise<string> {
-  const url = getRequiredEnv("CHAT_API_URL");
-  const apiKey = getRequiredEnv("DASHSCOPE_API_KEY");
-  const model = "qwen3-32b";
-
-  const dashscopeBody = {
-    model,
-    input: { messages },
-    parameters: {
-      temperature: 0.1,
-      top_p: 0.9,
-      max_tokens: 450,
-      result_format: "message",
-      enable_thinking: false,
-    },
-  };
-
-  let response = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify(dashscopeBody),
-  });
-
-  if (!response.ok) {
-    const openAiBody = {
-      model,
-      messages,
-      temperature: 0.1,
-      top_p: 0.9,
-      max_tokens: 450,
-      enable_thinking: false,
-    };
-    response = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify(openAiBody),
-    });
-  }
-
-  if (!response.ok) {
-    const details = await response.text().catch(() => "");
-    throw new Error(`Intent LLM error ${response.status}${details ? `: ${details.slice(0, 300)}` : ""}`);
-  }
-
-  const json = (await response.json()) as unknown;
-  const text = extractAssistantText(json);
-  if (!text) throw new Error("Intent LLM returned an unexpected payload shape");
-  return text;
+  return callChatLlm(messages, { temperature: 0.1, maxTokens: 450 });
 }
 
 function normalizeIntentType(value: unknown): IntentType | null {

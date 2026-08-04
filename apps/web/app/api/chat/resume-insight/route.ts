@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { prisma } from "@workspace/db";
+import { prisma, JobListingStatus } from "@workspace/db";
 import { extractResumeProfileFromRawText } from "../agent/intentExtractor";
-import { buildResumeEmbeddingText } from "@/lib/embedding-text";
-import { embedText } from "@/lib/embedding";
+import { callChatLlm } from "@/lib/chat-llm";
 
 export const runtime = "nodejs";
 
@@ -20,98 +19,11 @@ type ResumeInsightResponse = {
   improvements: string[];
 };
 
-function getChatApiUrl(): string {
-  const value = process.env.CHAT_API_URL;
-  if (!value) {
-    throw new Error("Missing required environment variable: CHAT_API_URL ");
-  }
-  return value;
-}
-
-function getRequiredEnv(name: string): string {
-  const value = process.env[name];
-  if (!value) throw new Error(`Missing required environment variable: ${name}`);
-  return value;
-}
-
-function pickFirstString(...candidates: unknown[]): string | null {
-  for (const c of candidates) {
-    if (typeof c === "string" && c.trim()) return c.trim();
-  }
-  return null;
-}
-
-function extractAssistantText(json: any): string | null {
-  return pickFirstString(
-    json?.output?.choices?.[0]?.message?.content,
-    json?.output?.text,
-    json?.output?.texts?.[0],
-    json?.output?.choices?.[0]?.text,
-    json?.choices?.[0]?.message?.content,
-    json?.choices?.[0]?.text,
-  );
-}
-
-async function callQwenJson(messages: { role: "system" | "user"; content: string }[]): Promise<string> {
-  const url = getChatApiUrl();
-  const apiKey = getRequiredEnv("DASHSCOPE_API_KEY");
-  const model = "qwen3-32b";
-
-  const dashscopeBody = {
-    model,
-    input: { messages },
-    parameters: {
-      temperature: 0.2,
-      top_p: 0.9,
-      max_tokens: 900,
-      result_format: "message",
-      enable_thinking: false,
-    },
-  };
-
-  let response = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify(dashscopeBody),
-  });
-
-  if (!response.ok) {
-    const openaiBody = {
-      model,
-      messages,
-      temperature: 0.2,
-      top_p: 0.9,
-      max_tokens: 900,
-      enable_thinking: false,
-    };
-    response = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify(openaiBody),
-    });
-  }
-
-  if (!response.ok) {
-    const details = await response.text().catch(() => "");
-    throw new Error(`Resume insight model call failed (${response.status})${details ? `: ${details.slice(0, 300)}` : ""}`);
-  }
-
-  const json = await response.json();
-  const text = extractAssistantText(json);
-  if (!text) throw new Error("Resume insight model returned empty output.");
-  return text;
-}
-
 function safeParseInsight(text: string): ResumeInsightResponse | null {
   const firstBrace = text.indexOf("{");
   const lastBrace = text.lastIndexOf("}");
-  const jsonSlice = firstBrace !== -1 && lastBrace !== -1 ? text.slice(firstBrace, lastBrace + 1) : text;
+  const jsonSlice =
+    firstBrace !== -1 && lastBrace !== -1 ? text.slice(firstBrace, lastBrace + 1) : text;
 
   let parsed: any;
   try {
@@ -157,6 +69,51 @@ function fallbackInsight(): ResumeInsightResponse {
   };
 }
 
+async function getGroundingJobs(profile: {
+  job_title?: string | null;
+  skills?: string[];
+}) {
+  const title = profile.job_title?.trim();
+  const skills = (profile.skills ?? []).slice(0, 5);
+
+  if (title) {
+    const matches = await prisma.job.findMany({
+      where: {
+        status: JobListingStatus.published,
+        OR: [
+          { title: { contains: title, mode: "insensitive" } },
+          ...skills.map((skill) => ({
+            tags: { has: skill },
+          })),
+        ],
+      },
+      orderBy: { createdAt: "desc" },
+      take: 8,
+      select: {
+        title: true,
+        tags: true,
+        experienceLevel: true,
+        city: true,
+        category: true,
+      },
+    });
+    if (matches.length > 0) return matches;
+  }
+
+  return prisma.job.findMany({
+    where: { status: JobListingStatus.published },
+    orderBy: { createdAt: "desc" },
+    take: 8,
+    select: {
+      title: true,
+      tags: true,
+      experienceLevel: true,
+      city: true,
+      category: true,
+    },
+  });
+}
+
 export async function POST(req: Request) {
   try {
     const session = await auth();
@@ -172,27 +129,7 @@ export async function POST(req: Request) {
     }
 
     const profile = await extractResumeProfileFromRawText({ resumeText: text, locale });
-    const standardizedText = buildResumeEmbeddingText(profile);
-    const resumeEmbedding = await embedText(standardizedText);
-    const embeddingLiteral = `[${resumeEmbedding.join(",")}]`;
-
-    const topJobs = await (prisma as any).$queryRawUnsafe(
-      `
-        SELECT
-          "title",
-          "tags",
-          "experienceLevel",
-          "city",
-          "category",
-          (1 - ("embedding_vector" <=> $1::vector))::float AS "similarity"
-        FROM "Job"
-        WHERE "embedding_vector" IS NOT NULL
-          AND "status" = 'published'
-        ORDER BY "embedding_vector" <=> $1::vector ASC
-        LIMIT 8
-      `,
-      embeddingLiteral,
-    );
+    const groundingJobs = await getGroundingJobs(profile);
 
     const systemPrompt = `
 You are a multilingual resume strategist.
@@ -206,22 +143,28 @@ Return JSON only with this exact shape:
 }
 Rules:
 - Keep overallScore in [0, 100].
-- Salary must be monthly MAD.
-- Base the answer on resume profile + semantic matches.
+- Salary must be monthly EUR for Morocco / France / Belgium / Germany markets.
+- Base the answer on the resume profile and sample job listings provided.
 - Keep recommendations practical and concise.
+- Respond in the user's locale when possible: ${locale}.
 `.trim();
 
     const userPayload = JSON.stringify({
       locale,
+      resumeText: text.slice(0, 12000),
       profile,
-      semanticMatches: topJobs,
-      note: "Use the semantic matches as grounding evidence for role fit, skill gaps, and salary range.",
+      sampleJobs: groundingJobs,
+      note: "Use the sample jobs as grounding evidence for role fit, skill gaps, and salary range.",
     });
 
-    const raw = await callQwenJson([
-      { role: "system", content: systemPrompt },
-      { role: "user", content: userPayload },
-    ]);
+    const raw = await callChatLlm(
+      [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPayload },
+      ],
+      { temperature: 0.2, maxTokens: 900 },
+    );
+
     const parsed = safeParseInsight(raw);
     if (!parsed) {
       return NextResponse.json(fallbackInsight(), { status: 200 });
@@ -234,4 +177,3 @@ Rules:
     );
   }
 }
-

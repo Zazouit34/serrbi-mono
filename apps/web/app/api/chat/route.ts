@@ -28,6 +28,7 @@ import {
   detectExplicitIntentOverride,
 } from "./agent/orchestrator";
 import { classifyServiceQuery, inferJobCategoryFromText } from "./agent/classifier";
+import { callChatLlm } from "@/lib/chat-llm";
 
 export const runtime = "nodejs";
 
@@ -85,92 +86,13 @@ type AgentResponse = {
 const FREE_DAILY_LIMIT = 20;
 const SEARCH_PAGE_SIZE = 3;
 
-// ─── Env ──────────────────────────────────────────────────────────────────────
-
-function getRequiredEnv(name: string): string {
-  const value = process.env[name];
-  if (!value) throw new Error(`Missing required environment variable: ${name}`);
-  return value;
-}
-
 // ─── LLM caller ───────────────────────────────────────────────────────────────
-
-function pickFirstString(...candidates: unknown[]): string | null {
-  for (const c of candidates) {
-    if (typeof c === "string" && c.trim()) return c;
-  }
-  return null;
-}
-
-function extractAssistantText(json: any): string | null {
-  return pickFirstString(
-    json?.output?.choices?.[0]?.message?.content,
-    json?.output?.text,
-    json?.output?.texts?.[0],
-    json?.output?.choices?.[0]?.text,
-    json?.choices?.[0]?.message?.content,
-    json?.choices?.[0]?.text,
-  );
-}
 
 async function callLLM(
   messages: Array<{ role: "system" | "user" | "assistant"; content: string }>,
   opts?: { temperature?: number; maxTokens?: number },
 ): Promise<string> {
-  const url = getRequiredEnv("CHAT_API_URL");
-  const apiKey = getRequiredEnv("DASHSCOPE_API_KEY");
-  const model = "qwen3-32b";
-  const temperature = opts?.temperature ?? 0.4;
-  const max_tokens = opts?.maxTokens ?? 700;
-
-  let response = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model,
-      input: { messages },
-      parameters: {
-        temperature,
-        top_p: 0.9,
-        max_tokens,
-        result_format: "message",
-        enable_thinking: false,
-      },
-    }),
-  });
-
-  if (!response.ok) {
-    response = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model,
-        messages,
-        temperature,
-        top_p: 0.9,
-        max_tokens,
-        enable_thinking: false,
-      }),
-    });
-  }
-
-  if (!response.ok) {
-    const details = await response.text().catch(() => "");
-    throw new Error(
-      `LLM error ${response.status}${details ? `: ${details.slice(0, 300)}` : ""}`,
-    );
-  }
-
-  const json = await response.json();
-  const text = extractAssistantText(json);
-  if (!text) throw new Error("LLM returned unexpected payload shape");
-  return text;
+  return callChatLlm(messages, opts);
 }
 
 // ─── Normalizers ──────────────────────────────────────────────────────────────

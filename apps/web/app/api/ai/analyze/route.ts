@@ -1,7 +1,5 @@
 import { NextResponse } from "next/server";
-
-const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
-const MODEL_ID = "tngtech/deepseek-r1t2-chimera:free";
+import { callChatLlmJson } from "@/lib/chat-llm";
 
 type AnalyzeAction = "resumeAnalysis" | "careerSwitch";
 
@@ -52,61 +50,6 @@ interface AnalyzeRequestBody {
   payload: ResumePayload | CareerSwitchPayload;
 }
 
-async function callOpenRouter(prompt: string) {
-  const apiKey =
-    process.env.OPENROUTER_API_KEY || process.env.NEXT_PUBLIC_OPENROUTER_API_KEY;
-  if (!apiKey) {
-    throw new Error(
-      "OPENROUTER_API_KEY / NEXT_PUBLIC_OPENROUTER_API_KEY is not configured.",
-    );
-  }
-
-  const response = await fetch(OPENROUTER_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-      "HTTP-Referer": process.env.OPENROUTER_REFERRER || "http://localhost",
-      "X-Title": "SerrbiAIAnalyze",
-      Accept: "application/json",
-    },
-    body: JSON.stringify({
-      model: MODEL_ID,
-      response_format: { type: "json_object" },
-      messages: [
-        {
-          role: "user",
-          content: prompt,
-        },
-      ],
-    }),
-  });
-
-  if (!response.ok) {
-    const details = await response.text().catch(() => "");
-    throw new Error(
-      `OpenRouter error ${response.status}${
-        details ? `: ${details.slice(0, 200)}` : ""
-      }`,
-    );
-  }
-
-  const data = (await response.json()) as any;
-  const content = data?.choices?.[0]?.message?.content;
-  if (typeof content !== "string") {
-    throw new Error("OpenRouter returned invalid payload.");
-  }
-
-  const firstBrace = content.indexOf("{");
-  const lastBrace = content.lastIndexOf("}");
-  const jsonSlice =
-    firstBrace !== -1 && lastBrace !== -1
-      ? content.slice(firstBrace, lastBrace + 1)
-      : content;
-
-  return JSON.parse(jsonSlice);
-}
-
 function buildResumePrompt(text: string, locale?: string): string {
   return `
 You are an expert career coach and resume analyst.
@@ -130,7 +73,7 @@ Analyze the resume text below and respond ONLY in valid JSON following exactly t
 - Score must always be between 0 and 100.
 
 ### Salary
-- Estimate the monthly salary range in EURO (€) based on the resume’s skills, experience, and job roles.
+- Estimate the monthly salary range in EURO (€) based on the resume's skills, experience, and job roles.
 - Provide realistic numbers for Europe (Morocco / France / Belgium / Germany).
 
 Resume text:
@@ -251,7 +194,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid action" }, { status: 400 });
     }
 
-    const result = await callOpenRouter(prompt);
+    const result = await callChatLlmJson(
+      [{ role: "user", content: prompt }],
+      { temperature: 0.3, maxTokens: 2000 },
+    );
+
     return NextResponse.json(result as CareerSwitchResult, { status: 200 });
   } catch (error) {
     const message =
@@ -262,4 +209,3 @@ export async function POST(req: Request) {
     );
   }
 }
-
