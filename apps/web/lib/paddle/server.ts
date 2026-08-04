@@ -6,19 +6,23 @@ import { Paddle, Environment } from '@paddle/paddle-node-sdk';
  */
 let paddleInstance: Paddle | null = null;
 
+export function isPaddleConfigured(): boolean {
+  return Boolean(process.env.PADDLE_API_KEY?.trim());
+}
+
 export function getPaddleInstance(): Paddle {
   if (!paddleInstance) {
-    if (!process.env.PADDLE_API_KEY) {
+    if (!isPaddleConfigured()) {
       throw new Error('PADDLE_API_KEY environment variable is required');
     }
 
     const environment = (process.env.PADDLE_ENVIRONMENT || 'sandbox') as Environment;
-    
-    paddleInstance = new Paddle(process.env.PADDLE_API_KEY, {
+
+    paddleInstance = new Paddle(process.env.PADDLE_API_KEY!, {
       environment,
     });
   }
-  
+
   return paddleInstance;
 }
 
@@ -26,7 +30,9 @@ export function getPaddleInstance(): Paddle {
  * Service class for Paddle operations
  */
 export class PaddleService {
-  private static paddle = getPaddleInstance();
+  private static get paddle(): Paddle {
+    return getPaddleInstance();
+  }
 
   /**
    * Get subscription details from Paddle

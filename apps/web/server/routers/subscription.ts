@@ -6,7 +6,7 @@ import {
   adminProcedure,
 } from "@/server/trpc";
 import { TRPCError } from "@trpc/server";
-import { PaddleService } from "@/lib/paddle/server";
+import { isPaddleConfigured, PaddleService } from "@/lib/paddle/server";
 import type { PrismaClient } from "@workspace/db";
 import { SubscriptionStatus } from "@workspace/db";
 
@@ -35,7 +35,7 @@ export const subscriptionRouter = router({
       },
     });
 
-    if (subscription?.paddleSubscriptionId) {
+    if (subscription?.paddleSubscriptionId && isPaddleConfigured()) {
       try {
         const paddleSubscription = await PaddleService.getSubscription(
           subscription.paddleSubscriptionId
@@ -135,7 +135,11 @@ export const subscriptionRouter = router({
       if (!newPlan)
         throw new TRPCError({ code: "NOT_FOUND", message: "Plan not found" });
 
-      if (subscription.paddleSubscriptionId && newPlan.paddlePriceId) {
+      if (
+        subscription.paddleSubscriptionId &&
+        newPlan.paddlePriceId &&
+        isPaddleConfigured()
+      ) {
         try {
           const paddleSubscription = await PaddleService.updateSubscription({
             subscriptionId: subscription.paddleSubscriptionId,
@@ -182,7 +186,7 @@ export const subscriptionRouter = router({
           message: "No subscription found",
         });
 
-      if (subscription.paddleSubscriptionId) {
+      if (subscription.paddleSubscriptionId && isPaddleConfigured()) {
         try {
           const paddleSubscription = await PaddleService.cancelSubscription(
             subscription.paddleSubscriptionId
@@ -246,6 +250,13 @@ export const subscriptionRouter = router({
         message: "No active subscription found",
       });
 
+    if (!isPaddleConfigured()) {
+      throw new TRPCError({
+        code: "PRECONDITION_FAILED",
+        message: "Subscription billing is not configured",
+      });
+    }
+
     try {
       const paddleSubscription = await PaddleService.pauseSubscription(
         subscription.paddleSubscriptionId
@@ -285,6 +296,13 @@ export const subscriptionRouter = router({
         code: "NOT_FOUND",
         message: "No paused subscription found",
       });
+
+    if (!isPaddleConfigured()) {
+      throw new TRPCError({
+        code: "PRECONDITION_FAILED",
+        message: "Subscription billing is not configured",
+      });
+    }
 
     try {
       const paddleSubscription = await PaddleService.resumeSubscription(
