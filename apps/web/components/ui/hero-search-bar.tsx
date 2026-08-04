@@ -488,12 +488,6 @@ function HeroSearchBarComponent({
   const handleSearch = async (overrideQuery?: string, overrideIntent?: TabType) => {
     const effectiveQuery = (overrideQuery ?? chatInput).trim();
 
-    if (!isLoggedIn) {
-      const callback = pathname || "/";
-      router.push(`/login?callbackUrl=${encodeURIComponent(callback)}`);
-      return;
-    }
-
     const effectiveScope: ScopeOverride = overrideIntent ?? currentScope;
     if (!effectiveQuery) return;
 

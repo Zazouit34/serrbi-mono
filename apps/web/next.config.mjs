@@ -1,9 +1,22 @@
 import createNextIntlPlugin from 'next-intl/plugin'
 import createMDX from '@next/mdx'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const prismaGeneratedPath = path.join(
+  __dirname,
+  '../../packages/database/generated/prisma',
+)
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  transpilePackages: ["@workspace/ui"],
+  transpilePackages: ["@workspace/ui", "@workspace/db"],
+  serverExternalPackages: ["@prisma/client"],
+  outputFileTracingIncludes: {
+    "/*": [`${prismaGeneratedPath}/**/*`],
+    "/api/**/*": [`${prismaGeneratedPath}/**/*`],
+  },
   pageExtensions: ['js', 'jsx', 'md', 'mdx', 'ts', 'tsx'],
   images: {
     domains: [
