@@ -7,7 +7,7 @@ import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { cn } from "@workspace/ui/lib/utils";
-import { Globe2, CircleCheckIcon, CircleIcon, Wallet, Zap, Menu } from "lucide-react";
+import { Globe2, CircleCheckIcon, CircleIcon, Wallet, Zap, Menu, TrendingUp, FileText } from "lucide-react";
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -17,7 +17,7 @@ import {
   NavigationMenuTrigger,
 } from "@workspace/ui/components/navigation-menu";
 import { Container } from "@workspace/ui/components/container";
-import { useTranslations, useLocale } from "next-intl";
+import { useTranslations } from "next-intl";
 import { SerrbiLogo } from "./SerrbiLogo";
 import { UserMenu } from "./user-menu"; // 👈 your existing user menu component
 import {
@@ -28,17 +28,14 @@ import {
 } from "@workspace/ui/components/dropdown-menu";
 
 const DEFAULT_LINKS = [
-  //{ href: "/jobs", key: "jobs", image: "/images/jobs.png" },
-  //{ href: "/services", key: "services", image: "/images/services.png" },
-  //{ href: "/tasks", key: "tasks", image: "/images/tasks.png" },
-  //{ href: "/career-switch", key: "careerSwitch", image: "/images/jobs.png" },
+  { href: "/career-switch", key: "careerSwitch", image: "/images/jobs.png" },
   { href: "/account/auto-apply", key: "autoApply", image: "/images/services.png" },
-  //{ href: "/resume-analyzer", key: "resumeAnalyzer", image: "/images/tasks.png" },
+  { href: "/resume-analyzer", key: "resumeAnalyzer", image: "/images/tasks.png" },
 ];
 
 const LINKS = [
-  //{ href:"/career-switch", key: "careerSwitch", icon: TrendingUp },
-  //{ href:"/resume-analyzer", key: "resumeAnalyzer", icon: FileText },
+  { href:"/career-switch", key: "careerSwitch", icon: TrendingUp },
+  { href:"/resume-analyzer", key: "resumeAnalyzer", icon: FileText },
   { href:"/subscription", key: "plans", icon: Wallet },
   { href:"/account/auto-apply", key: "autoApply", icon: Zap },
 ]
@@ -51,7 +48,6 @@ const DEFAULT_LANGUAGES: Array<{ code: string; label: string }> = [
 
 export function Navbar() {
   const t = useTranslations("Navbar");
-  const locale = useLocale();
   const [selectedLang, setSelectedLang] = React.useState("fr");
   const pathname = usePathname();
   const router = useRouter();
@@ -112,13 +108,8 @@ export function Navbar() {
               <NavigationMenuList>
                 {NAV_LINKS.map((link) => {
                   const isAutoApply = link.key === "autoApply";
-                  // For autoApply, never include locale in href:
-                  const href = isAutoApply
-                    ? link.href
-                    : `/${locale}${link.href}`;
-                  const isActive = isAutoApply
-                    ? pathname === link.href
-                    : pathname === `/${locale}${link.href}` || pathname === link.href;
+                  const href = link.href;
+                  const isActive = pathname === link.href;
                   const visibleLabel = t(link.key as any);
 
                   if (isAutoApply) {
@@ -229,10 +220,7 @@ export function Navbar() {
             <DropdownMenuContent align="start" className="w-56">
               {LINKS.map((link) => {
                 const isAutoApply = link.key === "autoApply";
-                // For autoApply, never include locale in href:
-                const href = isAutoApply
-                  ? link.href
-                  : `/${locale}${link.href}`;
+                const href = link.href;
                 return (
                   <DropdownMenuItem key={link.href} asChild>
                     <Link
@@ -285,7 +273,6 @@ export function Navbar() {
         {/* Bottom row: auto-apply pill */}
         <nav className="flex justify-center items-center px-4 py-2">
           {NAV_LINKS.filter((l) => l.key === "autoApply").map((link) => {
-            // For autoApply, never include locale in href:
             const isActive = pathname === link.href;
             return (
               <Link

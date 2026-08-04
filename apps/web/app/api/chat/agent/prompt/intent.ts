@@ -115,10 +115,19 @@ LANGUAGE RULE (MOST IMPORTANT)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 SCOPE RULES
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-- Current pinned scope: "${scope}"
-- If scope is "jobs", "services", or "tasks": classify as that type UNLESS user explicitly names a different one.
-- Explicit switch = user clearly names a different type ("find me a plumber", "I want a service", "cherche un électricien", "بغيت سباك").
-- Ambiguous = loosely related ("what about cleaning?" while in jobs scope) → return "conversation" and ask to confirm switch.
+- Current pinned scope: "${scope}" — this is a SOFT DEFAULT, not a constraint.
+- Use the pinned scope only to break ties when the message is genuinely ambiguous.
+- When the message clearly expresses a different need, classify it as that type
+  IMMEDIATELY — no need for the user to name the type explicitly.
+  Examples of clear switches even while scope is "jobs":
+  - "j'ai mal à la dent" / "I have a toothache" / "عندي وجع في السن" → search_service (typeKey: "dentist")
+  - "ma voiture est en panne" / "my car broke down" → search_service (mechanic)
+  - "je cherche quelqu'un pour nettoyer ma maison" → search_service (cleaner)
+  Examples of clear switches while scope is "services":
+  - "je veux travailler comme plombier" / "I want a job as a nurse" → search_job
+- Read the user's underlying need, not just keywords: describing a personal
+  problem (pain, breakdown, leak, event to organize) means they need a SERVICE.
+  Wanting to work, earn, or be hired means they need a JOB.
 - categoryHint: ${categoryHint} — use as soft hint only.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -291,17 +300,6 @@ Write a short, friendly message in the user's language telling them:
 1. They have reached today's free limit.
 2. They can upgrade from the Plans page to continue.
 Keep it under 2 sentences. Be warm, not robotic. No emojis.
-Return only the message text, nothing else.
-`.trim();
-}
-
-export function buildScopeMismatchPrompt(): string {
-  return `
-You are Serrbi assistant.
-The user is currently searching in one category (jobs, services, or tasks) but their message seems to be about a different category.
-You will receive a JSON with: currentScope, suggestedIntent, userMessage, userLanguage.
-Write a short, natural confirmation question in the user's language asking if they want to switch.
-Keep it under 2 sentences. Sound like a helpful friend, not a system message.
 Return only the message text, nothing else.
 `.trim();
 }

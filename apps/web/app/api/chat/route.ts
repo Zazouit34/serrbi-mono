@@ -16,14 +16,11 @@ import { rankJobsWithResumeMatch } from "./agent/scoreEngine";
 import {
   buildSuggestionsPrompt,
   buildPlanLimitPrompt,
-  buildScopeMismatchPrompt,
   buildPostResultNarrativePrompt,
 } from "./agent/prompt/intent";
 import {
-  shouldBypassIntentLlm,
   checkJobSearchReadiness,
   checkServiceSearchReadiness,
-  checkScopeGuard,
   generateDbGroundedSuggestions,
   detectExplicitIntentOverride,
 } from "./agent/orchestrator";
@@ -124,18 +121,62 @@ function normalizeForIntent(text: string): string {
 
 
 
+// ─── Localized last-resort fallbacks ─────────────────────────────────────────
+// Used only when the Claude call itself fails; keyed by the UI locale so the
+// user never gets an English string mid-French/Arabic conversation.
+
+type Locale = "en" | "fr" | "ar";
+
+const FALLBACK_TEXT: Record<string, Record<Locale, string>> = {
+  clarifyCategory: {
+    en: "What field are you looking for? (Tech, Finance, Health, Hospitality...)",
+    fr: "Dans quel domaine cherches-tu ? (Tech, Finance, Santé, Hôtellerie...)",
+    ar: "في أي مجال تبحث؟ (تقنية، مالية، صحة، ضيافة...)",
+  },
+  clarifyLocation: {
+    en: "Which city do you prefer, or are you open to remote?",
+    fr: "Quelle ville préfères-tu, ou es-tu ouvert au télétravail ?",
+    ar: "أي مدينة تفضل، أم أنت منفتح على العمل عن بعد؟",
+  },
+  clarifyBoth: {
+    en: "What field and location are you looking for?",
+    fr: "Quel domaine et quelle ville recherches-tu ?",
+    ar: "ما المجال والمدينة اللذان تبحث عنهما؟",
+  },
+  serviceClarify: {
+    en: "What kind of service are you looking for?",
+    fr: "Quel type de service cherches-tu ?",
+    ar: "ما نوع الخدمة التي تبحث عنها؟",
+  },
+  planLimit: {
+    en: "You've reached your free daily limit. Upgrade from the Plans page to continue.",
+    fr: "Tu as atteint ta limite quotidienne gratuite. Passe à un plan supérieur pour continuer.",
+    ar: "لقد وصلت إلى حدك اليومي المجاني. قم بالترقية من صفحة الخطط للمتابعة.",
+  },
+  greeting: {
+    en: "How can I help you today?",
+    fr: "Comment puis-je t'aider aujourd'hui ?",
+    ar: "كيف يمكنني مساعدتك اليوم؟",
+  },
+};
+
+function fallbackText(key: keyof typeof FALLBACK_TEXT, locale: Locale): string {
+  return FALLBACK_TEXT[key]?.[locale] ?? FALLBACK_TEXT[key]?.en ?? "";
+}
+
 // ─── LLM-powered helpers ──────────────────────────────────────────────────────
 
 /**
  * Asks the user for their job domain/category.
  * Prefers the LLM's own reply if it already wrote a clarification.
- * Falls back to a fresh LLM call, then a hardcoded string as last resort.
+ * Falls back to a fresh LLM call, then a localized string as last resort.
  */
 async function buildSmartClarifyMessage(opts: {
   userMessage: string;
   intentData: JobIntentData;
   missingField: "category" | "location" | "both";
   existingReply?: string;
+  locale: Locale;
 }): Promise<string> {
   const { intentData, missingField, userMessage } = opts;
   const prefix = opts.existingReply?.trim() || "";
@@ -175,40 +216,15 @@ Rules:
     );
     // Combine resume acknowledgment with the clarify question
     return prefix ? `${prefix} ${question}` : question;
-  } catch {
-    let fallback: string;
-    if (missingField === "category") {
-      fallback = "What field are you looking for? (Tech, Finance, Health, Hospitality...)";
-    } else if (missingField === "location") {
-      fallback = "Which city do you prefer, or are you open to remote?";
-    } else {
-      fallback = "What field and location are you looking for?";
-    }
+  } catch (error) {
+    console.error("[chat/route] clarify LLM call failed, using localized fallback", error);
+    const fallback =
+      missingField === "category"
+        ? fallbackText("clarifyCategory", opts.locale)
+        : missingField === "location"
+          ? fallbackText("clarifyLocation", opts.locale)
+          : fallbackText("clarifyBoth", opts.locale);
     return prefix ? `${prefix} ${fallback}` : fallback;
-  }
-}
-
-async function buildJobClarifyMessage(
-  userMessage: string,
-): Promise<string> {
-  try {
-    return await callLLM(
-      [
-        {
-          role: "system",
-          content: `You are a helpful marketplace assistant.
-The user wants a job but hasn't told you their field or domain yet.
-Ask them naturally in their language what domain or field they work in.
-Give 3-4 short examples (e.g. Tech, Finance, Health, Hospitality).
-Keep it under 2 sentences. Sound like a helpful friend.
-Return only the message text — no JSON, no preamble.`,
-        },
-        { role: "user", content: userMessage },
-      ],
-      { temperature: 0.4, maxTokens: 80 },
-    );
-  } catch {
-    return "What field are you looking for? (Tech, Finance, Health, Hospitality...)";
   }
 }
 
@@ -265,16 +281,15 @@ async function generateSmartSuggestions(opts: {
       return parsed.slice(0, 3).filter(Boolean);
     }
     throw new Error("Invalid format");
-  } catch {
-    if (opts.intent === "jobs")
-      return ["More job opportunities", "Filter by experience level", "Remote positions only"];
-    if (opts.intent === "services")
-      return ["Highest rated providers", "Filter by city", "Compare prices"];
-    return ["More tasks available", "Filter by budget", "Urgent tasks only"];
+  } catch (error) {
+    console.error("[chat/route] suggestions LLM call failed, using static fallback", error);
+    // Suggestions are non-critical decoration — return an empty list rather
+    // than English strings in a non-English conversation.
+    return [];
   }
 }
 
-async function buildPlanLimitMessage(userMessage: string): Promise<string> {
+async function buildPlanLimitMessage(userMessage: string, locale: Locale): Promise<string> {
   try {
     return await callLLM(
       [
@@ -283,33 +298,9 @@ async function buildPlanLimitMessage(userMessage: string): Promise<string> {
       ],
       { temperature: 0.3, maxTokens: 100 },
     );
-  } catch {
-    return "You've reached your free daily limit. Upgrade from the Plans page to continue.";
-  }
-}
-
-async function buildScopeMismatchMessage(opts: {
-  currentScope: string;
-  suggestedIntent: string;
-  userMessage: string;
-}): Promise<string> {
-  try {
-    return await callLLM(
-      [
-        { role: "system", content: buildScopeMismatchPrompt() },
-        {
-          role: "user",
-          content: JSON.stringify({
-            currentScope: opts.currentScope,
-            suggestedIntent: opts.suggestedIntent,
-            userMessage: opts.userMessage,
-          }),
-        },
-      ],
-      { temperature: 0.3, maxTokens: 100 },
-    );
-  } catch {
-    return `You're currently searching ${opts.currentScope}. Switch to ${opts.suggestedIntent}?`;
+  } catch (error) {
+    console.error("[chat/route] plan-limit LLM call failed, using localized fallback", error);
+    return fallbackText("planLimit", locale);
   }
 }
 
@@ -350,7 +341,8 @@ async function generatePostResultNarrative(opts: {
       ],
       { temperature: 0.5, maxTokens: 200 },
     );
-  } catch {
+  } catch (error) {
+    console.error("[chat/route] post-result narrative LLM call failed", error);
     return "";
   }
 }
@@ -630,6 +622,7 @@ export async function POST(req: Request) {
       "";
 
     const locale = body.context?.locale || "en";
+    const uiLocale = normalizeLocale(locale);
 
     // ── Auth & rate limiting ──────────────────────────────────────────────────
     const session = await auth();
@@ -646,7 +639,7 @@ export async function POST(req: Request) {
         const dayBucket = getDayBucketUtc();
         const used = await getDailyUsageCount(userId, dayBucket);
         if (used >= FREE_DAILY_LIMIT) {
-          const limitMessage = await buildPlanLimitMessage(lastUser);
+          const limitMessage = await buildPlanLimitMessage(lastUser, uiLocale);
           return NextResponse.json({
             action: "chat",
             intent: "jobs",
@@ -703,60 +696,35 @@ export async function POST(req: Request) {
     const scope = body.context?.scope;
     const quickQuery = (lastUser || "").trim();
 
-    const bypassLlm = shouldBypassIntentLlm({
-      scope,
-      query: quickQuery,
-    });
-
     // ── Intent extraction ─────────────────────────────────────────────────────
+    // Always run the LLM extractor so it can accumulate slots across turns,
+    // answer in the user's language, and detect mid-conversation intent switches.
     const extractorHistory: IntentExtractorMessage[] = messages
       .filter((m): m is IntentExtractorMessage => {
         return (
           (m.role === "user" || m.role === "assistant") &&
           typeof m.content === "string" &&
           m.content.trim().length > 0 &&
-          // Filter out thinking/loading placeholder messages
-          m.content.trim().length > 3
+          // Filter out thinking/loading placeholder messages ("...", "…")
+          !/^[.…\s]+$/.test(m.content)
         );
       })
       .slice(-8);
 
-    let aiResult = bypassLlm
-      ? scope === "services"
-        ? {
-            type: "search_service" as const,
-            reply: "",
-            intent_data: { query: quickQuery },
-            clarify_field: null,
-          }
-        : scope === "tasks"
-          ? {
-              type: "search_task" as const,
-              reply: "",
-              intent_data: { query: quickQuery },
-              clarify_field: null,
-            }
-          : {
-              type: "search_job" as const,
-              reply: "",
-              intent_data: { query: quickQuery },
-              clarify_field: null,
-            }
-      : await extractIntent({
-          locale,
-          scope,
-          categoryHint: body.context?.categoryHint,
-          message: lastUser,
-          history: extractorHistory,
-          resumeProfile: resumeProfile as any,
-        });
+    let aiResult = await extractIntent({
+      locale,
+      scope,
+      categoryHint: body.context?.categoryHint,
+      message: lastUser,
+      history: extractorHistory,
+      resumeProfile: resumeProfile as any,
+    });
 
     logChatDebug("intent_extracted", {
       message: lastUser,
       type: aiResult.type,
       reply: aiResult.reply,
       intent_data: aiResult.intent_data,
-      bypassed: bypassLlm,
     });
 
     await trackAgentEvent({
@@ -770,7 +738,6 @@ export async function POST(req: Request) {
         categoryHint: body.context?.categoryHint ?? null,
         query: (lastUser || "").slice(0, 500),
         extractedIntentData: aiResult.intent_data ?? null,
-        bypassed: bypassLlm,
       },
     });
 
@@ -810,7 +777,14 @@ Keep it under 12 words. No questions. Return only the message text.`,
           { role: "user", content: quickQuery },
         ],
         { temperature: 0.4, maxTokens: 60 },
-      ).catch(() => `Got it — searching for ${resumeProfile.job_title} positions for you!`);
+      ).catch((error) => {
+        console.error("[chat/route] resume ack LLM call failed, using localized fallback", error);
+        return uiLocale === "fr"
+          ? `C'est noté — je cherche des postes de ${resumeProfile.job_title} pour toi !`
+          : uiLocale === "ar"
+            ? `تمام — أبحث لك عن وظائف ${resumeProfile.job_title} الآن!`
+            : `Got it — searching for ${resumeProfile.job_title} positions for you!`;
+      });
 
       aiResult = {
         type: "search_job",
@@ -830,49 +804,13 @@ Keep it under 12 words. No questions. Return only the message text.`,
       if (forcedType && forcedType !== aiResult.type) {
         aiResult = { ...aiResult, type: forcedType };
       }
-    }
-    if (
-      pinnedScope &&
-      pinnedScope !== "auto" &&
-      aiResult.type !== "conversation"
-    ) {
-      const guardResult = checkScopeGuard({
+      // When the LLM classified a different type than the pinned scope, trust
+      // it and auto-switch: the search runs with the new type and the response
+      // carries the new intent, which flips the tag on the client.
+      logChatDebug("scope_resolution", {
         pinnedScope,
-        extractedType: aiResult.type,
-        query: quickQuery,
+        resolvedType: aiResult.type,
       });
-
-      if (guardResult.mismatch) {
-        if (guardResult.isExplicit) {
-          // Auto-switch: force the intent type without asking
-          const typeMap: Record<string, string> = {
-            services: "search_service",
-            tasks: "search_task",
-            jobs: "search_job",
-          };
-          aiResult = { ...aiResult, type: typeMap[guardResult.suggestedIntent] as any };
-          // Fall through to the search blocks with corrected type
-        } else {
-          // Ask user to confirm the switch
-          const mismatchMessage = await buildScopeMismatchMessage({
-            currentScope: pinnedScope,
-            suggestedIntent: guardResult.suggestedIntent,
-            userMessage: lastUser,
-          });
-
-          return NextResponse.json({
-            action: "chat",
-            intent: pinnedScope as AgentIntent,
-            searchQuery: "",
-            assistantText: mismatchMessage,
-            relatedPrompts: [
-              `Yes, search ${guardResult.suggestedIntent}`,
-              `No, keep searching ${pinnedScope}`,
-            ],
-            intentMismatch: { suggestedIntent: guardResult.suggestedIntent as AgentIntent },
-          } satisfies AgentResponse);
-        }
-      }
     }
 
     // ── Conversation ──────────────────────────────────────────────────────────
@@ -906,7 +844,10 @@ Under 12 words. Return only the text.`,
             { role: "user", content: quickQuery },
           ],
           { temperature: 0.4, maxTokens: 60 },
-        ).catch(() => "");
+        ).catch((error) => {
+          console.error("[chat/route] proactive resume reply LLM call failed", error);
+          return "";
+        });
 
         // Mutate aiResult to trigger a job search instead of asking for domain
         aiResult = {
@@ -924,7 +865,7 @@ Under 12 words. Return only the text.`,
           action: "chat",
           intent: "jobs",
           searchQuery: "",
-          assistantText: aiResult.reply || "How can I help you today?",
+          assistantText: aiResult.reply || fallbackText("greeting", uiLocale),
           relatedPrompts: [],
           debug: includeDebug
             ? { stage: "conversation", extracted_intent: aiResult }
@@ -951,6 +892,7 @@ Under 12 words. Return only the text.`,
           intentData,
           missingField: readiness.missingField,
           existingReply: aiResult.reply?.trim(),
+          locale: uiLocale,
         });
         return NextResponse.json({
           action: "chat",
@@ -1046,7 +988,6 @@ Under 12 words. Return only the text.`,
               stage: "search_job",
               extracted_intent: aiResult,
               filters_applied: searchResult.filtersApplied,
-              bypassed: bypassLlm,
               ranking_top3: personalizedRanked.slice(0, 3).map((item: any) => ({
                 id: item.id,
                 title: item.title,
@@ -1092,7 +1033,10 @@ Return only the question text.`,
             { role: "user", content: lastUser },
           ],
           { temperature: 0.4, maxTokens: 80 },
-        ).catch(() => "What kind of service are you looking for?");
+        ).catch((error) => {
+          console.error("[chat/route] service clarify LLM call failed, using localized fallback", error);
+          return fallbackText("serviceClarify", uiLocale);
+        });
 
         return NextResponse.json({
           action: "chat",

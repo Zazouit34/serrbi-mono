@@ -211,13 +211,36 @@ function safeParseResponse(text: string): AgentResponse | null {
   return { type, reply, intent_data: intentData };
 }
 
+const FALLBACK_GREETINGS: Record<"en" | "fr" | "ar", { empty: string; greeting: string }> = {
+  en: {
+    empty: "Hey 👋 Tell me what you need and I will help you right away.",
+    greeting: "Hi 👋 Great to see you. Want to find a job, service, or task?",
+  },
+  fr: {
+    empty: "Salut 👋 Dis-moi ce dont tu as besoin et je t'aide tout de suite.",
+    greeting: "Salut 👋 Content de te voir. Tu cherches un emploi, un service ou une tâche ?",
+  },
+  ar: {
+    empty: "مرحباً 👋 أخبرني بما تحتاجه وسأساعدك فوراً.",
+    greeting: "مرحباً 👋 سعيد برؤيتك. هل تبحث عن وظيفة أو خدمة أو مهمة؟",
+  },
+};
+
+function normalizeFallbackLocale(locale?: string): "en" | "fr" | "ar" {
+  const lower = (locale ?? "en").toLowerCase();
+  if (lower.startsWith("fr")) return "fr";
+  if (lower.startsWith("ar")) return "ar";
+  return "en";
+}
+
 function fallbackExtractor(input: ExtractIntentInput): AgentResponse {
   const q = input.message.trim();
   const lowered = q.toLowerCase();
+  const greetings = FALLBACK_GREETINGS[normalizeFallbackLocale(input.locale)];
   if (!q) {
     return {
       type: "conversation",
-      reply: "Hey 👋 Tell me what you need and I will help you right away.",
+      reply: greetings.empty,
       intent_data: null,
     };
   }
@@ -227,7 +250,7 @@ function fallbackExtractor(input: ExtractIntentInput): AgentResponse {
   if (greetingLike && q.split(/\s+/).length <= 5) {
     return {
       type: "conversation",
-      reply: "Hi 👋 Great to see you. Want to find a job, service, or task?",
+      reply: greetings.greeting,
       intent_data: null,
     };
   }

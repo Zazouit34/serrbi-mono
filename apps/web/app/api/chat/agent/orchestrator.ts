@@ -3,11 +3,8 @@ import {
   classifyServiceQuery,
   inferJobCategoryFromText,
   inferServiceCategoryFromText,
-  isLikelySearchRequest,
-  isGreetingOrSmallTalk,
   isExplicitIntentSwitch,
 } from "./classifier";
-import { PROXIMITY_SIGNALS } from "./keywords";
 
 export type SuggestionPrompt = {
   label: string;
@@ -27,28 +24,11 @@ export function checkJobSearchReadiness(intentData: JobIntentData): ReadinessRes
     Boolean(intentData.category) ||
     inferJobCategoryFromText(intentData.query, intentData.skills ?? []) !== null;
 
-  // Check explicit location fields
-  const hasExplicitLocation = !!(
-    (intentData.city?.trim() || null) ??
-    (intentData.locationRequirement?.trim() || null) ??
-    (intentData.stateAbbreviation?.trim() || null)
-  );
-
-  // Check for proximity signal in the query ("near me", "في موقعي", etc.)
-  const hasProximitySignal = PROXIMITY_SIGNALS.some(signal =>
-    intentData.query?.toLowerCase().includes(signal.toLowerCase())
-  );
-
-  const hasLocation = hasExplicitLocation || hasProximitySignal;
-
-  if (!hasCategory && !hasLocation) {
-    return { ready: false, missingField: "both" };
-  }
+  // Location is intentionally NOT required: searching immediately across all
+  // locations and letting the user refine afterwards feels smarter than
+  // interrogating them turn after turn.
   if (!hasCategory) {
     return { ready: false, missingField: "category" };
-  }
-  if (!hasLocation) {
-    return { ready: false, missingField: "location" };
   }
 
   return { ready: true };
@@ -74,59 +54,6 @@ export function checkServiceSearchReadiness(intentData: ServiceIntentData):
   
   // Default: proceed — longer queries have enough semantic content for embedding search
   return { ready: true };
-}
-
-export function shouldBypassIntentLlm(opts: {
-  scope: string | undefined;
-  query: string;
-}): boolean {
-  const { scope, query } = opts;
-
-  if (!scope || scope === "auto") return false;
-
-  const wordCount = query.split(" ").filter(Boolean).length;
-  if (wordCount <= 3) return false;
-
-  if (!isLikelySearchRequest(query)) return false;
-  if (isGreetingOrSmallTalk(query)) return false;
-
-  return true;
-}
-
-export function checkScopeGuard(opts: {
-  pinnedScope: string;
-  extractedType: string;
-  query: string;
-}):
-  | { mismatch: false }
-  | { mismatch: true; suggestedIntent: string; isExplicit: boolean } {
-  const { pinnedScope, extractedType, query } = opts;
-
-  const scopeToType: Record<string, string> = {
-    jobs: "search_job",
-    services: "search_service",
-    tasks: "search_task",
-  };
-
-  const expectedType = scopeToType[pinnedScope];
-  if (!expectedType || extractedType === expectedType) {
-    return { mismatch: false };
-  }
-
-  const isExplicit = isExplicitIntentSwitch(query, extractedType);
-
-  const suggestedIntent =
-    extractedType === "search_service"
-      ? "services"
-      : extractedType === "search_task"
-        ? "tasks"
-        : "jobs";
-
-  return {
-    mismatch: true,
-    suggestedIntent,
-    isExplicit,
-  };
 }
 
 export function detectExplicitIntentOverride(
