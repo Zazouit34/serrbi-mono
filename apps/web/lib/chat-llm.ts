@@ -56,7 +56,7 @@ export async function callChatLlm(
   opts?: CallChatLlmOptions,
 ): Promise<string> {
   const apiKey = getRequiredEnv("ANTHROPIC_API_KEY");
-  const model = process.env.ANTHROPIC_MODEL || "claude-sonnet-4-20250514";
+  const model = process.env.ANTHROPIC_MODEL || "claude-sonnet-5";
   const temperature = opts?.temperature ?? 0.4;
   const max_tokens = opts?.maxTokens ?? 700;
   const { system, messages: anthropicMessages } = toAnthropicMessages(messages);
