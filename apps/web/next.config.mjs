@@ -2,16 +2,20 @@ import createNextIntlPlugin from 'next-intl/plugin'
 import createMDX from '@next/mdx'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { PrismaPlugin } from '@prisma/nextjs-monorepo-workaround-plugin'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const monorepoRoot = path.join(__dirname, '../..')
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  transpilePackages: ["@workspace/ui"],
+  transpilePackages: ["@workspace/ui", "@workspace/db"],
   outputFileTracingRoot: monorepoRoot,
-  outputFileTracingIncludes: {
-    "/api/**/*": ["packages/database/generated/prisma/**/*"],
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      config.plugins.push(new PrismaPlugin())
+    }
+    return config
   },
   pageExtensions: ['js', 'jsx', 'md', 'mdx', 'ts', 'tsx'],
   images: {
