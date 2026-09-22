@@ -2,7 +2,7 @@
 
 **Serrbi** is an AI-powered marketplace for jobs, services, and tasks — built for Morocco and beyond. Users can search listings, chat with an intelligent agent to find the right opportunities, analyze their resume, and manage applications from one place.
 
-Live site: [serrbi.ma](https://serrbi.ma)
+
 
 ---
 
